@@ -92,6 +92,20 @@
       "when": 1792951658751,
       "tag": "0012_goals_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792955398235,
+      "tag": "0013_data_portability_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792955412569,
+      "tag": "0014_data_portability_rls",
+      "breakpoints": true
     }
   ]
 }
