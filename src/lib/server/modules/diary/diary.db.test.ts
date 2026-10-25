@@ -271,3 +271,16 @@ it('lists recent foods newest first', async () => {
 	await diary.logFood(MEHMET, ctx(), a, 200, { kind: 'volume', unit: 'ml' });
 	expect(await diary.recentFoodIds(MEHMET)).toEqual([ayranId, breadId]);
 });
+
+it('marks days complete, idempotently and privately', async () => {
+	await diary.setDayComplete(MEHMET, '2026-10-24', true);
+	await diary.setDayComplete(MEHMET, '2026-10-24', true);
+	await diary.setDayComplete(MEHMET, '2026-10-25', true);
+	expect(await diary.completedDays(MEHMET, '2026-10-01', '2026-10-31')).toEqual([
+		'2026-10-24',
+		'2026-10-25'
+	]);
+	await diary.setDayComplete(MEHMET, '2026-10-25', false);
+	expect(await diary.completedDays(MEHMET, '2026-10-01', '2026-10-31')).toEqual(['2026-10-24']);
+	expect(await diary.completedDays(ZEYNEP, '2026-10-01', '2026-10-31')).toEqual([]);
+});

@@ -3,8 +3,8 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, gte, isNull, lte } from 'drizzle-orm';
 import { withUser, type Database } from '../../db/identity.ts';
-import type { BodyReading } from '../../../shared/body-types.ts';
-import { waterEntries, weightEntries } from './schema.ts';
+import type { ActivityEntry, BodyReading } from '../../../shared/body-types.ts';
+import { activityEntries, waterEntries, weightEntries } from './schema.ts';
 
 export class BodyError extends Error {
 	constructor(readonly code: 'not_found' | 'conflict') {
@@ -20,7 +20,7 @@ export interface ReadingContext {
 
 const TRASH_MS = 30 * 24 * 3600 * 1000;
 
-type Table = typeof weightEntries | typeof waterEntries;
+type Table = typeof weightEntries | typeof waterEntries | typeof activityEntries;
 
 const toReading = (
 	r: { id: string; localDate: string; createdAt: Date; revision: number },
@@ -30,6 +30,16 @@ const toReading = (
 	localDate: r.localDate,
 	value,
 	revision: r.revision,
+	createdAt: r.createdAt.toISOString()
+});
+
+const toActivity = (r: typeof activityEntries.$inferSelect): ActivityEntry => ({
+	id: r.id,
+	localDate: r.localDate,
+	kcal: r.kcal,
+	note: r.note,
+	source: r.source,
+	countsTowardBudget: r.countsTowardBudget,
 	createdAt: r.createdAt.toISOString()
 });
 
@@ -101,6 +111,69 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 		restoreWeight: (userId: string, id: string) => setDeleted(userId, weightEntries, id, false),
 		removeWater: (userId: string, id: string) => setDeleted(userId, waterEntries, id, true),
 		restoreWater: (userId: string, id: string) => setDeleted(userId, waterEntries, id, false),
+
+		/** Manual activity: calories burned above an inactive day. Counts toward the budget. */
+		async logActivity(
+			userId: string,
+			ctx: ReadingContext,
+			kcal: number,
+			note: string | null
+		): Promise<ActivityEntry> {
+			const id = ctx.id ?? randomUUID();
+			return withUser(db, userId, async (tx) => {
+				const [existing] = await tx
+					.select()
+					.from(activityEntries)
+					.where(eq(activityEntries.id, id));
+				if (existing) {
+					const same =
+						existing.localDate === ctx.localDate &&
+						existing.kcal === kcal &&
+						existing.note === note;
+					if (!same) throw new BodyError('conflict');
+					return toActivity(existing);
+				}
+				try {
+					const [row] = await tx
+						.insert(activityEntries)
+						.values({
+							id,
+							userId,
+							localDate: ctx.localDate,
+							zone: ctx.zone,
+							kcal,
+							note,
+							countsTowardBudget: true
+						})
+						.returning();
+					return toActivity(row);
+				} catch (e) {
+					if ((e as { cause?: { code?: string } }).cause?.code === '23505')
+						throw new BodyError('conflict');
+					throw e;
+				}
+			});
+		},
+		removeActivity: (userId: string, id: string) => setDeleted(userId, activityEntries, id, true),
+		restoreActivity: (userId: string, id: string) => setDeleted(userId, activityEntries, id, false),
+
+		/** A day's activity; only entries that count toward the budget are added to `countedKcal`. */
+		async activityDay(userId: string, localDate: string) {
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select()
+					.from(activityEntries)
+					.where(and(eq(activityEntries.localDate, localDate), isNull(activityEntries.deletedAt)))
+					.orderBy(asc(activityEntries.createdAt))
+			);
+			const entries = rows.map(toActivity);
+			return {
+				countedKcal: entries
+					.filter((e) => e.countsTowardBudget)
+					.reduce((sum, e) => sum + e.kcal, 0),
+				entries
+			};
+		},
 
 		async waterDay(userId: string, localDate: string) {
 			const rows = await withUser(db, userId, (tx) =>

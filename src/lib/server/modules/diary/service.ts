@@ -2,7 +2,7 @@
 // Nutrition is always computed on the server from a snapshot of the food; clients send only food, amount,
 // unit, day and meal.
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { snapshotNutrients } from '../../../shared/diary-rules.ts';
 import type {
@@ -13,7 +13,7 @@ import type {
 	SnapshotUnit
 } from '../../../shared/diary-types.ts';
 import type { FoodDetail } from '../../../shared/food-types.ts';
-import { diaryEntries } from './schema.ts';
+import { dayCompletions, diaryEntries } from './schema.ts';
 
 export class DiaryError extends Error {
 	constructor(readonly code: 'not_found' | 'conflict' | 'conversion_unknown') {
@@ -297,6 +297,30 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 					.returning();
 				return toEntry(updated);
 			});
+		},
+
+		/** Marks a day complete (or not). Only complete days count as "under budget" in the calendar. */
+		async setDayComplete(userId: string, localDate: string, complete: boolean): Promise<void> {
+			await withUser(db, userId, async (tx) => {
+				if (complete) {
+					await tx.insert(dayCompletions).values({ userId, localDate }).onConflictDoNothing();
+				} else {
+					await tx
+						.delete(dayCompletions)
+						.where(and(eq(dayCompletions.userId, userId), eq(dayCompletions.localDate, localDate)));
+				}
+			});
+		},
+
+		async completedDays(userId: string, from: string, to: string): Promise<string[]> {
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select({ localDate: dayCompletions.localDate })
+					.from(dayCompletions)
+					.where(and(gte(dayCompletions.localDate, from), lte(dayCompletions.localDate, to)))
+					.orderBy(asc(dayCompletions.localDate))
+			);
+			return rows.map((r) => r.localDate);
 		},
 
 		/** Foods the person logged most recently, newest first. */

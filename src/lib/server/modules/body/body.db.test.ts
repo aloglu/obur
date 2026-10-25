@@ -126,3 +126,39 @@ describe('isolation and constraints', () => {
 		expect(await insert('water_entries', 'ml', 20000)).toBe('23514');
 	});
 });
+
+describe('activity', () => {
+	it('counts manual activity, but not imported activity with an unclear meaning', async () => {
+		const run = await body.logActivity(AYSE, at('2026-10-25'), 300, 'Walk');
+		await admin`insert into activity_entries (id, user_id, local_date, zone, kcal, source, counts_toward_budget)
+			values (${randomUUID()}, ${AYSE}, '2026-10-25', 'UTC', 900, 'loseit', false)`;
+		const day = await body.activityDay(AYSE, '2026-10-25');
+		expect(day.countedKcal).toBe(300);
+		expect(day.entries).toHaveLength(2);
+		await body.removeActivity(AYSE, run.id);
+		expect((await body.activityDay(AYSE, '2026-10-25')).countedKcal).toBe(0);
+		await body.restoreActivity(AYSE, run.id);
+		expect((await body.activityDay(AYSE, '2026-10-25')).countedKcal).toBe(300);
+	});
+
+	it('is idempotent by ID, private, and manual entries always count', async () => {
+		const id = randomUUID();
+		const a = await body.logActivity(AYSE, at('2026-10-25', id), 300, null);
+		expect(await body.logActivity(AYSE, at('2026-10-25', id), 300, null)).toEqual(a);
+		expect(await errorCode(body.logActivity(AYSE, at('2026-10-25', id), 400, null))).toBe(
+			'conflict'
+		);
+		expect((await body.activityDay(MEHMET, '2026-10-25')).entries).toEqual([]);
+		expect(
+			await errorCode(
+				asUser(
+					AYSE,
+					(
+						tx
+					) => tx`insert into activity_entries (id, user_id, local_date, zone, kcal, counts_toward_budget)
+					values (${randomUUID()}, ${AYSE}, '2026-10-25', 'UTC', 100, false)`
+				)
+			)
+		).toBe('23514');
+	});
+});
