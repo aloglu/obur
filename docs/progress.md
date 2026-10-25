@@ -8,6 +8,22 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 The owner keeps using LoseIt until obur is complete and production-ready; Phase 1 and later builds are for testing, not daily reliance.
 
+## Phase 1 plan
+
+Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a commit; the step order lets a usable logging flow appear early.
+
+1. **Scaffold.** SvelteKit + Svelte 5, strict TypeScript, Tailwind with the Pazar tokens, Paraglide message catalog, ESLint with module-boundary rules, Vitest, Playwright (phone WebKit and desktop Chromium), self-hosted fonts. Docker Compose with PostgreSQL for development. Verified commands recorded in `CLAUDE.md`.
+2. **Database foundation.** Drizzle schema and migrations, a locked migration runner, a separate migration owner and runtime roles (non-superuser, no `BYPASSRLS`), and the transaction-local `app.user_id` wrapper. Real-Postgres tests for cross-user access, missing identity and connection reuse.
+3. **Authentication.** One-time bootstrap admin, passkeys and YubiKeys (SimpleWebAuthn), Postgres sessions, invites, recovery codes and the operator recovery command, CSRF and CSP. Playwright with a virtual authenticator.
+4. **Catalog.** Foods with the nutrient contract (basis, qualifiers, source definitions, unknown ≠ 0), servings and conversions, private/shared visibility, Turkish-aware and transliteration-aware search.
+5. **Diary and the Pazar screens.** Today, Log (Speak and Scan as "Coming soon"), the amount sheet, entries with snapshots and intended day/meal/zone, edit, Move to, delete with Undo and trash, calories-only quick add.
+6. **Weight and water.**
+7. **Goals.** Onboarding with BMI and base burn, a versioned daily budget with manual activity calories, the deficit and floor, the no-target path for minors, pregnancy and breastfeeding, and day completion.
+8. **Progress.** Daily totals, weight history and the month calendar (green only for complete days).
+9. **Offline create queue.** Ordered, retry-safe, partitioned by account, with offline detection from failed requests and a cache-first app shell; re-test offline launch on the iPhone.
+10. **Your data.** Export and import of every implemented entity, and account deletion.
+11. **Operations.** Production Compose image (web and worker), deployment behind the existing Cloudflare Tunnel, pgBackRest with encrypted local and off-site backups, a weekly restore check, `docs/restore.md` with a rehearsed restore, and CI.
+
 ## Completed
 
 - 2026-10-25: Repository initialised with `CLAUDE.md`, `docs/design.md`, this file and a `.gitignore` that excludes secrets and private data.
@@ -33,7 +49,7 @@ None yet. No measurements have been taken.
 
 ## Exact next step
 
-Write the Phase 1 plan into this file, then start step 1 (application scaffold).
+Phase 1 step 1: application scaffold.
 
 ## Conventions for Phase 0
 
@@ -46,7 +62,8 @@ Write the Phase 1 plan into this file, then start step 1 (application scaffold).
 - Test phone: iPhone 13, iOS 27.0.1. Second authenticators for recovery tests: two YubiKeys.
 - Pilot hostname chosen (a subdomain of the owner's domain); recorded only in the owner's `.env`, RP ID is the parent domain.
 - Home server OS, Docker availability and exact CPU/storage (design assumes a 2-core/4-thread i3 with 16 GB RAM).
-- Off-site backup destination (needed in Phase 1, not Phase 0).
+- Off-site backup destination (needed by Phase 1 step 11).
+- Where the Phase 1 test build runs on Unraid (Compose stack on the host versus a container like obur-lab) — needed by step 11.
 
 ## Repository
 
