@@ -26,11 +26,70 @@ Full findings: `docs/loseit-export.md`. Summary:
 
 ## Speech (faster-whisper)
 
-Not measured yet.
+**Setup.** 48 clips recorded by the owner on the iPhone (Voice Memos, AAC 48 kHz mono, 1.3–7.2 s, mean 3.6 s): 25 Turkish, 13 English and 10 mixed sentences built from the owner's real foods, 13 of them in harder conditions (TV, kitchen noise, arm's length, fast speech). One speaker, all development data: there is no held-out set yet, so every number below is an optimistic upper bound with roughly ±7 percentage points of uncertainty per figure. faster-whisper 1.1.1, CTranslate2 4.8.3, int8, beam 5 unless stated. Scripts: `spikes/speech/`.
+
+**Scoring.** Reference and output are normalised the same way (Turkish-aware lowercasing, number words to digits, comma/dot decimals, `g`/`gram`/`grams` unified). *Clip fully right* means every number is right and every food, brand, unit and date word is present: exactly, or close enough (≥ 0.8 similarity after Turkish letter folding) that catalog matching could recover it. That is the closest proxy for "the confirmation screen needs no edit".
+
+| Configuration (desktop, 16 threads) | Numbers right | Clip fully right | Turkish / English / mixed | p50 latency |
+| --- | --- | --- | --- | --- |
+| small, auto language | 92% | 60% | 68% / 69% / 30% | 0.7 s |
+| medium, auto language | 98% | 67% | 76% / 77% / 30% | 1.7 s |
+| large-v3-turbo, auto language | 100% | 75% | 84% / 77% / 50% | 2.5 s |
+| **large-v3-turbo, auto, brand prompt** | **100%** | **81%** | **80% / 100% / 60%** | **2.4 s** |
+| large-v3-turbo, forced Turkish, brand prompt | 100% | 79% | 80% / 100% / 50% | 1.4 s |
+| large-v3-turbo, forced Turkish, no prompt | 92% | 67% | 84% / 54% / 40% | 1.4 s |
+
+Findings:
+
+- large-v3-turbo is clearly the most accurate candidate. Numbers, including decimal commas, halves and "yüzde on", were right in every clip with the prompt.
+- **Forcing Turkish without a prompt breaks English sentences; with the brand prompt it does not**, and it skips language detection, which is a large share of the time.
+- **The brand prompt helps** (75% → 81%), but it listed exactly the brands in the test sentences. That mirrors the intended design (prompting with each person's frequent foods) and also flatters this result.
+- Remaining errors are mostly brand and product words: "Untad" → "un tatlı", "Wasa" → "basa", "Delly" → "deli", "peynir" → "painter", "körpe ıspanak" → "kürtpil spanak", "bar" → "var". **Mixed-language sentences are the weakest category** (50–60% at best).
+- Shortening Whisper's 30-second window (`chunk_length`) had no effect: CTranslate2 still processes a full 30 s window for a 3 s clip, so this cost is fixed on this engine.
+
+**Target server (i3-1115G4, 4 threads; other services idle-to-light):**
+
+| Configuration | Clip fully right | p50 | p95 | Peak memory |
+| --- | --- | --- | --- | --- |
+| small, auto language | 56% | 4.1 s | 4.5 s | 1.5 GB |
+| small, forced Turkish | 40% | 2.4 s | 8.5 s | 1.3 GB |
+| large-v3-turbo, auto language | 71% | 19.1 s | 21.3 s | 2.7 GB |
+| large-v3-turbo, forced Turkish (no prompt) | see raw results | ≈ 9.9 s mean | — | 2.2 GB |
+| large-v3-turbo, forced Turkish + prompt; the same with 2 concurrent requests; small + prompt | **Running** | | | |
+
+**Interim conclusion: the 5-second voice target (p95, warm) is not met on the target server with any accurate configuration measured so far.** large-v3-turbo is about 8× slower there than on the desktop. The small model is close to the target in time but gets roughly half the clips fully right. Quality on the server is slightly lower than on the desktop for the same model (71% vs 75%), consistent with int8 kernels differing by CPU. End-to-end phone timings (upload included) are not measured yet.
 
 ## Label OCR (PaddleOCR via ONNX Runtime)
 
-Not measured yet.
+**Setup.** Ten real label photos from the owner's kitchen (an eleventh photo was not a label and was excluded and deleted). Values were read by hand from the photos (136 values over 16 nutrient columns; owner verification pending). Photos were converted to orientation-corrected JPEG with all metadata removed (the originals contain GPS location). The set includes curved packs, glare through plastic, very small print, two labels in running text rather than tables, %RI columns, bilingual rows, distractor tables in other languages and a distractor energy figure. Development data only. Scripts: `spikes/ocr/`; RapidOCR 3.9.2 on ONNX Runtime 1.31.0.
+
+Models:
+- **A:** PP-OCRv5 mobile detector + Latin PP-OCRv5 mobile recogniser (the design's named candidate), converted to ONNX locally from PaddlePaddle's Hugging Face release with paddle2onnx 2.1.0 / paddlepaddle 3.3.0.
+- **B:** PP-OCRv6 small detector + recogniser.
+- **C:** PP-OCRv6 tiny detector + recogniser.
+
+B and C are PaddlePaddle's official ONNX exports. All three character sets include every Turkish letter. The text-orientation classifier was off.
+
+*Readable* means the correct number appears anywhere in the OCR output. *Extracted right/wrong* uses a deliberately naive row reader, not the planned label parser.
+
+| Desktop, 16 threads | Readable non-zero values | Extracted right | Extracted wrong | Labels fully right | p50 per image | Peak memory |
+| --- | --- | --- | --- | --- | --- | --- |
+| A at 2000 px | 78% | 62% | 13% | 2/10 | 0.56 s | 1.0 GB |
+| **B at 1280 px** | **90%** | **71%** | 14% | 4/10 | **0.39 s** | 0.6 GB |
+| B at 2000 px | 90% | 66% | 18% | 3/10 | 0.62 s | 0.9 GB |
+| C at 2000 px | 86% | 62% | 19% | 3/10 | 0.29 s | 0.7 GB |
+
+Findings:
+
+- **PP-OCRv6 small reads labels clearly better than the PP-OCRv5 Latin model the design named.** The design's choice of "PaddleOCR mobile models" should become PP-OCRv6 small, pending server timings.
+- Higher resolution did not help consistently; 1280–2000 px is enough.
+- **Serious OCR failure mode: `%` read as `9`**, turning "%28" into "9628" on a curved pouch. Combined with row merging on curved packs, this produces confident wrong numbers. The design's plausibility checks (mass and energy consistency, %RI column detection) are required, not optional.
+- Most "extracted wrong" results come from the naive reader, not the OCR: on the running-text turkey label every value was read correctly, but the reader mistook a best-before date for energy. The real parser must handle running text, multiple bases and distractor numbers.
+- Server timings: **Pending** (they run after the speech benchmark so the two do not distort each other).
+
+**Runtime notes.**
+- RapidOCR's default model host (`modelscope.cn`) did not resolve on the owner's network. Models were fetched from PaddlePaddle's Hugging Face repositories instead; pin and vendor model files during setup.
+- **ONNX Runtime 1.31 includes a telemetry component** that logged an attempt to persist a device ID. The production OCR worker must disable it and run without outbound network access, consistent with the no-telemetry rule. Not yet verified which mechanism is sufficient.
 
 ## Phone, HTTPS and passkeys (iPhone 13, iOS 27.0.1)
 

@@ -17,6 +17,9 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - 48 voice clips recorded (m4a) in `~/obur-private/audio/raw/`, matching `~/obur-private/audio/transcripts.tsv` (25 tr, 13 en, 10 mixed; 13 in harder conditions).
 - Server access ready: SSH alias `obur-lab` (desktop `~/.ssh/config`) into the unprivileged `obur-lab` container; only `/work` (its appdata folder) is mounted. The owner's existing Cloudflare tunnel routes the pilot hostname to server port 8040 (done 2026-10-25); the container must be recreated with `-p 8040:8040` for the phone probe.
 - Step 0 done: hardware recorded in `docs/feasibility.md`.
+- Steps 2–3 mostly done: desktop speech and OCR benchmarks complete; server speech runs partly complete (focused runs in progress), server OCR pending. Interim results in `docs/feasibility.md`.
+- Phone probe built and tested in desktop Chromium with a virtual authenticator (`spikes/phone-probe/`); waiting for server benchmarks to finish before the owner recreates the container with port 8040.
+- A non-label photo (payment card) was found among the label photos; derived copies were deleted and the owner was told.
 - Step 1 done: LoseIt export inspected (`docs/loseit-export.md`, summary in `docs/feasibility.md`). Aggregate output in `~/obur-private/results/`.
 
 ## Validation results
@@ -25,7 +28,7 @@ None yet. No measurements have been taken.
 
 ## Exact next step
 
-Step 2: speech benchmark (faster-whisper) in a shared Docker image under `spikes/speech/`, desktop first, then `obur-lab`.
+Collect the focused server speech runs (`/work/results/speech/matrix2.log` on obur-lab), then run the OCR matrix on obur-lab (needs a venv from the OCR image's package list). Then the owner recreates the container with `-p 8040:8040` and runs `spikes/phone-probe/CHECKLIST.md`. UI demo directions are waiting on the owner's choice of review venue.
 
 ## Conventions for Phase 0
 
