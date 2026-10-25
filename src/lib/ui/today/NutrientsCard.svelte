@@ -2,14 +2,31 @@
 	// docs/ui.md "Nutrients card". Unknown values show "+" and how many entries are unknown, never zero.
 	import { m } from '#lib/paraglide/messages.js';
 	import type { DayTotals, NutrientTotal } from '#lib/shared/diary-types.ts';
+	import type { MacroTargets } from '#lib/shared/goals.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
 
-	let { totals, entryCount }: { totals: DayTotals; entryCount: number } = $props();
+	interface Props {
+		totals: DayTotals;
+		entryCount: number;
+		/** From a calculated target; without one, bars are drawn relative to each other. */
+		targets: MacroTargets | null;
+	}
+	let { totals, entryCount, targets }: Props = $props();
 
 	const main = [
-		{ code: 'protein', label: m.nutrient_short_protein, color: 'var(--protein)' },
-		{ code: 'carbohydrate_excl_fibre', label: m.nutrient_short_carbohydrate, color: 'var(--carb)' },
-		{ code: 'fat', label: m.nutrient_short_fat, color: 'var(--fat)' }
+		{
+			code: 'protein',
+			label: m.nutrient_short_protein,
+			color: 'var(--protein)',
+			target: 'proteinG'
+		},
+		{
+			code: 'carbohydrate_excl_fibre',
+			label: m.nutrient_short_carbohydrate,
+			color: 'var(--carb)',
+			target: 'carbohydrateG'
+		},
+		{ code: 'fat', label: m.nutrient_short_fat, color: 'var(--fat)', target: 'fatG' }
 	] as const;
 	const minor = [
 		{ code: 'fibre', label: m.nutrient_short_fibre },
@@ -32,6 +49,11 @@
 		};
 	}
 	const largest = $derived(Math.max(1, ...main.map((n) => totals[n.code]?.value ?? 0)));
+	const width = (n: (typeof main)[number]) => {
+		const value = totals[n.code]?.value ?? 0;
+		const goal = targets?.[n.target];
+		return Math.min(100, Math.round((value / (goal || largest)) * 100));
+	};
 </script>
 
 <section
@@ -44,14 +66,14 @@
 		<div class="flex flex-col gap-1">
 			<div class="flex items-baseline justify-between gap-2 text-[15px]">
 				<span class="font-semibold">{n.label()}</span>
-				<span class="font-semibold tabular-nums">{s.text}</span>
+				<span class="font-semibold tabular-nums"
+					>{s.text}{#if targets}<span class="font-normal text-muted">
+							/ {targets[n.target]} g</span
+						>{/if}</span
+				>
 			</div>
 			<div class="h-2 overflow-hidden rounded-full bg-track" aria-hidden="true">
-				<div
-					class="h-full rounded-full"
-					style:background={n.color}
-					style:width="{Math.round(((totals[n.code]?.value ?? 0) / largest) * 100)}%"
-				></div>
+				<div class="h-full rounded-full" style:background={n.color} style:width="{width(n)}%"></div>
 			</div>
 			{#if s.note}<p class="text-[12.5px] text-muted">{s.note}</p>{/if}
 		</div>

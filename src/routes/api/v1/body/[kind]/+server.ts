@@ -13,7 +13,7 @@ const Reading = (max: number) =>
 		value: v.pipe(v.number(), v.finite(), v.gtValue(0), v.ltValue(max))
 	});
 
-/** POST /api/v1/body/weight (kg) or /api/v1/body/water (ml). */
+/** POST /api/v1/body/weight (kg), /api/v1/body/water (ml) or /api/v1/body/activity (kcal, note). */
 export const POST: RequestHandler = ({ params, request, locals }) =>
 	respondBody(async () => {
 		const userId = locals.session!.userId;
@@ -28,6 +28,30 @@ export const POST: RequestHandler = ({ params, request, locals }) =>
 			const r = await readJson(request, Reading(10_001));
 			return json(
 				await body.logWater(userId, { id: r.id, localDate: r.date, zone: r.zone }, r.value),
+				{ status: 201 }
+			);
+		}
+		if (params.kind === 'activity') {
+			const r = await readJson(
+				request,
+				v.object({
+					id: v.optional(v.pipe(v.string(), v.uuid())),
+					date: DateString,
+					zone: Zone,
+					value: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10_000)),
+					note: v.pipe(
+						v.optional(v.nullable(v.string()), null),
+						v.transform((s) => (s ? s.normalize('NFC').trim().slice(0, 120) || null : null))
+					)
+				})
+			);
+			return json(
+				await body.logActivity(
+					userId,
+					{ id: r.id, localDate: r.date, zone: r.zone },
+					r.value,
+					r.note
+				),
 				{ status: 201 }
 			);
 		}

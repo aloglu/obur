@@ -125,3 +125,36 @@ export function macroTargets(
 	const carbohydrateG = Math.max(0, Math.round((budgetKcal - proteinG * 4 - fatG * 9) / 4));
 	return { proteinG, fatG, carbohydrateG };
 }
+
+export interface DayBudget {
+	budget: number;
+	baseKcal: number;
+	activityKcal: number;
+	deficitKcal: number;
+	floorApplied: boolean;
+}
+
+/**
+ * The budget for a day from the target in force and that day's counted activity. A manual target is the budget
+ * for an inactive day, so counted activity is added to it too. No target (or mode "none") means no budget.
+ */
+export function budgetForDay(
+	target: {
+		mode: 'calculated' | 'manual' | 'none';
+		baseBurnKcal: number | null;
+		deficitKcal: number;
+		floorKcal: number;
+	} | null,
+	activityKcal: number
+): DayBudget | null {
+	if (!target || target.mode === 'none' || target.baseBurnKcal === null) return null;
+	const raw = Math.round(target.baseBurnKcal + activityKcal - target.deficitKcal);
+	const budget = Math.max(target.floorKcal, raw);
+	return {
+		budget,
+		baseKcal: target.baseBurnKcal,
+		activityKcal,
+		deficitKcal: target.deficitKcal,
+		floorApplied: budget > raw
+	};
+}

@@ -4,6 +4,7 @@ import {
 	ageOn,
 	baseBurn,
 	bmi,
+	budgetForDay,
 	bmrKatchMcArdle,
 	bmrMifflinStJeor,
 	dailyBudget,
@@ -107,5 +108,34 @@ describe('macro targets', () => {
 		expect(
 			macroTargets(1000, { proteinGPerKg: 2.5, proteinBasisKg: 120, fatShare: 0.4 }).carbohydrateG
 		).toBe(0);
+	});
+});
+
+describe('budgetForDay', () => {
+	it('combines the target with counted activity and reports when the floor applied', () => {
+		const target = {
+			mode: 'calculated' as const,
+			baseBurnKcal: 2136,
+			deficitKcal: 550,
+			floorKcal: 1500
+		};
+		expect(budgetForDay(target, 300)).toEqual({
+			budget: 1886,
+			baseKcal: 2136,
+			activityKcal: 300,
+			deficitKcal: 550,
+			floorApplied: false
+		});
+		expect(budgetForDay({ ...target, baseBurnKcal: 1700, deficitKcal: 660 }, 0)?.floorApplied).toBe(
+			true
+		);
+		expect(
+			budgetForDay({ mode: 'manual', baseBurnKcal: 2300, deficitKcal: 0, floorKcal: 0 }, 200)
+				?.budget
+		).toBe(2500);
+		expect(
+			budgetForDay({ mode: 'none', baseBurnKcal: null, deficitKcal: 0, floorKcal: 0 }, 200)
+		).toBeNull();
+		expect(budgetForDay(null, 0)).toBeNull();
 	});
 });

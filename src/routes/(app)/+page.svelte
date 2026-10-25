@@ -7,8 +7,11 @@
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { addDays, defaultMeal } from '#lib/shared/diary-rules.ts';
+	import type { ActivityEntry } from '#lib/shared/body-types.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
 	import { kcal, mealName } from '#lib/shared/format.ts';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import ActivitySheet from '#lib/ui/log/ActivitySheet.svelte';
 	import AmountSheet from '#lib/ui/log/AmountSheet.svelte';
 	import EditEntrySheet from '#lib/ui/log/EditEntrySheet.svelte';
 	import LogPanel from '#lib/ui/log/LogPanel.svelte';
@@ -25,6 +28,7 @@
 	let preset = $state<Meal | null>(null);
 	let picking = $state<string | null>(null);
 	let quick = $state(false);
+	let addingActivity = $state(false);
 	let editing = $state<DiaryEntry | null>(null);
 	// Bumped after each save so the desktop Log panel starts fresh for the next food.
 	let panelKey = $state(0);
@@ -96,6 +100,23 @@
 		});
 	}
 
+	async function activityAdded(entry: ActivityEntry) {
+		addingActivity = false;
+		await invalidateAll();
+		showToast({
+			message: m.toast_activity({ kcal: kcal(entry.kcal) }),
+			undo: async () => {
+				await api('POST', `/api/v1/body/activity/${entry.id}?action=delete`, {});
+				await invalidateAll();
+			}
+		});
+	}
+
+	async function toggleComplete() {
+		await api('PUT', `/api/v1/diary/days/${data.date}`, { complete: !data.complete });
+		await invalidateAll();
+	}
+
 	async function conflict() {
 		editing = null;
 		showToast({ message: m.toast_conflict() });
@@ -110,8 +131,14 @@
 >
 	<main class="flex min-w-0 flex-col gap-3">
 		<DayHeader date={data.date} today={data.today} onmove={move} />
-		<BudgetCard {eaten} budget={null} />
-		<NutrientsCard totals={data.totals} entryCount={data.entries.length} />
+		<BudgetCard
+			{eaten}
+			budget={data.budget}
+			manual={data.target?.mode === 'manual'}
+			floor={data.target?.floorKcal ?? 0}
+			onaddactivity={() => (addingActivity = true)}
+		/>
+		<NutrientsCard totals={data.totals} entryCount={data.entries.length} targets={data.macros} />
 		<div class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
 			<WaterCard date={data.date} totalMl={data.water.totalMl} onchange={invalidateAll} />
 			<WeightCard
@@ -130,6 +157,22 @@
 				onopen={(e) => (editing = e)}
 			/>
 		{/each}
+		<div class="flex flex-col items-start gap-1 px-1">
+			<button
+				type="button"
+				onclick={toggleComplete}
+				aria-pressed={data.complete}
+				class={[
+					'inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-[15px] font-bold',
+					data.complete ? 'border-good bg-surface text-good' : 'border-line bg-surface text-text'
+				]}
+			>
+				<CircleCheck size={20} aria-hidden="true" />{data.complete
+					? m.day_completed()
+					: m.day_complete()}
+			</button>
+			<p class="text-[13px] text-muted">{m.day_complete_hint()}</p>
+		</div>
 	</main>
 
 	<aside class="hidden desk:block" aria-label={m.log_title()}>
@@ -175,5 +218,12 @@
 		ondeleted={deleted}
 		onconflict={conflict}
 		onclose={() => (editing = null)}
+	/>
+{/if}
+{#if addingActivity}
+	<ActivitySheet
+		date={data.date}
+		onsaved={activityAdded}
+		onclose={() => (addingActivity = false)}
 	/>
 {/if}

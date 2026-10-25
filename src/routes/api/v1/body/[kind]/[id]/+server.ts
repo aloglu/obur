@@ -11,7 +11,8 @@ export const POST: RequestHandler = ({ params, url, locals }) =>
 		const action = url.searchParams.get('action');
 		const handlers = {
 			weight: { delete: body.removeWeight, restore: body.restoreWeight },
-			water: { delete: body.removeWater, restore: body.restoreWater }
+			water: { delete: body.removeWater, restore: body.restoreWater },
+			activity: { delete: body.removeActivity, restore: body.restoreActivity }
 		} as const;
 		const kind = handlers[params.kind as keyof typeof handlers];
 		const run = kind?.[action as keyof typeof kind];
