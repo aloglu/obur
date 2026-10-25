@@ -32,7 +32,7 @@ async function errorCode(promise: Promise<unknown>): Promise<string | undefined>
 }
 
 beforeEach(async () => {
-	await admin`truncate users`;
+	await admin`truncate users cascade`;
 	await admin`insert into users (id, display_name) values (${alice}, 'Alice'), (${bob}, 'Bob')`;
 });
 
