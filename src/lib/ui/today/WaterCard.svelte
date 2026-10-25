@@ -3,6 +3,7 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
+	import { offline, submit } from '#lib/client/offline/sync.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
@@ -13,16 +14,29 @@
 		onchange
 	}: { date: string; totalMl: number; onchange: () => Promise<void> } = $props();
 	let busy = $state(false);
+	const pendingMl = $derived(
+		offline.items.reduce(
+			(sum, i) =>
+				i.status === 'pending' && i.preview.kind === 'water' && i.preview.localDate === date
+					? sum + i.preview.ml
+					: sum,
+			0
+		)
+	);
 
 	async function add(ml: number) {
 		busy = true;
 		try {
-			const r = await api<{ id: string }>('POST', '/api/v1/body/water', {
-				id: crypto.randomUUID(),
-				date,
-				zone: deviceZone(),
-				value: ml
-			});
+			const result = await submit<{ id: string }>(
+				'/api/v1/body/water',
+				{ id: crypto.randomUUID(), date, zone: deviceZone(), value: ml },
+				{ kind: 'water', localDate: date, ml }
+			);
+			if (result.status === 'queued') {
+				showToast({ message: m.offline_saved(), detail: m.offline_saved_detail() });
+				return;
+			}
+			const r = result.data;
 			await onchange();
 			showToast({
 				message: m.toast_water({ ml: String(ml) }),
@@ -45,6 +59,11 @@
 	<p class="font-display text-[28px] leading-none font-extrabold tabular-nums">
 		{m.water_total({ ml: formatDecimal(totalMl, ',', 0) })}
 	</p>
+	{#if pendingMl}
+		<p class="text-[13px] font-semibold text-warn">
+			{m.offline_water_pending({ ml: String(pendingMl) })}
+		</p>
+	{/if}
 	<div class="flex flex-wrap gap-2">
 		{#each [250, 500] as ml (ml)}
 			<button

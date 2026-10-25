@@ -3,6 +3,7 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { DiaryEntry, Meal } from '#lib/shared/diary-types.ts';
+	import type { QueuedOp } from '#lib/client/offline/store.ts';
 	import { kcal, mealName, quantityText } from '#lib/shared/format.ts';
 
 	interface Props {
@@ -11,8 +12,11 @@
 		highlight?: string;
 		onadd: () => void;
 		onopen: (entry: DiaryEntry) => void;
+		/** Entries kept on this device and not yet on the server. */
+		pending?: QueuedOp[];
+		onpending?: (op: QueuedOp) => void;
 	}
-	let { meal, entries, highlight, onadd, onopen }: Props = $props();
+	let { meal, entries, highlight, onadd, onopen, pending = [], onpending }: Props = $props();
 
 	const total = $derived(
 		entries.reduce((sum, e) => sum + (e.nutrients.energy_kcal?.value ?? 0), 0)
@@ -42,7 +46,7 @@
 			</button>
 		</div>
 	</div>
-	{#if entries.length === 0}
+	{#if entries.length === 0 && pending.length === 0}
 		<p class="mt-1 text-[14px] text-muted">{m.meal_empty()}</p>
 	{:else}
 		<ul class="mt-2 flex flex-col">
@@ -75,6 +79,33 @@
 						>
 					</button>
 				</li>
+			{/each}
+			{#each pending as op (op.seq)}
+				{#if op.preview.kind === 'diary'}
+					<li>
+						<button
+							type="button"
+							onclick={() => onpending?.(op)}
+							class="flex min-h-14 w-full items-center gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
+						>
+							<span class="min-w-0 flex-1">
+								<span class="line-clamp-2 text-[15px] font-semibold break-words"
+									>{op.preview.name}</span
+								>
+								<span class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
+									{op.preview.quantity}
+									<span
+										class="rounded-full bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn"
+										>{op.status === 'review' ? m.offline_review() : m.entry_pending()}</span
+									>
+								</span>
+							</span>
+							<span class="shrink-0 text-[15px] font-semibold text-muted tabular-nums"
+								>{op.preview.kcal === null ? '?' : kcal(op.preview.kcal)}</span
+							>
+						</button>
+					</li>
+				{/if}
 			{/each}
 		</ul>
 	{/if}

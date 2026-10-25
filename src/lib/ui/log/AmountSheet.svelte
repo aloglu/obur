@@ -3,6 +3,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
+	import { submit } from '#lib/client/offline/sync.svelte.ts';
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { addDays, isLateNight } from '#lib/shared/diary-rules.ts';
@@ -23,7 +24,8 @@
 		date: string;
 		today: string;
 		meal: Meal;
-		onsaved: (entry: DiaryEntry) => void;
+		/** The saved entry, or null when it was kept on this device to send later. */
+		onsaved: (entry: DiaryEntry | null) => void;
 		onclose: () => void;
 	}
 	let { foodId, date, today, meal: presetMeal, onsaved, onclose }: Props = $props();
@@ -99,17 +101,34 @@
 		busy = true;
 		problem = '';
 		try {
-			const entry = await api<DiaryEntry>('POST', '/api/v1/diary/entries', {
-				kind: 'food',
-				id: crypto.randomUUID(),
-				date: day,
-				meal,
-				zone: deviceZone(),
-				foodId: food.id,
-				amount,
-				unit: option.input
-			});
-			onsaved(entry);
+			const scaled = basisFactor(food, amount, toUnit(option));
+			const kcalValue = food.nutrients.find((n) => n.code === 'energy_kcal')?.value;
+			const quantity =
+				option.input.kind === 'mass' || option.input.kind === 'volume'
+					? `${formatDecimal(amount, ',', 2)} ${option.label}`
+					: `${formatDecimal(amount, ',', 2)} × ${option.label}`;
+			const result = await submit<DiaryEntry>(
+				'/api/v1/diary/entries',
+				{
+					kind: 'food',
+					id: crypto.randomUUID(),
+					date: day,
+					meal,
+					zone: deviceZone(),
+					foodId: food.id,
+					amount,
+					unit: option.input
+				},
+				{
+					kind: 'diary',
+					localDate: day,
+					meal,
+					name: `${food.brand ? `${food.brand} ` : ''}${food.name}`,
+					quantity,
+					kcal: kcalValue !== undefined && scaled !== undefined ? kcalValue * scaled : null
+				}
+			);
+			onsaved(result.status === 'sent' ? result.data : null);
 		} catch (e) {
 			problem =
 				e instanceof ApiError && e.status === 422

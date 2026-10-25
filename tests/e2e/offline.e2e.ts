@@ -1,0 +1,131 @@
+// The bounded offline scope (docs/design.md): queued new entries with ordered, retry-safe sending, visible pending
+// state, cached viewing, and sign-out that never silently drops unsent entries.
+import { expect, test, type Page } from '@playwright/test';
+import { apiAs, signedInAs } from './fixtures.ts';
+
+const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
+
+/**
+ * Uses the app online first, the way people do: the service worker takes control, and moving between tabs caches
+ * the pages and the data requests that client-side navigation makes.
+ */
+async function primeCache(page: Page) {
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await page.reload();
+	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
+	for (const tab of ['Log', isPhone(page) ? 'More' : 'Settings', 'Today']) {
+		await nav.getByRole('link', { name: tab }).click();
+		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+	}
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+}
+
+async function quickAdd(page: Page, kcal: string, description: string) {
+	await page
+		.getByRole('region', { name: 'Snacks' })
+		.getByRole('button', { name: 'Add to Snacks' })
+		.click();
+	await page.getByRole('button', { name: 'Quick add calories' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Quick add calories' });
+	await sheet.getByLabel('Calories (kcal)').fill(kcal);
+	await sheet.getByLabel('What was it? (optional)').fill(description);
+	await sheet.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('status')).toContainText('Saved on this device');
+	if (isPhone(page))
+		await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+}
+
+test('entries made offline wait visibly, then arrive once and in order', async ({
+	page,
+	context
+}) => {
+	await signedInAs(page, 'Ayşe');
+	await primeCache(page);
+	await context.setOffline(true);
+
+	await page
+		.getByRole('region', { name: 'Water' })
+		.getByRole('button', { name: 'Add 250 ml of water' })
+		.click();
+	await expect(page.getByRole('region', { name: 'Water' })).toContainText(
+		'+250 ml waiting to sync'
+	);
+
+	await quickAdd(page, '300', 'Simit');
+	await quickAdd(page, '50', 'Çay');
+	const snacks = page.getByRole('region', { name: 'Snacks' });
+	await expect(snacks.getByText('Waiting to sync')).toHaveCount(2);
+
+	// Back online: everything is sent in the order it was created, exactly once.
+	await context.setOffline(false);
+	await page.evaluate(() => dispatchEvent(new Event('online')));
+	await expect(snacks.getByText('Waiting to sync')).toHaveCount(0);
+	// The first refresh can still meet the saved copy while the connection settles; the page says so and
+	// refreshes on the next attempt.
+	await expect(async () => {
+		await page.evaluate(() => dispatchEvent(new Event('online')));
+		await expect(snacks).toContainText('Simit', { timeout: 1000 });
+	}).toPass();
+	await expect(page.getByText('Showing the copy saved on this device')).toHaveCount(0);
+	await expect(snacks).toContainText('Çay');
+	await expect(page.getByRole('region', { name: 'Water' })).toContainText('250 ml');
+
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	const day = await apiAs<{ entries: { description: string }[] }>(
+		page,
+		'GET',
+		`/api/v1/diary/${date}`
+	);
+	expect(day.entries.map((e) => e.description)).toEqual(['Simit', 'Çay']);
+
+	// Cached viewing: the day still opens without a connection, once the saved copy has caught up.
+	await expect
+		.poll(() =>
+			page.evaluate(async () => {
+				const hit = await (await caches.open('obur-data-v1')).match(location.origin + '/');
+				return hit ? hit.text() : '';
+			})
+		)
+		.toContain('Simit');
+	await context.setOffline(true);
+	await page.reload();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect(snacks).toContainText('Simit');
+	await context.setOffline(false);
+});
+
+test('signing out asks before discarding entries that have not been sent', async ({
+	page,
+	context,
+	browserName
+}) => {
+	await signedInAs(page, 'Mehmet');
+	await primeCache(page);
+	await context.setOffline(true);
+	await quickAdd(page, '120', 'Elma');
+	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
+	await nav.getByRole('link', { name: isPhone(page) ? 'More' : 'Settings' }).click();
+
+	// Sign-out tries to send first, then asks; declining keeps everything.
+	let dialog = page.waitForEvent('dialog');
+	await page.getByRole('button', { name: 'Sign out' }).click();
+	expect((await dialog).message()).toContain("haven't been sent");
+	await (await dialog).dismiss();
+	await expect(page).toHaveURL(/\/(settings|more)$/);
+
+	// Signing out needs the server; keep this entry failing so it is still unsent when confirmed. Playwright cannot
+	// intercept requests from a service-worker-controlled page in WebKit, so this half runs in Chromium only.
+	test.skip(
+		browserName === 'webkit',
+		'request interception does not apply under a service worker in WebKit'
+	);
+	await context.route('**/api/v1/diary/entries', (route) => route.abort());
+	await context.setOffline(false);
+	dialog = page.waitForEvent('dialog');
+	await page.getByRole('button', { name: 'Sign out' }).click();
+	await (await dialog).accept();
+	await expect(page).toHaveURL(/\/login$/);
+	const queues = await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name));
+	expect(queues.filter((n) => n?.startsWith('obur-queue-'))).toEqual([]);
+});

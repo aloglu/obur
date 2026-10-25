@@ -6,6 +6,7 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
+	import { clearDeviceData, flush, offline } from '#lib/client/offline/sync.svelte.ts';
 	import { setTheme, type ThemeChoice } from '#lib/client/prefs.ts';
 	import Button from '../Button.svelte';
 	import Card from '../Card.svelte';
@@ -19,6 +20,11 @@
 	let { isAdmin, displayName, initialTheme }: Props = $props();
 
 	async function signOut() {
+		// Try to send anything waiting; never discard unsent entries without asking (docs/design.md, offline scope).
+		await flush();
+		const unsent = offline.items.length;
+		if (unsent > 0 && !confirm(m.signout_pending({ count: String(unsent) }))) return;
+		if (offline.ownerId) await clearDeviceData(offline.ownerId);
 		await api('POST', '/api/v1/auth/logout', {});
 		await invalidateAll();
 		await goto(resolve('/login'));

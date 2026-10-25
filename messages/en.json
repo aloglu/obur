@@ -369,5 +369,17 @@
 	"weekday_thu": "Thu",
 	"weekday_fri": "Fri",
 	"weekday_sat": "Sat",
-	"weekday_sun": "Sun"
+	"weekday_sun": "Sun",
+	"offline_saved": "Saved on this device",
+	"offline_cached_copy": "Showing the copy saved on this device. It will update when the server can be reached.",
+	"offline_saved_detail": "It will be sent when you're back online.",
+	"offline_signin": "Sign in again to send {count} waiting entries.",
+	"offline_signin_link": "Sign in",
+	"offline_review": "Couldn't be saved. The food may have changed while you were offline.",
+	"offline_discard": "Discard",
+	"offline_discard_title": "Unsent entry",
+	"offline_discard_body": "This entry is only on this device and hasn't reached the server yet.",
+	"offline_water_pending": "+{ml} ml waiting to sync",
+	"offline_weight_pending": "{kg} kg waiting to sync",
+	"signout_pending": "{count} entries on this device haven't been sent yet. Signing out will discard them. Sign out anyway?"
 }

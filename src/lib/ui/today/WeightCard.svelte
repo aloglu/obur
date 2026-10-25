@@ -3,6 +3,7 @@
 	// measured reading; it never copies an old one into a day (docs/design.md, "Progress").
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
+	import { offline, submit } from '#lib/client/offline/sync.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { BodyReading } from '#lib/shared/body-types.ts';
@@ -18,19 +19,28 @@
 	let { date, today, latest, onchange }: Props = $props();
 	let text = $state('');
 	let busy = $state(false);
+	const pendingKg = $derived(
+		offline.items.findLast(
+			(i) => i.status === 'pending' && i.preview.kind === 'weight' && i.preview.localDate === date
+		)
+	);
 	const kg = $derived(parseDecimal(text));
 	const invalid = $derived(text.trim() !== '' && (kg === undefined || kg <= 0 || kg >= 700));
 
 	async function save(value: number) {
 		busy = true;
 		try {
-			const r = await api<{ id: string }>('POST', '/api/v1/body/weight', {
-				id: crypto.randomUUID(),
-				date,
-				zone: deviceZone(),
-				value
-			});
+			const result = await submit<{ id: string }>(
+				'/api/v1/body/weight',
+				{ id: crypto.randomUUID(), date, zone: deviceZone(), value },
+				{ kind: 'weight', localDate: date, kg: value }
+			);
 			text = '';
+			if (result.status === 'queued') {
+				showToast({ message: m.offline_saved(), detail: m.offline_saved_detail() });
+				return;
+			}
+			const r = result.data;
 			await onchange();
 			showToast({
 				message: m.toast_weight({ kg: formatDecimal(value, ',', 2) }),
@@ -58,6 +68,11 @@
 				})
 			: m.weight_none()}
 	</p>
+	{#if pendingKg?.preview.kind === 'weight'}
+		<p class="text-[13px] font-semibold text-warn">
+			{m.offline_weight_pending({ kg: formatDecimal(pendingKg.preview.kg, ',', 2) })}
+		</p>
+	{/if}
 	<form
 		class="flex gap-2"
 		onsubmit={(e) => {

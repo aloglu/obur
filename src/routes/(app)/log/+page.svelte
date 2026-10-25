@@ -1,6 +1,7 @@
 <script lang="ts">
 	// The phone Log tab (and the desktop Log item). After saving it returns to Today with the new row highlighted.
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
@@ -31,7 +32,13 @@
 	let quick = $state(false);
 	const sheetMeal = $derived(preset ?? defaultMeal(new Date(), deviceZone()));
 
-	async function logged(entry: DiaryEntry) {
+	async function logged(entry: DiaryEntry | null) {
+		if (!entry) {
+			// Offline: confirm first, then return to Today's cached page.
+			showToast({ message: m.offline_saved(), detail: m.offline_saved_detail() });
+			await goto(date === data.today ? resolve('/(app)') : dayHref(date));
+			return;
+		}
 		await goto(dayHref(entry.localDate, entry.id));
 		showToast({
 			message: m.toast_logged(),

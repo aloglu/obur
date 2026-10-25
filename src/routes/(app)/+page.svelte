@@ -11,7 +11,10 @@
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
 	import { kcal, mealName } from '#lib/shared/format.ts';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import { discard, offline } from '#lib/client/offline/sync.svelte.ts';
+	import type { QueuedOp } from '#lib/client/offline/store.ts';
 	import ActivitySheet from '#lib/ui/log/ActivitySheet.svelte';
+	import PendingSheet from '#lib/ui/log/PendingSheet.svelte';
 	import AmountSheet from '#lib/ui/log/AmountSheet.svelte';
 	import EditEntrySheet from '#lib/ui/log/EditEntrySheet.svelte';
 	import LogPanel from '#lib/ui/log/LogPanel.svelte';
@@ -29,6 +32,12 @@
 	let picking = $state<string | null>(null);
 	let quick = $state(false);
 	let addingActivity = $state(false);
+	let pendingOpen = $state<QueuedOp | null>(null);
+	const pendingFor = (meal: Meal) =>
+		offline.items.filter(
+			(i) =>
+				i.preview.kind === 'diary' && i.preview.localDate === data.date && i.preview.meal === meal
+		);
 	let editing = $state<DiaryEntry | null>(null);
 	// Bumped after each save so the desktop Log panel starts fresh for the next food.
 	let panelKey = $state(0);
@@ -56,11 +65,16 @@
 		else goto(logHref(meal, data.date));
 	}
 
-	async function logged(entry: DiaryEntry) {
+	async function logged(entry: DiaryEntry | null) {
 		picking = null;
 		quick = false;
 		preset = null;
 		panelKey += 1;
+		if (!entry) {
+			// Kept on this device; it shows as "Waiting to sync" until it reaches the server.
+			showToast({ message: m.offline_saved(), detail: m.offline_saved_detail() });
+			return;
+		}
 		if (entry.localDate !== data.date) await goto(dayHref(entry.localDate));
 		await invalidateAll();
 		highlight = entry.id;
@@ -155,6 +169,8 @@
 				{highlight}
 				onadd={() => add(meal)}
 				onopen={(e) => (editing = e)}
+				pending={pendingFor(meal)}
+				onpending={(op) => (pendingOpen = op)}
 			/>
 		{/each}
 		<div class="flex flex-col items-start gap-1 px-1">
@@ -225,5 +241,15 @@
 		date={data.date}
 		onsaved={activityAdded}
 		onclose={() => (addingActivity = false)}
+	/>
+{/if}
+{#if pendingOpen}
+	<PendingSheet
+		op={pendingOpen}
+		ondiscard={async () => {
+			await discard(pendingOpen!.seq!);
+			pendingOpen = null;
+		}}
+		onclose={() => (pendingOpen = null)}
 	/>
 {/if}

@@ -2,7 +2,7 @@
 	// docs/ui.md "Quick add calories": kcal, optional description, day and meal. Other nutrients stay unknown.
 	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { submit } from '#lib/client/offline/sync.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { addDays } from '#lib/shared/diary-rules.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
@@ -18,7 +18,8 @@
 		date: string;
 		today: string;
 		meal: Meal;
-		onsaved: (entry: DiaryEntry) => void;
+		/** The saved entry, or null when it was kept on this device to send later. */
+		onsaved: (entry: DiaryEntry | null) => void;
 		onclose: () => void;
 	}
 	let { date, today, meal: presetMeal, onsaved, onclose }: Props = $props();
@@ -38,8 +39,9 @@
 		busy = true;
 		problem = '';
 		try {
-			onsaved(
-				await api<DiaryEntry>('POST', '/api/v1/diary/entries', {
+			const result = await submit<DiaryEntry>(
+				'/api/v1/diary/entries',
+				{
 					kind: 'quick',
 					id: crypto.randomUUID(),
 					date: day,
@@ -47,8 +49,17 @@
 					zone: deviceZone(),
 					kcal: value,
 					description: description || null
-				})
+				},
+				{
+					kind: 'diary',
+					localDate: day,
+					meal,
+					name: description || m.entry_quick(),
+					quantity: m.entry_quick(),
+					kcal: value
+				}
 			);
+			onsaved(result.status === 'sent' ? result.data : null);
 		} catch {
 			problem = m.error_generic();
 		} finally {
