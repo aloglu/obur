@@ -12,7 +12,10 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 ## In progress
 
-- Phase 0 plan presented to the owner; waiting for approval before running any probes.
+- Phase 0 plan approved by the owner (2026-10-25).
+- Owner has supplied the LoseIt export, 11 label photos and a favourite-foods list in `~/obur-private/`.
+- Voice clip script written to `~/obur-private/audio/transcripts.tsv` (48 clips: 25 tr, 13 en, 10 mixed; 13 in harder conditions). Owner is recording.
+- Server access: recommended an isolated Unraid VM rather than SSH to the Unraid host (host SSH is root and sees every share). Waiting for the owner.
 
 ## Validation results
 
@@ -20,7 +23,7 @@ None yet. No measurements have been taken.
 
 ## Exact next step
 
-Owner approves (or amends) the Phase 0 plan and supplies the inputs listed in it. Then start with the LoseIt export inspection.
+Step 0 (desktop hardware inventory), then step 1: inspect the LoseIt export with scripts in `spikes/loseit/` that print structure and coverage, not diary rows.
 
 ## Conventions for Phase 0
 
@@ -29,7 +32,8 @@ Owner approves (or amends) the Phase 0 plan and supplies the inputs listed in it
 
 ## Unresolved questions
 
-- Exact phone model(s) and OS versions to support.
+- Test phone: iPhone 13; iOS version not yet recorded.
+- Pilot hostname chosen (a subdomain of the owner's domain); recorded only in the owner's `.env`, RP ID is the parent domain.
 - Home server OS, Docker availability and exact CPU/storage (design assumes a 2-core/4-thread i3 with 16 GB RAM).
 - Off-site backup destination (needed in Phase 1, not Phase 0).
 
