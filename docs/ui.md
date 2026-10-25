@@ -192,7 +192,7 @@ The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps.
 - **Scan error states:** no table found, several tables, kJ/kcal mismatch, a per-serving label without a serving size, scan turned off in `.env` (hide the tile).
 - **Marking a day complete:** the control on Today (and its undo) is not designed yet. The calendar depends on it.
 - **Offline and pending:** only the "Waiting to sync" badge is designed. A global offline indicator and sync-failure states are not.
-- **Other logging flows:** recipes, saved meals, "Make my own variant", food editing and sharing.
+- **Other logging flows:** recipes and saved meals. A provisional food create/edit screen (`/foods/new`, `/foods/[id]`) was built in Phase 1 step 4 following the scan confirmation layout above: basis chips, one row per value with empty rows marked unknown, a "<" toggle per value, live plausibility warnings, portions, Shared/Only me, an EU-Turkey/US label switch (US maps carbohydrate to total carbohydrate and salt to sodium), "Make my own variant" and Archive. It needs the owner's review before it is considered designed.
 - **Calendar details:** which month it opens on when you come from a past day (the demo always opens the current month); a just-under day that looks almost full.
 - **Day titles:** for older days, whether "Thu 15 Oct" in the title duplicates the long date underneath.
 - **Tablet:** only the 760 px switch was checked.

@@ -1,0 +1,282 @@
+// Food catalog operations, all under the signed-in person's identity (RLS decides visibility and edit rights).
+// Shared foods never expose who created them (docs/design.md, "Food catalog and recipes").
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { withUser, type Database, type Tx } from '../../db/identity.ts';
+import { foodWarnings } from '../../../shared/food-checks.ts';
+import type { FoodInput } from '../../../shared/food-input.ts';
+import { deriveNutrients, type NutrientValue } from '../../../shared/nutrients.ts';
+import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';
+import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
+import { foodNutrients, foods, foodServings, householdMeasures } from './schema.ts';
+
+export class CatalogError extends Error {
+	constructor(readonly code: 'not_found' | 'forbidden' | 'conflict' | 'energy_required') {
+		super(code);
+	}
+}
+
+type Origin = 'manual' | 'label_scan' | 'loseit' | 'curated' | 'variant';
+
+async function writeChildren(tx: Tx, foodId: string, input: FoodInput) {
+	const nutrients = deriveNutrients(input.nutrients);
+	await tx.delete(foodNutrients).where(eq(foodNutrients.foodId, foodId));
+	if (nutrients.length)
+		await tx.insert(foodNutrients).values(nutrients.map((n) => ({ ...n, foodId })));
+	await tx.delete(foodServings).where(eq(foodServings.foodId, foodId));
+	if (input.servings.length) {
+		await tx.insert(foodServings).values(input.servings.map((s) => ({ ...s, foodId })));
+	}
+}
+
+const columns = (input: FoodInput) => ({
+	name: input.name,
+	brand: input.brand,
+	searchKey: foodSearchKey(input.name, input.brand),
+	visibility: input.visibility,
+	basis: input.basis,
+	servingLabel: input.basis === 'serving' ? input.servingLabel : null,
+	servingAmount: input.basis === 'serving' ? (input.servingSize?.amount ?? null) : null,
+	servingUnit: input.basis === 'serving' ? (input.servingSize?.unit ?? null) : null,
+	barcode: input.barcode
+});
+
+async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefined> {
+	const [row] = await tx
+		.select({
+			food: foods,
+			mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
+			editable: sql<boolean>`(${foods.ownerId} = app_current_user_id()
+				or (${foods.visibility} = 'shared' and app_current_user_is_admin()))`
+		})
+		.from(foods)
+		.where(eq(foods.id, foodId));
+	if (!row) return undefined;
+	const nutrients = await tx
+		.select({
+			code: foodNutrients.code,
+			value: foodNutrients.value,
+			qualifier: foodNutrients.qualifier
+		})
+		.from(foodNutrients)
+		.where(eq(foodNutrients.foodId, foodId));
+	const servings = await tx
+		.select({
+			id: foodServings.id,
+			name: foodServings.name,
+			amount: foodServings.amount,
+			unit: foodServings.unit
+		})
+		.from(foodServings)
+		.where(eq(foodServings.foodId, foodId))
+		.orderBy(asc(foodServings.amount));
+	const f = row.food;
+	const values = nutrients as NutrientValue[];
+	return {
+		id: f.id,
+		name: f.name,
+		brand: f.brand,
+		visibility: f.visibility,
+		basis: f.basis,
+		servingLabel: f.servingLabel,
+		servingSize:
+			f.servingAmount !== null && f.servingUnit
+				? { amount: f.servingAmount, unit: f.servingUnit }
+				: null,
+		barcode: f.barcode,
+		origin: f.origin,
+		archived: f.archivedAt !== null,
+		version: f.version,
+		mine: Boolean(row.mine),
+		editable: Boolean(row.editable),
+		derivedFrom: f.derivedFrom,
+		nutrients: values,
+		servings,
+		warnings: foodWarnings(f.basis, values)
+	};
+}
+
+export function createCatalog(db: Database, now: () => Date = () => new Date()) {
+	return {
+		async createFood(
+			userId: string,
+			input: FoodInput,
+			options: { origin?: Origin; requireEnergy?: boolean } = {}
+		): Promise<string> {
+			const { origin = 'manual', requireEnergy = true } = options;
+			if (
+				requireEnergy &&
+				!input.nutrients.some((n) => n.code === 'energy_kcal' || n.code === 'energy_kj')
+			) {
+				throw new CatalogError('energy_required');
+			}
+			return withUser(db, userId, async (tx) => {
+				const [row] = await tx
+					.insert(foods)
+					.values({ ...columns(input), ownerId: userId, origin })
+					.returning({ id: foods.id });
+				await writeChildren(tx, row.id, input);
+				return row.id;
+			});
+		},
+
+		async getFood(userId: string, foodId: string): Promise<FoodDetail> {
+			const food = await withUser(db, userId, (tx) => load(tx, foodId));
+			if (!food) throw new CatalogError('not_found');
+			return food;
+		},
+
+		/** Replaces a food's details if it is still at `expectedVersion`; returns the new version. */
+		async updateFood(userId: string, foodId: string, expectedVersion: number, input: FoodInput) {
+			if (!input.nutrients.some((n) => n.code === 'energy_kcal' || n.code === 'energy_kj')) {
+				throw new CatalogError('energy_required');
+			}
+			return withUser(db, userId, async (tx) => {
+				const current = await load(tx, foodId);
+				if (!current) throw new CatalogError('not_found');
+				if (!current.editable) throw new CatalogError('forbidden');
+				// Only the creator may change who can see a food.
+				if (!current.mine && input.visibility !== current.visibility)
+					throw new CatalogError('forbidden');
+				const updated = await tx
+					.update(foods)
+					.set({ ...columns(input), version: expectedVersion + 1, updatedAt: now() })
+					.where(and(eq(foods.id, foodId), eq(foods.version, expectedVersion)))
+					.returning({ version: foods.version });
+				if (updated.length === 0) throw new CatalogError('conflict');
+				await writeChildren(tx, foodId, input);
+				return updated[0].version;
+			});
+		},
+
+		async setArchived(userId: string, foodId: string, archived: boolean): Promise<void> {
+			await withUser(db, userId, async (tx) => {
+				const current = await load(tx, foodId);
+				if (!current) throw new CatalogError('not_found');
+				if (!current.editable) throw new CatalogError('forbidden');
+				await tx
+					.update(foods)
+					.set({
+						archivedAt: archived ? now() : null,
+						version: current.version + 1,
+						updatedAt: now()
+					})
+					.where(eq(foods.id, foodId));
+			});
+		},
+
+		/** "Make my own variant": a private copy that records which food it came from. */
+		async makeVariant(userId: string, foodId: string): Promise<string> {
+			return withUser(db, userId, async (tx) => {
+				const source = await load(tx, foodId);
+				if (!source) throw new CatalogError('not_found');
+				const [row] = await tx
+					.insert(foods)
+					.values({
+						name: source.name,
+						brand: source.brand,
+						searchKey: foodSearchKey(source.name, source.brand),
+						visibility: 'private',
+						basis: source.basis,
+						servingLabel: source.servingLabel,
+						servingAmount: source.servingSize?.amount ?? null,
+						servingUnit: source.servingSize?.unit ?? null,
+						barcode: source.barcode,
+						ownerId: userId,
+						origin: 'variant',
+						derivedFrom: source.id
+					})
+					.returning({ id: foods.id });
+				if (source.nutrients.length) {
+					await tx
+						.insert(foodNutrients)
+						.values(source.nutrients.map((n) => ({ ...n, foodId: row.id })));
+				}
+				if (source.servings.length) {
+					await tx.insert(foodServings).values(
+						source.servings.map((s) => ({
+							name: s.name,
+							amount: s.amount,
+							unit: s.unit,
+							source: 'user' as const,
+							foodId: row.id
+						}))
+					);
+				}
+				return row.id;
+			});
+		},
+
+		/**
+		 * Searches visible, non-archived foods. Every word must appear (in any order), or the whole query must be
+		 * similar enough to tolerate typos. Real matches come before typo-tolerant ones, and within each the
+		 * person's own foods come before shared ones (recent foods join the ranking with the diary).
+		 */
+		async searchFoods(userId: string, query: string, limit = 20): Promise<FoodSearchResult[]> {
+			const q = foldForSearch(query).slice(0, 100);
+			if (!q) return [];
+			const words = q.split(' ').filter(Boolean).slice(0, 8);
+			// foldForSearch leaves only letters, digits and spaces, so LIKE wildcards cannot appear in q.
+			const rank = sql`case
+				when ${foods.searchKey} = ${q} then 0
+				when ${foods.searchKey} like ${`${q}%`} then 1
+				when ${foods.searchKey} like ${`% ${q}%`} then 2
+				when ${foods.searchKey} like ${`%${q}%`} then 3
+				else 4 end`;
+			const allWords = sql.join(
+				words.map((w) => sql`${foods.searchKey} like ${`%${w}%`}`),
+				sql` and `
+			);
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select({
+						id: foods.id,
+						name: foods.name,
+						brand: foods.brand,
+						basis: foods.basis,
+						servingLabel: foods.servingLabel,
+						visibility: foods.visibility,
+						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
+						kcal: foodNutrients.value
+					})
+					.from(foods)
+					.leftJoin(
+						foodNutrients,
+						and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
+					)
+					.where(
+						and(sql`${foods.archivedAt} is null`, sql`((${allWords}) or ${foods.searchKey} % ${q})`)
+					)
+					.orderBy(
+						// Real matches before typo-tolerant ones; within them the person's own foods first.
+						sql`(${rank} < 4) desc`,
+						sql`(${foods.ownerId} = app_current_user_id()) desc nulls last`,
+						rank,
+						sql`similarity(${foods.searchKey}, ${q}) desc`,
+						asc(foods.name)
+					)
+					.limit(Math.min(Math.max(limit, 1), 50))
+			);
+			return rows.map((r) => ({ ...r, mine: Boolean(r.mine) }));
+		},
+
+		/** Shared reference data; no personal rows, so no identity is needed. */
+		async householdMeasures() {
+			return db.select().from(householdMeasures).orderBy(asc(householdMeasures.position));
+		},
+
+		async foodsById(userId: string, ids: string[]): Promise<FoodDetail[]> {
+			if (!ids.length) return [];
+			return withUser(db, userId, async (tx) => {
+				const visible = await tx.select({ id: foods.id }).from(foods).where(inArray(foods.id, ids));
+				const out: FoodDetail[] = [];
+				for (const { id } of visible) {
+					const food = await load(tx, id);
+					if (food) out.push(food);
+				}
+				return out;
+			});
+		}
+	};
+}
+
+export type Catalog = ReturnType<typeof createCatalog>;

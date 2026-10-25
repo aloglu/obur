@@ -1,0 +1,341 @@
+<script lang="ts">
+	// Create or edit a food. Layout follows the label-scan confirmation in docs/ui.md (basis chips, one row per
+	// value, empty rows highlighted as unknown). Food editing itself is not designed yet; see docs/ui.md.
+	import { untrack } from 'svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { foodWarnings, type FoodWarning } from '#lib/shared/food-checks.ts';
+	import type { FoodInput } from '#lib/shared/food-input.ts';
+	import type { FoodDetail } from '#lib/shared/food-types.ts';
+	import { deriveNutrients, type NutrientCode, type NutrientValue } from '#lib/shared/nutrients.ts';
+	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+	import type { Basis } from '#lib/shared/quantity.ts';
+	import Button from '../Button.svelte';
+	import Notice from '../Notice.svelte';
+	import TextField from '../TextField.svelte';
+
+	interface Props {
+		initial?: FoodDetail;
+		busy?: boolean;
+		onsave: (food: FoodInput) => void;
+	}
+
+	let { initial, busy = false, onsave }: Props = $props();
+	const start = untrack(() => initial);
+
+	type Field =
+		| 'energy_kcal'
+		| 'energy_kj'
+		| 'fat'
+		| 'saturated_fat'
+		| 'carbohydrate'
+		| 'sugars'
+		| 'fibre'
+		| 'protein'
+		| 'salt';
+	const FIELDS: Field[] = [
+		'energy_kcal',
+		'energy_kj',
+		'fat',
+		'saturated_fat',
+		'carbohydrate',
+		'sugars',
+		'fibre',
+		'protein',
+		'salt'
+	];
+
+	const reported = (code: NutrientCode) =>
+		start?.nutrients.find(
+			(n) => n.code === code && (n.qualifier === 'reported' || n.qualifier === 'less_than')
+		);
+
+	let labelType = $state<'eu' | 'us'>(
+		reported('carbohydrate_total') || reported('sodium') ? 'us' : 'eu'
+	);
+	const codeFor = (field: Field): NutrientCode =>
+		field === 'carbohydrate'
+			? labelType === 'eu'
+				? 'carbohydrate_excl_fibre'
+				: 'carbohydrate_total'
+			: field === 'salt' && labelType === 'us'
+				? 'sodium'
+				: field;
+
+	function initialRow(field: Field) {
+		const codes: NutrientCode[] =
+			field === 'carbohydrate'
+				? ['carbohydrate_excl_fibre', 'carbohydrate_total']
+				: field === 'salt'
+					? ['salt', 'sodium']
+					: [field];
+		const found = codes.map(reported).find(Boolean);
+		return {
+			text: found ? formatDecimal(found.value, ',', 4) : '',
+			lessThan: found?.qualifier === 'less_than'
+		};
+	}
+
+	let name = $state(start?.name ?? '');
+	let brand = $state(start?.brand ?? '');
+	let visibility = $state<'shared' | 'private'>(start?.visibility ?? 'shared');
+	let basis = $state<Basis>(start?.basis ?? '100g');
+	let servingLabel = $state(start?.servingLabel ?? '');
+	let servingSizeText = $state(
+		start?.servingSize ? formatDecimal(start.servingSize.amount, ',', 4) : ''
+	);
+	let servingSizeUnit = $state<'g' | 'ml'>(start?.servingSize?.unit ?? 'g');
+	let rows = $state(
+		Object.fromEntries(FIELDS.map((f) => [f, initialRow(f)])) as Record<
+			Field,
+			{ text: string; lessThan: boolean }
+		>
+	);
+	let portions = $state(
+		(start?.servings ?? []).map((s) => ({
+			name: s.name,
+			text: formatDecimal(s.amount, ',', 4),
+			unit: s.unit
+		}))
+	);
+	let showErrors = $state(false);
+
+	const values = $derived.by(() => {
+		const out: NutrientValue[] = [];
+		for (const field of FIELDS) {
+			const value = parseDecimal(rows[field].text);
+			if (value !== undefined) {
+				out.push({
+					code: codeFor(field),
+					value,
+					qualifier: rows[field].lessThan ? 'less_than' : 'reported'
+				});
+			}
+		}
+		return out;
+	});
+	const invalid = (text: string) => text.trim() !== '' && parseDecimal(text) === undefined;
+	const warnings = $derived<FoodWarning[]>(foodWarnings(basis, deriveNutrients(values)));
+	const label = (field: Field) =>
+		({
+			energy_kcal: m.nutrient_energy_kcal(),
+			energy_kj: m.nutrient_energy_kj(),
+			fat: m.nutrient_fat(),
+			saturated_fat: m.nutrient_saturated_fat(),
+			carbohydrate:
+				labelType === 'eu' ? m.nutrient_carbohydrate() : m.nutrient_carbohydrate_total(),
+			sugars: m.nutrient_sugars(),
+			fibre: m.nutrient_fibre(),
+			protein: m.nutrient_protein(),
+			salt: labelType === 'eu' ? m.nutrient_salt() : m.nutrient_sodium()
+		})[field];
+	const warningText: Record<FoodWarning, () => string> = {
+		sugars_exceed_carbohydrate: m.warning_sugars_exceed_carbohydrate,
+		saturated_exceeds_fat: m.warning_saturated_exceeds_fat,
+		mass_exceeds_100: m.warning_mass_exceeds_100,
+		energy_units_mismatch: m.warning_energy_units_mismatch,
+		energy_macros_mismatch: m.warning_energy_macros_mismatch,
+		salt_sodium_mismatch: m.warning_salt_sodium_mismatch,
+		energy_missing: m.warning_energy_missing
+	};
+
+	function submit(event: SubmitEvent) {
+		event.preventDefault();
+		showErrors = true;
+		const anyInvalid =
+			FIELDS.some((f) => invalid(rows[f].text)) ||
+			portions.some((p) => parseDecimal(p.text) === undefined || !p.name.trim()) ||
+			(basis === 'serving' && invalid(servingSizeText));
+		if (anyInvalid || !name.trim() || (basis === 'serving' && !servingLabel.trim())) return;
+		const size = basis === 'serving' ? parseDecimal(servingSizeText) : undefined;
+		onsave({
+			name,
+			brand: brand || null,
+			visibility,
+			basis,
+			servingLabel: basis === 'serving' ? servingLabel : null,
+			servingSize: size ? { amount: size, unit: servingSizeUnit } : null,
+			barcode: start?.barcode ?? null,
+			nutrients: values,
+			servings: portions.map((p) => ({
+				name: p.name,
+				amount: parseDecimal(p.text)!,
+				unit: p.unit,
+				source: 'user' as const
+			}))
+		});
+	}
+
+	const chip = (active: boolean) => [
+		'min-h-11 rounded-full px-4 text-[15px] font-semibold border',
+		active ? 'bg-soft text-accent border-accent' : 'bg-surface2 text-text border-line'
+	];
+</script>
+
+<form class="flex flex-col gap-4" onsubmit={submit} novalidate>
+	<TextField label={m.food_name()} bind:value={name} required maxlength={200} />
+	<TextField label={m.food_brand()} bind:value={brand} maxlength={120} />
+
+	<fieldset class="flex flex-col gap-2">
+		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_visibility()}</legend>
+		<div class="flex flex-wrap gap-2">
+			<button
+				type="button"
+				class={chip(visibility === 'shared')}
+				aria-pressed={visibility === 'shared'}
+				onclick={() => (visibility = 'shared')}>{m.food_visibility_shared()}</button
+			>
+			<button
+				type="button"
+				class={chip(visibility === 'private')}
+				aria-pressed={visibility === 'private'}
+				onclick={() => (visibility = 'private')}>{m.food_visibility_private()}</button
+			>
+		</div>
+	</fieldset>
+
+	<fieldset class="flex flex-col gap-2">
+		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_basis()}</legend>
+		<div class="flex flex-wrap gap-2">
+			{#each [['100g', m.food_basis_100g()], ['100ml', m.food_basis_100ml()], ['serving', m.food_basis_serving()]] as const as [value, text] (value)}
+				<button
+					type="button"
+					class={chip(basis === value)}
+					aria-pressed={basis === value}
+					onclick={() => (basis = value)}>{text}</button
+				>
+			{/each}
+		</div>
+	</fieldset>
+
+	{#if basis === 'serving'}
+		<TextField
+			label={m.food_serving_label()}
+			placeholder={m.food_serving_label_placeholder()}
+			bind:value={servingLabel}
+			maxlength={60}
+			aria-invalid={showErrors && !servingLabel.trim()}
+		/>
+		<div class="flex items-end gap-2">
+			<div class="flex-1">
+				<TextField
+					label={m.food_serving_size()}
+					hint={m.food_serving_size_hint()}
+					bind:value={servingSizeText}
+					inputmode="decimal"
+					aria-invalid={invalid(servingSizeText)}
+				/>
+			</div>
+			<select
+				bind:value={servingSizeUnit}
+				aria-label={m.food_unit()}
+				class="mb-[26px] min-h-12 rounded-input border border-line bg-surface2 px-3 text-[16px] font-semibold"
+			>
+				<option value="g">g</option>
+				<option value="ml">ml</option>
+			</select>
+		</div>
+	{/if}
+
+	<fieldset class="flex flex-col gap-2">
+		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_label_type()}</legend>
+		<div class="flex flex-wrap gap-2">
+			<button
+				type="button"
+				class={chip(labelType === 'eu')}
+				aria-pressed={labelType === 'eu'}
+				onclick={() => (labelType = 'eu')}>{m.food_label_eu()}</button
+			>
+			<button
+				type="button"
+				class={chip(labelType === 'us')}
+				aria-pressed={labelType === 'us'}
+				onclick={() => (labelType = 'us')}>{m.food_label_us()}</button
+			>
+		</div>
+	</fieldset>
+
+	<section class="flex flex-col gap-2" aria-labelledby="values-heading">
+		<h2 id="values-heading" class="text-[17px] font-bold">{m.food_values()}</h2>
+		<p class="text-[13px] text-muted">{m.food_values_hint()}</p>
+		{#each FIELDS as field (field)}
+			{@const empty = rows[field].text.trim() === ''}
+			{@const bad = invalid(rows[field].text)}
+			<div
+				class={[
+					'flex min-h-14 items-center gap-2 rounded-input px-3',
+					empty ? 'bg-warn-soft' : 'bg-surface2'
+				]}
+			>
+				<label for="n-{field}" class="min-w-0 flex-1 text-[15px] font-semibold">
+					{label(field)}
+					{#if empty}<span class="ml-1 text-[13px] font-semibold text-warn"
+							>· {m.food_unknown()}</span
+						>{/if}
+					{#if bad}<span class="block text-[13px] text-bad">{m.food_invalid_number()}</span>{/if}
+				</label>
+				<label class="flex min-h-11 items-center gap-1.5 text-[13px] text-muted">
+					<input type="checkbox" bind:checked={rows[field].lessThan} class="size-5 accent-accent" />
+					&lt;<span class="sr-only">{m.food_less_than()}</span>
+				</label>
+				<input
+					id="n-{field}"
+					bind:value={rows[field].text}
+					inputmode="decimal"
+					autocomplete="off"
+					aria-invalid={bad}
+					class="h-11 w-24 rounded-small border border-line bg-surface px-2 text-right text-[16px] font-semibold tabular-nums"
+				/>
+			</div>
+		{/each}
+	</section>
+
+	{#each warnings as w (w)}<Notice>{warningText[w]()}</Notice>{/each}
+
+	<section class="flex flex-col gap-2" aria-labelledby="portions-heading">
+		<h2 id="portions-heading" class="text-[17px] font-bold">{m.food_portions()}</h2>
+		<p class="text-[13px] text-muted">{m.food_portions_hint()}</p>
+		{#each portions as portion, i (i)}
+			<div class="flex items-end gap-2">
+				<div class="flex-1">
+					<TextField
+						id="portion-name-{i}"
+						label={m.food_portion_name()}
+						bind:value={portion.name}
+						maxlength={60}
+					/>
+				</div>
+				<div class="w-24">
+					<TextField
+						id="portion-amount-{i}"
+						label={m.food_portion_amount()}
+						bind:value={portion.text}
+						inputmode="decimal"
+					/>
+				</div>
+				<select
+					bind:value={portion.unit}
+					aria-label={m.food_unit()}
+					class="min-h-12 rounded-input border border-line bg-surface2 px-2 text-[16px] font-semibold"
+				>
+					<option value="g">g</option>
+					<option value="ml">ml</option>
+				</select>
+				<button
+					type="button"
+					class="min-h-12 min-w-11 rounded-input text-[20px] text-muted"
+					aria-label={m.food_portion_remove()}
+					onclick={() => portions.splice(i, 1)}>×</button
+				>
+			</div>
+		{/each}
+		<Button
+			variant="ghost"
+			onclick={() => portions.push({ name: '', text: '', unit: basis === '100ml' ? 'ml' : 'g' })}
+			>{m.food_portion_add()}</Button
+		>
+	</section>
+
+	<Button type="submit" wide disabled={busy || !name.trim()}
+		>{busy ? m.common_working() : m.food_save()}</Button
+	>
+</form>

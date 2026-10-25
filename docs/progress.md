@@ -26,6 +26,8 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 
 ## Completed
 
+- Phase 1 step 4 done (2026-10-25): catalog. Tables for foods, nutrient values (code, value, qualifier), named portions and household measures, with forced RLS (shared visible to all, private to the owner; only the creator or an admin edits shared foods; ownership and provenance immutable; nothing deleted through the app) and database constraints for basis, codes, qualifiers and non-negative values. Pure shared modules with tests: Turkish-aware search folding, comma/dot decimals without thousands guessing, the nutrient registry and derivations (kcal⇄kJ, salt from sodium, carbohydrate excluding fibre as an estimate), unit conversion that refuses unknown density or serving mass, and warning-only plausibility checks. Catalog service with versioned edits, archive/restore, "Make my own variant" and ranked search (pg_trgm). Food API and provisional food screens (listed in `docs/ui.md` for owner review). Tests: 98 more unit, 23 more real-Postgres catalog tests and browser tests on both projects; e2e fixtures now create sessions directly in the test database (no app change).
+
 - Phase 1 step 3 done (2026-10-25): authentication. Tables for credentials, sessions, invites, recovery codes, recovery links and the setup token with forced RLS; reviewed SECURITY DEFINER functions for the pre-identity steps (first admin, invite redemption, sign-in lookup, session lookup, recovery begin/complete); SimpleWebAuthn ceremonies with user verification and user-handle checks; recent-passkey checks for sensitive actions; idle/absolute session expiry; in-memory rate limits; same-origin CSRF check, CSP, HSTS (https), no-referrer; operator commands for the setup link and recovery links (token in the URL fragment); Pazar-styled sign-in, setup, join, recovery, security and household pages with all strings in `messages/en.json`. Tests: 19 more real-Postgres auth tests (single use under concurrency, expiry, revocation, admin-only invites, isolation, last-credential guard, recovery revoking everything), 12 helper unit tests, and Chromium virtual-authenticator journeys (setup, sign-in, adding a security key, invite and join, recovery, old passkey rejected) plus header/CSRF checks.
 
 - Phase 1 step 2 done (2026-10-25): database foundation. Roles `obur_migrator` (schema owner), `obur_app` and `obur_worker` (non-superuser, `NOBYPASSRLS`, `NOINHERIT`, own nothing) created by `npm run db:bootstrap`; a locked, single-transaction migration runner with checksum and newer-database checks (`npm run db:migrate`); `withUser()` sets `app.user_id` transaction-locally and rejects malformed identity; first table `users` (auth module) with forced RLS. 27 real-Postgres tests cover cross-user reads/writes/deletes, role escalation, missing/malformed identity, connection reuse (including after errors and under concurrency), a guard that every table forces RLS, and migration atomicity, locking and tamper detection.
@@ -51,11 +53,11 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 
 ## Validation results
 
-Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 3 (2026-10-25): `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 116 passed (46 against real PostgreSQL); `npm run build` succeeded; `npm run test:e2e` 9 passed, 5 skipped (passkey journeys are Chromium-only). Phase 1 step 2: 85 unit/db tests, 2 e2e. Phase 1 step 1: `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 58 passed; `npm run build` succeeded; `npm run test:e2e` 2 passed (phone WebKit, desktop Chromium), including no third-party requests.
+Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 4 (2026-10-25): `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 193 passed (69 against real PostgreSQL); `npm run build` succeeded; `npm run test:e2e` 13 passed (passkey journey first, then phone WebKit and desktop Chromium). Earlier steps: step 3 116 unit/db and 9 e2e; step 2 85 and 2. Phase 1 step 1: `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 58 passed; `npm run build` succeeded; `npm run test:e2e` 2 passed (phone WebKit, desktop Chromium), including no third-party requests.
 
 ## Exact next step
 
-Phase 1 step 4: catalog. Foods with the nutrient contract (basis, source definitions, qualifiers, unknown ≠ 0), servings and conversions, private/shared visibility with RLS, Turkish-aware and transliteration-aware search.
+Phase 1 step 5: diary and the Pazar screens. Entries with independent nutrient snapshots, intended local date, meal and IANA zone, edit, Move to, delete with Undo and a 30-day trash, calories-only quick add; the Today screen (budget ring placeholder until goals in step 7, nutrients card with partial totals, meal cards), the Log screen (search with recent foods on focus, Speak/Scan as "Coming soon", quick add), the amount sheet with day and meal chips, toasts; navigation shell (phone tab bar, desktop side nav).
 
 ## Implementation notes
 
@@ -64,6 +66,7 @@ Phase 1 step 4: catalog. Foods with the nutrient contract (basis, source definit
 - Migrations reference the fixed role names `obur_app` and `obur_worker` created by the bootstrap script.
 - FORCE ROW LEVEL SECURITY also applies to the schema owner, so SECURITY DEFINER functions (owned by `obur_migrator`) need an explicit `<table>_owner` policy on each table they touch. Always `SET search_path` on them.
 - Drizzle's `sql` template expands JavaScript arrays into parameter lists; pass Postgres arrays with `textArrayLiteral()` (auth store) and an explicit cast.
+- Playwright projects: `auth-journey` (Chromium, runs first on an empty database) and then `phone-webkit` and `desktop-chromium`. Other e2e tests sign in with `tests/e2e/fixtures.ts`, which writes a session row directly to the disposable database.
 - Not yet verified on a real iPhone: the Phase 1 sign-in pages themselves (the Phase 0 probe verified passkeys, YubiKeys and the installed app on the owner's phone with the same library).
 
 ## Conventions for Phase 0

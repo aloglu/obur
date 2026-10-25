@@ -35,7 +35,20 @@ export default defineConfig({
 	},
 	use: { baseURL: `http://localhost:${PORT}` },
 	projects: [
-		{ name: 'phone-webkit', use: { ...devices['iPhone 13'] } },
-		{ name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } }
+		// The passkey journey starts with first-admin setup, which needs an empty database, so it runs first.
+		// Chromium only: WebKit has no supported virtual authenticator.
+		{ name: 'auth-journey', testMatch: 'auth.e2e.ts', use: { ...devices['Desktop Chrome'] } },
+		{
+			name: 'phone-webkit',
+			testIgnore: 'auth.e2e.ts',
+			dependencies: ['auth-journey'],
+			use: { ...devices['iPhone 13'] }
+		},
+		{
+			name: 'desktop-chromium',
+			testIgnore: 'auth.e2e.ts',
+			dependencies: ['auth-journey'],
+			use: { ...devices['Desktop Chrome'] }
+		}
 	]
 });

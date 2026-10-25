@@ -1,11 +1,10 @@
-// Passkey journeys with Chromium's virtual authenticator (WebKit has no supported virtual authenticator).
+// Passkey journeys with Chromium's virtual authenticator (the auth-journey project in playwright.config.ts).
 // The steps share one browser context for the admin's "phone" and run in order.
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import postgres from 'postgres';
 import { issueSetupLink } from '../../src/lib/server/modules/auth/operator.ts';
 import { e2eEnv } from '../../playwright.config.ts';
 
-test.skip(({ browserName }) => browserName !== 'chromium', 'Virtual authenticators need Chromium');
 test.describe.configure({ mode: 'serial' });
 
 interface Device {

@@ -9,7 +9,7 @@ export class ApiError extends Error {
 }
 
 export async function api<T = unknown>(
-	method: 'GET' | 'POST',
+	method: 'GET' | 'POST' | 'PUT',
 	path: string,
 	body?: unknown
 ): Promise<T> {

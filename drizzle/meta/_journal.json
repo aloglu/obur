@@ -29,6 +29,27 @@
       "when": 1792948429065,
       "tag": "0003_auth_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792949445970,
+      "tag": "0004_pg_trgm",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792949446400,
+      "tag": "0005_catalog_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792949476307,
+      "tag": "0006_catalog_rls",
+      "breakpoints": true
     }
   ]
 }

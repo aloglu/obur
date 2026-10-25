@@ -28,6 +28,7 @@
 		</h1>
 		<p class="text-[14px] text-muted">{m.placeholder_building()}</p>
 		<nav class="flex flex-col gap-2">
+			<a class="font-semibold text-accent underline" href={resolve('/foods')}>{m.home_foods()}</a>
 			<a class="font-semibold text-accent underline" href={resolve('/settings/security')}
 				>{m.home_security()}</a
 			>
