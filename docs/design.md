@@ -42,8 +42,8 @@ One modular TypeScript application and one PostgreSQL database, shipped through 
 | Database and jobs | PostgreSQL, Drizzle ORM, pg-boss; no Redis | Committed |
 | Authentication | WebAuthn through SimpleWebAuthn server/browser packages | Committed |
 | Charts | LayerChart when richer charts are introduced | Planned |
-| Label OCR | PaddleOCR mobile models through ONNX Runtime, followed by a rule-based table parser | Candidate pipeline; benchmark exact models and runtime |
-| Speech | faster-whisper in its own Python container; compare large-v3-turbo int8 with smaller multilingual models | Model chosen by measured quality and latency |
+| Label OCR | PaddleOCR PP-OCRv6 small (detector and recogniser) through ONNX Runtime on images of about 1280 px, followed by a rule-based table parser | Model chosen from Phase 0 measurements (`docs/feasibility.md`); parser and end-to-end evaluation still needed |
+| Speech | faster-whisper `small` (int8) in its own Python container | Chosen from Phase 0 measurements (`docs/feasibility.md`); confirm on held-out recordings before release |
 | Language-model fallback | A small local LLM through Ollama, off by default | Deferred until failures justify it |
 | Backups | pgBackRest, encrypted local and off-site repositories | Committed before production use |
 | Entry point | Cloudflare Tunnel for the owner's pilot; Tailscale Serve and Caddy profiles later | Pilot route decided; hostname and RP ID live only in `.env` |
@@ -152,7 +152,8 @@ The following is a logical model, not a demand to create all tables in the pilot
 | Import batches and source records | Owner, format/version, file hash, stable source identity or row fingerprint, reconciliation decisions and outcome |
 | Queued operations | Owner, unique operation/record ID, payload fingerprint and durable result for safe retries |
 | Scans and parser cases | Owner, OCR/transcript and structured proposal/correction, retention/consent; no persistent production media |
-| Later features | Day-completeness markers, achievements, timeline, notification settings, sync tombstones/cursors as required |
+| Day completion | Owner, intended local date and when it was marked complete; LoseIt's daily `Complete` markers import here |
+| Later features | Achievements, timeline, notification settings, sync tombstones/cursors as required |
 
 ### Quantities and source values
 
@@ -258,7 +259,7 @@ Voice fills the same text-to-entry workflow as typed input. Start with food + am
 
 The pure parser recognizes English/Turkish numbers, comma decimals, units, meal words and relative dates. The matching service resolves accessible foods using recent/favourite/private/shared candidates. Ambiguous foods, dates and missing portion conversions require a choice. Food nutrients come from the selected food; the parser/optional LLM never invents them. Explicit kcal/weight/water/activity values are permitted inputs.
 
-Record in the browser and transcribe locally. Compare multilingual Whisper candidates, including large-v3-turbo int8, on the actual workload; keep the chosen model loaded and bound clip duration, queue length and concurrency. Vocabulary prompts and fuzzy matching are experiments, not guarantees of bilingual brand recognition. Preserve the original transcript for the confirmation flow, allow correction, and present a single editable result rather than requiring a separate mandatory transcript-approval screen.
+Record in the browser and transcribe locally. Phase 0 selected faster-whisper `small`: on the target server it came within two points of large-v3-turbo's accuracy at under half the latency, while large-v3-turbo could not meet the latency target (`docs/feasibility.md`). Restrict language detection to Turkish or English (unrestricted detection produced a wrong-language, 35-second failure), prompt with the person's frequent foods and brands, and decode once at temperature 0 to bound processing time. Re-evaluate on held-out recordings, including another speaker, before release; keep the chosen model loaded and bound clip duration, queue length and concurrency. Vocabulary prompts and fuzzy matching are experiments, not guarantees of bilingual brand recognition. Preserve the original transcript for the confirmation flow, allow correction, and present a single editable result rather than requiring a separate mandatory transcript-approval screen.
 
 Examples include "100 g Sütaş ayran", "Öğlende bir tane muz yedim", "300 kcal snack", "iki gün önce 450 kalori yaktım", "bugün 82,4 kiloydum" and "iki bardak su içtim". Dates/units are explicit on confirmation. Learning an alias from a correction is per-user, reversible and must not change another user's matching.
 
@@ -285,7 +286,7 @@ The latency/usability numbers are proposed acceptance targets, not published har
 
 ## Progress, graphs and optional encouragement
 
-Start with daily totals and a basic weight-history view. Missing days are unlogged, not zero intake; missing weigh-ins remain missing. A "same value" shortcut still records a genuinely measured reading and must not fabricate an observation. Distinguish an observed zero from no activity/water record where relevant.
+Start with daily totals and a basic weight-history view. A day counts as under budget, and is shown green in the calendar, only after the person marks it complete; a logged but incomplete day is shown neutrally, so forgetting to log is never rewarded. Missing days are unlogged, not zero intake; missing weigh-ins remain missing. A "same value" shortcut still records a genuinely measured reading and must not fabricate an observation. Distinguish an observed zero from no activity/water record where relevant.
 
 Later charts can show raw weight and a documented smoothed trend, calorie/budget comparisons, partial nutrient totals and water targets across common ranges. Specify how smoothing treats gaps; forecasts are estimates and require adequate data. Timeline and richer charts use the same historical snapshots as the diary.
 
@@ -415,7 +416,7 @@ This roadmap is not authorization to build every phase at once. Once a feature/p
 | --- | --- | --- |
 | LoseIt export fidelity | No guessed schema; preserve source values | Owner export, redacted fixture and reconciliation results in phases 0 and 2 |
 | Source nutrient mapping | Typed source definitions and qualified conversions | Dataset-specific nutrient IDs, units and edge-case fixtures before catalog import |
-| Speech/OCR model and speed | Candidate local CPU pipeline; no performance claims | Exact hardware/model measurements and accepted latency/correction targets |
+| Speech/OCR model and speed | faster-whisper `small` and PP-OCRv6 small chosen from Phase 0 measurements on the target server | Held-out voice set with another speaker, phone end-to-end voice latency, a larger label set, the real label parser and accepted correction targets |
 | Phone support | Mobile PWA with real-device acceptance | Supported phone/OS versions, permission/recovery/queue checks |
 | Backup configuration and recovery objectives | Encrypted local/off-site plus weekly restore; targets provisional | Off-site destination, supported retention schedule, storage capacity and measured rehearsal |
 | Imported activity credit | Manual activity counts toward the budget; imported values recorded only | Meaning of LoseIt's exercise values, from the real export |

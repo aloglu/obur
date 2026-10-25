@@ -34,7 +34,7 @@
 - One modular application, one database, one app image with web and worker commands. Speech inference is a separate service; do not introduce microservices or Redis.
 - Keep business logic under `src/lib/server/modules/`, with thin routes and public module entry points. Follow the ownership and transaction boundaries in the design; use lint rules to prevent accidental internal imports.
 - Keep `label-parser` and `nl-parser` pure TypeScript with no database, SvelteKit or I/O dependencies. Resolve catalogs and perform writes outside them.
-- Use PaddleOCR mobile models via ONNX Runtime for the OCR candidate, and faster-whisper for the speech candidate. Model size, latency and memory requirements remain subject to the feasibility evidence.
+- Use PaddleOCR PP-OCRv6 small via ONNX Runtime for OCR and faster-whisper `small` for speech, as selected by the Phase 0 measurements in `docs/feasibility.md`. Change models only with new measured evidence on the target server.
 - Keep sessions and jobs in PostgreSQL, paginate relevant lists and make worker concurrency configurable. Do not add speculative infrastructure for scale or native apps.
 
 ## Security and privacy invariants

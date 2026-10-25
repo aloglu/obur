@@ -75,11 +75,11 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 **Progress**
 - **Month calendar** at the top:
   - Weeks start on Monday, and each day has a small ring with its date inside (40 px on phone, 54 px on desktop).
-  - The ring fills by eaten ÷ budget: **green** (`good`) when at or under budget, a full **red** (`bad`) ring when over.
+  - The ring fills by eaten ÷ budget: **green** (`good`) when the day is marked complete and at or under budget, a full **red** (`bad`) ring when over. A logged day that is not marked complete fills in a neutral colour (`muted`), so incomplete logging is never shown as success (owner decision, 2026-10-25).
   - Today has an accent outline. Days with no logs show only the track, and future days have no ring and are disabled.
   - Tapping a day opens that day's Today view. Arrows move between months.
   - Each cell's accessible name reads like "Thursday, 15 October: 1,840 of 2,000 kcal, 160 under".
-  - Below the grid: a key and a month summary ("17 days under, 4 over, 3 not logged"). Today isn't counted.
+  - Below the grid: a key and a month summary ("17 days under, 4 over, 3 not logged"). Today isn't counted. "Under" counts complete days only; incomplete days need their own wording in the summary and key.
 - Below the calendar: weight chart, averages and achievements. Not designed yet.
 
 **Profile, Settings and the More rows:** placeholders only.
@@ -99,7 +99,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 | accent | `#C2410C` | `#FF8F55` | brand, primary buttons, active nav, ring while under budget |
 | onAccent | `#FFFFFF` | `#2A1304` | text on accent |
 | soft | `#FDF0E7` | `#3D2619` | accent-tinted backgrounds (active tab, + buttons, preset pill, just-logged row) |
-| good (success) | `#2E7D3B` | `#6CCB7A` | under budget in the calendar |
+| good (success) | `#2E7D3B` | `#6CCB7A` | complete days at or under budget in the calendar |
 | bad (over budget) | `#C62F3A` | `#FF6B6B` | over-budget ring and number; over days in the calendar |
 | warn (warning) | `#8A4B00` | `#F2B65A` | "Waiting to sync", unknown scan values |
 | warnSoft | `#FCEFD9` | `#3A2C14` | warning backgrounds |
@@ -190,6 +190,7 @@ The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps.
 - **Voice quick adds:** voice could also handle "500 calories, dinner". If it does, the Quick add button could move to the no-results state only.
 - **Voice error states:** nothing heard, low confidence, a food not found (offer to create it or quick add), voice turned off in `.env` (hide the tile).
 - **Scan error states:** no table found, several tables, kJ/kcal mismatch, a per-serving label without a serving size, scan turned off in `.env` (hide the tile).
+- **Marking a day complete:** the control on Today (and its undo) is not designed yet. The calendar depends on it.
 - **Offline and pending:** only the "Waiting to sync" badge is designed. A global offline indicator and sync-failure states are not.
 - **Other logging flows:** recipes, saved meals, "Make my own variant", food editing and sharing.
 - **Calendar details:** which month it opens on when you come from a past day (the demo always opens the current month); a just-under day that looks almost full.

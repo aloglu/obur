@@ -18,7 +18,7 @@ A ZIP of 29 UTF-8 CSV files (no BOM) in three folders, about 420 KB uncompressed
 | `calorie-bonus.csv` | 118 | Two values per day whose meaning is unresolved |
 | `daily-calorie-summary.csv` | 274 | Per-day food kcal, exercise kcal, budget and EER |
 | `carbohydrates.csv`, `fat.csv`, `protein.csv` | 270 each | Per-day totals |
-| `daily-values.csv` | 270 | One `Complete` marker per day (day marked complete) |
+| `daily-values.csv` | 270 | One `Complete` marker per day (day marked complete); imports as obur's day-completion marker |
 | `steps.csv` | 265 | Daily steps: out of scope |
 | `profile.csv` | 11 | Name/value pairs: birthday, gender, height, start/current/goal weight, calorie adjustment, current EER, plan, activity level, start date |
 | `achievements.csv`, `achievement-actions.csv`, `notes.csv`, `fasting-schedules.csv`, `food-photos/food-photos.csv` | ≤55 | Small; photos are tokens only, no images. Out of scope for the first importer |
