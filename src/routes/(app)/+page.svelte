@@ -17,6 +17,8 @@
 	import DayHeader from '#lib/ui/today/DayHeader.svelte';
 	import MealCard from '#lib/ui/today/MealCard.svelte';
 	import NutrientsCard from '#lib/ui/today/NutrientsCard.svelte';
+	import WaterCard from '#lib/ui/today/WaterCard.svelte';
+	import WeightCard from '#lib/ui/today/WeightCard.svelte';
 
 	let { data } = $props();
 
@@ -110,6 +112,15 @@
 		<DayHeader date={data.date} today={data.today} onmove={move} />
 		<BudgetCard {eaten} budget={null} />
 		<NutrientsCard totals={data.totals} entryCount={data.entries.length} />
+		<div class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+			<WaterCard date={data.date} totalMl={data.water.totalMl} onchange={invalidateAll} />
+			<WeightCard
+				date={data.date}
+				today={data.today}
+				latest={data.latestWeight}
+				onchange={invalidateAll}
+			/>
+		</div>
 		{#each MEALS as meal (meal)}
 			<MealCard
 				{meal}

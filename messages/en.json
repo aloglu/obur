@@ -263,5 +263,18 @@
 	"profile_title": "Profile",
 	"profile_soon": "Onboarding, goals and units arrive in a later step.",
 	"settings_signed_in_as": "Signed in as {name}",
-	"nutrients_all_unknown": "Unknown"
+	"nutrients_all_unknown": "Unknown",
+	"water_title": "Water",
+	"water_add": "+{ml} ml",
+	"water_add_label": "Add {ml} ml of water",
+	"water_total": "{ml} ml",
+	"toast_water": "Added {ml} ml of water",
+	"weight_title": "Weight",
+	"weight_input": "Weight (kg)",
+	"weight_save": "Save",
+	"weight_last": "Last: {kg} kg · {day}",
+	"weight_none": "No weigh-ins yet.",
+	"weight_same": "Same as last time ({kg} kg)",
+	"weight_invalid": "Enter a weight such as 82,4",
+	"toast_weight": "Saved {kg} kg"
 }
