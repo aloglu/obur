@@ -32,7 +32,7 @@ export async function signedInAs(
 /** Calls the app's API as the signed-in browser user, with the Origin header the CSRF check requires. */
 export async function apiAs<T>(
 	page: Page,
-	method: 'POST' | 'GET',
+	method: 'POST' | 'GET' | 'PUT',
 	path: string,
 	data?: unknown
 ): Promise<T> {

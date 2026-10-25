@@ -299,6 +299,32 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 			});
 		},
 
+		/** Energy eaten per logged day in a range. Days without entries are absent (unlogged, not zero). */
+		async dailyEnergy(
+			userId: string,
+			from: string,
+			to: string
+		): Promise<{ localDate: string; kcal: number }[]> {
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select({
+						localDate: diaryEntries.localDate,
+						kcal: sql<string>`coalesce(sum(${diaryEntries.energyKcal}), 0)`
+					})
+					.from(diaryEntries)
+					.where(
+						and(
+							gte(diaryEntries.localDate, from),
+							lte(diaryEntries.localDate, to),
+							isNull(diaryEntries.deletedAt)
+						)
+					)
+					.groupBy(diaryEntries.localDate)
+					.orderBy(asc(diaryEntries.localDate))
+			);
+			return rows.map((r) => ({ localDate: r.localDate, kcal: Math.round(Number(r.kcal)) }));
+		},
+
 		/** Marks a day complete (or not). Only complete days count as "under budget" in the calendar. */
 		async setDayComplete(userId: string, localDate: string, complete: boolean): Promise<void> {
 			await withUser(db, userId, async (tx) => {

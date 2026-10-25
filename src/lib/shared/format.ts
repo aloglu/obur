@@ -46,6 +46,18 @@ export function dayTitle(date: string, today: string): string {
 	return `${WEEKDAYS[weekday].slice(0, 3)} ${d} ${MONTHS[mo - 1].slice(0, 3)}`;
 }
 
+/** "Tuesday 20 October". */
+export function dayAndMonth(date: string): string {
+	const { mo, d, weekday } = parts(date);
+	return `${WEEKDAYS[weekday]} ${d} ${MONTHS[mo - 1]}`;
+}
+
+/** "October 2026". */
+export function monthTitle(month: string): string {
+	const [y, mo] = month.split('-').map(Number);
+	return `${MONTHS[mo - 1]} ${y}`;
+}
+
 /** "Tuesday 20 October 2026". */
 export function longDate(date: string): string {
 	const { y, mo, d, weekday } = parts(date);

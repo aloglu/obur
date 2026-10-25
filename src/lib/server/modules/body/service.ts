@@ -1,7 +1,7 @@
 // Weight and water readings under the signed-in person's identity. Separate readings are never merged, even when
 // their values match (docs/design.md, "Database consistency"); creates are idempotent by client ID.
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, gte, isNull, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
 import { withUser, type Database } from '../../db/identity.ts';
 import type { ActivityEntry, BodyReading } from '../../../shared/body-types.ts';
 import { activityEntries, waterEntries, weightEntries } from './schema.ts';
@@ -173,6 +173,32 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 					.reduce((sum, e) => sum + e.kcal, 0),
 				entries
 			};
+		},
+
+		/** Counted activity per day in a range. */
+		async activityByDay(
+			userId: string,
+			from: string,
+			to: string
+		): Promise<{ localDate: string; kcal: number }[]> {
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select({
+						localDate: activityEntries.localDate,
+						kcal: sql<string>`sum(${activityEntries.kcal})`
+					})
+					.from(activityEntries)
+					.where(
+						and(
+							gte(activityEntries.localDate, from),
+							lte(activityEntries.localDate, to),
+							isNull(activityEntries.deletedAt),
+							eq(activityEntries.countsTowardBudget, true)
+						)
+					)
+					.groupBy(activityEntries.localDate)
+			);
+			return rows.map((r) => ({ localDate: r.localDate, kcal: Number(r.kcal) }));
 		},
 
 		async waterDay(userId: string, localDate: string) {

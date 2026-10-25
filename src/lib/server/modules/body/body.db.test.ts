@@ -162,3 +162,14 @@ describe('activity', () => {
 		).toBe('23514');
 	});
 });
+
+it('sums counted activity per day', async () => {
+	await body.logActivity(AYSE, at('2026-10-01'), 200, null);
+	await body.logActivity(AYSE, at('2026-10-01'), 100, null);
+	await admin`insert into activity_entries (id, user_id, local_date, zone, kcal, source, counts_toward_budget)
+		values (${randomUUID()}, ${AYSE}, '2026-10-01', 'UTC', 900, 'loseit', false)`;
+	await body.logActivity(MEHMET, at('2026-10-01'), 700, null);
+	expect(await body.activityByDay(AYSE, '2026-10-01', '2026-10-31')).toEqual([
+		{ localDate: '2026-10-01', kcal: 300 }
+	]);
+});

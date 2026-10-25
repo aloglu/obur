@@ -284,3 +284,14 @@ it('marks days complete, idempotently and privately', async () => {
 	expect(await diary.completedDays(MEHMET, '2026-10-01', '2026-10-31')).toEqual(['2026-10-24']);
 	expect(await diary.completedDays(ZEYNEP, '2026-10-01', '2026-10-31')).toEqual([]);
 });
+
+it('sums energy per logged day, skipping deleted entries and unlogged days', async () => {
+	await diary.quickAdd(MEHMET, ctx({ localDate: '2026-10-01' }), 300, null);
+	await diary.quickAdd(MEHMET, ctx({ localDate: '2026-10-01' }), 450.4, null);
+	const gone = await diary.quickAdd(MEHMET, ctx({ localDate: '2026-10-03' }), 999, null);
+	await diary.remove(MEHMET, gone.id);
+	await diary.quickAdd(ZEYNEP, ctx({ localDate: '2026-10-01' }), 5000, null);
+	expect(await diary.dailyEnergy(MEHMET, '2026-10-01', '2026-10-31')).toEqual([
+		{ localDate: '2026-10-01', kcal: 750 }
+	]);
+});
