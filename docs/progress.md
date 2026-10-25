@@ -61,7 +61,11 @@ Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 6 (2026-10-25): `npm r
 
 ## Exact next step
 
-Phase 1 step 7: goals. Onboarding (height, weight, birth date, sex; optional body fat and waist; BMI with WHO adult categories and the muscle caveat; skip to a manual target), base burn (Mifflin–St Jeor, Katch–McArdle with body fat, × 1.2, or a fixed number), versioned targets by effective date with frozen daily budgets, manual activity calories (body module), goal rate up to 1 kg/week with the 7,700 kcal/kg deficit capped at 1 % of body weight per week and the editable floor, macro targets, the no-target path for minors, pregnancy and breastfeeding, units and day completion (calendar green only for complete days). Formula fixture tests with published worked examples.
+Phase 1 step 7 (goals) is **in progress**. Done and committed: pure formulas with fixture tests (`src/lib/shared/goals.ts`), shared types and validation (`goal-types.ts`), tables and RLS for profiles, append-only target versions, activity entries (body module) and day completions (diary module) in migrations 0011–0012, and the goals service (`modules/goals/service.ts`, not yet tested). Next, in order:
+1. Real-Postgres tests for the goals service (append-only versions, target in force on a day, past days unaffected by a new version, calculated targets refused for minors/pregnancy/breastfeeding and without a profile or weight).
+2. Body service: activity entries (log, remove/restore, counted kcal per day); diary service: set/unset day completion; tests.
+3. API routes (profile, targets, activity, completion), then onboarding page, Profile page, budget card wired to the target plus activity (equation base + activity − deficit), activity sheet, "Mark day complete" on Today.
+4. Record the protein (1.2 g/kg of goal or current weight) and fat (30 %) defaults in `docs/design.md`; browser tests; regenerate screenshots.
 
 Pending from step 5: purging trash entries older than 30 days needs the background worker (pg-boss), planned with operations (step 11); until then expired trash simply cannot be restored.
 

@@ -7,6 +7,7 @@ import {
 	jsonb,
 	numeric,
 	pgTable,
+	primaryKey,
 	text,
 	timestamp,
 	uuid
@@ -73,5 +74,24 @@ export const diaryEntries = pgTable(
 			.on(t.userId, t.localDate)
 			.where(sql`${t.deletedAt} is null`),
 		index('diary_entries_user_food_idx').on(t.userId, t.foodId, t.createdAt)
+	]
+);
+
+// Days the person marked complete (only complete days at or under budget count as "under" in the calendar).
+export const dayCompletions = pgTable(
+	'day_completions',
+	{
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		localDate: date('local_date', { mode: 'string' }).notNull(),
+		source: text('source', { enum: ['manual', 'loseit'] })
+			.notNull()
+			.default('manual'),
+		completedAt: timestamp('completed_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		primaryKey({ columns: [t.userId, t.localDate] }),
+		check('day_completions_source_valid', sql`${t.source} in ('manual', 'loseit')`)
 	]
 );

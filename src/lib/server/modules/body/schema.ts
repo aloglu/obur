@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+	boolean,
 	check,
 	date,
 	index,
@@ -60,6 +61,34 @@ export const waterEntries = pgTable(
 		check('water_entries_zone_format', sql`${t.zone} ~ '^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$'`),
 		check('water_entries_source_valid', sql`${t.source} in ('manual', 'loseit')`),
 		index('water_entries_user_date_idx')
+			.on(t.userId, t.localDate)
+			.where(sql`${t.deletedAt} is null`)
+	]
+);
+
+// Calories burned through activity, as extra above an inactive day (docs/design.md). Only rows that count toward
+// the budget are added to it; imported values with an unclear meaning are recorded but not counted.
+export const activityEntries = pgTable(
+	'activity_entries',
+	{
+		...common(),
+		kcal: integer('kcal').notNull(),
+		note: text('note'),
+		countsTowardBudget: boolean('counts_toward_budget').notNull()
+	},
+	(t) => [
+		check('activity_entries_kcal_range', sql`${t.kcal} > 0 and ${t.kcal} <= 10000`),
+		check(
+			'activity_entries_note_length',
+			sql`${t.note} is null or char_length(${t.note}) between 1 and 120`
+		),
+		check('activity_entries_zone_format', sql`${t.zone} ~ '^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$'`),
+		check('activity_entries_source_valid', sql`${t.source} in ('manual', 'loseit')`),
+		check(
+			'activity_entries_manual_counts',
+			sql`${t.source} <> 'manual' or ${t.countsTowardBudget}`
+		),
+		index('activity_entries_user_date_idx')
 			.on(t.userId, t.localDate)
 			.where(sql`${t.deletedAt} is null`)
 	]
