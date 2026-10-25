@@ -45,7 +45,7 @@ One modular TypeScript application and one PostgreSQL database, shipped through 
 | Label OCR | PaddleOCR PP-OCRv6 small (detector and recogniser) through ONNX Runtime on images of about 1280 px, followed by a rule-based table parser | Model chosen from Phase 0 measurements (`docs/feasibility.md`); parser and end-to-end evaluation still needed |
 | Speech | faster-whisper `small` (int8) in its own Python container | Chosen from Phase 0 measurements (`docs/feasibility.md`); confirm on held-out recordings before release |
 | Language-model fallback | A small local LLM through Ollama, off by default | Deferred until failures justify it |
-| Backups | pgBackRest, encrypted local and off-site repositories | Committed before production use |
+| Backups | pgBackRest: encrypted local repository required; off-site repository optional per installation (Cloudflare R2 for the owner's pilot) | Committed before production use |
 | Entry point | Cloudflare Tunnel for the owner's pilot; Tailscale Serve and Caddy profiles later | Pilot route decided; hostname and RP ID live only in `.env` |
 
 ```mermaid
@@ -342,16 +342,17 @@ Years of history deserve recoverability that has been demonstrated. Backup insta
 
 **Backup policy**
 
-- Use pgBackRest for encrypted full/incremental backups and continuous WAL archiving to a local repository and an independently located off-site repository. Start with one tested off-site backend rather than implementing every storage option.
+- Use pgBackRest for encrypted full/incremental backups and continuous WAL archiving to a local repository, and to an independently located off-site repository when one is configured. The off-site repository is optional so that less technical households can run obur (owner decision, 2026-10-25); the local repository and weekly restore verification are not. Start with one tested off-site backend, S3-compatible storage such as Cloudflare R2, which the owner's own installation uses, rather than implementing every storage option.
+- Without an off-site repository, the admin page shows a permanent, plain notice that a fire, theft or failure of the server's storage would lose all history, with a link to the setup guide. It is never presented as fully protected.
 - Proposed recovery targets are at most 15 minutes of committed data loss after server loss and a usable restoration within four hours. These are initial targets, not guarantees; measure them on the actual server and off-site connection during rehearsal and record the accepted values in `docs/restore.md` before real use.
-- Configure and monitor WAL archival delay, including low-write periods and failures. Configure archival timing to meet the accepted data-loss target; “continuous archiving” alone does not establish it. An offline or unhealthy off-site repository is a visible protection failure.
+- Configure and monitor WAL archival delay, including low-write periods and failures. Configure archival timing to meet the accepted data-loss target; “continuous archiving” alone does not establish it. A configured off-site repository that is offline or unhealthy is a visible protection failure.
 - Desired retention is 7 daily, 4 weekly and 12 monthly restore points, configurable. Document how the pgBackRest backup schedule and dependency-aware retention provide those points, with estimated storage usage; do not claim that one retention count implements that calendar automatically.
 - Keep the backup encryption key and deployment configuration outside the server, such as in a password manager. Never store the only decryption key alongside the only backup. Setup records that the operator has saved and tested access to them.
 - Production photos, audio and temporary import uploads are excluded. The separately consented development fixtures are not production uploads and follow their own storage policy.
 
 **Verification and alerts**
 
-- Automatically restore a backup into an isolated temporary Postgres environment every week. Exercise the off-site repository regularly so the verification is not limited to a healthy local copy.
+- Automatically restore a backup into an isolated temporary Postgres environment every week. When an off-site repository is configured, exercise it regularly so the verification is not limited to a healthy local copy.
 - Verify backup integrity, schema compatibility, application queries and known records at a specified recovery point. Any row-count or content comparison must use a consistent snapshot corresponding to that point; never compare an older restore with a changing live database and expect equality.
 - Keep a small recovery-checkpoint manifest with the target and evidence used by the test. Record the restored target, selected repository, checks performed, result and elapsed time. Run a deliberate point-in-time recovery test during the initial rehearsal and after recovery-related changes.
 - The admin page shows last successful backups for both destinations, WAL archival freshness, last successful restore test and free space. Show an overdue/failure banner. Optional webhook or ntfy alerts are off until configured and contain operational status, not personal diary data.
@@ -418,7 +419,7 @@ This roadmap is not authorization to build every phase at once. Once a feature/p
 | Source nutrient mapping | Typed source definitions and qualified conversions | Dataset-specific nutrient IDs, units and edge-case fixtures before catalog import |
 | Speech/OCR model and speed | faster-whisper `small` and PP-OCRv6 small chosen from Phase 0 measurements on the target server | Held-out voice set with another speaker, phone end-to-end voice latency, a larger label set, the real label parser and accepted correction targets |
 | Phone support | Mobile PWA with real-device acceptance | Supported phone/OS versions, permission/recovery/queue checks |
-| Backup configuration and recovery objectives | Encrypted local/off-site plus weekly restore; targets provisional | Off-site destination, supported retention schedule, storage capacity and measured rehearsal |
+| Backup configuration and recovery objectives | Encrypted local backups plus weekly restore; optional off-site (R2 for the owner); targets provisional | Supported retention schedule, storage capacity and measured rehearsal, including an R2 restore |
 | Imported activity credit | Manual activity counts toward the budget; imported values recorded only | Meaning of LoseIt's exercise values, from the real export |
 | Full offline editing | Deferred; new-record queue only initially | Conflict, tombstone, resync and maximum-offline-age contract before implementation |
 

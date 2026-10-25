@@ -60,7 +60,7 @@
 - Put invariants in database constraints as well as validation. Make each logical multi-row database operation atomic and preserve legitimate repeated entries.
 - Imports require a dry run and both file-level retry protection and a defined overlapping-history policy. A file hash alone is not row-level deduplication.
 - Exports must include the portable data and dependency closure defined in the design. Verify manifests and keep complex export/import round trips passing.
-- Keep encrypted local and off-site backups, monitored WAL archival and rehearsed restore ready before real reliance on the app. Test restores against the intended recovery point, not changing live counts.
+- Keep encrypted local backups (plus off-site when configured; optional per installation, R2 for the owner), monitored WAL archival and rehearsed restore ready before real reliance on the app. Warn plainly when no off-site copy exists. Test restores against the intended recovery point, not changing live counts.
 - Run migrations through the controlled, backed-up upgrade procedure. Respect deletion retention and restore reconciliation; never promise that live deletion instantly erases retained backups.
 
 ## Language and interface
