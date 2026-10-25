@@ -15,7 +15,8 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Phase 0 plan approved by the owner (2026-10-25).
 - Owner has supplied the LoseIt export, 11 label photos and a favourite-foods list in `~/obur-private/`.
 - 48 voice clips recorded (m4a) in `~/obur-private/audio/raw/`, matching `~/obur-private/audio/transcripts.tsv` (25 tr, 13 en, 10 mixed; 13 in harder conditions).
-- Server access: owner declined a VM. Proposed a single unprivileged Docker container ("obur-lab") on Unraid with only its own appdata folder mounted; owner pastes the run command. Waiting for the owner.
+- Server access ready: SSH alias `obur-lab` (desktop `~/.ssh/config`) into the unprivileged `obur-lab` container; only `/work` (its appdata folder) is mounted. Port 8040 will be published when the phone probe starts; the owner routes the pilot hostname to it through their existing Cloudflare tunnel.
+- Step 0 done: hardware recorded in `docs/feasibility.md`.
 
 ## Validation results
 
@@ -23,7 +24,7 @@ None yet. No measurements have been taken.
 
 ## Exact next step
 
-Step 0 (desktop hardware inventory), then step 1: inspect the LoseIt export with scripts in `spikes/loseit/` that print structure and coverage, not diary rows.
+Step 1: inspect the LoseIt export with scripts in `spikes/loseit/` that print structure and coverage, not diary rows.
 
 ## Conventions for Phase 0
 
