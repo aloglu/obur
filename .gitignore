@@ -1,0 +1,20 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Private data must never enter the repo (exports, photos, recordings, results with real data).
+# The canonical location is outside the repository (see docs/progress.md); these are safety nets.
+private/
+*.private.*
+**/loseit-export*/
+spikes/**/out/
+
+# Tooling
+node_modules/
+.venv/
+__pycache__/
+*.onnx
+*.bin
+models/
+.DS_Store
