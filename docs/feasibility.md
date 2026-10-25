@@ -71,7 +71,7 @@ Findings on the server:
 
 ## Label OCR (PaddleOCR via ONNX Runtime)
 
-**Setup.** Ten real label photos from the owner's kitchen (an eleventh photo was not a label and was excluded and deleted). Values were read by hand from the photos (136 values over 16 nutrient columns; owner verification pending). Photos were converted to orientation-corrected JPEG with all metadata removed (the originals contain GPS location). The set includes curved packs, glare through plastic, very small print, two labels in running text rather than tables, %RI columns, bilingual rows, distractor tables in other languages and a distractor energy figure. Development data only. Scripts: `spikes/ocr/`; RapidOCR 3.9.2 on ONNX Runtime 1.31.0.
+**Setup.** Ten real label photos from the owner's kitchen (an eleventh photo was not a label and was excluded and deleted). Values were read by hand from the photos (136 values over 16 nutrient columns; the owner spot-checked 5–6 of the 10 labels against the photos and found no errors, so this is not a full verification). Photos were converted to orientation-corrected JPEG with all metadata removed (the originals contain GPS location). The set includes curved packs, glare through plastic, very small print, two labels in running text rather than tables, %RI columns, bilingual rows, distractor tables in other languages and a distractor energy figure. Development data only. Scripts: `spikes/ocr/`; RapidOCR 3.9.2 on ONNX Runtime 1.31.0.
 
 Models:
 - **A:** PP-OCRv5 mobile detector + Latin PP-OCRv5 mobile recogniser (the design's named candidate), converted to ONNX locally from PaddlePaddle's Hugging Face release with paddle2onnx 2.1.0 / paddlepaddle 3.3.0.
@@ -151,6 +151,6 @@ Tested on 2026-10-25 by the owner with the throwaway probe in `spikes/phone-prob
 
 - Full phone release→result voice latency (server time is measured; upload over mobile data is not).
 - A held-out voice set, ideally including another household member with consent, before trusting the 77% figure. All 48 Phase 0 clips were development data from one speaker.
-- Owner verification of the hand-read label values, and more labels toward 30.
+- A full check of the hand-read label values (owner spot-checked 5–6 labels, no errors), and more labels toward 30.
 - Cause of the failed offline launch.
 - UI direction.

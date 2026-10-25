@@ -29,7 +29,7 @@ None yet. No measurements have been taken.
 
 ## Exact next step
 
-Phase 0 is complete except the UI direction. Wait for the owner: (1) the chosen UI direction from the Claude app (record it in `docs/ui.md` with tokens); (2) a decision on the recommendations in `docs/feasibility.md` (speech small model, PP-OCRv6 small), then update `docs/design.md`; (3) approval to start Phase 1. The owner is also verifying `~/obur-private/labels-prepared/ground_truth.tsv`.
+Phase 0 is complete except the UI direction. Wait for the owner: (1) the chosen UI direction from the Claude app (record it in `docs/ui.md` with tokens); (2) a decision on the recommendations in `docs/feasibility.md` (speech small model, PP-OCRv6 small), then update `docs/design.md`; (3) approval to start Phase 1. Label values: owner spot-checked 5–6 labels with no errors (2026-10-25).
 
 ## Conventions for Phase 0
 
