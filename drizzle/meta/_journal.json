@@ -50,6 +50,20 @@
       "when": 1792949476307,
       "tag": "0006_catalog_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792950076989,
+      "tag": "0007_diary_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792950077428,
+      "tag": "0008_diary_rls",
+      "breakpoints": true
     }
   ]
 }
