@@ -16,6 +16,8 @@ from faster_whisper import WhisperModel, decode_audio
 
 MAX_BYTES = 4 * 1024 * 1024
 MAX_AUDIO_S = 30
+# Best measured settings per model on the target server (docs/feasibility.md).
+STRATEGY = {"small": ["tr", "en"], "large-v3-turbo": ["tr"]}
 
 
 def main() -> None:
@@ -23,7 +25,7 @@ def main() -> None:
     ap.add_argument("--port", type=int, default=8041)
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--prompt-file")
-    ap.add_argument("--models", default="large-v3-turbo")
+    ap.add_argument("--models", default="small,large-v3-turbo")
     args = ap.parse_args()
     prompt = Path(args.prompt_file).read_text().strip() if args.prompt_file else None
     models = {}
@@ -54,8 +56,13 @@ def main() -> None:
                     self._json({"error": "clip too long"})
                     return
                 decoded = time.perf_counter()
-                segments, info = model.transcribe(audio, language=None, beam_size=5, initial_prompt=prompt,
-                                                  condition_on_previous_text=False)
+                allowed = STRATEGY.get(name, ["tr", "en"])
+                language = allowed[0]
+                if len(allowed) > 1:
+                    _, _, probs = model.detect_language(audio)
+                    language = max((p for p in probs if p[0] in allowed), key=lambda p: p[1])[0]
+                segments, info = model.transcribe(audio, language=language, beam_size=5, initial_prompt=prompt,
+                                                  condition_on_previous_text=False, temperature=0.0)
                 text = " ".join(s.text.strip() for s in segments)
                 done = time.perf_counter()
             self._json({"text": text, "language": info.language, "audioS": round(len(audio) / 16000, 2),

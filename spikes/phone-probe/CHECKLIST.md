@@ -11,7 +11,7 @@ Before starting: the probe operator gives you a one-time setup code.
 3. Tap **Sign out**, then **Sign in with passkey**. Note whether the passkey sheet appears and the result.
 4. Camera A: tap the file field, choose **Take Photo**, photograph a nutrition label. Note the resolution and size line, and whether you were asked for permission.
 5. Camera B: tap **Start live camera** (allow access), point at a label, tap **Capture**. Note the resolution, whether focus was sharp, and the focus/torch line.
-6. Voice: pick `large-v3-turbo`, press and hold **Hold to record**, say "Öğle yemeğinde iki yüz gram tavuk yedim", release. Note the transcript and the *release→result* time. Repeat 4 more times with different sentences, then twice with `small`.
+6. Voice: with `small` selected, press and hold **Hold to record**, say "Öğle yemeğinde iki yüz gram tavuk yedim", release. Note the transcript and the *release→result* time. Repeat with about 10 sentences of your own (Turkish, English and mixed), then 3 with `large-v3-turbo`.
 7. Offline queue: add an entry `online 1`. Turn on Airplane Mode, add `offline 1` and `offline 2`. Note that they show as pending. Turn Airplane Mode off and bring the page back to the foreground. Note whether both were sent once.
 8. Tap **Resend last** and confirm it reports `replayed true`.
 
