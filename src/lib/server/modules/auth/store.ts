@@ -8,6 +8,11 @@ import { hashRecoveryCode, hashToken, newRecoveryCodes, newToken } from './token
 
 export type AuthErrorCode =
 	| 'setup_unavailable'
+	| 'not_verified'
+	| 'challenge_expired'
+	| 'recent_auth_required'
+	| 'forbidden'
+	| 'rate_limited'
 	| 'invite_unavailable'
 	| 'recovery_unavailable'
 	| 'unknown_credential'
@@ -144,14 +149,19 @@ export function createAuthStore(db: Database, now: () => Date = () => new Date()
 			};
 		},
 
-		/** After a verified sign-in: records the counter and opens a session. */
-		async completeSignIn(userId: string, credentialId: string, counter: number): Promise<string> {
+		/** Records a verified assertion's signature counter. */
+		async recordAssertion(userId: string, credentialId: string, counter: number): Promise<void> {
 			await withUser(db, userId, (tx) =>
 				tx
 					.update(credentials)
 					.set({ counter, lastUsedAt: now() })
 					.where(eq(credentials.id, credentialId))
 			);
+		},
+
+		/** After a verified sign-in: records the counter and opens a session. */
+		async completeSignIn(userId: string, credentialId: string, counter: number): Promise<string> {
+			await this.recordAssertion(userId, credentialId, counter);
 			return newSession(userId);
 		},
 

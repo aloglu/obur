@@ -26,6 +26,8 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 
 ## Completed
 
+- Phase 1 step 3 done (2026-10-25): authentication. Tables for credentials, sessions, invites, recovery codes, recovery links and the setup token with forced RLS; reviewed SECURITY DEFINER functions for the pre-identity steps (first admin, invite redemption, sign-in lookup, session lookup, recovery begin/complete); SimpleWebAuthn ceremonies with user verification and user-handle checks; recent-passkey checks for sensitive actions; idle/absolute session expiry; in-memory rate limits; same-origin CSRF check, CSP, HSTS (https), no-referrer; operator commands for the setup link and recovery links (token in the URL fragment); Pazar-styled sign-in, setup, join, recovery, security and household pages with all strings in `messages/en.json`. Tests: 19 more real-Postgres auth tests (single use under concurrency, expiry, revocation, admin-only invites, isolation, last-credential guard, recovery revoking everything), 12 helper unit tests, and Chromium virtual-authenticator journeys (setup, sign-in, adding a security key, invite and join, recovery, old passkey rejected) plus header/CSRF checks.
+
 - Phase 1 step 2 done (2026-10-25): database foundation. Roles `obur_migrator` (schema owner), `obur_app` and `obur_worker` (non-superuser, `NOBYPASSRLS`, `NOINHERIT`, own nothing) created by `npm run db:bootstrap`; a locked, single-transaction migration runner with checksum and newer-database checks (`npm run db:migrate`); `withUser()` sets `app.user_id` transaction-locally and rejects malformed identity; first table `users` (auth module) with forced RLS. 27 real-Postgres tests cover cross-user reads/writes/deletes, role escalation, missing/malformed identity, connection reuse (including after errors and under concurrency), a guard that every table forces RLS, and migration atomicity, locking and tamper detection.
 
 - Phase 1 step 1 done (2026-10-25): SvelteKit 3 / Svelte 5.57 scaffold with strict TypeScript, Tailwind 4 and the Pazar tokens (contrast-tested in light and dark), self-hosted Inter and Bricolage Grotesque, Paraglide (English), ESLint with a local module-boundary rule (tested), Vitest, Playwright (iPhone 13 WebKit and desktop Chromium in the official Docker image), adapter-node, Drizzle with postgres.js, and a development PostgreSQL 18 in Compose. Verified commands are in `CLAUDE.md`.
@@ -49,17 +51,20 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 
 ## Validation results
 
-Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 2 (2026-10-25): `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 85 passed (27 against real PostgreSQL 18.6); `npm run build` succeeded; `npm run test:e2e` 2 passed. Phase 1 step 1: `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 58 passed; `npm run build` succeeded; `npm run test:e2e` 2 passed (phone WebKit, desktop Chromium), including no third-party requests.
+Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 3 (2026-10-25): `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 116 passed (46 against real PostgreSQL); `npm run build` succeeded; `npm run test:e2e` 9 passed, 5 skipped (passkey journeys are Chromium-only). Phase 1 step 2: 85 unit/db tests, 2 e2e. Phase 1 step 1: `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 58 passed; `npm run build` succeeded; `npm run test:e2e` 2 passed (phone WebKit, desktop Chromium), including no third-party requests.
 
 ## Exact next step
 
-Phase 1 step 3: authentication. One-time bootstrap admin, passkeys and YubiKeys with SimpleWebAuthn, Postgres sessions, invites, recovery codes and the operator recovery command, CSRF and CSP; Playwright with a virtual authenticator. Auth bootstrap paths need deliberately reviewed database interfaces (the app role can only create its own `users` row as a member).
+Phase 1 step 4: catalog. Foods with the nutrient contract (basis, source definitions, qualifiers, unknown ≠ 0), servings and conversions, private/shared visibility with RLS, Turkish-aware and transliteration-aware search.
 
 ## Implementation notes
 
 - SvelteKit 3 removed the `$lib` alias; use `#lib`. Import a module's public entry by its full path, `#lib/server/modules/<name>/index.ts` (TypeScript does not resolve a folder's index through the `#lib/*` mapping).
 - Drizzle names every column in an `INSERT` (using `DEFAULT` for omitted ones), so column-level INSERT grants do not work; pin allowed values with the RLS `WITH CHECK` instead. Column-level UPDATE grants do work.
 - Migrations reference the fixed role names `obur_app` and `obur_worker` created by the bootstrap script.
+- FORCE ROW LEVEL SECURITY also applies to the schema owner, so SECURITY DEFINER functions (owned by `obur_migrator`) need an explicit `<table>_owner` policy on each table they touch. Always `SET search_path` on them.
+- Drizzle's `sql` template expands JavaScript arrays into parameter lists; pass Postgres arrays with `textArrayLiteral()` (auth store) and an explicit cast.
+- Not yet verified on a real iPhone: the Phase 1 sign-in pages themselves (the Phase 0 probe verified passkeys, YubiKeys and the installed app on the owner's phone with the same library).
 
 ## Conventions for Phase 0
 

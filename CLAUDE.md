@@ -95,8 +95,9 @@ Verified on 2026-10-25 (Node 24+, npm, Docker). Add commands here only after run
 - Type-check (compiles messages first): `npm run check`.
 - Lint and formatting: `npm run lint`; fix formatting with `npm run format`.
 - All Vitest projects (unit, rule and database tests): `npx vitest run` (or `npm run test:unit` for watch mode).
-- End-to-end tests (phone WebKit and desktop Chromium in the official Playwright image): `npm run test:e2e`. `npm run test:e2e:local` runs desktop Chromium on the host only.
+- End-to-end tests (phone WebKit and desktop Chromium in the official Playwright image, with host networking; needs `npm run db:start`; recreates the `obur_e2e` database each run): `npm run test:e2e`. Passkey journeys run in Chromium only (virtual authenticator). `npm run test:e2e:local` runs desktop Chromium on the host only.
 - Production build: `npm run build`.
+- First admin's one-time setup link (24 h): `npm run admin:setup-link`. Recovery link for someone who lost every passkey and code (1 h): `npm run admin:recovery-link -- "<display name or user ID>"`. Both need `PUBLIC_ORIGIN` and `DATABASE_MIGRATOR_URL`.
 - Messages: edit `messages/en.json`; `npm run i18n` compiles them.
 
 Use `docs/design.md` for milestone scope and deferred features. Native apps, health-platform integration, meal planning and social features are outside the initial releases. Open sign-up, billing and multi-organisation tenancy are not planned.

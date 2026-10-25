@@ -13,6 +13,8 @@ export interface Challenge {
 	userId?: string;
 	/** Hash of the setup token, invite token or recovery session that started the ceremony. */
 	tokenHash?: string;
+	/** Display name chosen before a setup or join ceremony. */
+	displayName?: string;
 }
 
 interface Stored extends Challenge {
@@ -48,7 +50,8 @@ export class ChallengeStore {
 			challenge: item.challenge,
 			purpose: item.purpose,
 			...(item.userId && { userId: item.userId }),
-			...(item.tokenHash && { tokenHash: item.tokenHash })
+			...(item.tokenHash && { tokenHash: item.tokenHash }),
+			...(item.displayName && { displayName: item.displayName })
 		};
 	}
 
