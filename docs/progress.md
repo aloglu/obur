@@ -59,7 +59,7 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 
 ## Validation results
 
-Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 7 (2026-10-26): `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 254 passed (101 against real PostgreSQL); `npm run build` succeeded; `npm run test:e2e` 33 passed. Earlier: step 6 228 and 29; step 5 222 and 23; step 4 193 and 13; step 3 116 and 9; step 2 85 and 2. Phase 1 step 1: `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 58 passed; `npm run build` succeeded; `npm run test:e2e` 2 passed (phone WebKit, desktop Chromium), including no third-party requests.
+Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 7 (2026-10-26): `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 252 passed (101 against real PostgreSQL); `npm run build` succeeded; `npm run test:e2e` 33 passed. Earlier: step 6 228 and 29; step 5 222 and 23; step 4 193 and 13; step 3 116 and 9; step 2 85 and 2. Phase 1 step 1: `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 58 passed; `npm run build` succeeded; `npm run test:e2e` 2 passed (phone WebKit, desktop Chromium), including no third-party requests.
 
 ## Exact next step
 
