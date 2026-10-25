@@ -32,3 +32,7 @@ Owner approves (or amends) the Phase 0 plan and supplies the inputs listed in it
 - Exact phone model(s) and OS versions to support.
 - Home server OS, Docker availability and exact CPU/storage (design assumes a 2-core/4-thread i3 with 16 GB RAM).
 - Off-site backup destination (needed in Phase 1, not Phase 0).
+
+## Repository
+
+- Local Git only; no remote yet. When a remote is added it must be **private** for now (owner decision, 2026-10-25). The rules about keeping private data and real hostnames out of the repo still apply as if it were public.
