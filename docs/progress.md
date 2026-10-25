@@ -26,6 +26,8 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 
 ## Completed
 
+- Phase 1 step 1 done (2026-10-25): SvelteKit 3 / Svelte 5.57 scaffold with strict TypeScript, Tailwind 4 and the Pazar tokens (contrast-tested in light and dark), self-hosted Inter and Bricolage Grotesque, Paraglide (English), ESLint with a local module-boundary rule (tested), Vitest, Playwright (iPhone 13 WebKit and desktop Chromium in the official Docker image), adapter-node, Drizzle with postgres.js, and a development PostgreSQL 18 in Compose. Verified commands are in `CLAUDE.md`.
+
 - 2026-10-25: Repository initialised with `CLAUDE.md`, `docs/design.md`, this file and a `.gitignore` that excludes secrets and private data.
 
 ## In progress
@@ -45,11 +47,11 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 
 ## Validation results
 
-None yet. No measurements have been taken.
+Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 1 (2026-10-25): `npm run check` 0 errors; `npm run lint` clean; `npx vitest run` 58 passed; `npm run build` succeeded; `npm run test:e2e` 2 passed (phone WebKit, desktop Chromium), including no third-party requests.
 
 ## Exact next step
 
-Phase 1 step 1: application scaffold.
+Phase 1 step 2: database foundation. Create the migration owner and runtime roles (the Compose `POSTGRES_USER` is a superuser and must only run migrations), a locked migration runner, and the transaction-local `app.user_id` wrapper, with real-Postgres tests for cross-user access, missing identity and connection reuse.
 
 ## Conventions for Phase 0
 

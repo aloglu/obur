@@ -1,0 +1,18 @@
+# Development services. Production deployment is defined separately (Phase 1, step 11).
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    ports:
+      # Local machine only; never expose the development database on the network.
+      - 127.0.0.1:5432:5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-obur_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-obur}
+      POSTGRES_INITDB_ARGS: --data-checksums
+    volumes:
+      - pgdata:/var/lib/postgresql
+
+volumes:
+  pgdata:

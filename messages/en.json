@@ -1,0 +1,6 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"app_name": "obur",
+	"app_tagline": "Calories, weight and water, on your own server.",
+	"placeholder_building": "The first screens are being built."
+}

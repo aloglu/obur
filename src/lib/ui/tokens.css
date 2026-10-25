@@ -1,0 +1,154 @@
+/*
+ * Pazar design tokens (docs/ui.md §3). Colour values live only here.
+ * Theme: System (default) follows prefers-color-scheme; data-theme="light" or "dark" on <html> overrides it.
+ */
+
+:root {
+	--bg: #f6f3ee;
+	--surface: #ffffff;
+	--surface2: #f1ebe3;
+	--line: #e5ddd2;
+	--text: #1e1a16;
+	--muted: #665d53;
+	--accent: #c2410c;
+	--on-accent: #ffffff;
+	--soft: #fdf0e7;
+	--good: #2e7d3b;
+	--bad: #c62f3a;
+	--warn: #8a4b00;
+	--warn-soft: #fcefd9;
+	--track: #efe6db;
+	--protein: #c2410c;
+	--carb: #9e6510;
+	--fat: #5e7f3f;
+	--voice: #4f6e33;
+	--voice-bg: #e7eedd;
+	--scan: #8a5a00;
+	--scan-bg: #f8e9cc;
+	--toast-bg: #2a241f;
+	--toast-text: #ffffff;
+	--scrim: rgba(30, 26, 22, 0.42);
+
+	--shadow-card: 0 1px 2px rgba(60, 40, 20, 0.06), 0 8px 24px rgba(60, 40, 20, 0.08);
+	--shadow-tabbar: 0 8px 30px rgba(60, 40, 20, 0.16);
+	--tabbar-border: transparent;
+
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--bg: #161310;
+		--surface: #211d19;
+		--surface2: #2c2722;
+		--line: #3a332c;
+		--text: #f4eee7;
+		--muted: #b6ab9f;
+		--accent: #ff8f55;
+		--on-accent: #2a1304;
+		--soft: #3d2619;
+		--good: #6ccb7a;
+		--bad: #ff6b6b;
+		--warn: #f2b65a;
+		--warn-soft: #3a2c14;
+		--track: #342d26;
+		--protein: #ff8f55;
+		--carb: #e7b45c;
+		--fat: #9cc77a;
+		--voice: #b3d392;
+		--voice-bg: #2a3322;
+		--scan: #edbe66;
+		--scan-bg: #3b2f18;
+		--toast-bg: #f4eee7;
+		--toast-text: #1e1a16;
+		--scrim: rgba(0, 0, 0, 0.6);
+
+		--shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+		--shadow-tabbar: 0 8px 30px rgba(0, 0, 0, 0.5);
+		--tabbar-border: var(--line);
+
+		color-scheme: dark;
+	}
+}
+
+:root[data-theme='dark'] {
+	--bg: #161310;
+	--surface: #211d19;
+	--surface2: #2c2722;
+	--line: #3a332c;
+	--text: #f4eee7;
+	--muted: #b6ab9f;
+	--accent: #ff8f55;
+	--on-accent: #2a1304;
+	--soft: #3d2619;
+	--good: #6ccb7a;
+	--bad: #ff6b6b;
+	--warn: #f2b65a;
+	--warn-soft: #3a2c14;
+	--track: #342d26;
+	--protein: #ff8f55;
+	--carb: #e7b45c;
+	--fat: #9cc77a;
+	--voice: #b3d392;
+	--voice-bg: #2a3322;
+	--scan: #edbe66;
+	--scan-bg: #3b2f18;
+	--toast-bg: #f4eee7;
+	--toast-text: #1e1a16;
+	--scrim: rgba(0, 0, 0, 0.6);
+
+	--shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+	--shadow-tabbar: 0 8px 30px rgba(0, 0, 0, 0.5);
+	--tabbar-border: var(--line);
+
+	color-scheme: dark;
+}
+
+@theme inline {
+	--color-bg: var(--bg);
+	--color-surface: var(--surface);
+	--color-surface2: var(--surface2);
+	--color-line: var(--line);
+	--color-text: var(--text);
+	--color-muted: var(--muted);
+	--color-accent: var(--accent);
+	--color-on-accent: var(--on-accent);
+	--color-soft: var(--soft);
+	--color-good: var(--good);
+	--color-bad: var(--bad);
+	--color-warn: var(--warn);
+	--color-warn-soft: var(--warn-soft);
+	--color-track: var(--track);
+	--color-protein: var(--protein);
+	--color-carb: var(--carb);
+	--color-fat: var(--fat);
+	--color-voice: var(--voice);
+	--color-voice-bg: var(--voice-bg);
+	--color-scan: var(--scan);
+	--color-scan-bg: var(--scan-bg);
+	--color-toast-bg: var(--toast-bg);
+	--color-toast-text: var(--toast-text);
+	--color-scrim: var(--scrim);
+
+	--shadow-card: var(--shadow-card);
+	--shadow-tabbar: var(--shadow-tabbar);
+}
+
+@theme {
+	--font-sans: 'Inter Variable', system-ui, sans-serif;
+	--font-display: 'Bricolage Grotesque Variable', 'Inter Variable', system-ui, sans-serif;
+
+	--radius-menu: 10px;
+	--radius-small: 12px;
+	--radius-input: 14px;
+	--radius-button: 16px;
+	--radius-tile: 18px;
+	--radius-card: 22px;
+	--radius-sheet: 26px;
+
+	--shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.2);
+	--shadow-toast: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+	--ease-pop: cubic-bezier(0.2, 0.9, 0.3, 1.25);
+	--breakpoint-desk: 760px;
+}
