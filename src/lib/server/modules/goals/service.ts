@@ -14,7 +14,8 @@ import {
 	SEDENTARY_FACTOR,
 	targetsAllowed
 } from '../../../shared/goals.ts';
-import type { Profile, ProfileInput, TargetVersion } from '../../../shared/goal-types.ts';
+import * as v from 'valibot';
+import { ProfileInput, type Profile, type TargetVersion } from '../../../shared/goal-types.ts';
 import { goalVersions, profiles } from './schema.ts';
 
 export class GoalError extends Error {
@@ -78,7 +79,9 @@ export function createGoals(db: Database) {
 			return row ? toProfile(row) : null;
 		},
 
-		async saveProfile(userId: string, input: ProfileInput): Promise<Profile> {
+		/** Validates and saves the profile (missing optional fields take their defaults). */
+		async saveProfile(userId: string, raw: v.InferInput<typeof ProfileInput>): Promise<Profile> {
+			const input = v.parse(ProfileInput, raw);
 			const values = { ...input, updatedAt: new Date() };
 			const [row] = await withUser(db, userId, (tx) =>
 				tx
