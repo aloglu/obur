@@ -47,17 +47,27 @@ Findings:
 - Remaining errors are mostly brand and product words: "Untad" → "un tatlı", "Wasa" → "basa", "Delly" → "deli", "peynir" → "painter", "körpe ıspanak" → "kürtpil spanak", "bar" → "var". **Mixed-language sentences are the weakest category** (50–60% at best).
 - Shortening Whisper's 30-second window (`chunk_length`) had no effect: CTranslate2 still processes a full 30 s window for a 3 s clip, so this cost is fixed on this engine.
 
-**Target server (i3-1115G4, 4 threads; other services idle-to-light):**
+**Target server (i3-1115G4, 4 threads, owner's other services running at light load).** Latency is per clip on the server only (decode plus transcription, model warm); phone upload is measured separately in the probe.
 
-| Configuration | Clip fully right | p50 | p95 | Peak memory |
-| --- | --- | --- | --- | --- |
-| small, auto language | 56% | 4.1 s | 4.5 s | 1.5 GB |
-| small, forced Turkish | 40% | 2.4 s | 8.5 s | 1.3 GB |
-| large-v3-turbo, auto language | 71% | 19.1 s | 21.3 s | 2.7 GB |
-| large-v3-turbo, forced Turkish (no prompt) | see raw results | ≈ 9.9 s mean | — | 2.2 GB |
-| large-v3-turbo, forced Turkish + prompt; the same with 2 concurrent requests; small + prompt | **Running** | | | |
+| Configuration | Numbers right | Clip fully right | Turkish / English / mixed | p50 | p95 | Worst | Peak memory |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| small, auto language | 90% | 56% | 64% / 69% / 20% | 4.1 s | 4.5 s | 37.6 s | 1.5 GB |
+| small, auto language, brand prompt | 96% | 77% | 80% / 92% / 50% | 3.8 s | 4.4 s | 35.1 s | 1.3 GB |
+| **small, Turkish-or-English detection, brand prompt, no fallback** | **98%** | **77%** | **80% / 92% / 50%** | **4.3 s** | **4.6 s** | **4.8 s** | **0.8 GB** |
+| small, forced Turkish, brand prompt | 94% | 60% | 80% / 31% / 50% | 2.6 s | 7.7 s | 13.7 s | 1.4 GB |
+| large-v3-turbo, auto language | 98% | 71% | 80% / 69% / 50% | 19.1 s | 21.3 s | 27.1 s | 2.7 GB |
+| large-v3-turbo, forced Turkish | 92% | 67% | 80% / 54% / 50% | 9.6 s | 12.9 s | 13.7 s | 2.2 GB |
+| large-v3-turbo, forced Turkish, brand prompt | 100% | 79% | 80% / 100% / 50% | 9.7 s | 10.0 s | 12.4 s | 2.1 GB |
+| the same, two requests at once | 100% | 79% | 80% / 100% / 50% | 19.6 s | 24.3 s | 25.3 s | 2.3 GB |
 
-**Interim conclusion: the 5-second voice target (p95, warm) is not met on the target server with any accurate configuration measured so far.** large-v3-turbo is about 8× slower there than on the desktop. The small model is close to the target in time but gets roughly half the clips fully right. Quality on the server is slightly lower than on the desktop for the same model (71% vs 75%), consistent with int8 kernels differing by CPU. End-to-end phone timings (upload included) are not measured yet.
+Findings on the server:
+
+- **large-v3-turbo cannot meet the 5 s target on this CPU.** It takes about 8× longer than on the desktop. Its best setting is still about 10 s per clip, and two people speaking at once double each wait.
+- **The small model with a brand prompt nearly matches turbo's accuracy here (77% vs 79% of clips fully right) at under half the time.** The gap is in mixed sentences and in brand words.
+- **Unrestricted language detection is a real failure mode.** On a mixed English/Turkish clip the small model detected Persian, produced Arabic-script nonsense and spent 35 s on temperature-fallback retries. Restricting detection to Turkish or English and decoding once at temperature 0 removed the outlier: worst case 4.8 s, accuracy unchanged.
+- Quality on the server is slightly lower than on the desktop for some configurations, consistent with int8 kernels differing by CPU. Evaluate on the target hardware.
+
+**Conclusion so far.** The provisional voice target (p95 at most 5 s after the clip ends) is met **only** by the small model, and only on the server side, with about 0.4 s to spare for upload. About three in four clips need no correction, with mixed-language sentences the weakest. End-to-end phone timings are pending (probe).
 
 ## Label OCR (PaddleOCR via ONNX Runtime)
 
@@ -85,11 +95,20 @@ Findings:
 - Higher resolution did not help consistently; 1280–2000 px is enough.
 - **Serious OCR failure mode: `%` read as `9`**, turning "%28" into "9628" on a curved pouch. Combined with row merging on curved packs, this produces confident wrong numbers. The design's plausibility checks (mass and energy consistency, %RI column detection) are required, not optional.
 - Most "extracted wrong" results come from the naive reader, not the OCR: on the running-text turkey label every value was read correctly, but the reader mistook a best-before date for energy. The real parser must handle running text, multiple bases and distractor numbers.
-- Server timings: **Pending** (they run after the speech benchmark so the two do not distort each other).
+- **Server timings (i3-1115G4, 4 threads), same accuracy as the desktop:**
+
+  | Server | p50 per image | Worst | Peak memory |
+  | --- | --- | --- | --- |
+  | A (PP-OCRv5 Latin) at 1280 / 2000 px | 2.0 / 4.3 s | 3.3 / 5.6 s | 0.4 / 0.7 GB |
+  | **B (PP-OCRv6 small) at 1280 px** | **1.9 s** | **3.3 s** | **0.5 GB** |
+  | B at 2000 px | 2.5 s | 4.3 s | 0.7 GB |
+  | C (PP-OCRv6 tiny) at 1280 / 2000 px | 0.7 / 1.0 s | 1.1 / 1.5 s | 0.3 / 0.6 GB |
+
+  PP-OCRv6 small at 1280 px fits the provisional 10 s scan target with wide margin before upload time.
 
 **Runtime notes.**
 - RapidOCR's default model host (`modelscope.cn`) did not resolve on the owner's network. Models were fetched from PaddlePaddle's Hugging Face repositories instead; pin and vendor model files during setup.
-- **ONNX Runtime 1.31 includes a telemetry component** that logged an attempt to persist a device ID. The production OCR worker must disable it and run without outbound network access, consistent with the no-telemetry rule. Not yet verified which mechanism is sufficient.
+- **ONNX Runtime 1.31 includes a telemetry component** that logged an attempt to persist a device ID. The production OCR worker must disable it and run without outbound network access, consistent with the no-telemetry rule. No outbound connections from the OCR process were observed on the server during the full benchmark (sampled every 0.5 s), which is evidence, not proof; the network lockdown is still required.
 
 ## Phone, HTTPS and passkeys (iPhone 13, iOS 27.0.1)
 

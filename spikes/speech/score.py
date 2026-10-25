@@ -161,7 +161,7 @@ def main() -> None:
               f"| {pct(s['content_exact'] for s in scored)} | {pct(s['content_fuzzy'] for s in scored)} "
               f"| {pct(s['clip_exact'] for s in scored)} / {pct(s['clip_fuzzy'] for s in scored)} "
               f"| {pct(by_lang['tr'])} / {pct(by_lang['en'])} / {pct(by_lang['mix'])} "
-              f"| {pct(detect) if meta['language'] == 'auto' else 'forced'} "
+              f"| {pct(detect) if meta['language'] == 'auto' or ',' in meta['language'] else 'forced'} "
               f"| {quantile(times, .5):.2f} | {quantile(times, .95):.2f} | {max(times):.2f} "
               f"| {meta['load_s']} | {meta['peak_rss_mb']} |")
         if errors_dir:
