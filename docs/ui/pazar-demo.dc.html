@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>obur · Pazar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Inter:wght@400..700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="{{S.root}};">
+<sc-if value="{{D}}" hint-placeholder-val="{{ true }}">
+<nav aria-label="Main" style="{{S.side}};">
+<div style="font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 800; font-size: 30px; letter-spacing: -0.02em; padding: 8px 12px 24px; color: {{t.accent}}">obur</div>
+<button type="button" onClick="{{goToday}}" style="{{S.navToday}};"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"></rect><path d="M3 9.5h18M8 2.5v4M16 2.5v4"></path></svg>Today</button>
+<button type="button" onClick="{{goLog}}" style="{{S.navLog}};"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg>Log</button>
+<button type="button" onClick="{{goProgress}}" style="{{S.navProgress}};"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 17l6-6 4 4 8-8"></path><path d="M15 7h6v6"></path></svg>Progress</button>
+<div style="flex: 1"></div>
+<button type="button" onClick="{{goProfile}}" style="{{S.navProfile}};"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"></path></svg>Profile</button>
+<button type="button" onClick="{{goSettings}}" style="{{S.navSettings}};"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>Settings</button>
+</nav>
+</sc-if>
+<div style="{{S.main}};">
+<header style="{{S.header}};">
+<sc-if value="{{showDayNav}}" hint-placeholder-val="{{ true }}">
+<button type="button" aria-label="Previous day" onClick="{{prevDay}}" style="{{S.iconBtn}};"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+</sc-if>
+<div style="flex: 1; min-width: 0; text-align: {{S.headAlign}}">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 750; font-size: 24px; letter-spacing: -0.01em; line-height: 1.1">{{headTitle}}</h1>
+<div style="font-size: 13px; color: {{t.muted}}; margin-top: 2px">{{headSub}}</div>
+</div>
+<sc-if value="{{showDayNav}}" hint-placeholder-val="{{ true }}">
+<button type="button" aria-label="Next day" disabled="{{noNext}}" onClick="{{nextDay}}" style="{{S.nextBtn}};"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 6l6 6-6 6"></path></svg></button>
+</sc-if>
+</header>
+<div style="{{S.scroll}};">
+<div style="{{S.grid}};">
+<sc-if value="{{showColA}}" hint-placeholder-val="{{ true }}">
+<div style="{{S.colA}};">
+<section aria-label="Budget" style="{{S.card}}; display: flex; gap: {{ringGap}}; align-items: center">
+<div style="position: relative; width: {{ringPx}}; height: {{ringPx}}; flex: none">
+<svg width="{{ringSize}}" height="{{ringSize}}" viewBox="0 0 160 160" aria-hidden="true" style="display:block;transform:rotate(-90deg)"><circle cx="80" cy="80" r="70" style="fill:none;stroke:{{t.track}};stroke-width:14"></circle><circle cx="80" cy="80" r="70" style="fill:none;stroke:{{ring.color}};stroke-width:14;stroke-linecap:round;stroke-dasharray:{{ring.dash}}"></circle></svg>
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center">
+<div style="font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 800; font-size: {{remSize}}; letter-spacing: -0.03em; line-height: 1; color: {{remColor}}; font-variant-numeric: tabular-nums">{{remNum}}</div>
+<div style="font-size: 12.5px; color: {{t.muted}}; margin-top: 4px">{{remLabel}}</div>
+</div>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 15px"><span style="color: {{t.muted}}">Eaten</span><strong style="font-variant-numeric: tabular-nums; white-space: nowrap">{{eaten}}</strong></div>
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 15px"><span style="color: {{t.muted}}">Budget</span><strong style="font-variant-numeric: tabular-nums; white-space: nowrap">{{budget}}</strong></div>
+<div style="font-size: 12px; line-height: 1.5; color: {{t.muted}}; background: {{t.surface2}}; border-radius: 12px; padding: 7px 10px; font-variant-numeric: tabular-nums">2,450 base<br>+ 250 activity<br>− 700 deficit</div>
+</div>
+</section>
+<section aria-label="Nutrients" style="{{S.card}};">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{macros}}" as="m" hint-placeholder-count="3">
+<div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px"><span style="font-weight: 600">{{m.label}}</span><span style="font-variant-numeric: tabular-nums"><strong>{{m.val}}</strong> <span style="color: {{t.muted}}">{{m.target}}</span></span></div>
+<div style="height: 8px; border-radius: 99px; background: {{t.track}}; margin-top: 6px; overflow: hidden"><div style="height: 100%; width: {{m.w}}; border-radius: 99px; background: {{m.color}}"></div></div>
+<sc-if value="{{m.unk}}" hint-placeholder-val="{{ false }}"><div style="font-size: 12px; color: {{t.muted}}; margin-top: 4px">{{m.unkText}}</div></sc-if>
+</div>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+<sc-for list="{{extras}}" as="x" hint-placeholder-count="4">
+<div style="background: {{t.surface2}}; border-radius: 12px; padding: 8px 10px; min-width: 0">
+<div style="font-size: 12px; color: {{t.muted}}">{{x.label}}</div>
+<div style="font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums">{{x.val}}</div>
+<sc-if value="{{x.unk}}" hint-placeholder-val="{{ false }}"><div style="font-size: 11.5px; color: {{t.muted}}">{{x.unkText}}</div></sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<section aria-label="Water" style="{{S.card}}; padding: 14px">
+<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: {{t.muted}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"></path></svg>Water</div>
+<div style="font-size: 20px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums">{{water.text}}</div>
+<div style="font-size: 12px; color: {{t.muted}}">{{water.of}}</div>
+<div style="display: flex; gap: 8px; margin-top: 10px">
+<button type="button" onClick="{{add250}}" style="{{S.smallBtn}};">+250 ml</button>
+<button type="button" onClick="{{add500}}" style="{{S.smallBtn}};">+500 ml</button>
+</div>
+</section>
+<section aria-label="Weight" style="{{S.card}}; padding: 14px">
+<label for="wt-a" style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: {{t.muted}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="17" rx="4"></rect><path d="M8 10a4 4 0 0 1 8 0M12 10l1.5-2"></path></svg>Weight (kg)</label>
+<input id="wt-a" type="text" inputmode="decimal" value="{{weight}}" onChange="{{setWeight}}" style="{{S.input}}; margin-top: 6px; font-size: 18px; font-weight: 700">
+<button type="button" onClick="{{saveWeight}}" style="{{S.smallBtn}}; margin-top: 8px; width: 100%">Save weight</button>
+</section>
+</div>
+<sc-for list="{{meals}}" as="m" hint-placeholder-count="4">
+<section aria-label="{{m.name}}" style="{{S.card}}; padding: 8px 8px 10px">
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 10px">
+<h2 style="margin: 0; flex: 1; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 700; font-size: 19px">{{m.name}}</h2>
+<span style="font-size: 14px; color: {{t.muted}}; font-variant-numeric: tabular-nums">{{m.kcal}} kcal</span>
+<button type="button" aria-label="{{m.addLabel}}" onClick="{{m.add}}" style="{{S.addBtn}};"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round"><path d="M12 5v14M5 12h14"></path></svg></button>
+</div>
+<sc-for list="{{m.entries}}" as="e" hint-placeholder-count="2">
+<button type="button" onClick="{{e.open}}" style="{{e.row}};">
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 15px; font-weight: 550; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{e.name}}</span>
+<span style="font-size: 13px; color: {{t.muted}}; display: flex; flex-wrap: wrap; gap: 6px; align-items: center">{{e.qty}}
+<sc-if value="{{e.pending}}" hint-placeholder-val="{{ false }}"><span style="{{S.badgeWarn}};"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Waiting to sync</span></sc-if>
+<sc-if value="{{e.quick}}" hint-placeholder-val="{{ false }}"><span style="{{S.badge}};">Macros unknown</span></sc-if>
+</span>
+</span>
+<span style="font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap">{{e.kcal}}</span>
+</button>
+</sc-for>
+<sc-if value="{{m.empty}}" hint-placeholder-val="{{ false }}"><p style="margin: 2px 10px 6px; font-size: 14px; color: {{t.muted}}">Nothing logged yet.</p></sc-if>
+</section>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{showColB}}" hint-placeholder-val="{{ true }}">
+<div style="{{S.colB}};">
+<section aria-label="Log" style="{{S.panel}};">
+<sc-if value="{{D}}" hint-placeholder-val="{{ true }}"><h2 style="margin: 0 0 12px; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 750; font-size: 22px">Log</h2></sc-if>
+<sc-if value="{{hasPreset}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 4px 4px 4px 14px; border-radius: 999px; background: {{t.soft}}; color: {{t.accent}}">
+<span style="flex: 1; font-size: 14px; font-weight: 700">Adding to {{presetText}}</span>
+<button type="button" aria-label="Don't preset the meal" onClick="{{clearPreset}}" style="{{S.iconBtn}}; width: 40px; height: 40px"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+</sc-if>
+<label for="q-a" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search foods</label>
+<div style="display: flex; gap: 8px; align-items: center">
+<div style="position: relative; flex: 1; min-width: 0">
+<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:14px;top:14px;fill:none;stroke:{{t.muted}};stroke-width:2.2;stroke-linecap:round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<input id="q-a" type="search" autocomplete="off" placeholder="Type a food, e.g. sutas" value="{{q}}" onChange="{{setQ}}" onFocus="{{focusQ}}" style="{{S.input}}; padding-left: 44px">
+</div>
+<sc-if value="{{searching}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{cancelSearch}}" style="{{S.textBtn}};">Cancel</button></sc-if>
+</div>
+<sc-if value="{{showTiles}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px">
+<button type="button" onClick="{{openVoice}}" style="{{S.tileBig}};"><span style="{{S.tileIconVoice}};"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></span><span style="font-size: 16px; font-weight: 700">Speak</span></button>
+<button type="button" onClick="{{openScan}}" style="{{S.tileBig}};"><span style="{{S.tileIconScan}};"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"></path><path d="M8 9h8M8 12h8M8 15h5"></path></svg></span><span style="font-size: 16px; font-weight: 700">Scan a label</span></button>
+</div>
+<button type="button" onClick="{{openQuick}}" style="{{S.ghostBtn}}; margin-top: 10px; width: 100%"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M13 3L5 14h6l-1 7 8-11h-6l1-7z"></path></svg>Quick add calories</button>
+</sc-if>
+<sc-if value="{{showSuggest}}" hint-placeholder-val="{{ false }}">
+<h3 style="{{S.listHead}};">Suggestions</h3>
+<sc-for list="{{suggest}}" as="f" hint-placeholder-count="5">
+<button type="button" onClick="{{f.pick}}" style="{{S.foodRow}};"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 550; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{f.name}}</span><span style="font-size: 13px; color: {{t.muted}}">{{f.sub}}</span></span></button>
+</sc-for>
+</sc-if>
+<sc-if value="{{hasQ}}" hint-placeholder-val="{{ false }}">
+<h3 style="{{S.listHead}};">Results</h3>
+<sc-for list="{{results}}" as="f" hint-placeholder-count="2">
+<button type="button" onClick="{{f.pick}}" style="{{S.foodRow}};"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 550; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{f.name}}</span><span style="font-size: 13px; color: {{t.muted}}">{{f.sub}}</span></span></button>
+</sc-for>
+<sc-if value="{{noResults}}" hint-placeholder-val="{{ false }}"><p style="font-size: 14px; color: {{t.muted}}; margin: 8px 4px">No foods match. Try scanning its label, or quick add the calories.</p></sc-if>
+</sc-if>
+</section>
+</div>
+</sc-if>
+<sc-if value="{{showProgress}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 12px; grid-column: 1 / -1; max-width: 640px">
+<section aria-label="Calendar" style="{{S.card}}; padding: 12px 10px 16px">
+<div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px">
+<button type="button" aria-label="Previous month" disabled="{{cal.prevDisabled}}" onClick="{{cal.prev}}" style="{{cal.prevStyle}};"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+<h2 aria-live="polite" style="margin: 0; flex: 1; text-align: center; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 700; font-size: 19px">{{cal.title}}</h2>
+<button type="button" aria-label="Next month" disabled="{{cal.nextDisabled}}" onClick="{{cal.next}}" style="{{cal.nextStyle}};"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 6l6 6-6 6"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px">
+<sc-for list="{{cal.heads}}" as="h" hint-placeholder-count="7"><div aria-hidden="true" style="text-align: center; font-size: 12px; font-weight: 650; color: {{t.muted}}; padding: 4px 0">{{h}}</div></sc-for>
+<sc-for list="{{cal.cells}}" as="c" hint-placeholder-count="35">
+<button type="button" aria-label="{{c.label}}" disabled="{{c.disabled}}" onClick="{{c.open}}" style="{{c.style}};">
+<span style="position: relative; display: block; width: {{cal.ring}}; height: {{cal.ring}}">
+<svg width="100%" height="100%" viewBox="0 0 44 44" aria-hidden="true" style="display:block;transform:rotate(-90deg)"><circle cx="22" cy="22" r="18" style="fill:none;stroke:{{c.track}};stroke-width:5"></circle><circle cx="22" cy="22" r="18" style="fill:none;stroke:{{c.color}};stroke-width:5;stroke-linecap:round;stroke-dasharray:{{c.dash}}"></circle></svg>
+<span style="{{c.numStyle}};">{{c.num}}</span>
+</span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 12px 8px 0; font-size: 13px; color: {{t.muted}}">
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 99px; border: 3px solid {{t.good}}; border-right-color: {{t.track}}; box-sizing: border-box"></span>Under budget</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 99px; border: 3px solid {{t.bad}}; box-sizing: border-box"></span>Over budget (full ring)</span>
+<span style="flex: 1; min-width: 150px; text-align: right">{{cal.summary}}</span>
+</div>
+</section>
+<section aria-label="Weight and trends" style="{{S.card}};">
+<h2 style="margin: 0 0 6px; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 700; font-size: 19px">Weight and trends</h2>
+<p style="margin: 0; color: {{t.muted}}; font-size: 15px">Weight chart, weekly averages and per-kilo achievements would go here. Not in this demo.</p>
+</section>
+</div>
+</sc-if>
+<sc-if value="{{showProfile}}" hint-placeholder-val="{{ false }}">
+<section aria-label="Profile" style="{{S.card}}; grid-column: 1 / -1; max-width: 640px">
+<h2 style="margin: 0 0 6px; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 700; font-size: 19px">Profile and goals</h2>
+<p style="margin: 0; color: {{t.muted}}; font-size: 15px">Height, weight goal, daily budget and deficit. This screen isn't part of the demo.</p>
+</section>
+</sc-if>
+<sc-if value="{{showMore}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 12px; grid-column: 1 / -1; max-width: 640px">
+<section aria-label="Appearance" style="{{S.card}};">
+<h2 style="margin: 0 0 12px; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 700; font-size: 19px">Appearance</h2>
+<div role="group" aria-label="Theme" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: {{t.surface2}}">
+<sc-for list="{{themeOpts}}" as="o" hint-placeholder-count="3"><button type="button" aria-pressed="{{o.pressed}}" onClick="{{o.pick}}" style="{{o.style}};">{{o.label}}</button></sc-for>
+</div>
+<p style="margin: 10px 2px 0; font-size: 13px; color: {{t.muted}}">System follows your phone's light or dark setting.</p>
+</section>
+<section aria-label="Account and settings" style="{{S.card}}; padding: 6px 8px">
+<sc-for list="{{moreRows}}" as="r" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 6px 10px">
+<span style="flex: 1; min-width: 0"><span style="display: block; font-size: 15.5px; font-weight: 600">{{r.label}}</span><span style="display: block; font-size: 13px; color: {{t.muted}}">{{r.sub}}</span></span>
+<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:{{t.muted}};stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+</sc-for>
+</section>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+<sc-if value="{{P}}" hint-placeholder-val="{{ false }}">
+<nav aria-label="Main" style="{{S.bottom}};">
+<button type="button" onClick="{{goToday}}" style="{{S.tabToday}};"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"></rect><path d="M3 9.5h18M8 2.5v4M16 2.5v4"></path></svg>Today</button>
+<button type="button" onClick="{{goLog}}" style="{{S.tabLog}};"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round"><path d="M12 5v14M5 12h14"></path></svg>Log</button>
+<button type="button" onClick="{{goProgress}}" style="{{S.tabProgress}};"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M3 17l6-6 4 4 8-8"></path><path d="M15 7h6v6"></path></svg>Progress</button>
+<button type="button" onClick="{{goMore}}" style="{{S.tabMore}};"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>More</button>
+</nav>
+</sc-if>
+<sc-if value="{{anyForm}}" hint-placeholder-val="{{ false }}">
+<button type="button" aria-label="Close" onClick="{{closeAll}}" style="{{S.scrim}};"></button>
+<div role="dialog" aria-label="{{formTitle}}" style="{{S.sheet}};">
+<div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px">
+<h2 style="margin: 0; flex: 1; min-width: 0; font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 750; font-size: 21px; line-height: 1.2; overflow-wrap: anywhere">{{formTitle}}</h2>
+<button type="button" aria-label="Close" onClick="{{closeAll}}" style="{{S.iconBtn}}; margin: -6px -6px 0 0"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<sc-if value="{{showPick}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 13px; color: {{t.muted}}; margin: -8px 0 14px">{{pf.basis}}</div>
+<label for="amt-a" style="{{S.label}};">Amount</label>
+<input id="amt-a" type="text" inputmode="decimal" value="{{pf.amount}}" onChange="{{pf.setAmount}}" style="{{S.input}}; font-size: 20px; font-weight: 700">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px"><sc-for list="{{pf.units}}" as="c" hint-placeholder-count="2"><button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="{{c.style}};">{{c.label}}</button></sc-for></div>
+<div style="{{S.label}}; margin-top: 16px">Day</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{pf.days}}" as="c" hint-placeholder-count="2"><button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="{{c.style}};">{{c.label}}</button></sc-for></div>
+<div style="{{S.label}}; margin-top: 16px">Meal</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{pf.meals}}" as="c" hint-placeholder-count="4"><button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="{{c.style}};">{{c.label}}</button></sc-for></div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 18px; padding: 12px 14px; border-radius: 14px; background: {{t.surface2}}"><span style="font-size: 13px; color: {{t.muted}}">{{pf.macros}}</span><strong style="font-size: 20px; font-variant-numeric: tabular-nums; white-space: nowrap">{{pf.kcal}}</strong></div>
+<button type="button" disabled="{{pf.disabled}}" onClick="{{pf.save}}" style="{{S.primary}}; margin-top: 14px">Save</button>
+</sc-if>
+<sc-if value="{{showEdit}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 13px; color: {{t.muted}}; margin: -8px 0 14px">{{ef.where}}</div>
+<label for="eamt-a" style="{{S.label}};">{{ef.amountLabel}}</label>
+<input id="eamt-a" type="text" inputmode="decimal" value="{{ef.amount}}" onChange="{{ef.setAmount}}" style="{{S.input}}; font-size: 20px; font-weight: 700">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px"><sc-for list="{{ef.units}}" as="c" hint-placeholder-count="1"><button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="{{c.style}};">{{c.label}}</button></sc-for></div>
+<button type="button" disabled="{{ef.disabled}}" onClick="{{ef.save}}" style="{{S.primary}}; margin-top: 16px">Save changes</button>
+<div style="display: flex; gap: 10px; margin-top: 10px">
+<button type="button" aria-expanded="{{ef.moveExpanded}}" onClick="{{ef.toggleMove}}" style="{{S.ghostBtn}}; flex: 1"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 12h14M14 7l5 5-5 5"></path></svg>Move to…</button>
+<button type="button" onClick="{{ef.del}}" style="{{S.ghostBtn}}; flex: 1"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"></path></svg>Delete</button>
+</div>
+<sc-if value="{{ef.moveOpen}}" hint-placeholder-val="{{ false }}">
+<div role="group" aria-label="Move to meal" style="margin-top: 10px; border-radius: 14px; background: {{t.surface2}}; padding: 6px">
+<sc-for list="{{ef.moves}}" as="mv" hint-placeholder-count="4"><button type="button" disabled="{{mv.cur}}" onClick="{{mv.pick}}" style="{{mv.style}};">{{mv.label}}</button></sc-for>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{showQuick}}" hint-placeholder-val="{{ false }}">
+<label for="qk-a" style="{{S.label}};">Calories (kcal)</label>
+<input id="qk-a" type="text" inputmode="decimal" value="{{qf.kcal}}" onChange="{{qf.setKcal}}" style="{{S.input}}; font-size: 20px; font-weight: 700">
+<label for="qd-a" style="{{S.label}}; margin-top: 14px">Description (optional)</label>
+<input id="qd-a" type="text" placeholder="Snack" value="{{qf.desc}}" onChange="{{qf.setDesc}}" style="{{S.input}};">
+<div style="{{S.label}}; margin-top: 16px">Day</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{qf.days}}" as="c" hint-placeholder-count="2"><button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="{{c.style}};">{{c.label}}</button></sc-for></div>
+<div style="{{S.label}}; margin-top: 16px">Meal</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{qf.meals}}" as="c" hint-placeholder-count="4"><button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="{{c.style}};">{{c.label}}</button></sc-for></div>
+<p style="font-size: 13px; color: {{t.muted}}; margin: 14px 0 0">Protein, carbs, fat and the rest stay unknown for this entry.</p>
+<button type="button" disabled="{{qf.disabled}}" onClick="{{qf.save}}" style="{{S.primary}}; margin-top: 14px">Save</button>
+</sc-if>
+<sc-if value="{{showVoice}}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{vf.listening}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 0 4px">
+<span style="{{vf.micStyle}};"><svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></span>
+<p style="margin: 18px 0 4px; font-size: 17px; font-weight: 700">Listening… say what you ate</p>
+<p style="margin: 0; font-size: 14px; color: {{t.muted}}">English, Turkish or both, e.g. “Öğlen 200 gram tavuk göğsü ve bir kutu Coca-Cola Zero”</p>
+</div>
+<button type="button" onClick="{{vf.stop}}" style="{{S.primary}}; margin-top: 20px">Done</button>
+</sc-if>
+<sc-if value="{{vf.heard}}" hint-placeholder-val="{{ false }}">
+<label for="vt-a" style="{{S.label}};">I heard</label>
+<input id="vt-a" type="text" value="{{vf.text}}" onChange="{{vf.setText}}" style="{{S.input}};">
+<div style="{{S.label}}; margin-top: 16px">{{vf.countText}}</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{vf.items}}" as="it" hint-placeholder-count="2">
+<div style="border-radius: 16px; background: {{t.surface2}}; padding: 10px 10px 10px 14px">
+<div style="display: flex; align-items: flex-start; gap: 8px">
+<span style="flex: 1; min-width: 0; font-size: 15px; font-weight: 600; line-height: 1.3">{{it.name}}</span>
+<button type="button" aria-label="{{it.removeLabel}}" onClick="{{it.remove}}" style="{{S.iconBtn}}; width: 36px; height: 36px; margin: -6px -4px 0 0"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 6px">
+<label for="{{it.inputId}}" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{it.amountLabel}}</label>
+<input id="{{it.inputId}}" type="text" inputmode="decimal" value="{{it.amount}}" onChange="{{it.setAmount}}" style="{{S.input}}; width: 96px; min-height: 44px; background: {{t.surface}}; font-weight: 700">
+<span style="font-size: 14px; color: {{t.muted}}">{{it.unit}}</span>
+<span style="flex: 1"></span>
+<strong style="font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap">{{it.kcal}}</strong>
+</div>
+<div style="font-size: 12.5px; color: {{t.muted}}; margin-top: 6px">{{it.where}}</div>
+</div>
+</sc-for>
+</div>
+<button type="button" disabled="{{vf.disabled}}" onClick="{{vf.logAll}}" style="{{S.primary}}; margin-top: 16px">{{vf.logLabel}}</button>
+<button type="button" onClick="{{vf.again}}" style="{{S.ghostBtn}}; margin-top: 10px; width: 100%">Try again</button>
+</sc-if>
+</sc-if>
+<sc-if value="{{showScan}}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{sf.camera}}" hint-placeholder-val="{{ true }}">
+<div style="position: relative; width: 100%; height: {{scanH}}; border-radius: 22px; background: #141210; overflow: hidden">
+<div style="position: absolute; inset: 14% 12%; border-radius: 14px; box-shadow: 0 0 0 999px rgba(0,0,0,0.35)"></div>
+<div style="position: absolute; left: 12%; top: 14%; width: 28px; height: 28px; border-left: 3px solid #FFFFFF; border-top: 3px solid #FFFFFF; border-top-left-radius: 14px"></div>
+<div style="position: absolute; right: 12%; top: 14%; width: 28px; height: 28px; border-right: 3px solid #FFFFFF; border-top: 3px solid #FFFFFF; border-top-right-radius: 14px"></div>
+<div style="position: absolute; left: 12%; bottom: 14%; width: 28px; height: 28px; border-left: 3px solid #FFFFFF; border-bottom: 3px solid #FFFFFF; border-bottom-left-radius: 14px"></div>
+<div style="position: absolute; right: 12%; bottom: 14%; width: 28px; height: 28px; border-right: 3px solid #FFFFFF; border-bottom: 3px solid #FFFFFF; border-bottom-right-radius: 14px"></div>
+<p style="position: absolute; left: 0; right: 0; bottom: 16px; margin: 0; text-align: center; color: #FFFFFF; font-size: 14px; font-weight: 600">Fill the frame with the nutrition table</p>
+</div>
+<button type="button" onClick="{{sf.shoot}}" style="{{S.primary}}; margin-top: 14px">{{sf.shootLabel}}</button>
+</sc-if>
+<sc-if value="{{sf.reading}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 40px 0; text-align: center">
+<p style="margin: 0; font-size: 17px; font-weight: 700">Reading the nutrition table…</p>
+<p style="margin: 6px 0 0; font-size: 14px; color: {{t.muted}}">This runs on your own server.</p>
+</div>
+</sc-if>
+<sc-if value="{{sf.result}}" hint-placeholder-val="{{ false }}">
+<label for="sn-a" style="{{S.label}};">Product name (type it)</label>
+<input id="sn-a" type="text" placeholder="e.g. Eti Burçak Bisküvi" value="{{sf.name}}" onChange="{{sf.setName}}" style="{{S.input}};">
+<div style="{{S.label}}; margin-top: 14px">Values read from the label</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px"><sc-for list="{{sf.bases}}" as="c" hint-placeholder-count="3"><button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="{{c.style}};">{{c.label}}</button></sc-for></div>
+<div style="border-radius: 16px; background: {{t.surface2}}; padding: 4px 12px">
+<sc-for list="{{sf.rows}}" as="r" hint-placeholder-count="8">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 48px; border-bottom: 1px solid {{t.line}}">
+<label for="{{r.id}}" style="flex: 1; font-size: 14.5px">{{r.label}}</label>
+<input id="{{r.id}}" type="text" inputmode="decimal" placeholder="unknown" value="{{r.value}}" onChange="{{r.set}}" style="{{r.style}};">
+<span style="width: 34px; font-size: 13px; color: {{t.muted}}">{{r.unit}}</span>
+</div>
+</sc-for>
+</div>
+<div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{sf.notes}}" as="n" hint-placeholder-count="2"><div style="{{n.style}};">{{n.text}}</div></sc-for>
+</div>
+<button type="button" disabled="{{sf.disabled}}" onClick="{{sf.save}}" style="{{S.primary}}; margin-top: 14px">Save food and choose amount</button>
+<button type="button" onClick="{{sf.retake}}" style="{{S.ghostBtn}}; margin-top: 10px; width: 100%">Retake photo</button>
+</sc-if>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="{{S.toast}};">
+<span style="{{S.toastIcon}};"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span>
+<span style="flex: 1; min-width: 0; font-size: 14.5px; line-height: 1.3"><strong>{{toastText}}</strong> <span style="opacity: 0.8">{{toastSub}}</span></span>
+<sc-if value="{{toastUndo}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{undo}}" style="{{S.toastBtn}};">Undo</button></sc-if>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"scenario":{"editor":"enum","options":["normal","over budget"],"default":"normal"},"layout":{"editor":null,"default":"auto"},"$preview":{"width":1280,"height":860}}'>
+var MEALS=['Breakfast','Lunch','Dinner','Snacks'];
+var NK=['kcal','p','c','f','fib','sug','sat','salt'];
+var BASE=2450,ACT=250,DEF=700;
+function U(one,many,q,d){return {one:one,many:many,q:q,d:d};}
+var FOODS={
+fellas:{name:'Fellas HighPro+ Çikolatalı Kaplamalı Hindistan Cevizli Protein Bar',div:1,basis:'per bar (50 g)',n:{kcal:190,p:15,c:14,f:8,fib:5.5,sug:2.1,sat:4.6,salt:0.3},units:[U('bar (50 g)','bars (50 g)',1,'1'),U('g','g',0.02,'50')]},
+sebze:{name:'Superfresh Pratik Sebze Sote Mix',div:100,basis:'per 100 g',n:{kcal:45,p:2,c:5.8,f:1.4,fib:3.1,sug:3.2,sat:0.2,salt:0.5},units:[U('g','g',1,'225'),U('pack (225 g)','packs (225 g)',225,'1')]},
+vache:{name:'La Vache Qui Rit Light Üçgen Peynir',div:100,basis:'per 100 g',n:{kcal:180,p:13,c:6,f:11,fib:0,sug:6,sat:7.4,salt:2},units:[U('g','g',1,'50'),U('triangle (16.7 g)','triangles (16.7 g)',16.7,'3')]},
+untad:{name:'Untad Premium Light Ekmek',div:1,basis:'per slice · no gram conversion',n:{kcal:45,p:2.5,c:7.2,f:0.6,fib:null,sug:0.5,sat:0.1,salt:0.22},units:[U('slice','slices',1,'2')]},
+hindi:{name:'Migros Hindi Füme Eti',div:100,basis:'per 100 g',n:{kcal:105,p:18,c:2,f:2.6,fib:null,sug:1.2,sat:0.8,salt:2.1},units:[U('g','g',1,'90')]},
+sek:{name:'SEK Kakaolu Protein Süt',div:100,basis:'per 100 ml',n:{kcal:70,p:8,c:6.2,f:1.3,fib:null,sug:5.8,sat:0.8,salt:0.15},units:[U('ml','ml',1,'330'),U('bottle (330 ml)','bottles (330 ml)',330,'1')]},
+cola:{name:'Coca-Cola Zero',div:100,basis:'per 100 ml',n:{kcal:0.3,p:0,c:0,f:0,fib:0,sug:0,sat:0,salt:0.02},units:[U('ml','ml',1,'330'),U('can (330 ml)','cans (330 ml)',330,'1')]},
+tavuk:{name:'Tavuk göğsü, çiğ',div:100,basis:'per 100 g',n:{kcal:120,p:22.5,c:0,f:2.6,fib:0,sug:0,sat:0.7,salt:0.17},units:[U('g','g',1,'200')]},
+ayran:{name:'Sütaş Ayran',div:100,basis:'per 100 ml',n:{kcal:38,p:1.8,c:2.3,f:2.4,fib:0,sug:2.3,sat:1.6,salt:0.4},units:[U('ml','ml',1,'300'),U('bottle (300 ml)','bottles (300 ml)',300,'1')]}
+};
+var ALL=['ayran','fellas','sebze','vache','untad','hindi','sek','cola','tavuk'];
+var SUGGEST=['tavuk','sek','fellas','untad','vache','cola'];
+var WD=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function dayInfo(d){var dt=new Date(2026,9,25+d),w=WD[dt.getDay()],m=MO[dt.getMonth()];return {t:d===0?'Today':(d===-1?'Yesterday':w.slice(0,3)+' '+dt.getDate()+' '+m.slice(0,3)),d:w+', '+dt.getDate()+' '+m};}
+function rnd(n){var x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+var DINNERS=['Kuru fasulye and pilav','Lahmacun and ayran','K\u00f6fte with salad','Mercimek \u00e7orbas\u0131 and pilav','Pizza night','Fish by the sea','\u0130skender','Homemade menemen'];
+var SCANROWS=[['kcal','Energy','kcal','468'],['f','Fat','g','19'],['sat','Saturated fat','g','8,9'],['c','Carbohydrate','g','65'],['sug','Sugars','g','24'],['fib','Fibre','g',''],['p','Protein','g','7,4'],['salt','Salt','g','0,6']];
+function initEntries(over){var e=[
+{id:'b1',food:'untad',qty:3,u:0,meal:'Breakfast',day:0},
+{id:'b2',food:'vache',qty:50,u:0,meal:'Breakfast',day:0},
+{id:'b3',food:'hindi',qty:90,u:0,meal:'Breakfast',day:0},
+{id:'l1',food:'tavuk',qty:200,u:0,meal:'Lunch',day:0},
+{id:'l2',food:'sebze',qty:225,u:0,meal:'Lunch',day:0},
+{id:'l3',food:'cola',qty:1,u:1,meal:'Lunch',day:0},
+{id:'s1',food:'fellas',qty:1,u:0,meal:'Snacks',day:0},
+{id:'s2',food:'sek',qty:330,u:0,meal:'Snacks',day:0,pending:true},
+{id:'s3',kcal:157,desc:'Simit from the bakery',meal:'Snacks',day:0}];
+if(over)e.push({id:'d1',kcal:820,desc:'Mantı at a friend’s',meal:'Dinner',day:0});
+for(var d=-54;d<=-1;d++){if(d!==-1&&rnd(d*7+3)<0.07)continue;var K=Math.round(1450+rnd(d)*820),p='p'+(-d)+'-';e.push({id:p+'b1',food:'untad',qty:2,u:0,meal:'Breakfast',day:d},{id:p+'b2',food:'vache',qty:50,u:0,meal:'Breakfast',day:d},{id:p+'l1',food:'tavuk',qty:150,u:0,meal:'Lunch',day:d},{id:p+'l2',food:'sebze',qty:225,u:0,meal:'Lunch',day:d},{id:p+'s1',food:'fellas',qty:1,u:0,meal:'Snacks',day:d},{id:p+'d1',kcal:Math.max(200,K-651),desc:DINNERS[(-d)%DINNERS.length],meal:'Dinner',day:d});}
+return e;}
+function num(s){var v=parseFloat(String(s==null?'':s).replace(/\s+/g,'').replace(',','.'));return isFinite(v)&&v>0?v:null;}
+function num0(s){var v=parseFloat(String(s==null?'':s).replace(/\s+/g,'').replace(',','.'));return isFinite(v)&&v>=0?v:null;}
+function norm(s){return String(s).toLocaleLowerCase('tr-TR').replace(/i̇/g,'i').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u');}
+function nut(e){var o={},i,k;if(!e.food){for(i=0;i<NK.length;i++)o[NK[i]]=null;o.kcal=e.kcal;return o;}var f=FOODS[e.food],m=e.qty*f.units[e.u].q/f.div;for(i=0;i<NK.length;i++){k=NK[i];o[k]=f.n[k]==null?null:f.n[k]*m;}return o;}
+function g1(v){return v>=10?String(Math.round(v)):String(Math.round(v*10)/10);}
+function kc(v){return Math.round(v).toLocaleString('en-US');}
+function qtyText(qty,u){var q=String(Math.round(qty*100)/100);return q+' '+(qty===1?u.one:u.many);}
+function totals(list){var t={},i,j,k,n;for(j=0;j<NK.length;j++)t[NK[j]]={v:0,unk:0};for(i=0;i<list.length;i++){n=nut(list[i]);for(j=0;j<NK.length;j++){k=NK[j];if(n[k]==null)t[k].unk++;else t[k].v+=n[k];}}return t;}
+function voiceItems(meal,day){return [{food:'tavuk',qty:'200',u:0,meal:meal||'Lunch',day:day},{food:'cola',qty:'1',u:1,meal:meal||'Lunch',day:day}];}
+function scanInit(){var v={};SCANROWS.forEach(function(r){v[r[0]]=r[3];});return {stage:'camera',name:'',basis:'per 100 g',v:v};}
+var THEMES={
+light:{bg:'#F6F3EE',surface:'#FFFFFF',surface2:'#F1EBE3',line:'#E5DDD2',text:'#1E1A16',muted:'#665D53',accent:'#C2410C',onAccent:'#FFFFFF',soft:'#FDF0E7',warn:'#8A4B00',warnSoft:'#FCEFD9',over:'#5847B5',track:'#EFE6DB',protein:'#C2410C',carb:'#9E6510',fat:'#5E7F3F',good:'#2E7D3B',bad:'#C62F3A',voice:'#4F6E33',voiceBg:'#E7EEDD',scan:'#8A5A00',scanBg:'#F8E9CC',navEdge:'rgba(0,0,0,0)',navShadow:'0 8px 30px rgba(60,40,20,0.16)',toastBg:'#2A241F',toastText:'#FFFFFF',scrim:'rgba(30,26,22,0.42)',shadow:'0 1px 2px rgba(60,40,20,0.06), 0 8px 24px rgba(60,40,20,0.08)'},
+dark:{bg:'#161310',surface:'#211D19',surface2:'#2C2722',line:'#3A332C',text:'#F4EEE7',muted:'#B6AB9F',accent:'#FF8F55',onAccent:'#2A1304',soft:'#3D2619',warn:'#F2B65A',warnSoft:'#3A2C14',over:'#ABA1FF',track:'#342D26',protein:'#FF8F55',carb:'#E7B45C',fat:'#9CC77A',good:'#6CCB7A',bad:'#FF6B6B',voice:'#B3D392',voiceBg:'#2A3322',scan:'#EDBE66',scanBg:'#3B2F18',navEdge:'#3A332C',navShadow:'0 8px 30px rgba(0,0,0,0.5)',toastBg:'#F4EEE7',toastText:'#1E1A16',scrim:'rgba(0,0,0,0.6)',shadow:'0 1px 2px rgba(0,0,0,0.5)'}
+};
+function makeS(t,P,rm,fixed){
+var tr=rm?'':'transition: transform 260ms cubic-bezier(.2,.9,.3,1.25), opacity 180ms ease;';
+var btn='font: inherit; color: inherit; border: none; cursor: pointer; ';
+var chip=btn+'min-height: 44px; padding: 0 16px; border-radius: 999px; font-size: 15px; font-weight: 600; ';
+var tab=function(on){return btn+'flex: 1; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11.5px; font-weight: 700; border-radius: 999px; background: '+(on?t.soft:'transparent')+'; color: '+(on?t.accent:t.muted);};
+var side=function(on){return btn+'display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: 14px; font-size: 16px; font-weight: 600; text-align: left; background: '+(on?t.soft:'transparent')+'; color: '+(on?t.accent:t.text);};
+var seg=function(on){return btn+'min-height: 44px; border-radius: 12px; font-size: 15px; font-weight: 650; background: '+(on?t.surface:'transparent')+'; color: '+(on?t.text:t.muted)+'; box-shadow: '+(on?'0 1px 3px rgba(0,0,0,0.12)':'none');};
+return {
+tabItem:tab,sideItem:side,segItem:seg,
+root:'position: relative; display: flex; '+(P?'flex-direction: column; height: '+(fixed?'844px':'100vh')+'; overflow: hidden;':'min-height: 860px;')+' background: '+t.bg+'; color: '+t.text+'; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased',
+side:'flex: none; width: 232px; box-sizing: border-box; position: sticky; top: 0; height: 100vh; align-self: flex-start; overflow-y: auto; padding: 24px 16px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid '+t.line,
+main:'flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0',
+header:'display: flex; align-items: center; gap: 6px; box-sizing: border-box; min-height: 60px; '+(P?'padding: 14px 12px 8px;':'padding: 20px 28px 8px; max-width: 716px; width: calc(100% - 404px);'),
+headAlign:P?'center':'left',
+iconBtn:btn+'flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: transparent',
+textBtn:btn+'flex: none; min-height: 44px; padding: 0 6px; background: transparent; font-size: 15px; font-weight: 650; color: '+t.accent,
+scroll:'flex: 1; min-height: 0; '+(P?'overflow-y: auto; padding: 4px 14px 104px;':'padding: 8px 28px 40px;')+' box-sizing: border-box',
+grid:P?'display: block':'display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; align-items: start; max-width: 1064px',
+colA:'display: flex; flex-direction: column; gap: 12px; min-width: 0',
+colB:P?'display: block':'position: sticky; top: 16px; min-width: 0',
+card:'background: '+t.surface+'; border-radius: 22px; padding: 18px; box-shadow: '+t.shadow+'; box-sizing: border-box; min-width: 0',
+panel:'position: relative; background: '+t.surface+'; border-radius: 22px; padding: 18px; box-shadow: '+t.shadow,
+input:'font: inherit; box-sizing: border-box; width: 100%; min-height: 48px; padding: 0 14px; border-radius: 14px; border: 1.5px solid '+t.line+'; background: '+t.surface2+'; color: '+t.text+'; font-size: 16px',
+label:'display: block; font-size: 13px; font-weight: 650; color: '+t.muted+'; margin-bottom: 6px',
+listHead:'margin: 18px 4px 4px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: '+t.muted,
+foodRow:btn+'width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; min-height: 56px; padding: 8px 10px; border-radius: 14px; background: transparent',
+tileBig:btn+'display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; min-height: 116px; padding: 14px; border-radius: 18px; background: '+t.surface2,
+tileIconVoice:'width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: '+t.voiceBg+'; color: '+t.voice,
+tileIconScan:'width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: '+t.scanBg+'; color: '+t.scan,
+row:btn+'width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; min-height: 56px; padding: 8px 10px; border-radius: 14px; background: transparent',
+rowJust:btn+'width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; min-height: 56px; padding: 8px 10px; border-radius: 14px; background: '+t.soft,
+addBtn:btn+'flex: none; width: 44px; height: 44px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: '+t.soft+'; color: '+t.accent,
+smallBtn:btn+'min-height: 44px; padding: 0 12px; border-radius: 12px; background: '+t.surface2+'; font-size: 14px; font-weight: 650; flex: 1',
+ghostBtn:btn+'min-height: 48px; padding: 0 14px; border-radius: 14px; background: '+t.surface2+'; font-size: 15px; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 8px',
+primary:btn+'width: 100%; min-height: 52px; border-radius: 16px; background: '+t.accent+'; color: '+t.onAccent+'; font-size: 17px; font-weight: 750',
+chip:chip+'background: '+t.surface2+'; color: '+t.text,
+chipOn:chip+'background: '+t.accent+'; color: '+t.onAccent,
+calCell:btn+'display: flex; align-items: center; justify-content: center; min-height: '+(P?'50px':'66px')+'; padding: 2px 0; border-radius: 14px; background: transparent',
+calNum:'position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: '+(P?'12.5px':'14.5px')+'; font-variant-numeric: tabular-nums',
+move:btn+'display: block; width: 100%; text-align: left; min-height: 48px; padding: 0 12px; border-radius: 10px; background: transparent; font-size: 15px; font-weight: 600',
+moveCur:btn+'display: block; width: 100%; text-align: left; min-height: 48px; padding: 0 12px; border-radius: 10px; background: transparent; font-size: 15px; font-weight: 600; color: '+t.muted+'; cursor: default',
+badge:'display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 650; padding: 2px 8px; border-radius: 999px; background: '+t.surface2+'; color: '+t.muted,
+badgeWarn:'display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 650; padding: 2px 8px; border-radius: 999px; background: '+t.warnSoft+'; color: '+t.warn,
+noteWarn:'font-size: 13px; line-height: 1.4; padding: 8px 12px; border-radius: 12px; background: '+t.warnSoft+'; color: '+t.warn,
+noteOk:'font-size: 13px; line-height: 1.4; padding: 8px 12px; border-radius: 12px; background: '+t.surface2+'; color: '+t.muted,
+scanInput:'font: inherit; box-sizing: border-box; width: 90px; min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1.5px solid '+t.line+'; background: '+t.surface+'; color: '+t.text+'; font-size: 15px; font-weight: 650; text-align: right',
+scanInputWarn:'font: inherit; box-sizing: border-box; width: 90px; min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1.5px solid '+t.warn+'; background: '+t.warnSoft+'; color: '+t.text+'; font-size: 15px; font-weight: 650; text-align: right',
+bottom:'position: absolute; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 4px; padding: 6px; border-radius: 999px; background: '+t.surface+'; border: 1px solid '+t.navEdge+'; box-shadow: '+t.navShadow,
+scrim:btn+'position: absolute; inset: 0; width: 100%; background: '+t.scrim+'; z-index: 20',
+sheet:'position: absolute; z-index: 21; box-sizing: border-box; background: '+t.surface+'; color: '+t.text+'; overflow-y: auto; '+(P?'left: 0; right: 0; bottom: 0; max-height: 92%; border-radius: 26px 26px 0 0; padding: 22px 18px calc(22px + env(safe-area-inset-bottom));':'top: 0; right: 0; bottom: 0; width: 440px; border-radius: 26px 0 0 26px; padding: 28px 24px;')+' box-shadow: 0 -8px 40px rgba(0,0,0,0.2)',
+mic:'width: 96px; height: 96px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: '+t.accent+'; color: '+t.onAccent+'; '+(rm?'':'transition: box-shadow 700ms ease;'),
+toastBase:'position: absolute; z-index: 30; display: flex; align-items: center; gap: 12px; box-sizing: border-box; min-height: 56px; padding: 8px 8px 8px 12px; border-radius: 18px; background: '+t.toastBg+'; color: '+t.toastText+'; box-shadow: 0 10px 30px rgba(0,0,0,0.25); '+(P?'left: 12px; right: 12px; bottom: 92px;':'left: 260px; bottom: 28px; width: 420px;')+tr,
+toastIconBase:'flex: none; width: 32px; height: 32px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: '+t.accent+'; color: '+t.onAccent+'; '+tr,
+toastBtn:btn+'flex: none; min-height: 44px; padding: 0 14px; border-radius: 12px; background: transparent; color: '+t.toastText+'; font-weight: 750; text-decoration: underline'
+};}
+class Component extends DCLogic {
+constructor(props){super(props);this.state={pref:props.dark?'dark':'system',sysDark:false,screen:'today',day:0,q:'',focus:false,preset:null,pick:null,form:null,edit:null,eform:null,move:false,quick:null,voice:null,scan:null,pulse:false,toast:null,pop:false,entries:initEntries(props.scenario==='over budget'),water:1250,weight:'82,4',just:null,cal:0,narrow:false,rm:false};}
+componentDidMount(){var self=this;this.onR=function(){self.setState({narrow:window.innerWidth<760});};this.onR();window.addEventListener('resize',this.onR);try{this.setState({rm:window.matchMedia('(prefers-reduced-motion: reduce)').matches});this.mq=window.matchMedia('(prefers-color-scheme: dark)');this.onMq=function(){self.setState({sysDark:self.mq.matches});};this.onMq();this.mq.addEventListener('change',this.onMq);}catch(err){}}
+componentWillUnmount(){window.removeEventListener('resize',this.onR);try{this.mq.removeEventListener('change',this.onMq);}catch(err){}clearTimeout(this.t1);clearTimeout(this.t2);clearTimeout(this.t3);clearInterval(this.iv);}
+componentDidUpdate(pp){if(pp.dark!==this.props.dark)this.setState({pref:this.props.dark?'dark':'light'});if(pp.scenario!==this.props.scenario)this.setState({entries:initEntries(this.props.scenario==='over budget')});}
+flash(t){var self=this;clearTimeout(this.t1);clearTimeout(this.t2);this.setState({toast:t,pop:false});this.t2=setTimeout(function(){self.setState({pop:true});},30);this.t1=setTimeout(function(){self.setState({toast:null,pop:false,just:null});},5000);}
+closeAll(){clearInterval(this.iv);clearTimeout(this.t3);this.setState({pick:null,form:null,edit:null,eform:null,move:false,quick:null,voice:null,scan:null});}
+startPick(id){var f=FOODS[id];this.setState({pick:id,edit:null,quick:null,voice:null,scan:null,move:false,focus:false,form:{amount:f.units[0].d,u:0,day:this.state.day,meal:this.state.preset||'Lunch'}});}
+setForm(k,v){var f=Object.assign({},this.state.form);f[k]=v;this.setState({form:f});}
+done(ents,id,day,text,sub){this.setState({entries:ents,pick:null,form:null,quick:null,voice:null,scan:null,q:'',focus:false,preset:null,screen:'today',day:day,just:id});this.flash({text:text,sub:sub});}
+saveLog(){var s=this.state,q=num(s.form.amount);if(!q)return;var id='n'+Date.now();var e={id:id,food:s.pick,qty:q,u:s.form.u,meal:s.form.meal,day:s.form.day};this.done(s.entries.concat([e]),id,s.form.day,'Logged to '+s.form.meal,kc(nut(e).kcal)+' kcal');}
+find(id){return this.state.entries.filter(function(x){return x.id===id;})[0];}
+openEdit(id){var e=this.find(id);if(!e)return;this.setState({edit:id,pick:null,quick:null,voice:null,scan:null,move:false,eform:{amount:e.food?String(e.qty):String(e.kcal),u:e.u||0}});}
+setEform(k,v){var f=Object.assign({},this.state.eform);f[k]=v;this.setState({eform:f});}
+saveEdit(){var s=this.state,q=num(s.eform.amount);if(!q)return;var ents=s.entries.map(function(x){if(x.id!==s.edit)return x;var y=Object.assign({},x);if(y.food){y.qty=q;y.u=s.eform.u;}else{y.kcal=q;}return y;});this.setState({entries:ents,just:s.edit});this.closeAll();this.flash({text:'Updated',sub:''});}
+moveTo(m){var s=this.state;var ents=s.entries.map(function(x){return x.id===s.edit?Object.assign({},x,{meal:m}):x;});this.setState({entries:ents,just:s.edit});this.closeAll();this.flash({text:'Moved to '+m,sub:''});}
+del(){var s=this.state,idx=-1,i;for(i=0;i<s.entries.length;i++)if(s.entries[i].id===s.edit)idx=i;if(idx<0)return;var e=s.entries[idx];this.lastDel={e:e,idx:idx};var ents=s.entries.slice();ents.splice(idx,1);this.setState({entries:ents});this.closeAll();this.flash({text:'Deleted',sub:e.food?FOODS[e.food].name:e.desc,undo:true});}
+undo(){var d=this.lastDel;if(!d)return;var ents=this.state.entries.slice();ents.splice(d.idx,0,d.e);this.lastDel=null;clearTimeout(this.t1);this.setState({entries:ents,toast:null,just:d.e.id});}
+openQuick(){var s=this.state;this.setState({quick:{kcal:'300',desc:'',meal:s.preset||'Snacks',day:s.day},pick:null,edit:null,voice:null,scan:null,move:false});}
+setQuick(k,v){var f=Object.assign({},this.state.quick);f[k]=v;this.setState({quick:f});}
+saveQuick(){var s=this.state,q=num(s.quick.kcal);if(!q)return;var id='q'+Date.now();var e={id:id,kcal:q,desc:s.quick.desc.trim()||'Quick add',meal:s.quick.meal,day:s.quick.day};this.done(s.entries.concat([e]),id,s.quick.day,'Logged to '+e.meal,kc(q)+' kcal');}
+openVoice(){var self=this;clearInterval(this.iv);this.iv=setInterval(function(){self.setState({pulse:!self.state.pulse});},700);this.setState({voice:{stage:'listening'},pick:null,edit:null,quick:null,scan:null,focus:false});}
+stopVoice(){clearInterval(this.iv);var s=this.state;this.setState({voice:{stage:'heard',text:'Öğlen 200 gram tavuk göğsü ve bir kutu Coca-Cola Zero',items:voiceItems(s.preset,s.day)}});}
+setVoiceItem(i,v){var vo=Object.assign({},this.state.voice);vo.items=vo.items.map(function(it,j){return j===i?Object.assign({},it,{qty:v}):it;});this.setState({voice:vo});}
+removeVoiceItem(i){var vo=Object.assign({},this.state.voice);vo.items=vo.items.filter(function(it,j){return j!==i;});this.setState({voice:vo});}
+logVoice(){var s=this.state,items=s.voice.items,ents=s.entries.slice(),last=null,k=0,i,q;for(i=0;i<items.length;i++){q=num(items[i].qty);if(!q)return;var e={id:'v'+Date.now()+i,food:items[i].food,qty:q,u:items[i].u,meal:items[i].meal,day:items[i].day};k+=nut(e).kcal;ents.push(e);last=e.id;}if(!items.length)return;this.done(ents,last,items[0].day,'Logged '+items.length+(items.length===1?' item':' items')+' to '+items[0].meal,kc(k)+' kcal');}
+openScan(){this.setState({scan:scanInit(),pick:null,edit:null,quick:null,voice:null,focus:false});}
+shoot(){var self=this;this.setState({scan:Object.assign({},this.state.scan,{stage:'reading'})});clearTimeout(this.t3);this.t3=setTimeout(function(){if(self.state.scan)self.setState({scan:Object.assign({},self.state.scan,{stage:'result'})});},1100);}
+setScan(k,v){var sc=Object.assign({},this.state.scan);sc[k]=v;this.setState({scan:sc});}
+setScanVal(k,v){var sc=Object.assign({},this.state.scan);sc.v=Object.assign({},sc.v);sc.v[k]=v;this.setState({scan:sc});}
+saveScan(){var sc=this.state.scan;if(!sc.name.trim())return;var id='scan'+Date.now(),n={};SCANROWS.forEach(function(r){n[r[0]]=num0(sc.v[r[0]]);});var ml=sc.basis==='per 100 ml',srv=sc.basis==='per serving';FOODS[id]={name:sc.name.trim(),div:srv?1:100,basis:sc.basis,n:n,units:srv?[U('serving','servings',1,'1')]:[ml?U('ml','ml',1,'100'):U('g','g',1,'100')]};ALL.push(id);this.setState({scan:null});this.startPick(id);this.flash({text:'Food saved',sub:'Now choose the amount'});}
+renderVals(){
+var self=this,s=this.state,fixed=this.props.layout==='phone',P=fixed||s.narrow,D=!P,theme=s.pref==='system'?(s.sysDark?'dark':'light'):s.pref,t=THEMES[theme],S=makeS(t,P,s.rm,fixed);
+var list=s.entries.filter(function(e){return e.day===s.day;}),T=totals(list);
+var budget=BASE+ACT-DEF,eaten=Math.round(T.kcal.v),rem=budget-eaten,over=rem<0;
+var C=2*Math.PI*70,frac=Math.min(eaten/budget,1),ringN=P?128:150;
+function part(k,unit,target,color){var o=T[k];return {val:g1(o.v)+(o.unk?'+':'')+' '+unit,unk:o.unk>0,unkText:o.unk+(o.unk===1?' entry':' entries')+' unknown',target:target?'of '+target+' '+unit:'',w:target?Math.min(100,Math.round(o.v/target*100))+'%':'0%',color:color};}
+function lab(l,o){o.label=l;return o;}
+var macros=[lab('Protein',part('p','g',140,t.protein)),lab('Carbohydrate',part('c','g',200,t.carb)),lab('Fat',part('f','g',65,t.fat))];
+var extras=[lab('Fibre',part('fib','g')),lab('Sugars',part('sug','g')),lab('Saturated fat',part('sat','g')),lab('Salt',part('salt','g'))];
+var meals=MEALS.map(function(m){var es=list.filter(function(e){return e.meal===m;}),k=0;var items=es.map(function(e){var n=nut(e);k+=n.kcal;var f=e.food?FOODS[e.food]:null;return {id:e.id,name:f?f.name:e.desc,qty:f?qtyText(e.qty,f.units[e.u]):'Calories only',kcal:kc(n.kcal),pending:!!e.pending,quick:!f,open:function(){self.openEdit(e.id);},row:e.id===s.just?S.rowJust:S.row};});return {name:m,kcal:kc(k),entries:items,empty:items.length===0,addLabel:'Add to '+m,add:function(){self.setState({screen:'log',preset:m,q:'',focus:false});}};});
+function fitem(id){var f=FOODS[id];return {name:f.name,sub:kc(f.n.kcal==null?0:f.n.kcal)+' kcal '+f.basis,pick:function(){self.startPick(id);}};}
+var qn=norm(s.q.trim()),results=qn?ALL.filter(function(id){return norm(FOODS[id].name).indexOf(qn)>=0;}).map(fitem):[];
+function chip(label,sel,fn){return {label:label,pressed:sel?'true':'false',style:sel?S.chipOn:S.chip,pick:fn};}
+var dayKeys=s.day>=-1?[0,-1]:[s.day,0];
+var pf=null;if(s.pick&&s.form){var pfood=FOODS[s.pick],pq=num(s.form.amount),pe={food:s.pick,qty:pq||0,u:s.form.u},pn=nut(pe);pf={basis:pfood.basis,amount:s.form.amount,setAmount:function(ev){self.setForm('amount',ev.target.value);},units:pfood.units.map(function(u,i){return chip(u.one,i===s.form.u,function(){var f=Object.assign({},self.state.form,{u:i,amount:u.d});self.setState({form:f});});}),days:dayKeys.map(function(d){return chip(dayInfo(d).t,s.form.day===d,function(){self.setForm('day',d);});}),meals:MEALS.map(function(m){return chip(m,s.form.meal===m,function(){self.setForm('meal',m);});}),kcal:pq&&pn.kcal!=null?kc(pn.kcal)+' kcal':'— kcal',macros:pq?'P '+(pn.p==null?'?':g1(pn.p))+' g · C '+(pn.c==null?'?':g1(pn.c))+' g · F '+(pn.f==null?'?':g1(pn.f))+' g':'Enter an amount',disabled:!pq,save:function(){self.saveLog();}};}
+var ef=null;if(s.edit&&s.eform){var ee=this.find(s.edit);if(ee){var efood=ee.food?FOODS[ee.food]:null,eq=num(s.eform.amount);ef={where:ee.meal+' · '+dayInfo(ee.day).t,amountLabel:efood?'Amount':'Calories (kcal)',amount:s.eform.amount,setAmount:function(ev){self.setEform('amount',ev.target.value);},units:efood?efood.units.map(function(u,i){return chip(u.one,i===s.eform.u,function(){self.setEform('u',i);});}):[chip('kcal',true,function(){})],disabled:!eq,save:function(){self.saveEdit();},moveOpen:s.move,moveExpanded:s.move?'true':'false',toggleMove:function(){self.setState({move:!self.state.move});},moves:MEALS.map(function(m){var cur=m===ee.meal;return {label:cur?m+' (current)':m,cur:cur,style:cur?S.moveCur:S.move,pick:function(){self.moveTo(m);}};}),del:function(){self.del();}};}}
+var qf=null;if(s.quick){var qq=num(s.quick.kcal);qf={kcal:s.quick.kcal,desc:s.quick.desc,setKcal:function(ev){self.setQuick('kcal',ev.target.value);},setDesc:function(ev){self.setQuick('desc',ev.target.value);},days:dayKeys.map(function(d){return chip(dayInfo(d).t,s.quick.day===d,function(){self.setQuick('day',d);});}),meals:MEALS.map(function(m){return chip(m,s.quick.meal===m,function(){self.setQuick('meal',m);});}),disabled:!qq,save:function(){self.saveQuick();}};}
+var vf=null;if(s.voice){var vit=s.voice.items||[],vok=vit.length>0;vf={listening:s.voice.stage==='listening',heard:s.voice.stage==='heard',micStyle:S.mic+'; box-shadow: 0 0 0 '+(s.pulse&&!s.rm?'18px':'6px')+' '+t.soft,stop:function(){self.stopVoice();},text:s.voice.text||'',setText:function(ev){self.setState({voice:Object.assign({},self.state.voice,{text:ev.target.value})});},countText:vit.length===1?'1 food to log':vit.length+' foods to log',items:vit.map(function(it,i){var f=FOODS[it.food],q=num(it.qty);if(!q)vok=false;var n=nut({food:it.food,qty:q||0,u:it.u});return {name:f.name,amount:it.qty,setAmount:function(ev){self.setVoiceItem(i,ev.target.value);},unit:q===1?f.units[it.u].one:f.units[it.u].many,kcal:q?kc(n.kcal)+' kcal':'— kcal',where:it.meal+' · '+dayInfo(it.day).t,inputId:'va'+i,amountLabel:'Amount of '+f.name,removeLabel:'Remove '+f.name,remove:function(){self.removeVoiceItem(i);}};}),again:function(){self.openVoice();},logAll:function(){self.logVoice();}};vf.disabled=!vok;vf.logLabel=vit.length?'Log all ('+vit.length+')':'Nothing to log';}
+var sf=null;if(s.scan){var sc=s.scan;sf={camera:sc.stage==='camera',reading:sc.stage==='reading',result:sc.stage==='result',shootLabel:P?'Take photo':'Choose a photo',shoot:function(){self.shoot();},retake:function(){self.setScan('stage','camera');},name:sc.name,setName:function(ev){self.setScan('name',ev.target.value);},bases:['per 100 g','per 100 ml','per serving'].map(function(b){return chip(b,sc.basis===b,function(){self.setScan('basis',b);});}),rows:SCANROWS.map(function(r){var empty=!String(sc.v[r[0]]).trim();return {id:'sv-'+r[0],label:r[1],unit:r[2],value:sc.v[r[0]],style:empty?S.scanInputWarn:S.scanInput,set:function(ev){self.setScanVal(r[0],ev.target.value);}};}),notes:[{text:'Fibre isn’t on this label, so it stays unknown. Type it if you know it.',style:S.noteWarn},{text:'Energy matches the label’s kJ value (1,961 kJ). The %RI column was ignored.',style:S.noteOk}],disabled:!sc.name.trim(),save:function(){self.saveScan();}};}
+var cal=(function(){var cm=s.cal,first=new Date(2026,9+cm,1),dim=new Date(2026,10+cm,0).getDate(),lead=(first.getDay()+6)%7,t0=new Date(2026,9,25),cells=[],i,under=0,overN=0,none=0,byDay={},C2=2*Math.PI*18;
+s.entries.forEach(function(e){byDay[e.day]=(byDay[e.day]||0)+nut(e).kcal;});
+for(i=0;i<lead;i++)cells.push({num:'',label:'',disabled:true,style:S.calCell+'; visibility: hidden',track:'transparent',color:'transparent',dash:'0 200',numStyle:S.calNum,open:function(){}});
+for(i=1;i<=dim;i++)(function(day){var dt=new Date(2026,9+cm,day),d=Math.round((dt-t0)/86400000),di=dayInfo(d),k=byDay[d],fut=d>0,has=!fut&&k!=null,ov=has&&k>budget,fr=has?Math.min(k/budget,1):0;
+if(d<0){if(!has)none++;else if(ov)overN++;else under++;}
+cells.push({num:String(day),disabled:fut,label:fut?di.d:(has?di.d+': '+kc(k)+' of '+kc(budget)+' kcal, '+(ov?kc(k-budget)+' over':kc(budget-k)+' under'):di.d+': nothing logged'),
+style:S.calCell+(d===0?'; box-shadow: inset 0 0 0 2px '+t.accent:'')+(fut?'; cursor: default':''),
+track:fut?'transparent':t.track,color:fr>0?(ov?t.bad:t.good):'transparent',dash:(fr*C2).toFixed(1)+' '+C2.toFixed(1),
+numStyle:S.calNum+'; color: '+(d===0?t.accent:(has?t.text:t.muted))+'; font-weight: '+(d===0?800:650),
+open:function(){self.setState({screen:'today',day:d,preset:null,q:'',focus:false});}});})(i);
+var dis='; opacity: 0.35; cursor: default';
+return {title:MO[first.getMonth()]+' '+first.getFullYear(),cells:cells,heads:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],ring:P?'40px':'54px',
+summary:under+(under===1?' day':' days')+' under, '+overN+' over'+(none?', '+none+' not logged':''),
+prevDisabled:cm<=-1,nextDisabled:cm>=0,prevStyle:S.iconBtn+(cm<=-1?dis:''),nextStyle:S.iconBtn+(cm>=0?dis:''),
+prev:function(){if(self.state.cal>-1)self.setState({cal:-1});},next:function(){if(self.state.cal<0)self.setState({cal:0});}};})();
+var sc0=s.screen;if(P&&(sc0==='settings'||sc0==='profile'))sc0='more';if(D&&sc0==='more')sc0='settings';
+var mode=['progress','more','settings','profile'].indexOf(sc0)>=0?sc0:(P&&sc0==='log'?'log':'today');
+var fe=s.edit?this.find(s.edit):null;
+var formTitle=pf?FOODS[s.pick].name:(ef&&fe?(fe.food?FOODS[fe.food].name:fe.desc):(qf?'Quick add calories':(vf?'Speak':(sf?'Scan a label':''))));
+var go=function(sc2){return function(){self.setState({screen:sc2,preset:sc2==='log'?self.state.preset:null,focus:false});};};
+var popOn=s.pop||s.rm;
+var searching=s.focus||!!qn;
+var headTitle=mode==='more'?'More':mode==='settings'?'Settings':mode==='profile'?'Profile':(mode==='progress'?'Progress':(mode==='log'?'Log':dayInfo(s.day).t));
+var headSub=mode==='today'||mode==='log'?dayInfo(s.day).d:'';
+return {
+t:t,S:{root:S.root,side:S.side,main:S.main,header:S.header,headAlign:S.headAlign,iconBtn:S.iconBtn,textBtn:S.textBtn,nextBtn:S.iconBtn+(s.day<0?'':'; opacity: 0.35; cursor: default'),scroll:S.scroll,grid:S.grid,colA:S.colA,colB:S.colB,card:S.card,panel:S.panel,input:S.input,label:S.label,listHead:S.listHead,foodRow:S.foodRow,tileBig:S.tileBig,tileIconVoice:S.tileIconVoice,tileIconScan:S.tileIconScan,addBtn:S.addBtn,smallBtn:S.smallBtn,ghostBtn:S.ghostBtn,primary:S.primary,badge:S.badge,badgeWarn:S.badgeWarn,bottom:S.bottom,scrim:S.scrim,sheet:S.sheet,toastBtn:S.toastBtn,
+toast:S.toastBase+(popOn?'; transform: translateY(0); opacity: 1':'; transform: translateY(12px); opacity: 0'),toastIcon:S.toastIconBase+(popOn?'; transform: scale(1)':'; transform: scale(0.4)'),
+navToday:S.sideItem(s.screen==='today'),navLog:S.sideItem(s.screen==='log'),navProgress:S.sideItem(s.screen==='progress'),navProfile:S.sideItem(s.screen==='profile'),navSettings:S.sideItem(s.screen==='settings'||s.screen==='more'),
+tabToday:S.tabItem(s.screen==='today'),tabLog:S.tabItem(s.screen==='log'),tabProgress:S.tabItem(s.screen==='progress'),tabMore:S.tabItem(s.screen==='more'||s.screen==='settings'||s.screen==='profile')},
+P:P,D:D,headTitle:headTitle,headSub:headSub,showDayNav:mode==='today'||(D&&mode==='log'),
+noNext:s.day>=0,prevDay:function(){if(self.state.day>-54)self.setState({day:self.state.day-1});},nextDay:function(){if(self.state.day<0)self.setState({day:self.state.day+1});},
+showColA:mode==='today',showColB:(D&&mode==='today')||mode==='log',showProgress:mode==='progress',showMore:mode==='more'||mode==='settings',showProfile:mode==='profile',
+themeOpts:[['system','System'],['light','Light'],['dark','Dark']].map(function(o){return {label:o[1],pressed:s.pref===o[0]?'true':'false',style:S.segItem(s.pref===o[0]),pick:function(){self.setState({pref:o[0]});}};}),
+moreRows:(mode==='more'?[{label:'Profile and goals',sub:'Height, weight goal, daily budget · not in this demo'}]:[]).concat([{label:'Units and formats',sub:'kg, ml, kcal, first day of week · not in this demo'},{label:'Your data',sub:'Export, import, delete account · not in this demo'},{label:'Household',sub:'Invite people, backups (admin) · not in this demo'}]),
+ring:{dash:(frac*C).toFixed(1)+' '+C.toFixed(1),color:over?t.bad:t.accent},ringSize:ringN,ringPx:ringN+'px',ringGap:P?'14px':'20px',remSize:P?'30px':'36px',
+remNum:kc(Math.abs(rem)),remLabel:over?'kcal over':'kcal left',remColor:over?t.bad:t.text,eaten:kc(eaten),budget:kc(budget),
+macros:macros,extras:extras,meals:meals,cal:cal,
+water:{text:kc(s.water)+' ml',of:'of 2,000 ml today'},add250:function(){self.setState({water:self.state.water+250});self.flash({text:'Water +250 ml',sub:''});},add500:function(){self.setState({water:self.state.water+500});self.flash({text:'Water +500 ml',sub:''});},
+weight:s.weight,setWeight:function(ev){self.setState({weight:ev.target.value});},saveWeight:function(){var v=num(self.state.weight);if(v)self.flash({text:'Weight saved',sub:(Math.round(v*10)/10)+' kg'});},
+hasPreset:!!s.preset,presetText:(s.preset||'')+' · '+dayInfo(s.day).t,clearPreset:function(){self.setState({preset:null});},
+q:s.q,setQ:function(ev){self.setState({q:ev.target.value});},focusQ:function(){self.setState({focus:true});},cancelSearch:function(){self.setState({q:'',focus:false});},searching:searching,showTiles:!searching,showSuggest:s.focus&&!qn,suggest:SUGGEST.map(fitem),hasQ:!!qn,results:results,noResults:!!qn&&results.length===0,
+openQuick:function(){self.openQuick();},openVoice:function(){self.openVoice();},openScan:function(){self.openScan();},
+goToday:go('today'),goLog:go('log'),goProgress:go('progress'),goMore:go('more'),goProfile:go('profile'),goSettings:go('settings'),scanH:P?'380px':'460px',
+anyForm:!!(pf||ef||qf||vf||sf),showPick:!!pf,showEdit:!!ef,showQuick:!!qf,showVoice:!!vf,showScan:!!sf,formTitle:formTitle,pf:pf||{},ef:ef||{},qf:qf||{},vf:vf||{},sf:sf||{},closeAll:function(){self.closeAll();},
+hasToast:!!s.toast,toastText:s.toast?s.toast.text:'',toastSub:s.toast?s.toast.sub:'',toastUndo:!!(s.toast&&s.toast.undo),undo:function(){self.undo();}
+};}
+}
+</script>
+</body>
+</html>

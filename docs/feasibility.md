@@ -135,7 +135,7 @@ Tested on 2026-10-25 by the owner with the throwaway probe in `spikes/phone-prob
 
 ## UI direction
 
-**Pending.** The owner is exploring three directions in the Claude app from `spikes/ui/BRIEF.md`. The chosen direction, its HTML and its tokens will be recorded in `docs/ui.md`.
+**Chosen: Pazar** (2026-10-25), from three directions explored by the owner in the Claude app using `spikes/ui/BRIEF.md`. The direction, its behaviour, tokens and open items are in `docs/ui.md`; the reference demo is `docs/ui/pazar-demo.dc.html` (read it for structure, it does not run outside its canvas).
 
 ## Recommendations
 
@@ -153,4 +153,3 @@ Tested on 2026-10-25 by the owner with the throwaway probe in `spikes/phone-prob
 - A held-out voice set, ideally including another household member with consent, before trusting the 77% figure. All 48 Phase 0 clips were development data from one speaker.
 - A full check of the hand-read label values (owner spot-checked 5–6 labels, no errors), and more labels toward 30.
 - Cause of the failed offline launch.
-- UI direction.

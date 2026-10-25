@@ -66,7 +66,7 @@
 ## Language and interface
 
 - Keep interface strings in the English message catalog. Preserve entered food names and support Turkish-aware casing, transliteration-aware search, and comma/dot decimal input.
-- Build screens from `docs/ui.md` and the design tokens, created from the visual direction the owner picks among demos. Follow the design's visual principles: cohesion, practical before fun, joy in short non-blocking moments, compact information with large tap targets. Extend shared components for routine needs; reserve owner decisions for substantial changes to the experience.
+- Build screens from `docs/ui.md` and the design tokens, created from the visual direction the owner picked among demos (Pazar, 2026-10-25). Follow the design's visual principles: cohesion, practical before fun, joy in short non-blocking moments, compact information with large tap targets. Extend shared components for routine needs; reserve owner decisions for substantial changes to the experience.
 - Design for one-handed phone use, then desktop. Respect safe areas, sufficient touch targets, WCAG AA contrast, 200% text scaling and reduced motion. Provide menu alternatives to drag actions.
 - Check light/dark mode and long Turkish names. Keep confirmations clear and logging fast; decorations must not block input.
 - Deep links may prefill actions but never write on opening. Ship shortcuts only for implemented features. Notifications remain per-person and opt-in.

@@ -1,6 +1,6 @@
 # obur — Product and technical design
 
-> Canonical design document, maintained in the repository. Revised: 2026-10-25 (owner edits reviewed and reconciled).
+> Canonical design document, maintained in the repository. Revised: 2026-10-25 (owner edits reviewed and reconciled; UI direction recorded).
 > `CLAUDE.md` describes how to work; this document defines the product, data rules, architecture and release gates. Planning conversations inform changes here; they are not a second source of truth.
 
 ## Direction and decision status
@@ -107,11 +107,11 @@ obur should feel joyful to use without ever being slower to use. Practical first
 - **Mobile first, desktop as good:** desktop gets its own layouts (side nav, two columns), not a stretched phone.
 - **Modern conventions** over novelty.
 
-**Process:** a few distinct visual directions are built as clickable demos for the core Today and Log flows, phone and desktop, light and dark, filled with real long Turkish food names. The owner picks one and it's refined together, for example in the Claude app. The chosen direction is recorded in `docs/ui.md` and reusable tokens in the repo, so it doesn't depend on any external conversation. After that, add tokens/components as screens require them, documenting additions without seeking approval for every spacing decision.
+**Process:** a few distinct visual directions are built as clickable demos for the core Today and Log flows, phone and desktop, light and dark, filled with real long Turkish food names. The owner picks one and it's refined together, for example in the Claude app. The chosen direction is recorded in `docs/ui.md` and reusable tokens in the repo, so it doesn't depend on any external conversation. **Chosen direction: Pazar** (2026-10-25); `docs/ui.md` is authoritative on visual and interaction matters, with the reference demo in `docs/ui/`. After that, add tokens/components as screens require them, documenting additions without seeking approval for every spacing decision.
 
 - Phone-first layouts, then useful wider layouts; initial navigation is Today, Log, Progress and Profile.
 - Light and dark themes, WCAG AA contrast, accessible names, keyboard operation, 200% text resizing, reduced motion and safe-area insets. Web touch targets are at least 44 by 44 CSS pixels.
-- Prioritize search/recent foods and fast repeat logging. Voice/Scan appear only when usable. Nothing decorative blocks entering or correcting a meal.
+- Prioritize search and fast repeat logging. Recent and favourite foods appear as suggestions when the search field is focused and empty; there are no standing Recent/Favourites lists (owner's UI decision, `docs/ui.md`). Speak and Scan are tiles in the core Log screen, shown only once the feature is implemented and enabled in configuration; until then Log shows search and quick add. Nothing decorative blocks entering or correcting a meal.
 - Every drag action eventually has a menu equivalent. Menus ship before drag-and-drop.
 - Stable deep links open supported actions pre-filled but never write data by merely opening a URL. A button or explicit confirmation performs the write.
 - PWA manifest shortcuts and optional Apple Shortcuts are later conveniences. Verify actual routing, authentication and installed-app behaviour on the supported phones; do not assume Safari and the installed app share sessions or that links open the desired surface.
