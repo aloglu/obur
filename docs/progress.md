@@ -28,7 +28,7 @@ None yet. No measurements have been taken.
 
 ## Exact next step
 
-Collect the focused server speech runs (`/work/results/speech/matrix2.log` on obur-lab), then run the OCR matrix on obur-lab (needs a venv from the OCR image's package list). Then the owner recreates the container with `-p 8040:8040` and runs `spikes/phone-probe/CHECKLIST.md`. UI demo directions are waiting on the owner's choice of review venue.
+Collect the focused server speech runs (`/work/results/speech/matrix2.log` on obur-lab), then run the OCR matrix on obur-lab (needs a venv from the OCR image's package list). Then the owner recreates the container with `-p 8040:8040` and runs `spikes/phone-probe/CHECKLIST.md`. UI demo directions: owner explores them in the Claude app using `spikes/ui/BRIEF.md` and brings back the chosen direction, HTML and tokens for `docs/ui.md`.
 
 ## Conventions for Phase 0
 
@@ -38,7 +38,7 @@ Collect the focused server speech runs (`/work/results/speech/matrix2.log` on ob
 ## Unresolved questions
 
 
-- Test phone: iPhone 13, iOS 27.0.1.
+- Test phone: iPhone 13, iOS 27.0.1. Second authenticators for recovery tests: two YubiKeys.
 - Pilot hostname chosen (a subdomain of the owner's domain); recorded only in the owner's `.env`, RP ID is the parent domain.
 - Home server OS, Docker availability and exact CPU/storage (design assumes a 2-core/4-thread i3 with 16 GB RAM).
 - Off-site backup destination (needed in Phase 1, not Phase 0).
