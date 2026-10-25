@@ -148,6 +148,13 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 	}
 
 	return {
+		/** One live (not trashed) entry. */
+		async get(userId: string, id: string): Promise<DiaryEntry> {
+			const row = await withUser(db, userId, (tx) => current(tx, id));
+			if (row.deletedAt) throw new DiaryError('not_found');
+			return toEntry(row);
+		},
+
 		async day(userId: string, localDate: string): Promise<DiaryEntry[]> {
 			const rows = await withUser(db, userId, (tx) =>
 				tx

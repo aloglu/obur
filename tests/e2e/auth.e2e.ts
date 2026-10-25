@@ -65,15 +65,22 @@ async function saveCodes(page: Page): Promise<string[]> {
 }
 
 async function signOut(page: Page) {
-	await page.goto('/');
+	await page.goto('/settings');
 	await page.getByRole('button', { name: 'Sign out' }).click();
 	await expect(page).toHaveURL(/\/login$/);
+}
+
+/** Lands on Today and confirms who is signed in. */
+async function expectSignedIn(page: Page, name: string) {
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await page.goto('/settings');
+	await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
 }
 
 async function signIn(page: Page, name: string) {
 	await page.goto('/login');
 	await page.getByRole('button', { name: 'Sign in with a passkey' }).click();
-	await expect(page.getByRole('heading', { name: `Hello, ${name}` })).toBeVisible();
+	await expectSignedIn(page, name);
 }
 
 const ADMIN = 'Ayşe Yılmaz-Karaosmanoğlu';
@@ -101,7 +108,7 @@ test('the first admin sets up with a passkey and receives recovery codes', async
 	await page.getByLabel('Your name').fill(ADMIN);
 	await page.getByRole('button', { name: 'Create admin passkey' }).click();
 	adminCodes = await saveCodes(page);
-	await expect(page.getByRole('heading', { name: `Hello, ${ADMIN}` })).toBeVisible();
+	await expectSignedIn(page, ADMIN);
 });
 
 test('the setup link works only once', async () => {
@@ -151,7 +158,7 @@ test('an invited member joins with their own passkey', async ({ browser }) => {
 	await member.page.getByLabel('Your name').fill('Mehmet Öztürk');
 	await member.page.getByRole('button', { name: 'Create passkey and join' }).click();
 	await saveCodes(member.page);
-	await expect(member.page.getByRole('heading', { name: 'Hello, Mehmet Öztürk' })).toBeVisible();
+	await expectSignedIn(member.page, 'Mehmet Öztürk');
 	// Members have no Household page.
 	await expect(member.page.getByRole('link', { name: 'Household' })).toHaveCount(0);
 	await member.page.goto('/household');
@@ -178,7 +185,7 @@ test('a lost phone is replaced with a recovery code, and the old passkey stops w
 	await expect(page).toHaveURL(/\/recover$/);
 	await page.getByRole('button', { name: 'Create new passkey' }).click();
 	await saveCodes(page);
-	await expect(page.getByRole('heading', { name: `Hello, ${ADMIN}` })).toBeVisible();
+	await expectSignedIn(page, ADMIN);
 
 	// The same code cannot be used twice.
 	await signOut(page);

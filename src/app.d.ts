@@ -6,6 +6,10 @@ declare global {
 		interface Locals {
 			/** The signed-in session, resolved from the cookie on every request. */
 			session: SessionRecord | undefined;
+			/** Theme chosen on this device (cookie); undefined follows the system setting. */
+			theme: 'light' | 'dark' | undefined;
+			/** The device's IANA time zone (cookie), used to decide which day "today" is. */
+			zone: string;
 		}
 		interface Error {
 			message: string;

@@ -5,6 +5,7 @@ import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { auth, SESSION_COOKIE } from '#lib/server/auth.ts';
 import { config } from '#lib/server/config.ts';
 import { clearSessionCookie } from '#lib/server/http.ts';
+import { isValidZone } from '#lib/shared/diary-rules.ts';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -15,6 +16,7 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 					html
 						.replace('%paraglide.lang%', locale)
 						.replace('%paraglide.dir%', getTextDirection(locale))
+						.replace('%obur.theme%', event.locals.theme ? `data-theme="${event.locals.theme}"` : '')
 			}
 		);
 	});
@@ -54,6 +56,11 @@ const matches = (path: string, prefixes: string[]) =>
 	prefixes.some((p) => path === p || path.startsWith(`${p}/`));
 
 const handleSession: Handle = async ({ event, resolve }) => {
+	const theme = event.cookies.get('obur_theme');
+	event.locals.theme = theme === 'light' || theme === 'dark' ? theme : undefined;
+	const zone = event.cookies.get('obur_zone') ?? '';
+	event.locals.zone = isValidZone(zone) ? zone : 'UTC';
+
 	const token = event.cookies.get(SESSION_COOKIE);
 	const session = await auth.resolveSession(token);
 	if (token && !session) clearSessionCookie(event.cookies);

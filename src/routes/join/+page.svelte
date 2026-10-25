@@ -53,7 +53,7 @@
 
 	async function finish() {
 		await invalidateAll();
-		await goto(resolve('/'));
+		await goto(resolve('/(app)'));
 	}
 </script>
 

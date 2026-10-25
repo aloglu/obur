@@ -74,7 +74,9 @@ export default defineConfig({
 					environment: 'node',
 					include: ['src/**/*.db.test.ts'],
 					globalSetup: ['./tests/db/global-setup.ts'],
-					fileParallelism: false
+					fileParallelism: false,
+					// Some tests create and drop whole databases, which can exceed 5 s on a loaded machine.
+					testTimeout: 20_000
 				}
 			}
 		]

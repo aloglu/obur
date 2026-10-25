@@ -42,11 +42,11 @@
 <svelte:head><title>{m.foods_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex min-h-dvh max-w-[520px] flex-col gap-3 px-3.5 py-6">
-	<a href={resolve('/')} class="text-[14px] font-semibold text-accent">← {m.app_name()}</a>
+	<a href={resolve('/(app)')} class="text-[14px] font-semibold text-accent">← {m.app_name()}</a>
 	<div class="flex items-center justify-between gap-3">
 		<h1 class="text-[24px] font-[750]">{m.foods_title()}</h1>
 		<a
-			href={resolve('/foods/new')}
+			href={resolve('/(app)/foods/new')}
 			class="inline-flex min-h-11 items-center rounded-button bg-accent px-4 font-[750] text-on-accent"
 			>{m.foods_new()}</a
 		>
@@ -67,7 +67,7 @@
 		{#each results as r (r.id)}
 			<li>
 				<a
-					href={resolve('/foods/[id]', { id: r.id })}
+					href={resolve('/(app)/foods/[id]', { id: r.id })}
 					class="flex min-h-14 items-center justify-between gap-3 py-2"
 				>
 					<span class="min-w-0">

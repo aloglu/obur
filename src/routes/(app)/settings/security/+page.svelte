@@ -79,7 +79,7 @@
 <svelte:head><title>{m.security_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex min-h-dvh max-w-[520px] flex-col gap-3 px-3.5 py-6">
-	<a href={resolve('/')} class="text-[14px] font-semibold text-accent">← {m.app_name()}</a>
+	<a href={resolve('/(app)')} class="text-[14px] font-semibold text-accent">← {m.app_name()}</a>
 	<h1 class="text-[24px] font-[750]">{m.security_title()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if info}<Notice tone="info">{info}</Notice>{/if}

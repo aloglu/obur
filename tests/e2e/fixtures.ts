@@ -28,3 +28,28 @@ export async function signedInAs(
 	]);
 	return userId;
 }
+
+/** Calls the app's API as the signed-in browser user, with the Origin header the CSRF check requires. */
+export async function apiAs<T>(
+	page: Page,
+	method: 'POST' | 'GET',
+	path: string,
+	data?: unknown
+): Promise<T> {
+	const response = await page.request.fetch(path, {
+		method,
+		data,
+		headers: { origin: e2eEnv.PUBLIC_ORIGIN }
+	});
+	if (!response.ok())
+		throw new Error(`${method} ${path}: ${response.status()} ${await response.text()}`);
+	return (await response.json()) as T;
+}
+
+/** Creates a shared food through the API and returns its ID. */
+export async function createFood(page: Page, food: Record<string, unknown>): Promise<string> {
+	const { id } = await apiAs<{ id: string }>(page, 'POST', '/api/v1/foods', {
+		food: { visibility: 'shared', brand: null, servings: [], ...food }
+	});
+	return id;
+}

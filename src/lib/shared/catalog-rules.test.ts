@@ -63,6 +63,12 @@ describe('parseDecimal', () => {
 		expect(formatDecimal(82.4, '.')).toBe('82.4');
 		expect(formatDecimal(2)).toBe('2');
 		expect(formatDecimal(0.125, ',', 2)).toBe('0,13');
+		// Regression: whole numbers keep their zeros (200 once became "2").
+		expect(formatDecimal(200, ',', 0)).toBe('200');
+		expect(formatDecimal(1500, ',', 2)).toBe('1500');
+		expect(formatDecimal(330, ',', 1)).toBe('330');
+		expect(formatDecimal(2.5, ',', 2)).toBe('2,5');
+		expect(formatDecimal(0, ',', 2)).toBe('0');
 	});
 });
 

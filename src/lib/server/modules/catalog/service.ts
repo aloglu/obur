@@ -208,10 +208,16 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 
 		/**
 		 * Searches visible, non-archived foods. Every word must appear (in any order), or the whole query must be
-		 * similar enough to tolerate typos. Real matches come before typo-tolerant ones, and within each the
-		 * person's own foods come before shared ones (recent foods join the ranking with the diary).
+		 * similar enough to tolerate typos. Real matches come before typo-tolerant ones; within them, boosted
+		 * (recent) foods come first, then the person's own foods, then shared ones.
 		 */
-		async searchFoods(userId: string, query: string, limit = 20): Promise<FoodSearchResult[]> {
+		async searchFoods(
+			userId: string,
+			query: string,
+			limit = 20,
+			/** Foods to rank first among real matches, e.g. the person's recent foods. */
+			boostIds: string[] = []
+		): Promise<FoodSearchResult[]> {
 			const q = foldForSearch(query).slice(0, 100);
 			if (!q) return [];
 			const words = q.split(' ').filter(Boolean).slice(0, 8);
@@ -247,8 +253,16 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						and(sql`${foods.archivedAt} is null`, sql`((${allWords}) or ${foods.searchKey} % ${q})`)
 					)
 					.orderBy(
-						// Real matches before typo-tolerant ones; within them the person's own foods first.
+						// Real matches before typo-tolerant ones; then boosted (recent), own, and shared foods.
 						sql`(${rank} < 4) desc`,
+						...(boostIds.length
+							? [
+									sql`(${foods.id} in (${sql.join(
+										boostIds.slice(0, 50).map((id) => sql`${id}::uuid`),
+										sql`, `
+									)})) desc`
+								]
+							: []),
 						sql`(${foods.ownerId} = app_current_user_id()) desc nulls last`,
 						rank,
 						sql`similarity(${foods.searchKey}, ${q}) desc`,

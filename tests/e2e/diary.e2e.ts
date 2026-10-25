@@ -1,0 +1,193 @@
+import { expect, test, type Page } from '@playwright/test';
+import { apiAs, createFood, signedInAs } from './fixtures.ts';
+
+const bread = (tag: string) => ({
+	name: `Premium Light Ekmek ${tag}`,
+	brand: 'Untad',
+	basis: '100g',
+	nutrients: [
+		{ code: 'energy_kcal', value: 193, qualifier: 'reported' },
+		{ code: 'protein', value: 12.9, qualifier: 'reported' },
+		{ code: 'carbohydrate_excl_fibre', value: 42.4, qualifier: 'reported' },
+		{ code: 'fat', value: 0.2, qualifier: 'reported' },
+		{ code: 'fibre', value: 15, qualifier: 'reported' }
+	],
+	servings: [{ name: 'slice', amount: 26, unit: 'g' }]
+});
+
+const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
+const meal = (page: Page, name: string) => page.getByRole('region', { name });
+
+async function openLogFor(page: Page, mealName: string) {
+	await meal(page, mealName)
+		.getByRole('button', { name: `Add to ${mealName}` })
+		.click();
+	if (isPhone(page)) await expect(page).toHaveURL(/\/log\?meal=/);
+	await expect(page.getByText(`Adding to ${mealName} · Today`)).toBeVisible();
+}
+
+test('logging, correcting, moving and deleting an entry', async ({ page }, testInfo) => {
+	const tag = testInfo.project.name;
+	await signedInAs(page, 'Ayşe');
+	await createFood(page, bread(tag));
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Next day' })).toBeDisabled();
+
+	// Log three slices to lunch.
+	await openLogFor(page, 'Lunch');
+	await page.getByRole('searchbox').fill(`untad ${tag}`);
+	await page.getByRole('button', { name: new RegExp(`Untad Premium Light Ekmek ${tag}`) }).click();
+	const sheet = page.getByRole('dialog');
+	await expect(sheet.getByText('193 kcal per 100 g')).toBeVisible();
+	await expect(sheet.getByRole('radio', { name: 'slice (26 g)' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await sheet.getByLabel('Amount').fill('3');
+	await expect(sheet.getByText('151 kcal')).toBeVisible();
+	await sheet.getByRole('button', { name: 'Save' }).click();
+
+	const lunch = meal(page, 'Lunch');
+	await expect(lunch.getByText('3 × slice (26 g)')).toBeVisible();
+	await expect(page.getByRole('status').getByText('Logged to Lunch · 151 kcal')).toBeVisible();
+
+	// Undo from the toast removes it again.
+	await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
+	await expect(lunch.getByText('Nothing logged yet.')).toBeVisible();
+
+	// Log it again, then correct the amount from the entry's own snapshot.
+	await openLogFor(page, 'Lunch');
+	await page.getByRole('searchbox').fill(`untad ${tag}`);
+	await page.getByRole('button', { name: new RegExp(`Untad Premium Light Ekmek ${tag}`) }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
+	await expect(lunch.getByText('1 × slice (26 g)')).toBeVisible();
+
+	// Now it is a recent food: focusing the empty search field suggests it.
+	await openLogFor(page, 'Snacks');
+	await page.getByRole('searchbox').click();
+	const recent = page.getByRole('region', { name: 'Recent' });
+	await expect(
+		recent.getByRole('button', { name: new RegExp(`Untad Premium Light Ekmek ${tag}`) })
+	).toBeVisible();
+	await page.getByRole('button', { name: 'Cancel' }).click();
+	if (isPhone(page)) await page.goto('/');
+	await lunch.getByRole('button', { name: /Untad Premium Light Ekmek/ }).click();
+	await page.getByRole('dialog').getByLabel('Amount').fill('2');
+	await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
+	await expect(lunch.getByText('2 × slice (26 g)')).toBeVisible();
+	await expect(lunch.getByRole('button', { name: /Untad/ })).toContainText('100');
+
+	// Move to dinner, through the menu.
+	await lunch.getByRole('button', { name: /Untad Premium Light Ekmek/ }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Move to…' }).click();
+	await expect(
+		page.getByRole('dialog').getByRole('button', { name: 'Lunch (current)' })
+	).toBeDisabled();
+	await page.getByRole('dialog').getByRole('button', { name: 'Dinner' }).click();
+	await expect(meal(page, 'Dinner').getByText('2 × slice (26 g)')).toBeVisible();
+	await expect(page.getByRole('status').getByText('Moved to Dinner')).toBeVisible();
+
+	// Delete with Undo, no confirmation dialog.
+	await meal(page, 'Dinner').getByRole('button', { name: /Untad/ }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+	await expect(meal(page, 'Dinner').getByText('Nothing logged yet.')).toBeVisible();
+	await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
+	await expect(meal(page, 'Dinner').getByText('2 × slice (26 g)')).toBeVisible();
+});
+
+test('a quick add records calories only and makes totals partial', async ({ page }) => {
+	await signedInAs(page, 'Mehmet');
+	await page.goto('/');
+	await openLogFor(page, 'Snacks');
+	await page.getByRole('button', { name: 'Quick add calories' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Quick add calories' });
+	await sheet.getByLabel('Calories (kcal)').fill('300');
+	await sheet.getByLabel('What was it? (optional)').fill('Simit');
+	await sheet.getByRole('button', { name: 'Save' }).click();
+	const snacks = meal(page, 'Snacks');
+	await expect(snacks.getByText('Simit')).toBeVisible();
+	await expect(snacks.getByText('Macros unknown')).toBeVisible();
+	const nutrients = page.getByRole('region', { name: 'Nutrients' });
+	// Only calories are known: every other nutrient is unknown, never shown as zero.
+	await expect(nutrients.getByText('Unknown').first()).toBeVisible();
+	await expect(nutrients).not.toContainText('0 g');
+	await expect(page.getByRole('region', { name: 'Budget' })).toContainText('300');
+});
+
+test('the day header moves between days and never into the future', async ({ page }) => {
+	await signedInAs(page, 'Zeynep');
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Previous day' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Yesterday' })).toBeVisible();
+	await page.getByRole('button', { name: 'Next day' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await page.goto('/?date=2999-01-01');
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+});
+
+// Visual comparisons on a fixed past day with long Turkish names (CLAUDE.md, "Verification and handoff").
+for (const theme of ['light', 'dark'] as const) {
+	test(`Today screen (${theme})`, async ({ page, context }, testInfo) => {
+		await signedInAs(page, `Ayşe Yılmaz ${testInfo.project.name} ${theme}`);
+		await context.addCookies([{ name: 'obur_theme', value: theme, url: 'http://localhost:4173' }]);
+		const bar = await createFood(page, {
+			name: 'HighPro+ Çikolatalı Kaplamalı Hindistan Cevizli Protein Bar',
+			brand: 'Fellas',
+			basis: 'serving',
+			servingLabel: '1 bar',
+			servingSize: { amount: 50, unit: 'g' },
+			nutrients: [
+				{ code: 'energy_kcal', value: 191, qualifier: 'reported' },
+				{ code: 'protein', value: 20, qualifier: 'reported' },
+				{ code: 'fat', value: 8.1, qualifier: 'reported' }
+			]
+		});
+		const sote = await createFood(page, {
+			name: 'Pratik Sebze Sote Mix',
+			brand: 'Superfresh',
+			basis: '100g',
+			nutrients: [
+				{ code: 'energy_kcal', value: 45, qualifier: 'reported' },
+				{ code: 'protein', value: 2, qualifier: 'reported' },
+				{ code: 'carbohydrate_excl_fibre', value: 6, qualifier: 'reported' },
+				{ code: 'fat', value: 0.4, qualifier: 'reported' },
+				{ code: 'fibre', value: 3, qualifier: 'reported' }
+			]
+		});
+		const date = '2026-10-20';
+		const base = { date, zone: 'Europe/Istanbul' };
+		await apiAs(page, 'POST', '/api/v1/diary/entries', {
+			...base,
+			kind: 'food',
+			meal: 'breakfast',
+			foodId: bar,
+			amount: 1,
+			unit: { kind: 'basis_serving' }
+		});
+		await apiAs(page, 'POST', '/api/v1/diary/entries', {
+			...base,
+			kind: 'food',
+			meal: 'dinner',
+			foodId: sote,
+			amount: 225,
+			unit: { kind: 'mass', unit: 'g' }
+		});
+		await apiAs(page, 'POST', '/api/v1/diary/entries', {
+			...base,
+			kind: 'quick',
+			meal: 'snacks',
+			kcal: 300,
+			description: 'Simit'
+		});
+
+		await page.goto(`/?date=${date}`);
+		await expect(page.getByRole('heading', { level: 1, name: 'Tue 20 Oct' })).toBeVisible();
+		await page.evaluate(() => document.fonts.ready);
+		// Phones: the viewport, where the floating tab bar belongs. Desktop: the whole page.
+		await expect(page).toHaveScreenshot(`today-${theme}.png`, {
+			fullPage: !isPhone(page),
+			animations: 'disabled'
+		});
+	});
+}

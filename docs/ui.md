@@ -199,7 +199,21 @@ The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps.
 - **Testing:** full dark-mode contrast and 200 % zoom testing on the real build.
 - **Demo data:** the demo uses fixed dates (today = Sunday 25 October 2026) and made-up past days. It is not test data.
 
-## 5. Changes to other docs
+## 5. Implementation notes (Phase 1, step 5)
+
+Routine choices made while building the screens; none changes the direction above. Listed so the owner can review them.
+
+- **Sign out** sits at the bottom of Settings (desktop) and More (phone), under "Signed in as …". The demo did not place it.
+- **Default meal** for a new entry when no meal was preset: breakfast 04:00–10:30, lunch 11:00–15:00, dinner 17:00–21:30, otherwise snacks (device time zone).
+- **After midnight** (before 04:00) the amount sheet keeps Today selected and shows "It's after midnight. Did you mean yesterday?" above the day chips, as the design asks (offer, never silently change).
+- **Budget card** shows calories eaten and "Budget: Not set yet" until goals arrive (Phase 1, step 7); the ring structure is already in place.
+- **Nutrient bars** are drawn relative to each other until targets exist (step 7). "Partial · N unknown" marks totals where some entries lack the value; "Unknown" when none has it.
+- **Desktop Log panel** starts fresh after each save (query and preset cleared).
+- **Theme** choice is per device (cookie) so the server renders the right theme without a flash; System is the default.
+- **Day titles** are formatted by hand ("Tue 20 Oct", "Tuesday 20 October 2026") because browser engines format dates differently.
+- **Portion text**: "1 bar" for one basis serving, "2 × 1 bar", "3 × slice (26 g)", "2 × Su bardağı (200 ml)".
+
+## 6. Changes to other docs
 
 - `docs/design.md`: replace "calm over-budget" with red for over budget (the ring on Today and the calendar), by the owner's choice.
 - `docs/design.md`: voice and label scanning are part of the core logging UI (Speak and Scan tiles on Log). They still need hiding when switched off in `.env`.

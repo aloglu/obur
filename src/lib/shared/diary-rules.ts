@@ -105,3 +105,24 @@ export function isIsoDate(value: string): boolean {
 	const d = new Date(`${value}T00:00:00Z`);
 	return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }
+
+/** The meal a new entry defaults to, by local time of day, when no meal was chosen. */
+export function defaultMeal(
+	instant: Date,
+	zone: string
+): 'breakfast' | 'lunch' | 'dinner' | 'snacks' {
+	const [h, min] = new Intl.DateTimeFormat('en-GB', {
+		timeZone: zone,
+		hour: '2-digit',
+		minute: '2-digit',
+		hourCycle: 'h23'
+	})
+		.format(instant)
+		.split(':')
+		.map(Number);
+	const t = h * 60 + min;
+	if (t >= 4 * 60 && t < 10 * 60 + 30) return 'breakfast';
+	if (t >= 11 * 60 && t < 15 * 60) return 'lunch';
+	if (t >= 17 * 60 && t < 21 * 60 + 30) return 'dinner';
+	return 'snacks';
+}

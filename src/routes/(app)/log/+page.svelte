@@ -1,0 +1,82 @@
+<script lang="ts">
+	// The phone Log tab (and the desktop Log item). After saving it returns to Today with the new row highlighted.
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { m } from '#lib/paraglide/messages.js';
+	import { api } from '#lib/client/api.ts';
+	import { dayHref } from '#lib/client/links.ts';
+	import { deviceZone } from '#lib/client/prefs.ts';
+	import { showToast } from '#lib/client/toast.svelte.ts';
+	import { defaultMeal, isIsoDate } from '#lib/shared/diary-rules.ts';
+	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
+	import { kcal, mealName } from '#lib/shared/format.ts';
+	import AmountSheet from '#lib/ui/log/AmountSheet.svelte';
+	import LogPanel from '#lib/ui/log/LogPanel.svelte';
+	import QuickAddSheet from '#lib/ui/log/QuickAddSheet.svelte';
+
+	let { data } = $props();
+
+	const params = page.url.searchParams;
+	const requestedDate = params.get('date');
+	const date = $derived(
+		requestedDate && isIsoDate(requestedDate) && requestedDate <= data.today
+			? requestedDate
+			: data.today
+	);
+	const requestedMeal = params.get('meal');
+	let preset = $state<Meal | null>(
+		MEALS.includes(requestedMeal as Meal) ? (requestedMeal as Meal) : null
+	);
+	let picking = $state<string | null>(null);
+	let quick = $state(false);
+	const sheetMeal = $derived(preset ?? defaultMeal(new Date(), deviceZone()));
+
+	async function logged(entry: DiaryEntry) {
+		await goto(dayHref(entry.localDate, entry.id));
+		showToast({
+			message: m.toast_logged(),
+			detail: m.toast_logged_detail({
+				meal: mealName(entry.meal),
+				kcal: kcal(entry.nutrients.energy_kcal?.value ?? 0)
+			}),
+			undo: async () => {
+				await api('POST', `/api/v1/diary/entries/${entry.id}?action=delete`, {});
+				await goto(dayHref(entry.localDate), { invalidateAll: true });
+			}
+		});
+	}
+</script>
+
+<svelte:head><title>{m.log_title()} · {m.app_name()}</title></svelte:head>
+
+<main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
+	<h1 class="text-[24px] font-[750]">{m.log_title()}</h1>
+	<LogPanel
+		{date}
+		today={data.today}
+		{preset}
+		onpick={(id) => (picking = id)}
+		onquick={() => (quick = true)}
+		onclearpreset={() => (preset = null)}
+	/>
+</main>
+
+{#if picking}
+	<AmountSheet
+		foodId={picking}
+		{date}
+		today={data.today}
+		meal={sheetMeal}
+		onsaved={logged}
+		onclose={() => (picking = null)}
+	/>
+{/if}
+{#if quick}
+	<QuickAddSheet
+		{date}
+		today={data.today}
+		meal={sheetMeal}
+		onsaved={logged}
+		onclose={() => (quick = false)}
+	/>
+{/if}

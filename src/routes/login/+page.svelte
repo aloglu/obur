@@ -16,7 +16,7 @@
 		try {
 			await signIn();
 			await invalidateAll();
-			await goto(resolve('/'));
+			await goto(resolve('/(app)'));
 		} catch (e) {
 			problem = describeError(e);
 		} finally {

@@ -303,6 +303,16 @@ describe('search', () => {
 		expect(results[1].kcal).toBe(36);
 	});
 
+	it('ranks boosted (recent) foods first among real matches', async () => {
+		const own = await catalog.createFood(
+			ZEYNEP,
+			food({ name: 'Ayran', brand: 'Ev yapımı', visibility: 'private' })
+		);
+		const [shared] = (await catalog.searchFoods(ZEYNEP, 'sutas')).map((r) => r.id);
+		const boosted = await catalog.searchFoods(ZEYNEP, 'ayran', 20, [shared]);
+		expect(boosted.map((r) => r.id)).toEqual([shared, own]);
+	});
+
 	it('returns nothing for an empty or punctuation-only query', async () => {
 		expect(await catalog.searchFoods(ZEYNEP, '  ')).toEqual([]);
 		expect(await catalog.searchFoods(ZEYNEP, '%_')).toEqual([]);
