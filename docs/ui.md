@@ -35,7 +35,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - **Desktop layout:** two columns, with Today on the left and the Log panel as a sticky 380 px panel on the right.
 
 **Log**
-- **Idle state:** the search field, then two large centred tiles, **Speak** (olive icon tile) and **Scan a label** (ochre icon tile). There are no descriptions under the tiles. Below them is a "Quick add calories" ghost button.
+- **Idle state:** the search field, then two large centred tiles, **Speak** (olive icon tile) and **Scan a label** (ochre icon tile). There are no descriptions under the tiles. Until a feature is built (voice in Phase 2, scanning in Phase 3), its tile is shown disabled with a "Coming soon" label (owner decision, 2026-10-25); once built, a tile switched off in configuration is hidden. Below them is a "Quick add calories" ghost button.
 - **Suggestions:** they appear only when the search field is focused and empty. A Cancel button then returns to the tiles. Typing replaces suggestions with results.
 - **Search matching:** Turkish-insensitive, so "sutas" finds "Sütaş Ayran".
 - **No results:** the empty state points to scanning or quick add.

@@ -4,7 +4,9 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 ## Current phase
 
-**Phase 0 — Evidence and core-flow prototype**: complete (2026-10-25), pending owner decisions on recommendations.
+**Phase 1 — Daily-use pilot**: approved by the owner on 2026-10-25. Phase 0 is complete.
+
+The owner keeps using LoseIt until obur is complete and production-ready; Phase 1 and later builds are for testing, not daily reliance.
 
 ## Completed
 
@@ -17,7 +19,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - 48 voice clips recorded (m4a) in `~/obur-private/audio/raw/`, matching `~/obur-private/audio/transcripts.tsv` (25 tr, 13 en, 10 mixed; 13 in harder conditions).
 - Server access ready: SSH alias `obur-lab` (desktop `~/.ssh/config`) into the unprivileged `obur-lab` container; only `/work` (its appdata folder) is mounted. The owner's existing Cloudflare tunnel routes the pilot hostname to server port 8040 (done 2026-10-25); the container must be recreated with `-p 8040:8040` for the phone probe.
 - Step 0 done: hardware recorded in `docs/feasibility.md`.
-- Owner decisions (2026-10-25): speech uses faster-whisper `small`; OCR uses PP-OCRv6 small; calendar shows green only for complete days at or under budget (day-completion marker added to the design). Recorded in `docs/design.md`, `CLAUDE.md` and `docs/ui.md`.
+- Owner decisions (2026-10-25): Speak/Scan tiles show disabled "Coming soon" until each feature works; Phase 1 approved. Speech uses faster-whisper `small`; OCR uses PP-OCRv6 small; calendar shows green only for complete days at or under budget (day-completion marker added to the design). Recorded in `docs/design.md`, `CLAUDE.md` and `docs/ui.md`.
 - Step 5 done (2026-10-25): owner chose the Pazar UI direction; `docs/ui.md` and `docs/ui/pazar-demo.dc.html` added, `docs/design.md` updated for the Log-screen decisions.
 - Step 4 done (2026-10-25): owner ran the phone checklist; results in `docs/feasibility.md`. Probe stopped and its passkeys, sessions, logs and start script deleted from obur-lab; timing data kept in `~/obur-private/results/probe/`.
 - Steps 2–3 done: speech and OCR benchmarked on desktop and server (`docs/feasibility.md`). Server OCR environment in `/work/ocr`, speech in `/work/speech`, probe and Node 24.11.0 (checksum-verified) in `/work/probe` and `/work/node`.
@@ -31,7 +33,7 @@ None yet. No measurements have been taken.
 
 ## Exact next step
 
-Phase 0 is complete and its decisions are recorded. Waiting for the owner: approval to start Phase 1, and a decision on whether Speak/Scan tiles appear before their features work (discussed 2026-10-25).
+Write the Phase 1 plan into this file, then start step 1 (application scaffold).
 
 ## Conventions for Phase 0
 
