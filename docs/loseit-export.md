@@ -26,7 +26,7 @@ A ZIP of 29 UTF-8 CSV files (no BOM) in three folders, about 420 KB uncompressed
 
 ## Conventions
 
-- **Diary dates are `M/D/YYYY`** (second part reaches 31). No time of day, no meal time and no time zone. The importer must assume the owner's IANA zone (to be confirmed) and record that assumption.
+- **Diary dates are `M/D/YYYY`** (second part reaches 31). No time of day, no meal time and no time zone. The owner confirmed all entries were made in `Europe/Istanbul`; the import preview should still ask for the zone and record it with the batch.
 - **`Last Updated` timestamps carry `+0300`**; `active-food-servings.csv` uses UTC `Z`. These are edit times, not eating times.
 - **Decimals use a dot.** `Calories` in `food-logs.csv` can contain a **thousands comma** (`1,255`, three rows). Parse per column, never by guessing locale.
 - **Unknown is `n/a`, distinct from `0`.** In active diary rows, for example, fibre is `n/a` in 770 rows and `0` in 306. Map `n/a` to unknown, never zero.
@@ -59,7 +59,7 @@ Columns: `Date, Name, Icon, Meal, Quantity, Units, Calories, Deleted, Fat (g), P
 
 ## Weights and water
 
-- **Weight has no unit column.** All active readings fall in a single range without jumps, and profile height is in centimetres. The 1 kg/week deficit points to kilograms, but the export doesn't state it. **The owner must confirm**, and the import preview should ask.
+- **Weight has no unit column.** The owner confirmed this export is in kilograms. Other exports may not be, so the import preview must ask for the unit rather than infer it.
 - Water values are daily totals from 750 to 3,750 in steps of 250 (some with float noise such as 1999.99): consistent with millilitres. To be confirmed.
 
 ## Recipes
@@ -68,8 +68,7 @@ Columns: `Date, Name, Icon, Meal, Quantity, Units, Calories, Deleted, Fat (g), P
 
 ## Gaps and open questions
 
-- Weight unit and diary time zone (owner to confirm).
-- Whether LoseIt history before 2026 exists: the export covers 270 days of 2026 only.
+- Resolved with the owner: weight is kg, the zone is Europe/Istanbul, and the history really starts in January 2026 (the export is complete in date range).
 - Meaning of `calorie-bonus.csv` and of exercise `Deleted = 4`.
 - Recipe column shift and the missing ingredients.
 - No eaten times, so imported entries have a date and meal only.

@@ -15,7 +15,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Phase 0 plan approved by the owner (2026-10-25).
 - Owner has supplied the LoseIt export, 11 label photos and a favourite-foods list in `~/obur-private/`.
 - 48 voice clips recorded (m4a) in `~/obur-private/audio/raw/`, matching `~/obur-private/audio/transcripts.tsv` (25 tr, 13 en, 10 mixed; 13 in harder conditions).
-- Server access ready: SSH alias `obur-lab` (desktop `~/.ssh/config`) into the unprivileged `obur-lab` container; only `/work` (its appdata folder) is mounted. Port 8040 will be published when the phone probe starts; the owner routes the pilot hostname to it through their existing Cloudflare tunnel.
+- Server access ready: SSH alias `obur-lab` (desktop `~/.ssh/config`) into the unprivileged `obur-lab` container; only `/work` (its appdata folder) is mounted. The owner's existing Cloudflare tunnel routes the pilot hostname to server port 8040 (done 2026-10-25); the container must be recreated with `-p 8040:8040` for the phone probe.
 - Step 0 done: hardware recorded in `docs/feasibility.md`.
 - Step 1 done: LoseIt export inspected (`docs/loseit-export.md`, summary in `docs/feasibility.md`). Aggregate output in `~/obur-private/results/`.
 
@@ -34,7 +34,6 @@ Step 2: speech benchmark (faster-whisper) in a shared Docker image under `spikes
 
 ## Unresolved questions
 
-- LoseIt: weight unit (kg suspected), diary time zone (Europe/Istanbul suspected), whether pre-2026 history exists.
 
 - Test phone: iPhone 13, iOS 27.0.1.
 - Pilot hostname chosen (a subdomain of the owner's domain); recorded only in the owner's `.env`, RP ID is the parent domain.
