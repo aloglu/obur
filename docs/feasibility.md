@@ -112,12 +112,45 @@ Findings:
 
 ## Phone, HTTPS and passkeys (iPhone 13, iOS 27.0.1)
 
-Not measured yet.
+Tested on 2026-10-25 by the owner with the throwaway probe in `spikes/phone-probe/`, served from the target server through the owner's existing Cloudflare Tunnel at the pilot hostname. The RP ID was the parent domain. Owner observations plus server-side timings; the probe and all its credentials were deleted afterwards.
+
+| Check | Result |
+| --- | --- |
+| HTTPS through Cloudflare Tunnel, RP ID = parent domain, origin = pilot subdomain | **Works** |
+| Passkey creation and sign-in in Safari | **Works.** The owner's 1Password extension acts as passkey provider alongside Apple's sheet |
+| Hardware keys | **Works.** Two YubiKeys registered and used, one over USB and one over NFC (single-device, not backed up) |
+| Synced passkey | **Works** (multi-device, backed up), created inside the installed app |
+| Remove one credential, sign in with another (simulated recovery) | **Works** |
+| Installed app (Add to Home Screen) | Detected as standalone. **The session was shared with Safari**: already signed in. Passkey sign-in works inside it |
+| Camera via file picker | No permission prompt; iOS delivers a 4032×3024 JPEG (≈2.8 MB), converted from HEIC |
+| Live camera in the page | Permission prompt; full 3024×4032 frames (≈2 MB JPEG). **Capture felt slow, so the owner tapped repeatedly and several photos were uploaded.** Focus and torch capabilities were not recorded |
+| Upload of a 2–3 MB photo through the tunnel | 0.8–2.2 s for the server to receive the body |
+| Recording format | Safari's MediaRecorder produces `audio/mp4` (AAC-LC), about 23 KB per second |
+| Voice, owner's own sentences (10 clips, 2.9–8.6 s) | Owner judged every transcript correct with both models (informal check, not scored). Server time: **small 3.5–3.9 s, large-v3-turbo 7.7–7.8 s** regardless of clip length. The server-side receive time was 12–45 ms because Cloudflare buffers the upload; **the phone-measured release→result time was shown on screen but not logged, so full end-to-end latency remains unmeasured** |
+| Retry of an already-sent entry | **Works**: the server returned the original result (`replayed: true`) without creating a duplicate |
+| Entries created in Airplane Mode | Each sent exactly once after reconnecting. **They were sent in the wrong order**, because the probe's queue was keyed by random IDs; the real queue must preserve creation order. **`navigator.onLine` reported online during Airplane Mode**, so offline state must be inferred from failed requests, not from that flag |
+| Launch of the installed app while offline | **Failed**: black, then blank white screen. Cause not diagnosed. The probe's service worker fetched from the network first with no timeout. The Phase 1 offline work must use a cache-first app shell and re-test offline launch on the phone |
+| Permission prompts in the installed app | The owner believes camera and microphone permission were asked again; not certain |
+| OS reporting | Safari's user agent reports iOS 18.7 on iOS 27.0.1 (frozen string); do not use it to detect OS versions |
 
 ## UI direction
 
-Not chosen yet.
+**Pending.** The owner is exploring three directions in the Claude app from `spikes/ui/BRIEF.md`. The chosen direction, its HTML and its tokens will be recorded in `docs/ui.md`.
 
 ## Recommendations
 
-Not written yet.
+1. **Start Phase 1 (manual logging pilot).** Nothing measured in Phase 0 blocks it. Passkeys, YubiKey recovery, the installed app, the tunnel route and retry-safe creation all worked on the owner's phone.
+2. **Speech: make faster-whisper `small` the Phase 2 starting point, not large-v3-turbo.** Configure Turkish-or-English language detection, a per-person prompt built from their frequent foods, and decoding once at temperature 0. On the target server this measured 77% of clips fully right in 4.3–4.8 s server time. large-v3-turbo is slightly more accurate but takes about 10 s per clip at best, and doubles under concurrent use. Keep the confirmation screen central: about one clip in four needs a correction, mostly brand names and mixed-language sentences. If better accuracy at the same speed is wanted later, evaluate whisper.cpp, which can shorten Whisper's fixed 30-second window. That would be a stack change and needs a separate decision.
+3. **OCR: replace the design's PP-OCRv5 candidate with PP-OCRv6 small at about 1280 px.** It reads more values correctly and runs in about 2 s per label on the server. The label parser and plausibility checks must handle running text, distractor numbers and the `%`→`9` misread before any OCR feature ships.
+4. **LoseIt import is feasible.** The per-day calorie totals give an exact acceptance check. Identity must use fingerprints with occurrence counting, deleted rows must be skipped, and the weight unit and time zone must be asked in the preview.
+5. **Offline (Phase 1):** preserve queue order; do not trust `navigator.onLine`; use a cache-first app shell and re-test offline launch of the installed app on the iPhone early.
+6. **Camera (Phase 3):** downscale on the phone to about 1280–2000 px before upload (OCR gains nothing above that, and uploads shrink from 2–3 MB); give immediate capture feedback and ignore repeated taps.
+7. **Operations:** vendor and checksum model files during setup (`modelscope.cn` does not resolve on the owner's network; Hugging Face works); run the OCR and speech workers with telemetry disabled and no outbound network access.
+
+## Gaps and evidence still needed
+
+- Full phone release→result voice latency (server time is measured; upload over mobile data is not).
+- A held-out voice set, ideally including another household member with consent, before trusting the 77% figure. All 48 Phase 0 clips were development data from one speaker.
+- Owner verification of the hand-read label values, and more labels toward 30.
+- Cause of the failed offline launch.
+- UI direction.
