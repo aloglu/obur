@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<meta name="theme-color" content="#1f6f5c">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-title" content="obur probe">
+	<link rel="manifest" href="/manifest.webmanifest">
+	<link rel="apple-touch-icon" href="/icon-180.png">
+	<title>obur probe</title>
+	<style>
+		:root { color-scheme: light dark; --bg: #f6f7f5; --fg: #1b1d1c; --card: #fff; --muted: #5d6460; --accent: #1f6f5c; --line: #d9ddd9; }
+		@media (prefers-color-scheme: dark) { :root { --bg: #121413; --fg: #eceeed; --card: #1c1f1e; --muted: #a3aaa6; --accent: #5cc2a6; --line: #2d3230; } }
+		* { box-sizing: border-box; }
+		body { margin: 0; font: 16px/1.45 system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg);
+			padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+		h1 { font-size: 1.3rem; margin: 0 0 4px; }
+		h2 { font-size: 1.05rem; margin: 0 0 8px; }
+		section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; }
+		button, select, input { font: inherit; min-height: 44px; border-radius: 10px; }
+		button { background: var(--accent); color: #fff; border: 0; padding: 0 16px; margin: 4px 6px 4px 0; }
+		button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+		input, select { width: 100%; padding: 0 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); margin: 4px 0; }
+		pre { white-space: pre-wrap; word-break: break-word; background: var(--bg); border-radius: 8px; padding: 10px; font-size: 0.85rem; margin: 8px 0 0; min-height: 1.5em; }
+		.muted { color: var(--muted); font-size: 0.9rem; }
+		video { width: 100%; border-radius: 8px; background: #000; display: none; }
+		#rec.recording { background: #b3261e; }
+	</style>
+</head>
+<body>
+	<h1>obur phone probe</h1>
+	<p class="muted">Temporary Phase 0 test page. Uploaded photos and audio are not kept.</p>
+	<pre id="env"></pre>
+
+	<section>
+		<h2>1. Passkeys</h2>
+		<pre id="auth-status">Checking…</pre>
+		<input id="setup-code" placeholder="Setup code (first passkey only)" autocomplete="off">
+		<input id="cred-label" placeholder="Label, e.g. iPhone or YubiKey" autocomplete="off">
+		<button id="register">Create passkey</button>
+		<button id="login">Sign in with passkey</button>
+		<button id="logout" class="secondary">Sign out</button>
+		<div id="cred-list"></div>
+		<pre id="auth-log"></pre>
+	</section>
+
+	<section>
+		<h2>2. Camera</h2>
+		<p class="muted">A: the system camera picker. B: a live camera preview in the page.</p>
+		<input id="photo-input" type="file" accept="image/*" capture="environment">
+		<button id="cam-start" class="secondary">Start live camera</button>
+		<button id="cam-shot">Capture</button>
+		<video id="video" playsinline muted></video>
+		<pre id="photo-log"></pre>
+	</section>
+
+	<section>
+		<h2>3. Voice</h2>
+		<select id="model"><option value="large-v3-turbo">large-v3-turbo</option><option value="small">small</option></select>
+		<button id="rec">Hold to record</button>
+		<pre id="audio-log"></pre>
+	</section>
+
+	<section>
+		<h2>4. Offline queue</h2>
+		<input id="entry-text" placeholder="Anything, e.g. test 1" autocomplete="off">
+		<button id="entry-add">Add entry</button>
+		<button id="entry-flush" class="secondary">Send now</button>
+		<button id="entry-dup" class="secondary">Resend last (duplicate test)</button>
+		<pre id="queue-log"></pre>
+	</section>
+
+	<script src="/vendor/simplewebauthn.js"></script>
+	<script src="/app.js"></script>
+</body>
+</html>

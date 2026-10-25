@@ -1,0 +1,16 @@
+{
+  "name": "obur-phone-probe",
+  "private": true,
+  "description": "Phase 0 throwaway probe for passkeys, PWA, camera, recording and offline queue on real phones.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "13.3.0",
+    "@simplewebauthn/server": "13.3.3"
+  }
+}

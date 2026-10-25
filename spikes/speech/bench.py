@@ -29,6 +29,7 @@ def main() -> None:
     ap.add_argument("--concurrency", type=int, default=1)
     ap.add_argument("--clips", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--chunk-length", type=int, default=None, help="encoder window in seconds (Whisper default 30)")
     ap.add_argument("--label", default="")
     args = ap.parse_args()
 
@@ -58,7 +59,8 @@ def main() -> None:
         decoded = time.perf_counter()
         segments, info = model.transcribe(
             audio, language=None if args.language == "auto" else args.language,
-            beam_size=args.beam, initial_prompt=prompt, condition_on_previous_text=False)
+            beam_size=args.beam, initial_prompt=prompt, condition_on_previous_text=False,
+            chunk_length=args.chunk_length)
         text = " ".join(s.text.strip() for s in segments)
         end = time.perf_counter()
         return {"clip": path.stem, "text": text, "audio_s": round(len(audio) / 16000, 3),
@@ -75,7 +77,7 @@ def main() -> None:
 
     meta = {"label": args.label, "model": args.model, "compute": args.compute, "threads": args.threads,
             "language": args.language, "beam": args.beam, "prompt": bool(prompt),
-            "concurrency": args.concurrency, "load_s": round(load_s, 2),
+            "concurrency": args.concurrency, "chunk_length": args.chunk_length, "load_s": round(load_s, 2),
             "rss_after_load_mb": round(rss_after_load / 2**20), "peak_rss_mb": round(peak["rss"] / 2**20),
             "wall_s": round(wall, 2), "cpu": platform.processor() or platform.machine(),
             "host_cpus": psutil.cpu_count(), "versions": Path(os.environ.get("BENCH_VERSIONS", "/versions.txt")).read_text().split(),
