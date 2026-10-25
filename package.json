@@ -21,10 +21,12 @@
 		"test:e2e": "./scripts/e2e-docker.sh",
 		"db:start": "docker compose up -d db",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
+		"db:migrate": "node --env-file=.env scripts/migrate.ts",
 		"db:stop": "docker compose stop db",
 		"test:e2e:local": "playwright test --project desktop-chromium",
-		"i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide"
+		"i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
+		"db:bootstrap": "node --env-file=.env scripts/db-bootstrap.ts",
+		"test:db": "vitest run --project db"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

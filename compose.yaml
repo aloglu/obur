@@ -7,7 +7,7 @@ services:
       # Local machine only; never expose the development database on the network.
       - 127.0.0.1:5432:5432
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-obur_owner}
+      POSTGRES_USER: ${POSTGRES_USER:-obur_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-obur}
       POSTGRES_INITDB_ARGS: --data-checksums

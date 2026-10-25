@@ -46,7 +46,19 @@ export default defineConfig({
 					name: 'server',
 					environment: 'node',
 					include: ['src/**/*.{test,spec}.{js,ts}', 'eslint-rules/**/*.test.js'],
-					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
+					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}', 'src/**/*.db.test.ts']
+				}
+			},
+
+			{
+				// Real PostgreSQL (npm run db:start). Each run uses a disposable database.
+				extends: './vite.config.ts',
+				test: {
+					name: 'db',
+					environment: 'node',
+					include: ['src/**/*.db.test.ts'],
+					globalSetup: ['./tests/db/global-setup.ts'],
+					fileParallelism: false
 				}
 			}
 		]

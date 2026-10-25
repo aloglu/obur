@@ -1,11 +1,11 @@
 import { defineConfig } from 'drizzle-kit';
 
-if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
-
+// Used only to generate SQL migrations from the module schemas (`npm run db:generate`).
+// Migrations are applied by our own runner (`npm run db:migrate`), never by drizzle-kit.
 export default defineConfig({
-	schema: './src/lib/server/db/schema.ts',
+	schema: './src/lib/server/modules/*/schema.ts',
+	out: './drizzle',
 	dialect: 'postgresql',
-	dbCredentials: { url: process.env.DATABASE_URL },
 	verbose: true,
 	strict: true
 });

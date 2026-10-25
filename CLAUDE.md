@@ -83,14 +83,18 @@
 
 ## Commands and scope
 
-Verified on 2026-10-25 (Node 24+, npm, Docker). Add commands here only after running them; migration, production Compose and restore commands are still to come.
+Verified on 2026-10-25 (Node 24+, npm, Docker). Add commands here only after running them; production Compose and restore commands are still to come.
 
-- Setup: `cp .env.example .env`, set a local `POSTGRES_PASSWORD` and the matching `DATABASE_URL`, then `npm install`.
+- Setup: `cp .env.example .env`, replace every `change-me-*` password (the URLs must match), then `npm install`.
 - Development database (PostgreSQL 18, localhost only, data checksums on): `npm run db:start` / `npm run db:stop`.
+- Roles and ownership, once per database (superuser via `DATABASE_ADMIN_URL`): `npm run db:bootstrap`.
+- Generate a migration from module schemas: `npm run db:generate -- --name <name>`; hand-written SQL (RLS, grants): `npx drizzle-kit generate --custom --name <name>`. Never edit a migration that has been applied anywhere shared.
+- Apply migrations (locked, one transaction, as the schema owner): `npm run db:migrate`.
+- Database tests against real PostgreSQL (needs `npm run db:start`; uses a disposable database): `npm run test:db`.
 - Development server: `npm run dev`.
 - Type-check (compiles messages first): `npm run check`.
 - Lint and formatting: `npm run lint`; fix formatting with `npm run format`.
-- Unit and rule tests: `npx vitest run` (or `npm run test:unit` for watch mode).
+- All Vitest projects (unit, rule and database tests): `npx vitest run` (or `npm run test:unit` for watch mode).
 - End-to-end tests (phone WebKit and desktop Chromium in the official Playwright image): `npm run test:e2e`. `npm run test:e2e:local` runs desktop Chromium on the host only.
 - Production build: `npm run build`.
 - Messages: edit `messages/en.json`; `npm run i18n` compiles them.
