@@ -17,6 +17,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - 48 voice clips recorded (m4a) in `~/obur-private/audio/raw/`, matching `~/obur-private/audio/transcripts.tsv` (25 tr, 13 en, 10 mixed; 13 in harder conditions).
 - Server access ready: SSH alias `obur-lab` (desktop `~/.ssh/config`) into the unprivileged `obur-lab` container; only `/work` (its appdata folder) is mounted. Port 8040 will be published when the phone probe starts; the owner routes the pilot hostname to it through their existing Cloudflare tunnel.
 - Step 0 done: hardware recorded in `docs/feasibility.md`.
+- Step 1 done: LoseIt export inspected (`docs/loseit-export.md`, summary in `docs/feasibility.md`). Aggregate output in `~/obur-private/results/`.
 
 ## Validation results
 
@@ -24,7 +25,7 @@ None yet. No measurements have been taken.
 
 ## Exact next step
 
-Step 1: inspect the LoseIt export with scripts in `spikes/loseit/` that print structure and coverage, not diary rows.
+Step 2: speech benchmark (faster-whisper) in a shared Docker image under `spikes/speech/`, desktop first, then `obur-lab`.
 
 ## Conventions for Phase 0
 
@@ -32,6 +33,8 @@ Step 1: inspect the LoseIt export with scripts in `spikes/loseit/` that print st
 - Throwaway probe scripts live in `spikes/` and never import from or get imported by `src/`. Their outputs that contain real data go to `~/obur-private/results/`; only aggregate numbers and redacted fixtures reach `docs/feasibility.md`.
 
 ## Unresolved questions
+
+- LoseIt: weight unit (kg suspected), diary time zone (Europe/Istanbul suspected), whether pre-2026 history exists.
 
 - Test phone: iPhone 13, iOS 27.0.1.
 - Pilot hostname chosen (a subdomain of the owner's domain); recorded only in the owner's `.env`, RP ID is the parent domain.

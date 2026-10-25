@@ -17,7 +17,12 @@ Benchmarks use the same container image, model files and settings on both machin
 
 ## LoseIt export
 
-Not measured yet.
+Full findings: `docs/loseit-export.md`. Summary:
+
+- **Importable with good fidelity for diary history.** 2,420 active diary rows over 270 days. Each row carries its own nutrient totals, and those rows reproduce LoseIt's daily food calories exactly on all 274 summary days. That gives the importer a strong acceptance check.
+- **Identity is weak.** No entry IDs, no food IDs, no times. Overlap handling must use fingerprints with occurrence counting, and real repeated meals exist in the data.
+- **Traps the importer must handle:** included deleted rows, `n/a` vs `0`, thousands commas in calories, inconsistent unit names, count-only units, and `M/D/YYYY` dates without a zone.
+- **Not recoverable from the export:** recipe ingredients (the recipe rows are also malformed), the weight unit (owner to confirm), the meaning of the device calorie-bonus values, and any history before 2026 if it exists.
 
 ## Speech (faster-whisper)
 
