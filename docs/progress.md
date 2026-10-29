@@ -4,9 +4,20 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 ## Current phase
 
-**Phase 1 — Daily-use pilot**: approved by the owner on 2026-10-25. Phase 0 is complete.
+**Phase 2 — LoseIt replacement and early voice**: approved by the owner on 2026-10-30. Phase 1 is complete (deployed on the owner's Unraid, offline behaviour confirmed on the iPhone). The owner keeps using LoseIt until obur is production-ready.
 
-The owner keeps using LoseIt until obur is complete and production-ready; Phase 1 and later builds are for testing, not daily reliance.
+## Phase 2 plan
+
+1. **LoseIt reader** (pure parser, header-detected layout, redacted fixture with invented values for owner review).
+2. **LoseIt import** with dry run, file hash, fingerprint-and-multiplicity matching for overlapping exports, daily-total reconciliation against `daily-calorie-summary.csv`, atomic apply; foods private with an opt-in share; budgets as manual target versions from the dates they changed; activity recorded but not counted; completions; weight unit asked in the preview.
+3. **Owner's real import** through the app, with a reconciliation report.
+4. **Automatic budget recalculation** (proposed, owner to confirm): a new calculated target version when a new weight changes the budget; past days never change.
+5. **Saved meals** (snapshots, explicit refresh, in export/import).
+6. **Curated generic foods and aliases** from USDA (public domain only), chosen from foods in the owner's history.
+7. **Typed quick entry** (pure `nl-parser`, proposals confirmed before saving).
+8. **Voice** (speech service with faster-whisper `small`; audio deleted after transcription); held-out set of about 30 owner clips and 15–20 from a second speaker.
+
+Owner decisions (2026-10-30): LoseIt Morning and Afternoon Snacks map to Snacks; imported days keep LoseIt's budgets; generic foods from USDA only (no licensed sources; TürKomp is not public domain); held-out voice recordings possible but not guaranteed.
 
 ## Phase 1 plan
 
