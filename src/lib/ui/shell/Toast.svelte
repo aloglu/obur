@@ -2,7 +2,10 @@
 	// docs/ui.md "Toast": bottom-left of the main area on desktop, above the tab bar on phones; 5 s; role="status".
 	import Check from '@lucide/svelte/icons/check';
 	import { m } from '#lib/paraglide/messages.js';
-	import { dismissToast, toast } from '#lib/client/toast.svelte.ts';
+	import { onMount } from 'svelte';
+	import { dismissToast, restoreToast, toast } from '#lib/client/toast.svelte.ts';
+
+	onMount(restoreToast);
 
 	async function undo() {
 		const action = toast.current?.undo;

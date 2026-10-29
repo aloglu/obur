@@ -6,19 +6,23 @@ import { apiAs, signedInAs } from './fixtures.ts';
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
 /**
- * Uses the app online first, the way people do: the service worker takes control, and moving between tabs caches
- * the pages and the data requests that client-side navigation makes.
+ * Opens only Today online, the way people do. The service worker takes control and the app saves a copy of every
+ * main tab in the background, so tabs never visited online still open offline (owner's iPhone, Phase 1).
  */
 async function primeCache(page: Page) {
 	await page.goto('/');
 	await page.evaluate(() => navigator.serviceWorker.ready);
 	await page.reload();
-	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
-	for (const tab of ['Log', isPhone(page) ? 'More' : 'Settings', 'Today']) {
-		await nav.getByRole('link', { name: tab }).click();
-		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-	}
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect
+		.poll(() =>
+			page.evaluate(async () => {
+				const keys = await (await caches.open('obur-data-v1')).keys();
+				const paths = keys.map((r) => new URL(r.url).pathname);
+				return ['/__data.json', '/log', '/progress/__data.json'].every((p) => paths.includes(p));
+			})
+		)
+		.toBe(true);
 }
 
 async function quickAdd(page: Page, kcal: string, description: string) {
@@ -128,4 +132,53 @@ test('signing out asks before discarding entries that have not been sent', async
 	await expect(page).toHaveURL(/\/login$/);
 	const queues = await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name));
 	expect(queues.filter((n) => n?.startsWith('obur-queue-'))).toEqual([]);
+});
+
+test('the Log tab opens offline without a visit online, and a quick add there confirms once', async ({
+	page,
+	context
+}) => {
+	await signedInAs(page, 'Emre');
+	await primeCache(page);
+	await context.setOffline(true);
+	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
+	await nav.getByRole('link', { name: 'Log' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
+
+	await page.getByRole('button', { name: 'Quick add calories' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Quick add calories' });
+	await sheet.getByLabel('Calories (kcal)').fill('250');
+	await sheet.getByLabel('What was it? (optional)').fill('Tost');
+	await sheet.getByRole('button', { name: 'Save' }).click();
+	// The sheet closes, so the confirmation is visible rather than hidden behind it.
+	await expect(sheet).toHaveCount(0);
+	await expect(page.getByRole('status')).toContainText('Saved on this device');
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect(page.getByText('Waiting to sync')).toHaveCount(1);
+	await context.setOffline(false);
+});
+
+test('a connection that hangs gives up quickly, and the next entry is kept at once', async ({
+	page,
+	context,
+	browserName
+}) => {
+	test.skip(
+		browserName === 'webkit',
+		'request interception does not apply under a service worker in WebKit'
+	);
+	await signedInAs(page, 'Ece');
+	await primeCache(page);
+	// Like Airplane Mode on iOS: requests neither succeed nor fail.
+	await context.route('**/api/v1/body/water', () => {});
+	const water = page.getByRole('region', { name: 'Water' });
+	let started = Date.now();
+	await water.getByRole('button', { name: 'Add 250 ml of water' }).click();
+	await expect(water).toContainText('+250 ml waiting to sync', { timeout: 6000 });
+	expect(Date.now() - started).toBeLessThan(5000);
+	started = Date.now();
+	await water.getByRole('button', { name: 'Add 250 ml of water' }).click();
+	await expect(water).toContainText('+500 ml waiting to sync');
+	expect(Date.now() - started).toBeLessThan(1500);
+	await context.unrouteAll({ behavior: 'ignoreErrors' });
 });

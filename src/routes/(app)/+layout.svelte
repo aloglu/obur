@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
-	import { offline, startSync } from '#lib/client/offline/sync.svelte.ts';
+	import { offline, recentlyUnreachable, startSync } from '#lib/client/offline/sync.svelte.ts';
 	import { syncZoneCookie } from '#lib/client/prefs.ts';
 	import AppShell from '#lib/ui/shell/AppShell.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
@@ -16,6 +16,30 @@
 		if (syncZoneCookie()) invalidateAll();
 		// Send anything this account queued while offline; refresh the page when something arrives.
 		if (data.user) startSync(data.user.id, () => invalidateAll());
+		// Keep a copy of every main tab on this device, so each one opens without a connection, not only the
+		// pages visited while online. Done once per app start, after the current page has settled.
+		const warm = setTimeout(() => {
+			if (recentlyUnreachable()) return;
+			const tabs = [
+				resolve('/(app)'),
+				resolve('/(app)/log'),
+				resolve('/(app)/progress'),
+				resolve('/(app)/more'),
+				resolve('/(app)/settings'),
+				resolve('/(app)/profile')
+			];
+			const get = (url: string, accept?: string) =>
+				fetch(url, { credentials: 'same-origin', headers: accept ? { accept } : undefined }).catch(
+					() => {}
+				);
+			for (const href of tabs) {
+				// The page itself (for a reload), and its data as SvelteKit requests it on an in-app move. The
+				// page that was opened first has its data built into the HTML, so it is fetched here explicitly.
+				get(href, 'text/html');
+				get(href === '/' ? '/__data.json?x-sveltekit-trailing-slash=1' : `${href}/__data.json`);
+			}
+		}, 3000);
+		return () => clearTimeout(warm);
 	});
 	// Keep the service worker's copy of this page current, so an offline reload shows the latest data rather than
 	// the page as it was first loaded. Only while online; failures are irrelevant.

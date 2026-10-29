@@ -33,10 +33,13 @@
 	const sheetMeal = $derived(preset ?? defaultMeal(new Date(), deviceZone()));
 
 	async function logged(entry: DiaryEntry | null) {
+		// Close the sheet first: a toast cannot be seen over an open dialog.
+		quick = false;
+		picking = null;
 		if (!entry) {
 			// Offline: confirm first, then return to Today's cached page.
 			showToast({ message: m.offline_saved(), detail: m.offline_saved_detail() });
-			await goto(date === data.today ? resolve('/(app)') : dayHref(date));
+			void goto(date === data.today ? resolve('/(app)') : dayHref(date));
 			return;
 		}
 		await goto(dayHref(entry.localDate, entry.id));

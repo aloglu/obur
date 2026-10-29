@@ -4,8 +4,15 @@
 import { ApiError } from '../api.ts';
 import { deleteQueue, openQueue, type Preview, type Queue, type QueuedOp } from './store.ts';
 
+/** Background sends can wait; a person tapping Save should not. */
 const TIMEOUT_MS = 10_000;
+const DIRECT_TIMEOUT_MS = 3_000;
 const RETRY_MS = 30_000;
+/** After a failed request, new entries go straight to the queue for this long (iOS can hang offline requests). */
+const UNREACHABLE_HOLD_MS = 60_000;
+let unreachableUntil = 0;
+/** Refreshes the page after queued entries arrive (set by startSync). */
+let sentHandler: (() => void) | undefined;
 
 export const offline = $state<{
 	ownerId: string | null;
@@ -17,6 +24,8 @@ export const offline = $state<{
 }>({ ownerId: null, items: [], authRequired: false, cachedCopy: false });
 
 let queue: Queue | undefined;
+/** True while new entries skip the direct attempt because the server was unreachable a moment ago. */
+export const recentlyUnreachable = () => Date.now() < unreachableUntil;
 /** Resolves once the signed-in account's queue is open; submit() waits for it. */
 let ready: Promise<void> | undefined;
 let flushing: Promise<number> | undefined;
@@ -26,9 +35,9 @@ const listeners: (() => void)[] = [];
 class Unreachable extends Error {}
 
 /** POSTs JSON; throws Unreachable when the server cannot be reached or is failing, ApiError when it refuses. */
-async function post(path: string, body: unknown): Promise<unknown> {
+async function post(path: string, body: unknown, timeoutMs = TIMEOUT_MS): Promise<unknown> {
 	const controller = new AbortController();
-	const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 	let response: Response;
 	try {
 		response = await fetch(path, {
@@ -39,11 +48,16 @@ async function post(path: string, body: unknown): Promise<unknown> {
 			signal: controller.signal
 		});
 	} catch {
+		unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS;
 		throw new Unreachable();
 	} finally {
 		clearTimeout(timeout);
 	}
-	if (response.status >= 500) throw new Unreachable();
+	if (response.status >= 500) {
+		unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS;
+		throw new Unreachable();
+	}
+	unreachableUntil = 0;
 	const data = (await response.json().catch(() => ({}))) as { error?: string };
 	if (!response.ok) throw new ApiError(data.error ?? 'error', response.status);
 	return data;
@@ -64,6 +78,7 @@ export function startSync(ownerId: string, onSent: () => void): Promise<void> {
 		queue = await openQueue(ownerId);
 		await refresh();
 		// Refresh when something arrived or the page shows a saved copy; otherwise reloading would only fail.
+		sentHandler = onSent;
 		const kick = () => void flush().then((sent) => (sent > 0 || offline.cachedCopy) && onSent());
 		const onVisible = () => document.visibilityState === 'visible' && kick();
 		const onMessage = (event: MessageEvent) => {
@@ -95,6 +110,7 @@ export function stopSync() {
 	offline.ownerId = null;
 	offline.items = [];
 	offline.cachedCopy = false;
+	sentHandler = undefined;
 }
 
 /**
@@ -109,9 +125,11 @@ export async function submit<T>(
 	await ready;
 	if (!queue || !offline.ownerId) throw new Error('Sync not started');
 	const waiting = offline.items.some((i) => i.status === 'pending');
-	if (!waiting && !offline.authRequired) {
+	// Try the server directly only when nothing is waiting and it was reachable recently; a timed-out attempt may
+	// still arrive, which is harmless because the queued retry carries the same client ID.
+	if (!waiting && !offline.authRequired && Date.now() >= unreachableUntil) {
 		try {
-			return { status: 'sent', data: (await post(path, body)) as T };
+			return { status: 'sent', data: (await post(path, body, DIRECT_TIMEOUT_MS)) as T };
 		} catch (e) {
 			if (!(e instanceof Unreachable)) throw e;
 		}
@@ -128,7 +146,9 @@ export async function submit<T>(
 		status: 'pending'
 	});
 	await refresh();
-	if (waiting) void flush();
+	// Keep trying in the background (it also finds out when the server is back).
+	if (waiting || Date.now() < unreachableUntil)
+		void flush().then((sent) => sent > 0 && sentHandler?.());
 	return { status: 'queued' };
 }
 

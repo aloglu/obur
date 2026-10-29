@@ -34,17 +34,20 @@ sw.addEventListener('install', (event) => {
 	);
 });
 
+// Keeps the previous version's shell too: a page opened before an update still runs the old code, and offline it
+// must still find that code's files (seen on the owner's iPhone after a deploy). Older versions are removed.
+const KEEP_SHELLS = 2;
+
 sw.addEventListener('activate', (event) => {
 	event.waitUntil(
 		caches
 			.keys()
-			.then((keys) =>
-				Promise.all(
-					keys
-						.filter((k) => k.startsWith('obur-shell-') && k !== SHELL)
-						.map((k) => caches.delete(k))
-				)
-			)
+			.then((keys) => {
+				// Versions are build times, so the newest sort last.
+				const shells = keys.filter((k) => k.startsWith('obur-shell-')).sort();
+				const keep = new Set([...shells.slice(-KEEP_SHELLS), SHELL]);
+				return Promise.all(shells.filter((k) => !keep.has(k)).map((k) => caches.delete(k)));
+			})
 			.then(() => sw.clients.claim())
 	);
 });
@@ -100,8 +103,12 @@ sw.addEventListener('fetch', (event) => {
 	const url = new URL(request.url);
 	if (url.origin !== location.origin) return;
 
-	if (SHELL_ASSETS.has(url.pathname)) {
-		event.respondWith(caches.match(request).then((hit) => hit ?? fetch(request)));
+	// Hashed files never change, so any cached version's copy is right (including the previous version's).
+	if (SHELL_ASSETS.has(url.pathname) || url.pathname.startsWith('/_app/immutable/')) {
+		// ignoreVary: a module import sends headers (Origin) that the install-time copy was not fetched with.
+		event.respondWith(
+			caches.match(request, { ignoreVary: true }).then((hit) => hit ?? fetch(request))
+		);
 		return;
 	}
 	const page =
