@@ -65,8 +65,15 @@ wait_ready() {
 }
 
 ensure_stanza() {
-	# Idempotent: succeeds when the stanza already exists for this cluster.
-	pgbackrest stanza-create >/dev/null
+	# Idempotent: succeeds when the stanza already exists. Each repository is set up on its own, so an unreachable
+	# off-site store never stops local backups; only a local failure is an error here.
+	local repo
+	for repo in $(repos); do
+		if ! pgbackrest --repo="$repo" stanza-create >/dev/null; then
+			[[ $repo == 1 ]] && return 1
+			log "off-site repository not reachable; local backups continue"
+		fi
+	done
 }
 
 archive_status() {
