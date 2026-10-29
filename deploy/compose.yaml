@@ -28,6 +28,10 @@ x-pgbackrest-env: &pgbackrest-env
   PGBACKREST_LOG_LEVEL_FILE: 'off'
   PGBACKREST_START_FAST: 'y'
   PGBACKREST_COMPRESS_TYPE: zst
+  # Several files at once, and small files bundled into larger objects: far fewer requests to off-site storage.
+  PGBACKREST_PROCESS_MAX: ${OBUR_BACKUP_PROCESSES:-4}
+  PGBACKREST_REPO1_BUNDLE: 'y'
+  PGBACKREST_REPO1_BLOCK: 'y'
   PGBACKREST_REPO1_PATH: /var/lib/pgbackrest
   PGBACKREST_REPO1_CIPHER_TYPE: aes-256-cbc
   PGBACKREST_REPO1_CIPHER_PASS: ${OBUR_BACKUP_PASSPHRASE:?Set OBUR_BACKUP_PASSPHRASE in .env}

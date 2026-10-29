@@ -38,6 +38,8 @@ if [[ -n ${OBUR_OFFSITE_TYPE:-} ]]; then
 	export PGBACKREST_REPO2_CIPHER_TYPE=aes-256-cbc
 	export PGBACKREST_REPO2_CIPHER_PASS=$PGBACKREST_REPO1_CIPHER_PASS
 	export PGBACKREST_REPO2_RETENTION_FULL=${PGBACKREST_REPO1_RETENTION_FULL:-5}
+	export PGBACKREST_REPO2_BUNDLE=y
+	export PGBACKREST_REPO2_BLOCK=y
 fi
 
 log() { printf '%s obur-backup: %s\n' "$(date -Iseconds)" "$*" >&2; }
