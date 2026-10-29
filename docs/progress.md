@@ -50,7 +50,7 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 
 ## In progress
 
-- Phase 1 step 11 (operations) is next; nothing started.
+- Phase 1 step 11 (operations), started 2026-10-29. Owner chose restricted deploy access (option C): `deploy/unraid/obur-ctl` (forced-command script, tested in `deploy/unraid/obur-ctl.test.ts`) and `deploy/unraid/README.md`. Deploy key `~/.ssh/obur_deploy` and SSH alias `obur-host` exist on the desktop; waiting for the owner to install the script and key on the Unraid host. Owner decisions (2026-10-29): backups live in `appdata/obur/backups` (path configurable for other installations); `.env` stays in `appdata/obur` and is excluded from the owner's weekly appdata-to-Dropbox copy, with the location configurable and the pitfall documented. Next: production image and Compose stack, pg-boss worker with trash purge, pgBackRest.
 
 - Phase 0 plan approved by the owner (2026-10-25).
 - Owner has supplied the LoseIt export, 11 label photos and a favourite-foods list in `~/obur-private/`.

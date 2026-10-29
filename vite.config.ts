@@ -61,7 +61,11 @@ export default defineConfig({
 				test: {
 					name: 'server',
 					environment: 'node',
-					include: ['src/**/*.{test,spec}.{js,ts}', 'eslint-rules/**/*.test.js'],
+					include: [
+						'src/**/*.{test,spec}.{js,ts}',
+						'eslint-rules/**/*.test.js',
+						'deploy/**/*.test.ts'
+					],
 					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}', 'src/**/*.db.test.ts']
 				}
 			},
