@@ -185,7 +185,7 @@ The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps.
 ## 4. Deliberately left open
 
 - **Progress below the calendar:** weight chart, averages, per-kilo achievements, and the "joy" moment when an achievement lands.
-- **Unfinished screens:** Profile and goals, Units and formats, Your data, Household and admin, and onboarding (including BMI).
+- **Unfinished screens:** Profile and goals, Units and formats, Your data, Household and admin, and onboarding (including BMI). Provisional versions of Profile, onboarding, Your data and Household exist (Phase 1 steps 7 and 10) and need the owner's review.
 - **Barcode:** with no outside product lookups, a barcode only finds products someone in the household already scanned. The proposal is to add it later as a shortcut inside Scan, not as its own tile.
 - **Voice quick adds:** voice could also handle "500 calories, dinner". If it does, the Quick add button could move to the no-results state only.
 - **Voice error states:** nothing heard, low confidence, a food not found (offer to create it or quick add), voice turned off in `.env` (hide the tile).
@@ -218,3 +218,5 @@ Routine choices made while building the screens; none changes the direction abov
 - `docs/design.md`: replace "calm over-budget" with red for over budget (the ring on Today and the calendar), by the owner's choice.
 - `docs/design.md`: voice and label scanning are part of the core logging UI (Speak and Scan tiles on Log). They still need hiding when switched off in `.env`.
 - `docs/design.md`: suggestions show only when the search field is focused. There are no standing Favourites/Recent lists.
+- **Your data** (step 10, provisional): three cards. Export ("Download export"), Import (choose a file, then a preview table of New / Already here / Kept as is per kind with plain-language warnings, then "Import"), and Delete account (a keep/remove choice for shared foods, the backup-retention note, and a confirmation sheet with an "I understand" checkbox).
+- **Household** (step 10, provisional): a People card with "Delete account" for others (confirmation sheet with the same shared-foods choice), and a Deleted accounts card listing opaque IDs and dates with the instruction to keep a copy off the server.

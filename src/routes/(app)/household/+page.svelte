@@ -6,6 +6,8 @@
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Card from '#lib/ui/Card.svelte';
+	import Chips from '#lib/ui/Chips.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 	import TextField from '#lib/ui/TextField.svelte';
 
@@ -18,7 +20,22 @@
 		usedByName: string | null;
 	}
 
+	interface Member {
+		id: string;
+		displayName: string;
+		role: 'admin' | 'member';
+	}
+	interface Deletion {
+		accountId: string;
+		deletedAt: string;
+	}
+
+	let { data } = $props();
 	let invites = $state<Invite[]>([]);
+	let members = $state<Member[]>([]);
+	let deletions = $state<Deletion[]>([]);
+	let deleting = $state<Member | null>(null);
+	let removeShared = $state<'keep' | 'remove'>('keep');
 	let note = $state('');
 	let link = $state('');
 	let copied = $state(false);
@@ -37,6 +54,10 @@
 
 	const refresh = async () => {
 		invites = (await api<{ invites: Invite[] }>('GET', '/api/v1/auth/invites')).invites;
+		({ members, deletions } = await api<{ members: Member[]; deletions: Deletion[] }>(
+			'GET',
+			'/api/v1/household/members'
+		));
 	};
 	onMount(refresh);
 
@@ -61,6 +82,15 @@
 			copied = false;
 		});
 
+	const deleteMember = (member: Member) =>
+		run(async () => {
+			await api('DELETE', '/api/v1/household/members', {
+				id: member.id,
+				removeSharedFoods: removeShared === 'remove'
+			});
+			deleting = null;
+		});
+
 	const revoke = (i: Invite) => run(() => api('POST', '/api/v1/auth/invites/revoke', { id: i.id }));
 
 	async function copy() {
@@ -75,6 +105,33 @@
 	<a href={resolve('/(app)')} class="text-[14px] font-semibold text-accent">← {m.app_name()}</a>
 	<h1 class="text-[24px] font-[750]">{m.household_title()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
+
+	<Card title={m.household_members()}>
+		<ul class="flex flex-col divide-y divide-line">
+			{#each members as member (member.id)}
+				<li class="flex min-h-14 items-center justify-between gap-3 py-2">
+					<div class="min-w-0">
+						<p class="truncate text-[15px] font-semibold">{member.displayName}</p>
+						<p class="text-[13px] text-muted">
+							{member.id === data.user?.id
+								? m.household_you()
+								: member.role === 'admin'
+									? m.household_admin()
+									: ''}
+						</p>
+					</div>
+					{#if member.id !== data.user?.id}
+						<Button
+							variant="danger"
+							disabled={busy}
+							onclick={() => ((deleting = member), (removeShared = 'keep'))}
+							>{m.household_delete_member()}</Button
+						>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+	</Card>
 
 	<Card title={m.household_invite()}>
 		<TextField label={m.household_invite_note()} bind:value={note} maxlength={60} />
@@ -112,4 +169,43 @@
 			</ul>
 		{/if}
 	</Card>
+	<Card title={m.household_deletions()}>
+		<p class="text-[14px] text-muted">{m.household_deletions_body()}</p>
+		{#if deletions.length === 0}
+			<p class="text-[14px] text-muted">{m.household_deletions_none()}</p>
+		{:else}
+			<ul class="flex flex-col divide-y divide-line" data-testid="deletions">
+				{#each deletions as d (d.accountId)}
+					<li class="flex flex-col py-2">
+						<span class="font-mono text-[13px] break-all">{d.accountId}</span>
+						<span class="text-[13px] text-muted">{date(d.deletedAt)}</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</Card>
 </main>
+
+{#if deleting}
+	{@const member = deleting}
+	<Sheet
+		title={m.household_delete_title({ name: member.displayName })}
+		onclose={() => (deleting = null)}
+	>
+		<p class="text-[15px]">{m.household_delete_body()}</p>
+		<p class="text-[14px] text-muted">{m.data_delete_backups()}</p>
+		<Chips
+			label={m.data_delete_shared()}
+			bind:value={removeShared}
+			options={[
+				{ value: 'keep', label: m.data_delete_keep() },
+				{ value: 'remove', label: m.data_delete_remove() }
+			]}
+		/>
+		{#if problem}<Notice>{problem}</Notice>{/if}
+		<Button variant="danger" disabled={busy} onclick={() => deleteMember(member)}
+			>{m.data_delete_confirm_button()}</Button
+		>
+		<Button variant="ghost" onclick={() => (deleting = null)}>{m.common_cancel()}</Button>
+	</Sheet>
+{/if}

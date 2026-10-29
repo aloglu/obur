@@ -61,8 +61,8 @@
 			>
 		</li>
 		<li>
-			<span class={[row, 'text-muted']}
-				>{m.more_data()}<span class="text-[13px] font-normal">{m.more_soon()}</span></span
+			<a href={resolve('/(app)/settings/data')} class={row}
+				>{m.more_data()}<ChevronRight size={20} class="text-muted" aria-hidden="true" /></a
 			>
 		</li>
 		<li>
