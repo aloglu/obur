@@ -146,6 +146,8 @@
 	"nutrient_saturated_fat": "Saturated fat (g)",
 	"nutrient_carbohydrate": "Carbohydrate (g)",
 	"nutrient_carbohydrate_total": "Total carbohydrate (g)",
+	"nutrient_carbohydrate_unspecified": "Carbohydrate, definition not stated (g)",
+	"nutrient_cholesterol": "Cholesterol (mg)",
 	"nutrient_sugars": "Sugars (g)",
 	"nutrient_fibre": "Fibre (g)",
 	"nutrient_protein": "Protein (g)",

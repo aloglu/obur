@@ -10,6 +10,8 @@ export const NUTRIENTS = {
 	carbohydrate_excl_fibre: { unit: 'g', core: true },
 	// USDA/US label "total carbohydrate" includes fibre. Never summed with the one above.
 	carbohydrate_total: { unit: 'g', core: false },
+	// Imported carbohydrate whose definition the source does not state (LoseIt). Never summed with either one above.
+	carbohydrate_unspecified: { unit: 'g', core: false },
 	sugars: { unit: 'g', core: true },
 	fibre: { unit: 'g', core: true },
 	protein: { unit: 'g', core: true },

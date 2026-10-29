@@ -1,0 +1,2 @@
+ALTER TABLE "food_nutrients" DROP CONSTRAINT "food_nutrients_code_valid";--> statement-breakpoint
+ALTER TABLE "food_nutrients" ADD CONSTRAINT "food_nutrients_code_valid" CHECK ("food_nutrients"."code" in ('energy_kcal', 'energy_kj', 'fat', 'saturated_fat', 'carbohydrate_excl_fibre', 'carbohydrate_total', 'carbohydrate_unspecified', 'sugars', 'fibre', 'protein', 'salt', 'sodium', 'polyols', 'starch', 'monounsaturated_fat', 'polyunsaturated_fat', 'trans_fat', 'cholesterol', 'calcium', 'potassium', 'iron'));

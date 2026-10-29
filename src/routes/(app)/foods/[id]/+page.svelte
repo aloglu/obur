@@ -65,6 +65,8 @@
 		saturated_fat: m.nutrient_saturated_fat,
 		carbohydrate_excl_fibre: m.nutrient_carbohydrate,
 		carbohydrate_total: m.nutrient_carbohydrate_total,
+		carbohydrate_unspecified: m.nutrient_carbohydrate_unspecified,
+		cholesterol: m.nutrient_cholesterol,
 		sugars: m.nutrient_sugars,
 		fibre: m.nutrient_fibre,
 		protein: m.nutrient_protein,
