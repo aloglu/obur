@@ -42,9 +42,9 @@ Columns: `Date, Name, Icon, Meal, Quantity, Units, Calories, Deleted, Fat (g), P
 - **Nutrients are totals for the logged amount**: for 1,218 of the 1,270 rows comparable with a custom food, kcal matched the food scaled by grams/ml within 2%. The other 52 likely reflect foods edited after logging. The import should snapshot the row's own values and not recompute them from foods.
 - 138 of the 239 distinct active names match a custom food exactly (1,465 rows); 4 custom-food names are duplicated. The rest are LoseIt database foods, whose nutrients exist only in these rows.
 - Meals: `Breakfast`, `Lunch`, `Dinner`, `Snacks`, `Morning Snacks`, `Afternoon Snacks`. Mapping to obur meals is an importer decision to confirm with the owner.
-- 125 active rows have kcal but no macros: likely quick-add calories. They should import as calories-only entries.
+- 125 active rows have kcal but no macros. Checked in Phase 2: they are all one LoseIt database food (Walnuts, logged by count) with only calories reported, not quick adds. They import as food entries with the other nutrients unknown.
 - Sodium is reported; salt would be derived (sodium × 2.5 / 1000), with sodium retained.
-- Carbohydrate definition is not stated. LoseIt mixes database and user-entered values (the user's are from Turkish/EU labels). The importer must treat it as an unknown carbohydrate definition rather than assume EU or USDA.
+- Carbohydrate definition is not stated. LoseIt mixes database and user-entered values (the user's are from Turkish/EU labels). The importer must treat it as an unknown carbohydrate definition rather than assume EU or USDA. Implemented as the nutrient code `carbohydrate_unspecified`, never summed with either definition.
 
 ## Reconciliation baseline
 
