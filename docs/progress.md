@@ -86,13 +86,17 @@ Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 10 (2026-10-29): `npm 
 
 ## Exact next step
 
-Phase 1 step 11: operations. Production image (web and worker commands) and Compose stack for the Unraid host behind the existing Cloudflare Tunnel (set `BODY_SIZE_LIMIT` ≥ 21M); pg-boss worker with the 30-day trash purge that keeps a minimal per-ID marker; pgBackRest with encrypted local backups, optional off-site (R2 for the owner) with a plain warning when absent, monitored WAL archival, and a weekly restore check; `docs/restore.md` including revoking restored sessions and reapplying deletions from the admin's off-server list (needs an operator command); CI.
+**At the start of the next session, remind the owner of the open question:** step 4, automatic budget recalculation (a new calculated target version when a new weight changes the budget; past days never change) or keep the manual recalculation nudge on Profile. Then continue Phase 2 with step 4 or step 5 (saved meals).
 
-Owner check when convenient (not blocking): on the iPhone, open the installed app once online, then in Airplane Mode reopen it, add water and a quick add, turn Airplane Mode off and confirm both arrive.
+## Owner-reported issues to schedule (2026-10-30)
 
-Deferred within Phase 1 (noted, not blocking): imperial display units (storage is metric, so this is display-only); a units and formats settings page (decimal mark and first day of week are stored in the profile with defaults "," and Monday).
+Reported for later; the assistant decides when to fit them in. None is fixed yet.
 
-Pending from step 5: purging trash entries older than 30 days needs the background worker (pg-boss), planned with operations (step 11); until then expired trash simply cannot be restored.
+1. **Water can't be edited or deleted** after the Undo toast is gone. Add edit/delete for a day's water (the body module already has trash and restore).
+2. **Weight likewise:** edit or delete a recorded weight for a date.
+3. **LoseIt-imported foods show a wrong extra unit:** in a food's amount sheet, under Unit, a per-100 g food (e.g. Lor Peyniri) shows both "g" and "100g", apparently because its basis amount is 100. Check the unit options for imported foods (basis serving shown as a unit).
+4. **Desktop "+" on a meal card** only adds a meal pill to the Log panel, which is easy to miss (the owner first thought nothing happened). Rethink adding to a meal on desktop; the phone behaviour (open Log) is acceptable but could adopt a better shared solution.
+5. **Desktop Today layout:** the Log panel should align vertically with the Budget card, not with the top of the Today column.
 
 ## Implementation notes
 
