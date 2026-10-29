@@ -64,17 +64,25 @@ wait_ready() {
 	until pg_isready -q -h "$SOCKET" -U "${PGBACKREST_PG1_USER:-postgres}" -d postgres; do sleep 5; done
 }
 
+# Runs pgBackRest as if no off-site repository were configured.
+local_only() {
+	(
+		for v in $(compgen -e | grep '^PGBACKREST_REPO2_' || true); do unset "$v"; done
+		pgbackrest "$@"
+	)
+}
+
 ensure_stanza() {
-	# Idempotent: succeeds when the stanza already exists. Each repository is set up on its own, so an unreachable
-	# off-site store never stops local backups; only a local failure is an error here.
-	local repo out
-	for repo in $(repos); do
-		if ! out=$(pgbackrest --repo="$repo" stanza-create 2>&1); then
-			log "repository $repo could not be set up: $(grep -m3 -E 'ERROR|HINT' <<<"$out" | tr -s ' ' | tr '\n' ' ')"
-			[[ $repo == 1 ]] && return 1
-			log "local backups continue without the off-site copy"
-		fi
-	done
+	# Idempotent: succeeds when the stanza already exists. stanza-create acts on every configured repository, so the
+	# local one is set up first on its own: an unreachable off-site store never stops local backups.
+	local out
+	if ! out=$(local_only stanza-create 2>&1); then
+		log "the local repository could not be set up: $(grep -m3 -E 'ERROR|HINT' <<<"$out" | tr -s ' ' | tr '\n' ' ')"
+		return 1
+	fi
+	if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]] && ! out=$(pgbackrest stanza-create 2>&1); then
+		log "the off-site repository could not be set up (local backups continue): $(grep -m3 -E 'ERROR|HINT' <<<"$out" | tr -s ' ' | tr '\n' ' ')"
+	fi
 	return 0
 }
 
