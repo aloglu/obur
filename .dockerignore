@@ -1,0 +1,16 @@
+# Only what the image build needs; never secrets or private data.
+.git
+.env
+.env.*
+!.env.example
+node_modules
+build
+.svelte-kit
+test-results
+playwright-report
+spikes
+private
+docs
+tests
+**/*.private.*
+src/lib/paraglide
