@@ -6,7 +6,7 @@
 	import { dayHref, logHref } from '#lib/client/links.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
-	import { addDays, defaultMeal } from '#lib/shared/diary-rules.ts';
+	import { addDays, carbohydrateDay, defaultMeal } from '#lib/shared/diary-rules.ts';
 	import type { ActivityEntry } from '#lib/shared/body-types.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
 	import { kcal, mealName } from '#lib/shared/format.ts';
@@ -152,7 +152,12 @@
 			floor={data.target?.floorKcal ?? 0}
 			onaddactivity={() => (addingActivity = true)}
 		/>
-		<NutrientsCard totals={data.totals} entryCount={data.entries.length} targets={data.macros} />
+		<NutrientsCard
+			totals={data.totals}
+			carbs={carbohydrateDay(data.entries)}
+			entryCount={data.entries.length}
+			targets={data.macros}
+		/>
 		<div class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
 			<WaterCard date={data.date} totalMl={data.water.totalMl} onchange={invalidateAll} />
 			<WeightCard

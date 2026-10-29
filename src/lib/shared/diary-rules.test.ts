@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	addDays,
+	carbohydrateDay,
 	dayTotals,
 	isIsoDate,
 	isLateNight,
@@ -117,5 +118,27 @@ describe('days and zones', () => {
 		expect(isIsoDate('2026-10-25')).toBe(true);
 		expect(isIsoDate('2026-02-29')).toBe(false);
 		expect(isIsoDate('2026-10-5')).toBe(false);
+	});
+});
+
+describe('carbohydrateDay', () => {
+	const v = (value: number, qualifier: 'reported' | 'estimate' = 'reported') => ({
+		value,
+		qualifier
+	});
+	it('keeps the stated and the unstated carbohydrate apart and counts entries with neither', () => {
+		const day = carbohydrateDay([
+			{ nutrients: { carbohydrate_excl_fibre: v(20) } },
+			{ nutrients: { carbohydrate_unspecified: v(30, 'estimate') } },
+			{ nutrients: { carbohydrate_unspecified: v(12.5) } },
+			// An entry with both counts only once, as the stated value.
+			{ nutrients: { carbohydrate_excl_fibre: v(5), carbohydrate_unspecified: v(6) } },
+			{ nutrients: { energy_kcal: v(100) } }
+		]);
+		expect(day).toEqual({
+			stated: { value: 25, entries: 2, approximate: false },
+			unstated: { value: 42.5, entries: 2, approximate: true },
+			unknown: 1
+		});
 	});
 });

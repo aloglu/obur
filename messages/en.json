@@ -470,5 +470,7 @@
 	"data_warn_height_out_of_range": "The height in this export isn't in centimetres, so it's left out of your profile.",
 	"data_warn_reconciliation_mismatch": "Some days don't add up to LoseIt's totals. Check them after importing.",
 	"data_error_loseit_layout": "This LoseIt export has a layout obur doesn't recognise, so nothing was imported.",
-	"data_error_loseit_value": "This LoseIt export has a value obur can't read: {detail}."
+	"data_error_loseit_value": "This LoseIt export has a value obur can't read: {detail}.",
+	"nutrients_carbs_unstated": "Definition not stated (imported)",
+	"nutrients_carbs_plus_unstated": "+ {value} g with the definition not stated (imported)"
 }

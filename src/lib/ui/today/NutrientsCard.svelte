@@ -1,17 +1,20 @@
 <script lang="ts">
 	// docs/ui.md "Nutrients card". Unknown values show "+" and how many entries are unknown, never zero.
 	import { m } from '#lib/paraglide/messages.js';
+	import type { CarbohydrateDay } from '#lib/shared/diary-rules.ts';
 	import type { DayTotals, NutrientTotal } from '#lib/shared/diary-types.ts';
 	import type { MacroTargets } from '#lib/shared/goals.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
 
 	interface Props {
 		totals: DayTotals;
+		/** Carbohydrate with both definitions kept apart (imported days state no definition). */
+		carbs: CarbohydrateDay;
 		entryCount: number;
 		/** From a calculated target; without one, bars are drawn relative to each other. */
 		targets: MacroTargets | null;
 	}
-	let { totals, entryCount, targets }: Props = $props();
+	let { totals, carbs, entryCount, targets }: Props = $props();
 
 	const main = [
 		{
@@ -48,9 +51,32 @@
 			note: t.unknown > 0 ? m.nutrients_unknown_entries({ count: t.unknown }) : null
 		};
 	}
-	const largest = $derived(Math.max(1, ...main.map((n) => totals[n.code]?.value ?? 0)));
+	/**
+	 * Carbs: the excluding-fibre total when any entry states it, otherwise the imported total of unstated
+	 * definition, each with a note. The two are never added together.
+	 */
+	const carbTotal = $derived.by((): NutrientTotal | undefined => {
+		const part = carbs.stated.entries
+			? carbs.stated
+			: carbs.unstated.entries
+				? carbs.unstated
+				: null;
+		if (!part) return undefined;
+		return { value: part.value, unknown: entryCount - part.entries, approximate: part.approximate };
+	});
+	const carbNote = $derived(
+		carbs.stated.entries && carbs.unstated.entries
+			? m.nutrients_carbs_plus_unstated({ value: formatDecimal(carbs.unstated.value, ',', 1) })
+			: !carbs.stated.entries && carbs.unstated.entries
+				? m.nutrients_carbs_unstated()
+				: null
+	);
+	const totalFor = (code: (typeof main)[number]['code']) =>
+		code === 'carbohydrate_excl_fibre' ? carbTotal : totals[code];
+
+	const largest = $derived(Math.max(1, ...main.map((n) => totalFor(n.code)?.value ?? 0)));
 	const width = (n: (typeof main)[number]) => {
-		const value = totals[n.code]?.value ?? 0;
+		const value = totalFor(n.code)?.value ?? 0;
 		const goal = targets?.[n.target];
 		return Math.min(100, Math.round((value / (goal || largest)) * 100));
 	};
@@ -62,7 +88,7 @@
 >
 	<h2 id="nutrients-title" class="text-[19px] font-bold">{m.nutrients_title()}</h2>
 	{#each main as n (n.code)}
-		{@const s = shown(totals[n.code])}
+		{@const s = shown(totalFor(n.code))}
 		<div class="flex flex-col gap-1">
 			<div class="flex items-baseline justify-between gap-2 text-[15px]">
 				<span class="font-semibold">{n.label()}</span>
@@ -76,6 +102,9 @@
 				<div class="h-full rounded-full" style:background={n.color} style:width="{width(n)}%"></div>
 			</div>
 			{#if s.note}<p class="text-[12.5px] text-muted">{s.note}</p>{/if}
+			{#if n.code === 'carbohydrate_excl_fibre' && carbNote}
+				<p class="text-[12.5px] text-muted">{carbNote}</p>
+			{/if}
 		</div>
 	{/each}
 	<dl class="grid grid-cols-2 gap-2">

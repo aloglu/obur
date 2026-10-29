@@ -63,6 +63,41 @@ export function dayTotals(entries: Pick<DiaryEntry, 'nutrients'>[]): DayTotals {
 	return totals;
 }
 
+export interface CarbohydrateDay {
+	/** Entries stating carbohydrate excluding fibre (EU/Turkish labels): the figure the dashboard uses. */
+	stated: { value: number; entries: number; approximate: boolean };
+	/** Entries with only a carbohydrate of unstated definition (imported from LoseIt). */
+	unstated: { value: number; entries: number; approximate: boolean };
+	/** Entries with neither. */
+	unknown: number;
+}
+
+/**
+ * A day's carbohydrate, keeping the two definitions apart (they are never added together): entries with the
+ * excluding-fibre value count there; entries with only an unstated-definition value count separately.
+ */
+export function carbohydrateDay(entries: Pick<DiaryEntry, 'nutrients'>[]): CarbohydrateDay {
+	const out: CarbohydrateDay = {
+		stated: { value: 0, entries: 0, approximate: false },
+		unstated: { value: 0, entries: 0, approximate: false },
+		unknown: 0
+	};
+	for (const e of entries) {
+		const n = e.nutrients.carbohydrate_excl_fibre ?? e.nutrients.carbohydrate_unspecified;
+		const part = e.nutrients.carbohydrate_excl_fibre ? out.stated : n ? out.unstated : null;
+		if (!part || !n) {
+			out.unknown += 1;
+			continue;
+		}
+		part.value += n.value;
+		part.entries += 1;
+		if (n.qualifier === 'less_than' || n.qualifier === 'estimate') part.approximate = true;
+	}
+	out.stated.value = Math.round(out.stated.value * 100) / 100;
+	out.unstated.value = Math.round(out.unstated.value * 100) / 100;
+	return out;
+}
+
 /** YYYY-MM-DD of an instant in an IANA zone. */
 export function localDate(instant: Date, zone: string): string {
 	return new Intl.DateTimeFormat('en-CA', {
