@@ -96,13 +96,23 @@ async function fromNetwork(request: Request, cache: Cache, key: string, announce
 	return response;
 }
 
+/**
+ * The saved copy for a request. Pages that read their query in the browser (the + buttons open /log?meal=…) are
+ * served from the copy saved under the plain address; any other page never saved gets the "not available offline"
+ * page, never another page in its place (a day's address must not show today).
+ */
+const READS_OWN_QUERY = new Set(['/log']);
+
 async function savedCopy(request: Request, cache: Cache, key: string) {
+	const exact = await cache.match(key);
+	if (exact) return exact;
 	const isPage =
 		request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html');
-	return (
-		(await cache.match(key)) ??
-		(isPage ? await cache.match(new URL('/', location.origin).href) : undefined)
-	);
+	if (!isPage) return undefined;
+	const plain = new URL(request.url);
+	plain.search = '';
+	const samePage = READS_OWN_QUERY.has(plain.pathname) ? await cache.match(plain.href) : undefined;
+	return samePage ?? (await cache.match(new URL('/offline', location.origin).href));
 }
 
 async function networkFirst(event: FetchEvent): Promise<Response> {

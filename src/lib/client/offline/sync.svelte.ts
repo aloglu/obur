@@ -63,6 +63,25 @@ async function post(path: string, body: unknown, timeoutMs = TIMEOUT_MS): Promis
 	return data;
 }
 
+/** A quick check that bypasses the service worker's saved copies (no page data involved). */
+async function serverReachable(): Promise<boolean> {
+	if (Date.now() < unreachableUntil) return false;
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), DIRECT_TIMEOUT_MS);
+	try {
+		const response = await fetch('/_app/version.json', {
+			cache: 'no-store',
+			signal: controller.signal
+		});
+		return response.ok;
+	} catch {
+		unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS;
+		return false;
+	} finally {
+		clearTimeout(timeout);
+	}
+}
+
 async function refresh() {
 	offline.items = queue ? await queue.all() : [];
 }
@@ -79,7 +98,12 @@ export function startSync(ownerId: string, onSent: () => void): Promise<void> {
 		await refresh();
 		// Refresh when something arrived or the page shows a saved copy; otherwise reloading would only fail.
 		sentHandler = onSent;
-		const kick = () => void flush().then((sent) => (sent > 0 || offline.cachedCopy) && onSent());
+		// Refresh after something arrived, or when showing a saved copy and the server answers a quick check.
+		// Never while unreachable: a failed refresh makes SvelteKit reload the whole page.
+		const kick = () =>
+			void flush().then(async (sent) => {
+				if (sent > 0 || (offline.cachedCopy && (await serverReachable()))) onSent();
+			});
 		const onVisible = () => document.visibilityState === 'visible' && kick();
 		const onMessage = (event: MessageEvent) => {
 			if (event.data?.type === 'obur:page-data') offline.cachedCopy = event.data.copy === 'cached';

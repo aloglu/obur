@@ -26,7 +26,8 @@
 				resolve('/(app)/progress'),
 				resolve('/(app)/more'),
 				resolve('/(app)/settings'),
-				resolve('/(app)/profile')
+				resolve('/(app)/profile'),
+				resolve('/(app)/offline')
 			];
 			const get = (url: string, accept?: string) =>
 				fetch(url, { credentials: 'same-origin', headers: accept ? { accept } : undefined }).catch(

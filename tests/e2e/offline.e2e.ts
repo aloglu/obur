@@ -217,3 +217,30 @@ test('with a hanging connection, only the first page waits; later tabs open from
 	expect(Date.now() - started).toBeLessThan(1500);
 	await context.unrouteAll({ behavior: 'ignoreErrors' });
 });
+
+test('offline, the app stays on the page it is on, says what it cannot do, and never swaps in another page', async ({
+	page,
+	context
+}) => {
+	await signedInAs(page, 'Zehra');
+	await primeCache(page);
+	await context.setOffline(true);
+	// The phone's + buttons open the Log with a meal in the address, which was never visited online.
+	await page.goto('/log?meal=snacks&date=2026-10-29');
+	await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
+	// Reconnection attempts and returning to the foreground while still offline must not reload the page.
+	await page.evaluate(() => {
+		dispatchEvent(new Event('online'));
+		document.dispatchEvent(new Event('visibilitychange'));
+	});
+	await page.getByLabel('Search foods').fill('mercimek');
+	await expect(page.getByText('Search needs a connection')).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
+
+	// A page never saved on this device says so instead of showing Today.
+	await page.goto('/foods/new');
+	await expect(
+		page.getByRole('heading', { level: 1, name: 'Not available offline' })
+	).toBeVisible();
+	await context.setOffline(false);
+});

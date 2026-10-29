@@ -27,6 +27,7 @@
 	let recent = $state<FoodSearchResult[] | undefined>();
 	let results = $state<FoodSearchResult[]>([]);
 	let searchedFor = $state('');
+	let searchFailed = $state(false);
 	let input: HTMLInputElement;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -35,7 +36,11 @@
 
 	// Refreshed on every focus: logging, undo or edits elsewhere change what is recent.
 	async function loadRecent() {
-		recent = (await api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')).results;
+		try {
+			recent = (await api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')).results;
+		} catch {
+			// Keep what was shown; offline, the saved copy normally answers.
+		}
 	}
 
 	$effect(() => {
@@ -43,13 +48,19 @@
 		clearTimeout(timer);
 		if (!q) return;
 		timer = setTimeout(async () => {
-			const data = await api<{ results: FoodSearchResult[] }>(
-				'GET',
-				`/api/v1/foods?q=${encodeURIComponent(q)}`
-			);
-			if (q === query.trim()) {
-				results = data.results;
-				searchedFor = q;
+			try {
+				const data = await api<{ results: FoodSearchResult[] }>(
+					'GET',
+					`/api/v1/foods?q=${encodeURIComponent(q)}`
+				);
+				if (q === query.trim()) {
+					results = data.results;
+					searchedFor = q;
+					searchFailed = false;
+				}
+			} catch {
+				// Offline or unreachable: say so instead of showing nothing.
+				if (q === query.trim()) searchFailed = true;
 			}
 		}, 180);
 	});
@@ -133,7 +144,14 @@
 
 	{#if typing}
 		<section aria-label={m.log_results()}>
-			{#if searchedFor && results.length === 0}
+			{#if searchFailed}
+				<div class="flex flex-col items-start gap-2 py-2">
+					<p class="text-[15px] text-muted">{m.log_search_offline()}</p>
+					<button type="button" onclick={onquick} class="font-semibold text-accent underline"
+						>{m.log_quick_add()}</button
+					>
+				</div>
+			{:else if searchedFor && results.length === 0}
 				<div class="flex flex-col items-start gap-2 py-2">
 					<p class="text-[15px] text-muted">{m.log_no_results({ query: searchedFor })}</p>
 					<a href={resolve('/(app)/foods/new')} class="font-semibold text-accent underline"
