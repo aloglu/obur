@@ -14,3 +14,6 @@ bun.lockb
 /spikes/
 /CLAUDE.md
 /project.inlang/
+
+# Build output
+/build/

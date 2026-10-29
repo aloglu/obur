@@ -16,7 +16,7 @@ const DATA = 'obur-data-v1';
 const SHELL_ASSETS = new Set(
 	[...immutable, ...assets].map(({ path }) => `/${path.replace(/^\//, '')}`)
 );
-const NETWORK_TIMEOUT_MS = 4000;
+const NETWORK_TIMEOUT_MS = 3000;
 const NO_CACHE_PAGES = /^\/(login|setup|join|recover)(\/|$)/;
 const CACHEABLE_API = [
 	/^\/api\/v1\/foods\/[0-9a-f-]{36}$/,
@@ -72,26 +72,57 @@ async function announce(request: Request, copy: 'live' | 'cached') {
 		client.postMessage({ type: 'obur:page-data', copy });
 }
 
-async function networkFirst(request: Request): Promise<Response> {
-	const cache = await caches.open(DATA);
-	const key = cacheKey(request);
+/** After a failed request, pages come from the saved copy at once for this long (iOS can hang offline requests). */
+const UNREACHABLE_HOLD_MS = 60_000;
+let unreachableUntil = 0;
+
+async function fromNetwork(request: Request, cache: Cache, key: string, announceLive: boolean) {
+	let response: Response;
 	try {
-		const response = await Promise.race([
+		response = await Promise.race([
 			fetch(request),
 			new Promise<never>((_, reject) =>
 				setTimeout(() => reject(new Error('timeout')), NETWORK_TIMEOUT_MS)
 			)
 		]);
-		// Only successful, non-redirected responses are kept (never a sign-in redirect).
-		if (response.ok && !response.redirected) await cache.put(key, response.clone());
-		void announce(request, 'live');
-		return response;
+	} catch (e) {
+		unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS;
+		throw e;
+	}
+	unreachableUntil = 0;
+	// Only successful, non-redirected responses are kept (never a sign-in redirect).
+	if (response.ok && !response.redirected) await cache.put(key, response.clone());
+	if (announceLive) void announce(request, 'live');
+	return response;
+}
+
+async function savedCopy(request: Request, cache: Cache, key: string) {
+	const isPage =
+		request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html');
+	return (
+		(await cache.match(key)) ??
+		(isPage ? await cache.match(new URL('/', location.origin).href) : undefined)
+	);
+}
+
+async function networkFirst(event: FetchEvent): Promise<Response> {
+	const { request } = event;
+	const cache = await caches.open(DATA);
+	const key = cacheKey(request);
+	// Known to be unreachable a moment ago: answer from the saved copy without waiting, and keep checking the
+	// network in the background (which also refreshes the copy and ends the hold once it is back).
+	if (Date.now() < unreachableUntil) {
+		const cached = await savedCopy(request, cache, key);
+		if (cached) {
+			event.waitUntil(fromNetwork(request.clone(), cache, key, false).catch(() => {}));
+			void announce(request, 'cached');
+			return cached;
+		}
+	}
+	try {
+		return await fromNetwork(request, cache, key, true);
 	} catch {
-		const isPage =
-			request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html');
-		const cached =
-			(await cache.match(key)) ??
-			(isPage ? await cache.match(new URL('/', location.origin).href) : undefined);
+		const cached = await savedCopy(request, cache, key);
 		if (cached) void announce(request, 'cached');
 		return (
 			cached ?? new Response('Offline', { status: 503, headers: { 'content-type': 'text/plain' } })
@@ -126,10 +157,10 @@ sw.addEventListener('fetch', (event) => {
 		url.pathname.endsWith('/__data.json') ||
 		request.headers.get('accept')?.includes('text/html');
 	if (page && !NO_CACHE_PAGES.test(url.pathname)) {
-		event.respondWith(networkFirst(request));
+		event.respondWith(networkFirst(event));
 		return;
 	}
 	if (CACHEABLE_API.some((pattern) => pattern.test(url.pathname))) {
-		event.respondWith(networkFirst(request));
+		event.respondWith(networkFirst(event));
 	}
 });

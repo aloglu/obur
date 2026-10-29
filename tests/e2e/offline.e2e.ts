@@ -192,3 +192,28 @@ test('the service worker and manifest are never served from a cache', async ({ r
 		expect(response.headers()['cache-control']).toBe('no-store');
 	}
 });
+
+test('with a hanging connection, only the first page waits; later tabs open from the saved copy at once', async ({
+	page,
+	context,
+	browserName
+}) => {
+	test.skip(
+		browserName === 'webkit',
+		'request interception does not apply under a service worker in WebKit'
+	);
+	await signedInAs(page, 'Deniz');
+	await primeCache(page);
+	// Page data requests neither succeed nor fail, as on iOS in Airplane Mode.
+	await context.route('**/__data.json*', () => {});
+	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
+	await nav.getByRole('link', { name: 'Progress' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Progress' })).toBeVisible({
+		timeout: 6000
+	});
+	const started = Date.now();
+	await nav.getByRole('link', { name: 'Today' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	expect(Date.now() - started).toBeLessThan(1500);
+	await context.unrouteAll({ behavior: 'ignoreErrors' });
+});
