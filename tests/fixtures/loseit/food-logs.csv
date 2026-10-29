@@ -12,3 +12,9 @@ Date,Name,Icon,Meal,Quantity,Units,Calories,Deleted,Fat (g),Protein (g),Carbohyd
 1/6/2026,Zeytinyağı,Oil,Dinner,1.0,Tablespoon,119.0,0,13.5,0.0,0.0,1.9,0.0,0.0,0.0,0.0
 1/7/2026,Ayran,Milk,Lunch,2.0,Servings,76.0,0,3.6,4.0,6.4,2.4,6.4,0.0,12.0,240.0
 1/7/2026,Çay,Tea,Snacks,1.0,Each,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+1/7/2026,"Greek yogurt, plain",Yogurt,Breakfast,170.0,Grams,100.0,0,0.7,17.0,6.0,0.4,6.0,0.0,10.0,61.0
+1/7/2026,Banana,Banana,Breakfast,1.0,Each,105.0,0,0.4,1.3,27.0,0.1,14.4,3.1,0.0,1.0
+1/7/2026,"Chicken breast, grilled",Chicken,Dinner,150.0,Grams,248.0,0,5.4,46.5,0.0,1.5,0.0,0.0,127.0,111.0
+1/7/2026,Brown rice,Rice,Dinner,1.0,Cups,216.0,0,1.8,5.0,45.0,0.4,0.7,3.5,0.0,10.0
+1/8/2026,Peanut butter,PeanutButter,Snacks,2.0,Tablespoons,190.0,0,16.0,7.0,7.0,3.3,3.0,2.0,0.0,140.0
+1/8/2026,Oatmeal,Oatmeal,Breakfast,40.0,Grams,152.0,0,2.8,5.3,27.0,0.5,0.4,4.0,0.0,2.0
