@@ -179,7 +179,7 @@ restore_check() {
 
 scheduler() {
 	wait_ready
-	until ensure_stanza 2>/dev/null; do
+	until ensure_stanza; do
 		log "waiting to create the backup stanza"
 		sleep 60
 	done
