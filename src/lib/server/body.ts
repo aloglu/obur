@@ -10,7 +10,8 @@ export async function respondBody(run: () => Promise<Response>): Promise<Respons
 		return await run();
 	} catch (e) {
 		if (e instanceof BodyError) {
-			return json({ error: e.code }, { status: e.code === 'not_found' ? 404 : 409 });
+			const status = { not_found: 404, conflict: 409, gone: 410 }[e.code];
+			return json({ error: e.code }, { status });
 		}
 		throw e;
 	}

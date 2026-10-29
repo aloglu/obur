@@ -95,3 +95,20 @@ export const dayCompletions = pgTable(
 		check('day_completions_source_valid', sql`${t.source} in ('manual', 'loseit')`)
 	]
 );
+
+// Minimal markers for trash rows purged after 30 days (diary and body readings), so a late offline retry of the
+// same client ID is recognised instead of recreating the deleted record. Written only by app_purge_trash().
+export const purgedRecords = pgTable(
+	'purged_records',
+	{
+		id: uuid('id').primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		kind: text('kind', { enum: ['diary', 'weight', 'water', 'activity'] }).notNull(),
+		purgedAt: timestamp('purged_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		check('purged_records_kind_valid', sql`${t.kind} in ('diary', 'weight', 'water', 'activity')`)
+	]
+);

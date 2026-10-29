@@ -13,10 +13,11 @@ import type {
 	SnapshotUnit
 } from '../../../shared/diary-types.ts';
 import type { FoodDetail } from '../../../shared/food-types.ts';
-import { dayCompletions, diaryEntries } from './schema.ts';
+import { dayCompletions, diaryEntries, purgedRecords } from './schema.ts';
 
 export class DiaryError extends Error {
-	constructor(readonly code: 'not_found' | 'conflict' | 'conversion_unknown') {
+	/** gone: a late retry of an entry that was deleted and purged from the trash. */
+	constructor(readonly code: 'not_found' | 'conflict' | 'conversion_unknown' | 'gone') {
 		super(code);
 	}
 }
@@ -129,6 +130,11 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 				if (!sameRequest(existing, values)) throw new DiaryError('conflict');
 				return toEntry(existing);
 			}
+			const [purged] = await tx
+				.select({ id: purgedRecords.id })
+				.from(purgedRecords)
+				.where(eq(purgedRecords.id, values.id));
+			if (purged) throw new DiaryError('gone');
 			try {
 				const [row] = await tx.insert(diaryEntries).values(values).returning();
 				return toEntry(row);

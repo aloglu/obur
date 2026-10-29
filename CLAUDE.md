@@ -99,5 +99,6 @@ Verified on 2026-10-25 (Node 24+, npm, Docker). Add commands here only after run
 - Production build: `npm run build`.
 - First admin's one-time setup link (24 h): `npm run admin:setup-link`. Recovery link for someone who lost every passkey and code (1 h): `npm run admin:recovery-link -- "<display name or user ID>"`. Both need `PUBLIC_ORIGIN` and `DATABASE_MIGRATOR_URL`.
 - Messages: edit `messages/en.json`; `npm run i18n` compiles them.
+- Background jobs: `npm run jobs:setup` (schema owner; creates or upgrades the pg-boss schema and schedules, `TZ` sets the schedule zone), then `npm run worker` (worker role).
 
 Use `docs/design.md` for milestone scope and deferred features. Native apps, health-platform integration, meal planning and social features are outside the initial releases. Open sign-up, billing and multi-organisation tenancy are not planned.

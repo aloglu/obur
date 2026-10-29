@@ -2,12 +2,14 @@
 // their values match (docs/design.md, "Database consistency"); creates are idempotent by client ID.
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
-import { withUser, type Database } from '../../db/identity.ts';
+import { withUser, type Database, type Tx } from '../../db/identity.ts';
+import { purgedRecords } from '../diary/index.ts';
 import type { ActivityEntry, BodyReading } from '../../../shared/body-types.ts';
 import { activityEntries, waterEntries, weightEntries } from './schema.ts';
 
 export class BodyError extends Error {
-	constructor(readonly code: 'not_found' | 'conflict') {
+	/** gone: a late retry of a reading that was deleted and purged from the trash. */
+	constructor(readonly code: 'not_found' | 'conflict' | 'gone') {
 		super(code);
 	}
 }
@@ -43,6 +45,15 @@ const toActivity = (r: typeof activityEntries.$inferSelect): ActivityEntry => ({
 	createdAt: r.createdAt.toISOString()
 });
 
+/** Refuses a create whose ID belonged to a record already purged from the trash. */
+async function refusePurged(tx: Tx, id: string) {
+	const [purged] = await tx
+		.select({ id: purgedRecords.id })
+		.from(purgedRecords)
+		.where(eq(purgedRecords.id, id));
+	if (purged) throw new BodyError('gone');
+}
+
 export function createBody(db: Database, now: () => Date = () => new Date()) {
 	/** Inserts a reading, or returns the existing one for a retry with the same ID and content. */
 	async function insert(
@@ -63,6 +74,7 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 				if (!same) throw new BodyError('conflict');
 				return toReading(existing, value);
 			}
+			await refusePurged(tx, id);
 			try {
 				const [row] = await tx
 					.insert(table)
@@ -133,6 +145,7 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 					if (!same) throw new BodyError('conflict');
 					return toActivity(existing);
 				}
+				await refusePurged(tx, id);
 				try {
 					const [row] = await tx
 						.insert(activityEntries)

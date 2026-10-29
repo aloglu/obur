@@ -1,6 +1,6 @@
 // Public entry of the diary module (entries, snapshots, trash). Import only this file,
 // as '#lib/server/modules/diary/index.ts'.
-export { dayCompletions, diaryEntries } from './schema.ts';
+export { dayCompletions, diaryEntries, purgedRecords } from './schema.ts';
 export {
 	createDiary,
 	DiaryError,

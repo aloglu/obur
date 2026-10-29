@@ -28,7 +28,9 @@
 		"db:bootstrap": "node --env-file=.env scripts/db-bootstrap.ts",
 		"test:db": "vitest run --project db",
 		"admin:setup-link": "node --env-file=.env scripts/admin-setup-link.ts",
-		"admin:recovery-link": "node --env-file=.env scripts/admin-recovery-link.ts"
+		"admin:recovery-link": "node --env-file=.env scripts/admin-recovery-link.ts",
+		"jobs:setup": "node --env-file=.env scripts/jobs-setup.ts",
+		"worker": "node --env-file=.env scripts/worker.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -50,7 +52,6 @@
 		"eslint-plugin-svelte": "^3.19.0",
 		"globals": "^17.6.0",
 		"playwright": "^1.60.0",
-		"postgres": "^3.4.9",
 		"prettier": "^3.8.3",
 		"prettier-plugin-svelte": "^4.1.0",
 		"prettier-plugin-tailwindcss": "^0.8.0",
@@ -76,6 +77,8 @@
 		"@simplewebauthn/browser": "^13.3.0",
 		"@simplewebauthn/server": "^13.3.3",
 		"fflate": "0.8.3",
+		"pg-boss": "12.38.0",
+		"postgres": "3.4.9",
 		"valibot": "^1.5.0"
 	}
 }

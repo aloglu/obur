@@ -155,6 +155,11 @@ export function flush(): Promise<number> {
 						return sent;
 					}
 					const err = e as ApiError;
+					if (err.status === 410) {
+						// Sent long ago, then deleted and purged from the trash: nothing left to do.
+						await queue.remove(item.seq!);
+						continue;
+					}
 					if (err.status === 401) {
 						offline.authRequired = true;
 						return sent;

@@ -5,7 +5,7 @@ import { db } from './db/index.ts';
 
 export const diary = createDiary(db);
 
-const STATUS = { not_found: 404, conflict: 409, conversion_unknown: 422 } as const;
+const STATUS = { not_found: 404, conflict: 409, conversion_unknown: 422, gone: 410 } as const;
 
 export async function respondDiary(run: () => Promise<Response>): Promise<Response> {
 	try {
