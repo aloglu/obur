@@ -29,6 +29,7 @@
 	interface Deletion {
 		accountId: string;
 		deletedAt: string;
+		removedSharedFoods: boolean;
 	}
 
 	let { data } = $props();
@@ -217,7 +218,11 @@
 				{#each deletions as d (d.accountId)}
 					<li class="flex flex-col py-2">
 						<span class="font-mono text-[13px] break-all">{d.accountId}</span>
-						<span class="text-[13px] text-muted">{date(d.deletedAt)}</span>
+						<span class="text-[13px] text-muted"
+							>{date(d.deletedAt)}{d.removedSharedFoods
+								? ` · ${m.household_deletions_shared_removed()}`
+								: ''}</span
+						>
 					</li>
 				{/each}
 			</ul>

@@ -1,0 +1,1 @@
+ALTER TABLE "account_deletions" ADD COLUMN "removed_shared_foods" boolean DEFAULT false NOT NULL;

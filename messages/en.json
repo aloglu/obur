@@ -436,6 +436,7 @@
 	"household_deletions": "Deleted accounts",
 	"household_deletions_body": "Keep a copy of this list off the server with the backup key. After a restore from backup, these accounts must be deleted again.",
 	"household_deletions_none": "None.",
+	"household_deletions_shared_removed": "Shared foods removed too",
 	"household_backups": "Backups",
 	"household_backups_ok": "Backups are working.",
 	"household_backups_times": "Last backup: {backup}. Last restore check: {check}.",
@@ -449,5 +450,6 @@
 	"backup_archive_failing": "Recent changes are not being archived. Backups between nightly runs are incomplete.",
 	"backup_restore_check_failed": "The last restore check failed. The backups may not be restorable.",
 	"backup_restore_check_stale": "No restore check has passed in the last week.",
-	"backup_no_offsite": "There is no off-site copy. If this server's disks fail or the server is lost, the backups go with it."
+	"backup_no_offsite": "There is no off-site copy. If this server's disks fail or the server is lost, the backups go with it.",
+	"restore_in_progress": "obur is being restored from a backup. Please try again in a little while."
 }

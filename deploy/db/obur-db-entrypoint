@@ -4,6 +4,23 @@ set -euo pipefail
 if [[ ${1:-} == postgres ]]; then
 	mkdir -p /var/lib/obur-status
 	chown postgres:postgres /var/lib/pgbackrest /var/lib/obur-status 2>/dev/null || true
+	# The web app (another user) reads backup health and the restore mark from here; it holds no secrets.
+	chmod 755 /var/lib/obur-status
+	# Never create a new, empty database silently where one should be restored: an empty data folder while a
+	# restore is pending or backups already exist means data is missing (docs/restore.md).
+	pgdata=${PGDATA:-/var/lib/postgresql/18/docker}
+	if [[ ! -s $pgdata/PG_VERSION && ${OBUR_ALLOW_NEW_DATABASE:-} != 1 ]]; then
+		if [[ -f /var/lib/obur-status/restore-pending ]]; then
+			echo "obur: a restore is pending but the data folder is empty; the restore did not complete." >&2
+			echo "obur: run obur-restore start again (docs/restore.md)." >&2
+			exit 1
+		fi
+		if [[ -f /var/lib/pgbackrest/backup/obur/backup.info ]]; then
+			echo "obur: the data folder is empty but backups exist, so data would be lost by starting fresh." >&2
+			echo "obur: restore it (docs/restore.md), or set OBUR_ALLOW_NEW_DATABASE=1 to start a new database." >&2
+			exit 1
+		fi
+	fi
 	gosu postgres obur-backup scheduler &
 fi
 exec docker-entrypoint.sh "$@"

@@ -59,6 +59,8 @@ services:
       POSTGRES_DB: obur
       POSTGRES_INITDB_ARGS: --data-checksums
       OBUR_BACKUP_HOUR: ${OBUR_BACKUP_HOUR:-2}
+      # Only for a deliberate fresh start when backups exist (docs/restore.md).
+      OBUR_ALLOW_NEW_DATABASE: ${OBUR_ALLOW_NEW_DATABASE:-}
     command:
       - postgres
       - -c

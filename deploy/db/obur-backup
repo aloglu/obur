@@ -8,6 +8,7 @@
 #
 #   obur-backup run            a backup now (full on the weekly full day or when none exists, otherwise differential)
 #   obur-backup pre-upgrade    a quick incremental backup before an upgrade
+#   obur-backup full           a full backup now (after a restore, which starts a new history)
 #   obur-backup info           list backups
 #   obur-backup restore-check  archive the current position, restore backup + WAL into a throwaway cluster, and
 #                              verify it reached that position and every table reads
@@ -222,11 +223,12 @@ pgbackrest)
 	;;
 run) backup "$(scheduled_type)" ;;
 pre-upgrade) backup incr ;;
+full) backup full ;;
 info) pgbackrest info ;;
 restore-check) restore_check ;;
 scheduler) scheduler ;;
 *)
-	echo "usage: obur-backup run|pre-upgrade|info|restore-check|scheduler|pgbackrest <args>" >&2
+	echo "usage: obur-backup run|pre-upgrade|full|info|restore-check|scheduler|pgbackrest <args>" >&2
 	exit 2
 	;;
 esac

@@ -1,0 +1,86 @@
+#!/bin/bash
+# Restoring obur from a backup (docs/restore.md). Two steps, so the service never reopens with restored sessions or
+# with accounts that were deleted after the backup was taken:
+#
+#   obur-restore start [pgBackRest restore options]
+#       With PostgreSQL stopped and an empty data folder: restores the latest backup and all archived WAL (or a point
+#       in time with --type=time --target="2026-10-29 21:00:00+03"; use --repo=2 to restore from the off-site copy).
+#       Leaves a restore-pending mark, so the web app answers "restore in progress" until the restore is finished.
+#       Run as: docker compose run --rm --no-deps --entrypoint obur-restore db start
+#
+#   obur-restore finish [<account ID>[:shared][@<deletion date>] ...]
+#       With the restored database running: signs everyone out, cancels recovery links, unused invites and setup
+#       links, deletes again each account from the admin's off-server deletion list (":shared" if its shared foods
+#       were removed too), takes a full backup of the new history, and removes the mark.
+#       Run as: docker compose exec db obur-restore finish <IDs from the list>
+set -euo pipefail
+
+STATUS_DIR=${OBUR_STATUS_DIR:-/var/lib/obur-status}
+MARK=$STATUS_DIR/restore-pending
+PGDATA=${PGBACKREST_PG1_PATH:-/var/lib/postgresql/18/docker}
+UUID='[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+say() { printf 'obur-restore: %s\n' "$*"; }
+fail() {
+	say "$*" >&2
+	exit 1
+}
+
+start() {
+	if [[ $(id -u) == 0 ]]; then
+		install -d -o postgres -g postgres -m 700 "$PGDATA"
+		install -d -o postgres -g postgres -m 755 "$STATUS_DIR"
+		exec gosu postgres "$0" start "$@"
+	fi
+	if pg_isready -q -h /var/run/postgresql 2>/dev/null; then fail "PostgreSQL is running; stop the stack first"; fi
+	if [[ -n $(ls -A "$PGDATA" 2>/dev/null) ]]; then
+		fail "$PGDATA is not empty. Move the old data folder aside first (see docs/restore.md)."
+	fi
+	jq -n --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg options "$*" '{startedAt: $at, options: $options}' >"$MARK"
+	say "restoring into $PGDATA ..."
+	obur-backup pgbackrest restore "$@"
+	say "restored. Start the database (docker compose up -d db), then run: obur-restore finish <deletions>"
+}
+
+finish() {
+	[[ -f $MARK ]] || fail "no restore is pending"
+	local sql=(psql -X -q -v ON_ERROR_STOP=1 -h /var/run/postgresql -U "${PGBACKREST_PG1_USER:-postgres}" -d "${POSTGRES_DB:-obur}")
+	local statements="begin;
+delete from sessions;
+update recovery_links set used_at = now() where used_at is null;
+update invites set revoked_at = now() where used_at is null and revoked_at is null;
+update bootstrap_tokens set used_at = now() where used_at is null;"
+	local arg id shared at
+	for arg in "$@"; do
+		[[ $arg =~ ^($UUID)(:shared)?(@([0-9]{4}-[0-9]{2}-[0-9]{2}))?$ ]] || fail "not a deletion entry: $arg"
+		id=${BASH_REMATCH[1]}
+		shared=$([[ -n ${BASH_REMATCH[2]} ]] && echo true || echo false)
+		at=${BASH_REMATCH[4]:-}
+		statements+="
+select app_reapply_deletion('$id', $shared, $([[ -n $at ]] && echo "'$at'::timestamptz" || echo 'now()'));"
+	done
+	statements+="
+commit;"
+	"${sql[@]}" <<<"$statements"
+	say "signed everyone out, cancelled pending links and invites, reapplied $# deletion(s)"
+	# A restore starts a new history (timeline); back it up in full before reopening.
+	obur-backup full
+	rm -f "$MARK"
+	say "done. Start the rest of the stack (docker compose up -d) and run a restore check."
+}
+
+case ${1:-} in
+start)
+	shift
+	start "$@"
+	;;
+finish)
+	shift
+	[[ $(id -u) == 0 ]] && exec gosu postgres "$0" finish "$@"
+	finish "$@"
+	;;
+*)
+	echo "usage: obur-restore start [pgBackRest restore options] | finish [<id>[:shared][@YYYY-MM-DD] ...]" >&2
+	exit 2
+	;;
+esac

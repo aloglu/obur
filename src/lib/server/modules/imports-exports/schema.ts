@@ -74,7 +74,9 @@ export const accountDeletions = pgTable(
 	{
 		accountId: uuid('account_id').primaryKey(),
 		deletedAt: timestamp('deleted_at', { withTimezone: true }).notNull().defaultNow(),
-		by: text('by', { enum: ['self', 'admin'] }).notNull()
+		by: text('by', { enum: ['self', 'admin'] }).notNull(),
+		// Whether shared foods were removed too, so a restore can reapply the deletion exactly.
+		removedSharedFoods: boolean('removed_shared_foods').notNull().default(false)
 	},
 	(t) => [check('account_deletions_by_valid', sql`${t.by} in ('self', 'admin')`)]
 );

@@ -5,6 +5,8 @@ import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { auth, SESSION_COOKIE } from '#lib/server/auth.ts';
 import { config } from '#lib/server/config.ts';
 import { clearSessionCookie } from '#lib/server/http.ts';
+import { restorePending } from '#lib/server/restore-guard.ts';
+import { m } from '#lib/paraglide/messages.js';
 import { isValidZone } from '#lib/shared/diary-rules.ts';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
@@ -20,6 +22,19 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 			}
 		);
 	});
+
+/** Closed while a restore is pending: nothing is read or written until it is finished. */
+const handleRestore: Handle = ({ event, resolve }) => {
+	if (!restorePending()) return resolve(event);
+	const headers = { 'retry-after': '300', 'cache-control': 'no-store' };
+	if (event.url.pathname.startsWith('/api/'))
+		return json({ error: 'restoring' }, { status: 503, headers });
+	const text = m.restore_in_progress();
+	return new Response(
+		`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>obur</title><p style="font:17px system-ui;margin:3rem 1.5rem">${text}</p></html>`,
+		{ status: 503, headers: { ...headers, 'content-type': 'text/html; charset=utf-8' } }
+	);
+};
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -79,4 +94,9 @@ const handleSession: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-export const handle: Handle = sequence(handleSecurity, handleSession, handleParaglide);
+export const handle: Handle = sequence(
+	handleRestore,
+	handleSecurity,
+	handleSession,
+	handleParaglide
+);

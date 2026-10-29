@@ -120,6 +120,20 @@
       "when": 1793295941879,
       "tag": "0016_trash_purge",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793301367236,
+      "tag": "0017_deletion_shared_choice",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793301367666,
+      "tag": "0018_deletion_shared_choice_function",
+      "breakpoints": true
     }
   ]
 }

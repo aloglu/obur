@@ -869,7 +869,8 @@ export function createPortability(db: Database) {
 			return rows.map((r) => ({
 				accountId: r.accountId,
 				deletedAt: r.deletedAt.toISOString(),
-				by: r.by
+				by: r.by,
+				removedSharedFoods: r.removedSharedFoods
 			}));
 		}
 	};

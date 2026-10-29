@@ -437,7 +437,9 @@ describe('account deletion', () => {
 
 		// The admin sees an opaque ID and the date; members see nothing.
 		const list = await portability.deletions(AYSE);
-		expect(list).toEqual([{ accountId: MEHMET, deletedAt: expect.any(String), by: 'self' }]);
+		expect(list).toEqual([
+			{ accountId: MEHMET, deletedAt: expect.any(String), by: 'self', removedSharedFoods: false }
+		]);
 		expect(await portability.deletions(ZEYNEP)).toEqual([]);
 	});
 
@@ -461,6 +463,10 @@ describe('account deletion', () => {
 		);
 		await portability.deleteAccount(MEHMET, MEHMET, true);
 		expect(await admin`select 1 from foods where id = ${shared}`).toHaveLength(0);
+		// The choice is kept in the deletion list, so a restore can reapply it.
+		const [listed] =
+			await admin`select removed_shared_foods from account_deletions where account_id = ${MEHMET}`;
+		expect(listed.removed_shared_foods).toBe(true);
 		const [entry] =
 			await admin`select food_id, energy_kcal from diary_entries where user_id = ${ZEYNEP}`;
 		expect(entry.food_id).toBeNull();
@@ -490,5 +496,40 @@ describe('account deletion', () => {
 			await tx`delete from users where id = ${MEHMET}`;
 		});
 		await expect(del).rejects.toMatchObject({ code: '42501' });
+	});
+});
+
+describe('reapplying deletions after a restore', () => {
+	it('deletes the account again as it was deleted, and only the operator can run it', async () => {
+		const shared = await catalog.createFood(
+			MEHMET,
+			food({
+				name: 'Mercimek çorbası',
+				visibility: 'shared',
+				basis: '100g',
+				nutrients: [{ code: 'energy_kcal', value: 56, qualifier: 'reported' }],
+				servings: []
+			})
+		);
+		await diary.quickAdd(MEHMET, { localDate: '2026-10-01', meal: 'lunch', ...ist }, 300, 'Simit');
+		const [{ existed }] = await admin`select app_reapply_deletion(${MEHMET}::uuid, true,
+			'2026-10-20T10:00:00Z') as existed`;
+		expect(existed).toBe(true);
+		expect(await count('diary_entries', MEHMET)).toBe(0);
+		expect(await admin`select 1 from foods where id = ${shared}`).toHaveLength(0);
+		const [listed] = await admin`select deleted_at, removed_shared_foods from account_deletions
+			where account_id = ${MEHMET}`;
+		expect(listed.deleted_at.toISOString()).toBe('2026-10-20T10:00:00.000Z');
+		expect(listed.removed_shared_foods).toBe(true);
+		// Running the list again is harmless.
+		const [{ again }] =
+			await admin`select app_reapply_deletion(${MEHMET}::uuid, true, now()) as again`;
+		expect(again).toBe(false);
+
+		const asApp = appSql.begin(async (tx) => {
+			await tx`select set_config('app.user_id', ${AYSE}, true)`;
+			await tx`select app_reapply_deletion(${ZEYNEP}::uuid, false, now())`;
+		});
+		await expect(asApp).rejects.toMatchObject({ code: '42501' });
 	});
 });
