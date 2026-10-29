@@ -97,9 +97,9 @@ describe('obur-ctl', () => {
 		const r = run('deploy');
 		expect(r.status).toBe(0);
 		const steps = r.docker.split('\n');
-		const backup = steps.findIndex((s) => s.includes('exec -T db obur-backup pre-upgrade'));
+		const backup = steps.findIndex((s) => s.includes('obur-backup pre-upgrade'));
 		const tag = steps.findIndex((s) => s.startsWith('docker tag obur-app:candidate'));
-		const migrate = steps.findIndex((s) => s.includes('run --rm web migrate'));
+		const migrate = steps.findIndex((s) => s.includes('run --rm admin migrate'));
 		expect(backup).toBeGreaterThan(-1);
 		expect(backup).toBeLessThan(tag);
 		expect(tag).toBeLessThan(migrate);

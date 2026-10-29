@@ -1,0 +1,64 @@
+import { describe, expect, it } from 'vitest';
+import { assessBackups, type BackupStatusFile } from './backup-health.ts';
+
+const now = new Date('2026-10-29T12:00:00Z');
+const healthy: BackupStatusFile = {
+	offsiteConfigured: true,
+	lastBackup: {
+		at: '2026-10-29T00:00:00Z',
+		type: 'diff',
+		ok: true,
+		repos: { '1': true, '2': true }
+	},
+	lastSuccessfulBackupAt: '2026-10-29T00:00:00Z',
+	archive: {
+		lastArchivedAt: '2026-10-29T11:58:00Z',
+		failedCount: 2,
+		lastFailedAt: '2026-10-20T00:00:00Z'
+	},
+	lastRestoreCheck: { at: '2026-10-25T01:00:00Z', ok: true, detail: 'fine' }
+};
+
+describe('assessBackups', () => {
+	it('reports nothing when backups, archiving, off-site and the restore check are fine', () => {
+		expect(assessBackups(healthy, now, true).problems).toEqual([]);
+	});
+
+	it('warns plainly when there is no off-site copy', () => {
+		expect(assessBackups({ ...healthy, offsiteConfigured: false }, now, true).problems).toEqual([
+			'no_offsite'
+		]);
+	});
+
+	it('flags missed, failed and partly failed backups', () => {
+		const stale = { ...healthy, lastSuccessfulBackupAt: '2026-10-27T12:00:00Z' };
+		expect(assessBackups(stale, now, true).problems).toContain('backup_stale');
+		const offsite = {
+			...healthy,
+			lastBackup: { ...healthy.lastBackup!, ok: false, repos: { '1': true, '2': false } }
+		};
+		expect(assessBackups(offsite, now, true).problems).toEqual(['offsite_failed']);
+		const none = { ...healthy, lastSuccessfulBackupAt: undefined, lastBackup: undefined };
+		expect(assessBackups(none, now, true).problems).toContain('no_backup');
+	});
+
+	it('flags archiving that is failing now, not a failure that has since recovered', () => {
+		const failing = {
+			...healthy,
+			archive: { ...healthy.archive!, lastFailedAt: '2026-10-29T11:59:00Z' }
+		};
+		expect(assessBackups(failing, now, true).problems).toEqual(['archive_failing']);
+	});
+
+	it('flags a failed or overdue restore check', () => {
+		const failed = { ...healthy, lastRestoreCheck: { ...healthy.lastRestoreCheck!, ok: false } };
+		expect(assessBackups(failed, now, true).problems).toEqual(['restore_check_failed']);
+		const overdue = { ...healthy, lastRestoreCheck: undefined };
+		expect(assessBackups(overdue, now, true).problems).toEqual(['restore_check_stale']);
+	});
+
+	it('distinguishes an installation without backups from a missing status file', () => {
+		expect(assessBackups(null, now, false).problems).toEqual(['not_configured']);
+		expect(assessBackups(null, now, true).problems).toEqual(['no_status']);
+	});
+});

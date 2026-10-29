@@ -1,0 +1,3 @@
+#!/bin/sh
+# pgBackRest with obur's settings, for archive_command (which must name pgbackrest).
+exec obur-backup pgbackrest "$@"

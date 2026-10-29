@@ -27,5 +27,10 @@ export const variables = defineEnvVars({
 	WEBAUTHN_RP_NAME: {
 		description: 'Name shown by passkey prompts.',
 		schema: (value) => value || 'obur'
+	},
+	OBUR_STATUS_DIR: {
+		description:
+			'Folder with the backup status file written by the database container (read-only here).',
+		schema: (value) => value || null
 	}
 });

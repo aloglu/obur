@@ -1,0 +1,209 @@
+#!/bin/bash
+# Backups for the obur database with pgBackRest (docs/design.md, "Data safety, backups and restore").
+#
+# Repository 1 is local and always present; repository 2 is the optional off-site copy (S3-compatible, e.g.
+# Cloudflare R2), configured through PGBACKREST_REPO2_* variables. Both are encrypted. WAL is archived continuously
+# by PostgreSQL's archive_command. Results are written to $STATUS_FILE so the admin page can show them, including a
+# plain warning when there is no off-site copy.
+#
+#   obur-backup run            a backup now (full on the weekly full day or when none exists, otherwise differential)
+#   obur-backup pre-upgrade    a quick incremental backup before an upgrade
+#   obur-backup info           list backups
+#   obur-backup restore-check  archive the current position, restore backup + WAL into a throwaway cluster, and
+#                              verify it reached that position and every table reads
+#   obur-backup scheduler      the nightly backup and weekly restore check (started by the container)
+#   obur-backup pgbackrest …    pgBackRest with this installation's settings (archive_command uses it through
+#                              pgbackrest-obur, since pgBackRest requires its name in the command)
+set -euo pipefail
+
+STATUS_DIR=${OBUR_STATUS_DIR:-/var/lib/obur-status}
+STATUS_FILE=$STATUS_DIR/backup.json
+SOCKET=${PGBACKREST_PG1_SOCKET_PATH:-/var/run/postgresql}
+BACKUP_HOUR=${OBUR_BACKUP_HOUR:-2}
+FULL_DAY=${OBUR_FULL_BACKUP_DAY:-7}         # ISO weekday: 7 = Sunday
+CHECK_DAY=${OBUR_RESTORE_CHECK_DAY:-7}
+PSQL=(psql -X -q -t -A -h "$SOCKET" -U "${PGBACKREST_PG1_USER:-postgres}" -d postgres)
+
+# The off-site repository exists only when configured: pgBackRest refuses empty settings, so they are passed on
+# from OBUR_OFFSITE_* only when OBUR_OFFSITE_TYPE is set.
+if [[ -n ${OBUR_OFFSITE_TYPE:-} ]]; then
+	export PGBACKREST_REPO2_TYPE=$OBUR_OFFSITE_TYPE
+	export PGBACKREST_REPO2_PATH=${OBUR_OFFSITE_PATH:-/obur}
+	export PGBACKREST_REPO2_S3_ENDPOINT=${OBUR_OFFSITE_ENDPOINT:?}
+	export PGBACKREST_REPO2_S3_BUCKET=${OBUR_OFFSITE_BUCKET:?}
+	export PGBACKREST_REPO2_S3_REGION=${OBUR_OFFSITE_REGION:-auto}
+	export PGBACKREST_REPO2_S3_KEY=${OBUR_OFFSITE_KEY:?}
+	export PGBACKREST_REPO2_S3_KEY_SECRET=${OBUR_OFFSITE_SECRET:?}
+	export PGBACKREST_REPO2_S3_URI_STYLE=path
+	export PGBACKREST_REPO2_CIPHER_TYPE=aes-256-cbc
+	export PGBACKREST_REPO2_CIPHER_PASS=$PGBACKREST_REPO1_CIPHER_PASS
+	export PGBACKREST_REPO2_RETENTION_FULL=${PGBACKREST_REPO1_RETENTION_FULL:-5}
+fi
+
+log() { printf '%s obur-backup: %s\n' "$(date -Iseconds)" "$*" >&2; }
+now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+repos() {
+	echo 1
+	if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then echo 2; fi
+}
+
+# Applies a jq filter (the last argument; earlier ones are jq options such as --arg) to the status file, atomically.
+status() {
+	local filter=${*: -1}
+	set -- "${@:1:$#-1}"
+	mkdir -p "$STATUS_DIR"
+	local current='{}'
+	if [[ -s $STATUS_FILE ]]; then current=$(cat "$STATUS_FILE"); fi
+	jq --arg now "$(now)" --argjson offsite "$([[ -n ${PGBACKREST_REPO2_TYPE:-} ]] && echo true || echo false)" \
+		"$@" "($filter) + {updatedAt: \$now, offsiteConfigured: \$offsite}" <<<"$current" >"$STATUS_FILE.tmp"
+	mv "$STATUS_FILE.tmp" "$STATUS_FILE"
+}
+
+wait_ready() {
+	until pg_isready -q -h "$SOCKET" -U "${PGBACKREST_PG1_USER:-postgres}" -d postgres; do sleep 5; done
+}
+
+ensure_stanza() {
+	# Idempotent: succeeds when the stanza already exists for this cluster.
+	pgbackrest stanza-create >/dev/null
+}
+
+archive_status() {
+	local row
+	row=$("${PSQL[@]}" -c "select coalesce(to_char(last_archived_time at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'), ''),
+		failed_count, coalesce(to_char(last_failed_time at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'), '')
+		from pg_stat_archiver" 2>/dev/null) || return 0
+	IFS='|' read -r archived failed failed_at <<<"$row"
+	status --arg a "$archived" --arg f "$failed_at" --argjson n "${failed:-0}" \
+		'.archive = {lastArchivedAt: (if $a == "" then null else $a end), failedCount: $n,
+			lastFailedAt: (if $f == "" then null else $f end)}'
+}
+
+backup() {
+	local type=$1 ok=true repo results='{}' started
+	started=$(now)
+	ensure_stanza
+	for repo in $(repos); do
+		if pgbackrest --repo="$repo" --type="$type" backup; then
+			results=$(jq --arg r "$repo" '. + {($r): true}' <<<"$results")
+		else
+			ok=false
+			results=$(jq --arg r "$repo" '. + {($r): false}' <<<"$results")
+			log "backup to repository $repo failed"
+		fi
+	done
+	status --arg at "$started" --arg type "$type" --argjson ok "$ok" --argjson repos "$results" \
+		'.lastBackup = {at: $at, type: $type, ok: $ok, repos: $repos}
+		| if $ok then .lastSuccessfulBackupAt = $at else . end'
+	archive_status
+	$ok
+}
+
+scheduled_type() {
+	# A full backup on the weekly full day, otherwise differential (pgBackRest makes it full if none exists yet).
+	if [[ $(date +%u) == "$FULL_DAY" ]]; then echo full; else echo diff; fi
+}
+
+restore_check() {
+	local dir port=5499 started detail ok=false target segment
+	started=$(now)
+	dir=$(mktemp -d /tmp/restore-check.XXXXXX)
+	trap 'pg_ctl -D "$dir" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$dir"' RETURN
+	# The recovery point to prove: the live database's current position, archived now.
+	target=$("${PSQL[@]}" -c 'select pg_current_wal_lsn()')
+	segment=$("${PSQL[@]}" -c "select pg_walfile_name('$target')")
+	"${PSQL[@]}" -c 'select pg_switch_wal()' >/dev/null
+	local archived=''
+	for _ in $(seq 60); do
+		archived=$("${PSQL[@]}" -c 'select coalesce(last_archived_wal, $$$$) from pg_stat_archiver')
+		[[ ${archived:0:24} > "$segment" || ${archived:0:24} == "$segment" ]] && break
+		sleep 2
+	done
+	# Restore the latest backup plus all archived WAL from the local repository. Archiving is off in the copy, so
+	# it can never push WAL into the real repositories.
+	if [[ ${archived:0:24} < "$segment" ]]; then
+		detail="WAL up to $target was not archived within two minutes"
+	elif ! pgbackrest --repo=1 restore --pg1-path="$dir" --archive-mode=off --delta >/dev/null; then
+		detail="restore failed"
+	elif ! pg_ctl -D "$dir" -w -t 600 -l "$dir/restore.log" \
+		-o "-p $port -c listen_addresses='' -c unix_socket_directories=$dir -c archive_mode=off" start >/dev/null; then
+		detail="restored copy did not start"
+	else
+		local q=(psql -X -q -t -A -h "$dir" -p "$port" -U "${PGBACKREST_PG1_USER:-postgres}")
+		# Wait for recovery to finish, then read every table in the obur database completely.
+		for _ in $(seq 150); do
+			[[ $("${q[@]}" -d postgres -c 'select pg_is_in_recovery()') == f ]] && break
+			sleep 2
+		done
+		local tables rows=0 table count failed='' reached checkpoint
+		tables=$("${q[@]}" -d "${POSTGRES_DB:-obur}" -c "select format('%I.%I', schemaname, tablename)
+			from pg_tables where schemaname in ('public', 'pgboss')") || failed='could not list tables'
+		for table in $tables; do
+			count=$("${q[@]}" -d "${POSTGRES_DB:-obur}" -c "select count(*) from $table") || {
+				failed="could not read $table"
+				break
+			}
+			rows=$((rows + count))
+		done
+		# The copy must have replayed up to the recovery point taken above.
+		checkpoint=$("${q[@]}" -d postgres -c 'select checkpoint_lsn from pg_control_checkpoint()')
+		reached=$("${q[@]}" -d postgres -c "select '$checkpoint'::pg_lsn >= '$target'::pg_lsn")
+		if [[ -n $failed ]]; then
+			detail=$failed
+		elif [[ $reached != t ]]; then
+			detail="restored copy stops at $checkpoint, before the recovery point $target"
+		else
+			ok=true
+			detail="read $(wc -w <<<"$tables") tables, $rows rows; recovered to $checkpoint (target $target)"
+		fi
+	fi
+	status --arg at "$started" --argjson ok "$ok" --arg detail "$detail" \
+		'.lastRestoreCheck = {at: $at, ok: $ok, detail: $detail}'
+	log "restore check: $detail"
+	$ok
+}
+
+scheduler() {
+	wait_ready
+	until ensure_stanza 2>/dev/null; do
+		log "waiting to create the backup stanza"
+		sleep 60
+	done
+	log "scheduler started (backups after ${BACKUP_HOUR}:00, restore check on weekday $CHECK_DAY)"
+	while true; do
+		local today hour last_backup last_check
+		today=$(date +%F)
+		hour=$((10#$(date +%H)))
+		last_backup=$(jq -r '.lastBackup.at // ""' "$STATUS_FILE" 2>/dev/null || true)
+		last_check=$(jq -r '.lastRestoreCheck.at // ""' "$STATUS_FILE" 2>/dev/null || true)
+		# Status times are UTC; compare by the local date of the stored instant.
+		local backup_day='' check_day=''
+		[[ -n $last_backup ]] && backup_day=$(date -d "$last_backup" +%F)
+		[[ -n $last_check ]] && check_day=$(date -d "$last_check" +%F)
+		if ((hour >= BACKUP_HOUR)) && [[ $backup_day != "$today" ]]; then
+			backup "$(scheduled_type)" || true
+		fi
+		if [[ $(date +%u) == "$CHECK_DAY" ]] && ((hour >= BACKUP_HOUR)) && [[ $check_day != "$today" ]]; then
+			restore_check || true
+		fi
+		archive_status || true
+		sleep 600
+	done
+}
+
+case ${1:-} in
+pgbackrest)
+	shift
+	exec pgbackrest "$@"
+	;;
+run) backup "$(scheduled_type)" ;;
+pre-upgrade) backup incr ;;
+info) pgbackrest info ;;
+restore-check) restore_check ;;
+scheduler) scheduler ;;
+*)
+	echo "usage: obur-backup run|pre-upgrade|info|restore-check|scheduler|pgbackrest <args>" >&2
+	exit 2
+	;;
+esac

@@ -1,0 +1,9 @@
+#!/bin/bash
+# Starts the backup scheduler next to PostgreSQL, then hands over to the official entrypoint.
+set -euo pipefail
+if [[ ${1:-} == postgres ]]; then
+	mkdir -p /var/lib/obur-status
+	chown postgres:postgres /var/lib/pgbackrest /var/lib/obur-status 2>/dev/null || true
+	gosu postgres obur-backup scheduler &
+fi
+exec docker-entrypoint.sh "$@"

@@ -8,6 +8,7 @@
 	import Card from '#lib/ui/Card.svelte';
 	import Chips from '#lib/ui/Chips.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import type { BackupProblem, BackupReport } from '#lib/shared/backup-health.ts';
 	import Notice from '#lib/ui/Notice.svelte';
 	import TextField from '#lib/ui/TextField.svelte';
 
@@ -34,6 +35,7 @@
 	let invites = $state<Invite[]>([]);
 	let members = $state<Member[]>([]);
 	let deletions = $state<Deletion[]>([]);
+	let backups = $state<BackupReport | null>(null);
 	let deleting = $state<Member | null>(null);
 	let removeShared = $state<'keep' | 'remove'>('keep');
 	let note = $state('');
@@ -54,10 +56,11 @@
 
 	const refresh = async () => {
 		invites = (await api<{ invites: Invite[] }>('GET', '/api/v1/auth/invites')).invites;
-		({ members, deletions } = await api<{ members: Member[]; deletions: Deletion[] }>(
-			'GET',
-			'/api/v1/household/members'
-		));
+		({ members, deletions, backups } = await api<{
+			members: Member[];
+			deletions: Deletion[];
+			backups: BackupReport;
+		}>('GET', '/api/v1/household/members'));
 	};
 	onMount(refresh);
 
@@ -82,6 +85,23 @@
 			copied = false;
 		});
 
+	const problemText: Record<BackupProblem, () => string> = {
+		not_configured: m.backup_not_configured,
+		no_status: m.backup_no_status,
+		no_backup: m.backup_no_backup,
+		backup_stale: m.backup_backup_stale,
+		backup_failed: m.backup_backup_failed,
+		offsite_failed: m.backup_offsite_failed,
+		archive_failing: m.backup_archive_failing,
+		restore_check_failed: m.backup_restore_check_failed,
+		restore_check_stale: m.backup_restore_check_stale,
+		no_offsite: m.backup_no_offsite
+	};
+	const when = (iso: string | null) =>
+		iso
+			? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+			: m.household_backups_never();
+
 	const deleteMember = (member: Member) =>
 		run(async () => {
 			await api('DELETE', '/api/v1/household/members', {
@@ -105,6 +125,25 @@
 	<a href={resolve('/(app)')} class="text-[14px] font-semibold text-accent">← {m.app_name()}</a>
 	<h1 class="text-[24px] font-[750]">{m.household_title()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
+
+	{#if backups}
+		<Card title={m.household_backups()}>
+			{#each backups.problems as p (p)}
+				<Notice tone={p === 'not_configured' || p === 'no_status' ? 'info' : 'warn'}>
+					{problemText[p]()}
+				</Notice>
+			{/each}
+			{#if backups.problems.length === 0}
+				<p class="text-[15px] font-semibold">{m.household_backups_ok()}</p>
+			{/if}
+			<p class="text-[14px] text-muted">
+				{m.household_backups_times({
+					backup: when(backups.lastSuccessfulBackupAt),
+					check: when(backups.lastRestoreCheckAt)
+				})}
+			</p>
+		</Card>
+	{/if}
 
 	<Card title={m.household_members()}>
 		<ul class="flex flex-col divide-y divide-line">

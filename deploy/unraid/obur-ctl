@@ -39,7 +39,7 @@ obur-ctl actions:
   stop                      stop the containers (data is kept)
   backup                    run a backup now
   backup-info               list backups
-  restore-check             restore the latest backup into a throwaway database and verify it
+  restore-check             restore backup + archived WAL into a throwaway database and verify it
 USAGE
 }
 
@@ -98,14 +98,14 @@ deploy)
 	has_image obur-app:candidate && has_image obur-db:candidate || fail "build first"
 	# A backup before any upgrade (skipped only on the very first start, when there is nothing to back up).
 	if [[ -n $(compose ps -q db 2>/dev/null) ]]; then
-		compose exec -T db obur-backup pre-upgrade
+		compose exec -T db gosu postgres obur-backup pre-upgrade
 	fi
 	for image in obur-app obur-db; do
 		if has_image "$image:current"; then docker tag "$image:current" "$image:previous"; fi
 		docker tag "$image:candidate" "$image:current"
 	done
 	compose up -d --wait db
-	compose run --rm web migrate
+	compose --profile tools run --rm admin migrate
 	compose up -d --wait --remove-orphans
 	compose ps
 	;;
@@ -121,9 +121,9 @@ restart)
 	compose restart "$service"
 	;;
 stop) compose stop ;;
-backup) compose exec -T db obur-backup run ;;
-backup-info) compose exec -T db obur-backup info ;;
-restore-check) compose --profile checks run --rm restore-check ;;
+backup) compose exec -T db gosu postgres obur-backup run ;;
+backup-info) compose exec -T db gosu postgres obur-backup info ;;
+restore-check) compose exec -T db gosu postgres obur-backup restore-check ;;
 *)
 	usage >&2
 	fail "unknown action: $action"

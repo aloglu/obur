@@ -98,6 +98,8 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 
 	await signedInAs(page, 'Gül', 'admin');
 	await page.goto('/household');
+	// Development and test installations have no backup service, and the page says so.
+	await expect(page.getByText("Backups aren't set up on this installation.")).toBeVisible();
 	const people = page.locator('section', { has: page.getByRole('heading', { name: 'People' }) });
 	await people
 		.getByRole('listitem')

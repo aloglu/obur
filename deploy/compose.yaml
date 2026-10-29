@@ -1,0 +1,123 @@
+# obur production stack: one database, the web app, the background worker, and on-demand tools.
+# Settings come from the .env file next to this one (see .env.example). Nothing here holds secrets.
+#
+# Only the web app is reachable from outside, on OBUR_PORT; put it behind HTTPS (e.g. a Cloudflare Tunnel).
+# Data lives in OBUR_DATA_DIR (database, backup status) and OBUR_BACKUP_DIR (encrypted backups).
+name: obur
+
+x-app: &app
+  image: obur-app:current
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+
+x-runtime-env: &runtime-env
+  TZ: ${TZ:-UTC}
+  PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN in .env}
+  WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:?Set WEBAUTHN_RP_ID in .env}
+
+x-pgbackrest-env: &pgbackrest-env
+  TZ: ${TZ:-UTC}
+  PGBACKREST_STANZA: obur
+  PGBACKREST_PG1_PATH: /var/lib/postgresql/18/docker
+  PGBACKREST_PG1_SOCKET_PATH: /var/run/postgresql
+  PGBACKREST_PG1_USER: obur_admin
+  PGBACKREST_LOCK_PATH: /tmp/pgbackrest
+  PGBACKREST_LOG_LEVEL_CONSOLE: warn
+  PGBACKREST_LOG_LEVEL_FILE: 'off'
+  PGBACKREST_START_FAST: 'y'
+  PGBACKREST_COMPRESS_TYPE: zst
+  PGBACKREST_REPO1_PATH: /var/lib/pgbackrest
+  PGBACKREST_REPO1_CIPHER_TYPE: aes-256-cbc
+  PGBACKREST_REPO1_CIPHER_PASS: ${OBUR_BACKUP_PASSPHRASE:?Set OBUR_BACKUP_PASSPHRASE in .env}
+  PGBACKREST_REPO1_RETENTION_FULL: ${OBUR_BACKUP_KEEP_WEEKS:-5}
+  # Off-site copy: set OBUR_OFFSITE_TYPE=s3 and the other OBUR_OFFSITE_* values; leave the type empty for local
+  # backups only. obur-backup turns these into pgBackRest's repository 2 settings when the type is set.
+  OBUR_OFFSITE_TYPE: ${OBUR_OFFSITE_TYPE:-}
+  OBUR_OFFSITE_PATH: ${OBUR_OFFSITE_PATH:-/obur}
+  OBUR_OFFSITE_ENDPOINT: ${OBUR_OFFSITE_ENDPOINT:-}
+  OBUR_OFFSITE_BUCKET: ${OBUR_OFFSITE_BUCKET:-}
+  OBUR_OFFSITE_REGION: ${OBUR_OFFSITE_REGION:-auto}
+  OBUR_OFFSITE_KEY: ${OBUR_OFFSITE_KEY:-}
+  OBUR_OFFSITE_SECRET: ${OBUR_OFFSITE_SECRET:-}
+
+services:
+  db:
+    image: obur-db:current
+    restart: unless-stopped
+    init: true
+    shm_size: 256mb
+    environment:
+      <<: *pgbackrest-env
+      POSTGRES_USER: obur_admin
+      POSTGRES_PASSWORD: ${OBUR_ADMIN_DB_PASSWORD:?Set OBUR_ADMIN_DB_PASSWORD in .env}
+      POSTGRES_DB: obur
+      POSTGRES_INITDB_ARGS: --data-checksums
+      OBUR_BACKUP_HOUR: ${OBUR_BACKUP_HOUR:-2}
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=pgbackrest-obur archive-push %p
+      # Bounds how much recent history a lost disk can take with it (seconds).
+      - -c
+      - archive_timeout=${OBUR_ARCHIVE_TIMEOUT:-300}
+    volumes:
+      - ${OBUR_DATA_DIR:-./data}/postgres:/var/lib/postgresql
+      - ${OBUR_BACKUP_DIR:-./backups}:/var/lib/pgbackrest
+      - ${OBUR_DATA_DIR:-./data}/status:/var/lib/obur-status
+    healthcheck:
+      test:
+        ['CMD', 'pg_isready', '-q', '-h', '/var/run/postgresql', '-U', 'obur_admin', '-d', 'obur']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  web:
+    <<: *app
+    command: web
+    environment:
+      <<: *runtime-env
+      ORIGIN: ${PUBLIC_ORIGIN}
+      DATABASE_URL: postgres://obur_app:${OBUR_APP_DB_PASSWORD:?Set OBUR_APP_DB_PASSWORD in .env}@db:5432/obur
+      OBUR_STATUS_DIR: /app/status
+    volumes:
+      - ${OBUR_DATA_DIR:-./data}/status:/app/status:ro
+    ports:
+      - ${OBUR_PORT:-8040}:3000
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/login').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    <<: *app
+    command: worker
+    environment:
+      TZ: ${TZ:-UTC}
+      DATABASE_WORKER_URL: postgres://obur_worker:${OBUR_WORKER_DB_PASSWORD:?Set OBUR_WORKER_DB_PASSWORD in .env}@db:5432/obur
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-1}
+
+  # Operator tools: `docker compose run --rm admin migrate|setup-link|recovery-link "<name>"`.
+  admin:
+    <<: *app
+    profiles: [tools]
+    restart: 'no'
+    command: migrate
+    environment:
+      <<: *runtime-env
+      DATABASE_ADMIN_URL: postgres://obur_admin:${OBUR_ADMIN_DB_PASSWORD}@db:5432/obur
+      DATABASE_MIGRATOR_URL: postgres://obur_migrator:${OBUR_MIGRATOR_DB_PASSWORD:?Set OBUR_MIGRATOR_DB_PASSWORD in .env}@db:5432/obur
+      DATABASE_URL: postgres://obur_app:${OBUR_APP_DB_PASSWORD}@db:5432/obur
+      DATABASE_WORKER_URL: postgres://obur_worker:${OBUR_WORKER_DB_PASSWORD}@db:5432/obur
