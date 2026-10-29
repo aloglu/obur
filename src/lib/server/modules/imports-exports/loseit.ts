@@ -203,7 +203,7 @@ function nutrientsOf(file: string, row: number, get: (column: string) => string)
 function table(files: Record<string, string>, name: FileName) {
 	const text = files[name];
 	if (text === undefined) throw new LoseItError('unsupported_layout', `missing ${name}`);
-	const [header, ...rows] = parseCsv(text.replace(/^﻿/, ''));
+	const [header, ...rows] = parseCsv(text.replace(/^\uFEFF/, ''));
 	if (header?.join(',') !== HEADERS[name]) {
 		throw new LoseItError('unsupported_layout', `${name} has different columns than expected`);
 	}

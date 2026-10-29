@@ -18,6 +18,13 @@ import { foodNutrients, foods, foodServings } from '../catalog/index.ts';
 import { dayCompletions, diaryEntries } from '../diary/index.ts';
 import { goalVersions, profiles } from '../goals/index.ts';
 import { readArchive, sha256, writeArchive, type PortableData } from './archive.ts';
+import { readLoseItArchive } from './loseit.ts';
+import {
+	planLoseIt,
+	writeLoseIt,
+	type LoseItOptions,
+	type LoseItSummary
+} from './loseit-import.ts';
 import { accountDeletions, importFiles, importIdentities, installation } from './schema.ts';
 
 export class PortabilityError extends Error {
@@ -813,6 +820,36 @@ export function createPortability(db: Database) {
 				if (p.summary.alreadyImported) throw new PortabilityError('already_imported');
 				await write(tx, userId, data, p, manifest.sourceInstallation);
 				// The primary key also stops two concurrent imports of the same file.
+				await tx.insert(importFiles).values({ userId, sha256: sha, summary: p.summary });
+				return p.summary;
+			});
+		},
+
+		/** Reads a LoseIt export and reports what importing it would do, without writing anything. */
+		async previewLoseIt(
+			userId: string,
+			bytes: Uint8Array,
+			options: LoseItOptions
+		): Promise<LoseItSummary> {
+			const data = readLoseItArchive(bytes);
+			return withUser(db, userId, async (tx) => {
+				const p = await planLoseIt(tx, userId, data, { sha: sha256(bytes) }, options);
+				return p.summary;
+			});
+		},
+
+		/** Imports a LoseIt export in one transaction, planning again inside it. The same file cannot be imported twice. */
+		async applyLoseIt(
+			userId: string,
+			bytes: Uint8Array,
+			options: LoseItOptions
+		): Promise<LoseItSummary> {
+			const data = readLoseItArchive(bytes);
+			const sha = sha256(bytes);
+			return withUser(db, userId, async (tx) => {
+				const p = await planLoseIt(tx, userId, data, { sha }, options);
+				if (p.summary.alreadyImported) throw new PortabilityError('already_imported');
+				await writeLoseIt(tx, userId, data, p, options);
 				await tx.insert(importFiles).values({ userId, sha256: sha, summary: p.summary });
 				return p.summary;
 			});
