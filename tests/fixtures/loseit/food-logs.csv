@@ -1,0 +1,14 @@
+Date,Name,Icon,Meal,Quantity,Units,Calories,Deleted,Fat (g),Protein (g),Carbohydrates (g),Saturated Fat (g),Sugars (g),Fiber (g),Cholesterol (mg),Sodium (mg)
+1/5/2026,Ayran,Milk,Breakfast,250.0,Milliliters,95.0,0,4.5,5.0,8.0,3.0,8.0,0.0,15.0,300.0
+1/5/2026,"Ekmek, tam buğday",Bread,Breakfast,50.0,Grams,120.0,0,1.5,4.5,21.0,0.3,1.5,n/a,0.0,220.0
+1/5/2026,Haşlanmış yumurta,Egg,Breakfast,1.0,Each,78.0,0,5.3,6.3,0.6,1.6,0.6,0.0,186.0,62.0
+1/5/2026,Haşlanmış yumurta,Egg,Breakfast,1.0,Each,78.0,0,5.3,6.3,0.6,1.6,0.6,0.0,186.0,62.0
+1/5/2026,Mercimek çorbası,Soup,Lunch,200.0,Grams,130.0,0,3.0,8.0,18.0,0.5,2.0,4.0,0.0,480.0
+1/5/2026,Mercimek çorbası,Soup,Lunch,150.0,Grams,97.5,0,2.3,6.0,13.5,0.4,1.5,3.0,0.0,360.0
+1/5/2026,Baklava,Dessert,Dinner,2.0,Pieces,330.0,1,18.0,5.0,38.0,6.0,22.0,1.0,20.0,90.0
+1/5/2026,Walnuts,Nuts,Afternoon Snacks,3.0,Each,78.0,0,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a
+1/6/2026,"Köy ""usulü"" peynir",Cheese,Dinner,400.0,Grams,"1,180.0",0,92.0,80.0,4.0,58.0,0.0,0.0,280.0,2400.0
+1/6/2026,Elma,AppleGrannySmith,Morning Snacks,1.0,Each,72.0,0,0.2,0.4,19.0,0.0,14.0,3.3,0.0,1.0
+1/6/2026,Zeytinyağı,Oil,Dinner,1.0,Tablespoon,119.0,0,13.5,0.0,0.0,1.9,0.0,0.0,0.0,0.0
+1/7/2026,Ayran,Milk,Lunch,2.0,Servings,76.0,0,3.6,4.0,6.4,2.4,6.4,0.0,12.0,240.0
+1/7/2026,Çay,Tea,Snacks,1.0,Each,0.0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0

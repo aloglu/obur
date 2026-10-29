@@ -1,0 +1,5 @@
+Name,UniqueId,Brand,Image,Quantity,Measure,Calories,Fat (g),Protein (g),Carbohydrates (g),Saturated Fat (g),Sugars (g),Fiber (g),Cholesterol (mg),Sodium (mg)
+Ayran,0a1b2c3d4e5f60718293a4b5c6d7e8f9,Örnek Süt,Milk,250.0,Milliliters,95.0,4.5,5.0,8.0,3.0,8.0,0.0,15.0,300.0
+"Ekmek, tam buğday",1b2c3d4e5f60718293a4b5c6d7e8f90a,,Bread,100.0,Grams,240.0,3.0,9.0,42.0,0.6,3.0,n/a,0.0,440.0
+Mercimek çorbası,2c3d4e5f60718293a4b5c6d7e8f90a1b,,Soup,100.0,Grams,65.0,1.5,4.0,9.0,0.25,1.0,2.0,0.0,240.0
+Mercimek çorbası,3d4e5f60718293a4b5c6d7e8f90a1b2c,Ev yapımı,Soup,100.0,Grams,70.0,2.0,4.0,9.5,0.3,1.0,2.5,0.0,200.0
