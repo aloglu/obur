@@ -182,3 +182,13 @@ test('a connection that hangs gives up quickly, and the next entry is kept at on
 	expect(Date.now() - started).toBeLessThan(1500);
 	await context.unrouteAll({ behavior: 'ignoreErrors' });
 });
+
+test('the service worker and manifest are never served from a cache', async ({ request }) => {
+	// A CDN in front (Cloudflare caches .js by default) would otherwise keep serving a stale service worker that
+	// cannot install, leaving the app without offline support.
+	for (const path of ['/service-worker.js', '/manifest.webmanifest']) {
+		const response = await request.get(path);
+		expect(response.ok()).toBe(true);
+		expect(response.headers()['cache-control']).toBe('no-store');
+	}
+});

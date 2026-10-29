@@ -26,10 +26,12 @@ const CACHEABLE_API = [
 ];
 
 sw.addEventListener('install', (event) => {
+	// File by file rather than addAll: one missing or failing file must not stop the whole install (with addAll it
+	// does, and the app then has no offline support at all). Missing files are fetched when first needed.
 	event.waitUntil(
 		caches
 			.open(SHELL)
-			.then((cache) => cache.addAll([...SHELL_ASSETS]))
+			.then((cache) => Promise.allSettled([...SHELL_ASSETS].map((path) => cache.add(path))))
 			.then(() => sw.skipWaiting())
 	);
 });
@@ -107,7 +109,15 @@ sw.addEventListener('fetch', (event) => {
 	if (SHELL_ASSETS.has(url.pathname) || url.pathname.startsWith('/_app/immutable/')) {
 		// ignoreVary: a module import sends headers (Origin) that the install-time copy was not fetched with.
 		event.respondWith(
-			caches.match(request, { ignoreVary: true }).then((hit) => hit ?? fetch(request))
+			caches.match(request, { ignoreVary: true }).then(
+				(hit) =>
+					hit ??
+					fetch(request).then(async (response) => {
+						// Fill a gap left at install time, so it is there next time the network is not.
+						if (response.ok) await (await caches.open(SHELL)).put(request, response.clone());
+						return response;
+					})
+			)
 		);
 		return;
 	}

@@ -3,7 +3,7 @@
 set -eu
 cd /app
 case "${1:-web}" in
-web) exec node build ;;
+web) exec node server.js ;;
 worker) exec node scripts/worker.ts ;;
 migrate)
 	# Roles and ownership (idempotent, superuser), schema migrations (owner), then background jobs (owner).

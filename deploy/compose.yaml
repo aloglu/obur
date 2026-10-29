@@ -88,7 +88,9 @@ services:
     command: web
     environment:
       <<: *runtime-env
-      ORIGIN: ${PUBLIC_ORIGIN}
+      # Behind HTTPS (e.g. a Cloudflare Tunnel) the app is reached over plain http; take the real protocol from the
+      # proxy's header so SvelteKit sees the public https origin.
+      PROTOCOL_HEADER: x-forwarded-proto
       DATABASE_URL: postgres://obur_app:${OBUR_APP_DB_PASSWORD:?Set OBUR_APP_DB_PASSWORD in .env}@db:5432/obur
       OBUR_STATUS_DIR: /app/status
     volumes:

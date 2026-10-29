@@ -18,6 +18,7 @@ WORKDIR /app
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
+COPY --from=build /app/server.js ./server.js
 # The operator, migration and worker commands run as TypeScript directly (Node 24 strips types).
 COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/drizzle ./drizzle

@@ -27,11 +27,17 @@ export default defineConfig({
 	testMatch: '**/*.e2e.{ts,js}',
 	fullyParallel: false,
 	webServer: {
-		command: `node scripts/e2e-db.ts && npm run build && npm run preview -- --port ${PORT} --strictPort`,
+		// The production server (server.js), so its headers are tested too.
+		command: `node scripts/e2e-db.ts && npm run build && node server.js`,
 		port: PORT,
 		reuseExistingServer: false,
 		timeout: 180_000,
-		env: { ...(process.env as Record<string, string>), ...e2eEnv }
+		env: {
+			...(process.env as Record<string, string>),
+			...e2eEnv,
+			PORT: String(PORT),
+			HOST: '127.0.0.1'
+		}
 	},
 	use: { baseURL: `http://localhost:${PORT}` },
 	projects: [

@@ -101,9 +101,12 @@
 	const download = () =>
 		run(() =>
 			withRecentAuth(async () => {
+				// A JSON body, so the request is never mistaken for a cross-site form post.
 				const response = await fetch('/api/v1/export', {
 					method: 'POST',
-					credentials: 'same-origin'
+					credentials: 'same-origin',
+					headers: { 'content-type': 'application/json' },
+					body: '{}'
 				});
 				if (!response.ok) {
 					const body = (await response.json().catch(() => ({}))) as { error?: string };
