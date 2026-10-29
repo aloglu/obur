@@ -842,6 +842,22 @@ export function createPortability(db: Database) {
 			}
 		},
 
+		/** The household's accounts, for an admin (RLS shows others only to admins). */
+		async members(userId: string) {
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select({
+						id: users.id,
+						displayName: users.displayName,
+						role: users.role,
+						createdAt: users.createdAt
+					})
+					.from(users)
+					.orderBy(users.createdAt)
+			);
+			return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
+		},
+
 		/** Deleted accounts, newest first: opaque ID and date only (admins; RLS returns nothing to others). */
 		async deletions(userId: string) {
 			const rows = await withUser(db, userId, (tx) =>

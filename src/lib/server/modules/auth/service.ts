@@ -148,6 +148,11 @@ export function createAuthService(
 	}
 
 	return {
+		/** For sensitive actions in other modules: a normal session verified with a passkey moments ago. */
+		requireRecent,
+		/** As requireRecent, and the person is an admin. */
+		requireAdmin,
+
 		/** Resolves a session cookie; drops idle sessions and refreshes activity at most hourly. */
 		async resolveSession(token: string | undefined): Promise<SessionRecord | undefined> {
 			if (!token) return undefined;

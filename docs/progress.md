@@ -48,6 +48,8 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 
 ## In progress
 
+- Phase 1 step 10 (your data), started 2026-10-26. Done and committed: `imports-exports` module (archive format, import planning and atomic apply, account deletion function, 10 real-Postgres tests) and the API routes (`POST /api/v1/export`, `POST /api/v1/import[?apply=1]`, `DELETE /api/v1/account`, `GET`/`DELETE /api/v1/household/members`). Remaining: the "Your data" page (`/settings/data`), member deletion and the deleted-accounts list on the Household page, browser tests, design notes. Production must set adapter-node `BODY_SIZE_LIMIT` to at least 21M for 20 MB archives (step 11).
+
 - Phase 0 plan approved by the owner (2026-10-25).
 - Owner has supplied the LoseIt export, 11 label photos and a favourite-foods list in `~/obur-private/`.
 - 48 voice clips recorded (m4a) in `~/obur-private/audio/raw/`, matching `~/obur-private/audio/transcripts.tsv` (25 tr, 13 en, 10 mixed; 13 in harder conditions).
