@@ -2,7 +2,8 @@
 export class ApiError extends Error {
 	constructor(
 		readonly code: string,
-		readonly status: number
+		readonly status: number,
+		readonly detail?: string
 	) {
 		super(code);
 	}

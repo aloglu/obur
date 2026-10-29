@@ -9,6 +9,7 @@
 	import { clearDeviceData } from '#lib/client/offline/sync.svelte.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
+	import { deviceZone } from '#lib/client/prefs.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Card from '#lib/ui/Card.svelte';
 	import Chips from '#lib/ui/Chips.svelte';
@@ -17,13 +18,22 @@
 
 	let { data } = $props();
 
-	type Counts = { new: number; unchanged: number; changed: number; skipped: number };
+	type Counts = {
+		new: number;
+		unchanged: number;
+		changed?: number;
+		missing?: number;
+		skipped: number;
+	};
 	interface Summary {
-		exportedAt: string;
+		source?: 'loseit';
+		exportedAt?: string;
 		alreadyImported: boolean;
 		dateRange: { from: string; to: string } | null;
 		counts: Record<string, Counts>;
 		warnings: string[];
+		deletedInLoseIt?: number;
+		reconciliation?: { days: number; mismatched: string[] };
 	}
 
 	const KINDS = [
@@ -51,8 +61,13 @@
 		changed_kept: m.data_warn_changed_kept,
 		targets_kept: m.data_warn_targets_kept,
 		profile_kept: m.data_warn_profile_kept,
-		food_links_dropped: m.data_warn_food_links_dropped
+		food_links_dropped: m.data_warn_food_links_dropped,
+		budgets_after_own_target: m.data_warn_budgets_after_own_target,
+		height_out_of_range: m.data_warn_height_out_of_range,
+		reconciliation_mismatch: m.data_warn_reconciliation_mismatch
 	};
+	// Shown through their own controls instead.
+	const QUIET_WARNINGS = new Set(['missing_rows']);
 
 	let busy = $state(false);
 	// A file chosen before the page is interactive would be lost silently, so the picker waits for hydration.
@@ -61,6 +76,10 @@
 	let problem = $state('');
 	let file = $state<File | null>(null);
 	let summary = $state<Summary | null>(null);
+	// LoseIt imports: what the export cannot say for itself.
+	let weightUnit = $state<'kg' | 'lb'>('kg');
+	let shareFoods = $state(false);
+	let trashMissing = $state(false);
 	let removeShared = $state<'keep' | 'remove'>('keep');
 	let confirming = $state(false);
 	let understood = $state(false);
@@ -70,11 +89,14 @@
 	const rows = $derived(
 		summary
 			? KINDS.map((k) => ({ kind: k, ...summary!.counts[k] })).filter(
-					(r) => r.new + r.unchanged + r.changed + r.skipped > 0
+					(r) => r.new + r.unchanged + (r.changed ?? 0) + r.skipped > 0
 				)
 			: []
 	);
-	const nothingNew = $derived(rows.every((r) => r.new === 0));
+	const missing = $derived(
+		summary ? Object.values(summary.counts).reduce((n, c) => n + (c.missing ?? 0), 0) : 0
+	);
+	const nothingNew = $derived(rows.every((r) => r.new === 0) && !(trashMissing && missing > 0));
 
 	function importProblem(e: unknown): string {
 		if (e instanceof ApiError) {
@@ -82,6 +104,11 @@
 			if (e.code === 'archive_unsupported_version') return m.data_error_version();
 			if (e.code.startsWith('archive_')) return m.data_error_archive();
 			if (e.code === 'already_imported') return m.data_warn_already_imported();
+			if (e.code === 'loseit_unsupported_layout' || e.code === 'loseit_not_loseit')
+				return m.data_error_loseit_layout();
+			if (e.code === 'loseit_too_large') return m.data_error_too_large();
+			if (e.code === 'loseit_invalid_value')
+				return m.data_error_loseit_value({ detail: e.detail ?? '' });
 		}
 		return describeError(e);
 	}
@@ -124,14 +151,26 @@
 		);
 
 	async function upload(apply: boolean): Promise<Summary> {
-		const response = await fetch(`/api/v1/import${apply ? '?apply=1' : ''}`, {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built and sent at once, not reactive state
+		const params = new URLSearchParams({
+			zone: deviceZone(),
+			weightUnit,
+			share: shareFoods ? '1' : '0',
+			trashMissing: trashMissing ? '1' : '0'
+		});
+		if (apply) params.set('apply', '1');
+		const response = await fetch(`/api/v1/import?${params}`, {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: { 'content-type': 'application/zip' },
 			body: file
 		});
-		const body = (await response.json().catch(() => ({}))) as { error?: string; summary?: Summary };
-		if (!response.ok) throw new ApiError(body.error ?? 'error', response.status);
+		const body = (await response.json().catch(() => ({}))) as {
+			error?: string;
+			detail?: string;
+			summary?: Summary;
+		};
+		if (!response.ok) throw new ApiError(body.error ?? 'error', response.status, body.detail);
 		return body.summary!;
 	}
 
@@ -139,11 +178,15 @@
 		const input = event.currentTarget as HTMLInputElement;
 		file = input.files?.[0] ?? null;
 		summary = null;
-		if (file)
-			void run(async () => {
-				summary = await upload(false);
-			}, importProblem);
+		trashMissing = false;
+		if (file) void preview();
 	}
+
+	/** Runs the dry run again, e.g. after a LoseIt option changed. */
+	const preview = () =>
+		run(async () => {
+			summary = await upload(false);
+		}, importProblem);
 
 	const apply = () =>
 		run(async () => {
@@ -199,7 +242,9 @@
 		{#if summary}
 			<div class="flex flex-col gap-3" data-testid="import-preview">
 				<p class="text-[14px] text-muted">
-					{m.data_import_preview({ date: date(summary.exportedAt) })}
+					{summary.source === 'loseit'
+						? m.data_import_loseit()
+						: m.data_import_preview({ date: date(summary.exportedAt ?? '') })}
 					{#if summary.dateRange}
 						· {m.data_import_range({ from: summary.dateRange.from, to: summary.dateRange.to })}
 					{/if}
@@ -219,12 +264,52 @@
 								<th scope="row" class="py-2 font-semibold">{kindName[r.kind]()}</th>
 								<td class="py-2 text-right tabular-nums">{r.new}</td>
 								<td class="py-2 text-right tabular-nums">{r.unchanged}</td>
-								<td class="py-2 text-right tabular-nums">{r.changed + r.skipped}</td>
+								<td class="py-2 text-right tabular-nums">{(r.changed ?? 0) + r.skipped}</td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
-				{#each summary.warnings as w (w)}
+				{#if summary.source === 'loseit'}
+					{@const check = summary.reconciliation}
+					{#if check && check.mismatched.length === 0}
+						<p class="text-[14px] font-semibold">
+							{m.data_import_loseit_check_ok({ days: String(check.days) })}
+						</p>
+					{:else if check}
+						<Notice
+							>{m.data_import_loseit_check_bad({
+								count: String(check.mismatched.length),
+								dates: check.mismatched.slice(0, 5).join(', ')
+							})}</Notice
+						>
+					{/if}
+					{#if summary.deletedInLoseIt}
+						<p class="text-[14px] text-muted">
+							{m.data_import_loseit_deleted({ count: String(summary.deletedInLoseIt) })}
+						</p>
+					{/if}
+					<p class="text-[14px] text-muted">{m.data_import_activity_note()}</p>
+					<Chips
+						label={m.data_import_weight_unit()}
+						bind:value={weightUnit}
+						onchange={preview}
+						options={[
+							{ value: 'kg', label: 'kg' },
+							{ value: 'lb', label: 'lb' }
+						]}
+					/>
+					<label class="flex min-h-11 items-center gap-3 text-[15px] font-semibold">
+						<input type="checkbox" bind:checked={shareFoods} class="size-5" />
+						{m.data_import_share()}
+					</label>
+					{#if missing > 0}
+						<label class="flex min-h-11 items-center gap-3 text-[15px]">
+							<input type="checkbox" bind:checked={trashMissing} class="size-5" />
+							{m.data_import_missing({ count: String(missing) })}
+						</label>
+					{/if}
+				{/if}
+				{#each summary.warnings.filter((w) => !QUIET_WARNINGS.has(w)) as w (w)}
 					<Notice tone={w === 'already_imported' ? 'warn' : 'info'}>{warning[w]?.() ?? w}</Notice>
 				{/each}
 				{#if nothingNew && !summary.alreadyImported}

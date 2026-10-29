@@ -1,7 +1,7 @@
 // Public entry of the imports-exports module (portable archives, import reconciliation, account deletion). Import
 // only this file, as '#lib/server/modules/imports-exports/index.ts'.
 export { ArchiveError, LIMITS as ARCHIVE_LIMITS } from './archive.ts';
-export { isLoseItArchive, LoseItError } from './loseit.ts';
+export { archiveKind, isLoseItArchive, LoseItError } from './loseit.ts';
 export type { LoseItOptions, LoseItSummary, LoseItWarning } from './loseit-import.ts';
 export {
 	createPortability,

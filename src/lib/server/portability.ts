@@ -4,6 +4,7 @@ import {
 	ARCHIVE_LIMITS,
 	ArchiveError,
 	createPortability,
+	LoseItError,
 	PortabilityError
 } from '#lib/server/modules/imports-exports/index.ts';
 import { db } from './db/index.ts';
@@ -22,6 +23,8 @@ export function respondPortability(run: () => Promise<Response>): Promise<Respon
 			if (e instanceof ArchiveError)
 				return json({ error: `archive_${e.code}`, detail: e.detail }, { status: 422 });
 			if (e instanceof PortabilityError) return json({ error: e.code }, { status: STATUS[e.code] });
+			if (e instanceof LoseItError)
+				return json({ error: `loseit_${e.code}`, detail: e.detail }, { status: 422 });
 			throw e;
 		}
 	});

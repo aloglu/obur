@@ -1,7 +1,9 @@
 // Your data: export, import with a preview, and account deletion (docs/design.md, "Your data").
+import { readdirSync, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { expect, test } from '@playwright/test';
-import { strFromU8, unzipSync } from 'fflate';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { apiAs, signedInAs } from './fixtures.ts';
 
 const DAY = '2026-10-20';
@@ -113,4 +115,40 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	await expect(people).not.toContainText(name);
 	await expect(page.getByTestId('deletions')).toContainText(memberId);
 	await expect(page.getByTestId('deletions')).not.toContainText(name);
+});
+
+test('a LoseIt export imports after a preview that checks it against LoseIt’s own totals', async ({
+	page
+}) => {
+	const dir = path.resolve(import.meta.dirname, '../fixtures/loseit');
+	const loseit = zipSync(
+		Object.fromEntries(
+			readdirSync(dir)
+				.filter((f) => f.endsWith('.csv'))
+				.map((f) => [f, strToU8(readFileSync(path.join(dir, f), 'utf8'))])
+		)
+	);
+	await signedInAs(page, 'Okan');
+	await page.goto('/settings/data');
+	const chooser = page.locator('input[type=file]');
+	await expect(chooser).toBeEnabled();
+	await chooser.setInputFiles({
+		name: 'loseit.zip',
+		mimeType: 'application/zip',
+		buffer: Buffer.from(loseit)
+	});
+	const preview = page.getByTestId('import-preview');
+	await expect(preview).toContainText('LoseIt export');
+	await expect(preview).toContainText('All 4 days add up');
+	await expect(preview.getByRole('row', { name: /Diary entries/ })).toContainText('18');
+	await expect(preview).toContainText('Entries you deleted in LoseIt are left out (1)');
+	await preview.getByRole('radio', { name: 'kg' }).click();
+	await preview.getByRole('button', { name: 'Import' }).click();
+	await expect(page.getByRole('status')).toContainText('Import finished');
+	const day = await apiAs<{ entries: { food: { name: string } | null }[] }>(
+		page,
+		'GET',
+		'/api/v1/diary/2026-01-07'
+	);
+	expect(day.entries.map((e) => e.food?.name)).toContain('Greek yogurt, plain');
 });

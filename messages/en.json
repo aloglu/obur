@@ -390,7 +390,7 @@
 	"data_export_button": "Download export",
 	"data_export_done": "Export downloaded",
 	"data_import_title": "Import",
-	"data_import_body": "Bring in an export from obur, from this server or another one. You'll see what would change before anything is saved. Imported foods are private.",
+	"data_import_body": "Bring in an export from obur (this server or another one) or from LoseIt. You'll see what would change before anything is saved. Imported foods are private unless you choose to share them.",
 	"data_import_choose": "Choose an export file",
 	"data_import_preview": "From an export made {date}",
 	"data_import_range": "Entries from {from} to {to}",
@@ -457,5 +457,18 @@
 	"log_search_offline": "Search needs a connection. You can still quick add calories, or pick a recent food.",
 	"offline_page_title": "Not available offline",
 	"offline_page_body": "This page isn't saved on this device yet. It will open once you're back online.",
-	"offline_page_link": "Go to Today"
+	"offline_page_link": "Go to Today",
+	"data_import_loseit": "LoseIt export",
+	"data_import_loseit_check_ok": "All {days} days add up to LoseIt's own daily totals.",
+	"data_import_loseit_check_bad": "{count} days don't add up to LoseIt's own daily totals: {dates}.",
+	"data_import_loseit_deleted": "Entries you deleted in LoseIt are left out ({count}).",
+	"data_import_weight_unit": "Weights in this export are in",
+	"data_import_share": "Share my custom foods with the household",
+	"data_import_missing": "Move {count} entries to the trash: they were imported before but aren't in this export (deleted or changed in LoseIt).",
+	"data_import_activity_note": "Activity from LoseIt is recorded but doesn't change your budget.",
+	"data_warn_budgets_after_own_target": "LoseIt budgets from the day you set a target in obur are left out; obur's target applies from then on.",
+	"data_warn_height_out_of_range": "The height in this export isn't in centimetres, so it's left out of your profile.",
+	"data_warn_reconciliation_mismatch": "Some days don't add up to LoseIt's totals. Check them after importing.",
+	"data_error_loseit_layout": "This LoseIt export has a layout obur doesn't recognise, so nothing was imported.",
+	"data_error_loseit_value": "This LoseIt export has a value obur can't read: {detail}."
 }

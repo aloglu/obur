@@ -84,6 +84,23 @@ export interface LoseItData {
 	profile: { birthDate: string | null; sex: 'female' | 'male' | null; height: number | null };
 }
 
+/** Which kind of export an upload is, from its file names alone (nothing is decompressed). */
+export function archiveKind(bytes: Uint8Array): 'obur' | 'loseit' | 'unknown' {
+	const names: string[] = [];
+	try {
+		unzipSync(bytes, {
+			filter: (file) => {
+				names.push(file.name);
+				return false;
+			}
+		});
+	} catch {
+		return 'unknown';
+	}
+	if (names.includes('manifest.json')) return 'obur';
+	return isLoseItArchive(names) ? 'loseit' : 'unknown';
+}
+
 /** True when the archive looks like a LoseIt export (so the caller can choose the right reader). */
 export function isLoseItArchive(names: string[]): boolean {
 	return names.includes('food-logs.csv') && names.includes('daily-calorie-summary.csv');
