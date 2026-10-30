@@ -32,14 +32,14 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - **Nutrients card:** protein, carbohydrate and fat bars against their targets. Fibre, sugars, saturated fat and salt sit in a 2×2 grid. Unknown values show a "+" and "N entries unknown", never zero.
 - **Water and weight:** side-by-side cards with +250 / +500 ml buttons and a decimal-comma weight input. Each card has an **Edit** link (shown once something is recorded) that opens a sheet: Water lists the viewed day's additions, Weigh-ins lists all readings newest first, 20 at a time with **Show older**. Each row has Edit (inline value, decimal comma) and Delete; a deleted row stays in place, struck through, with its own Undo, because a toast would sit behind the sheet. A weight change that moves a calculated budget says so at the top of the sheet (added 2026-10-30, provisional).
 - **Meal cards:** Breakfast, Lunch, Dinner and Snacks, each with its kcal total and a **+** button. Each entry row shows a two-line clamped name, quantity, badges ("Waiting to sync", "Macros unknown") and kcal. Tapping an entry opens Edit.
-- **Desktop layout:** two columns, with Today on the left and the Log panel as a sticky 380 px panel on the right.
+- **Desktop layout:** two columns, with Today on the left and the Log panel as a sticky 380 px panel on the right, starting level with the Budget card (the day header sits above, in Today's column only).
 
 **Log**
 - **Idle state:** the search field, then two large centred tiles, **Speak** (olive icon tile) and **Scan a label** (ochre icon tile). There are no descriptions under the tiles. Until a feature is built (voice in Phase 2, scanning in Phase 3), its tile is shown disabled with a "Coming soon" label (owner decision, 2026-10-25); once built, a tile switched off in configuration is hidden. Below them is a "Quick add calories" ghost button.
 - **Suggestions:** they appear only when the search field is focused and empty. A Cancel button then returns to the tiles. Typing replaces suggestions with results.
 - **Search matching:** Turkish-insensitive, so "sutas" finds "Sütaş Ayran".
 - **No results:** the empty state points to scanning or quick add.
-- **The meal's +:** goes to Log, not a modal, with the meal preset. An "Adding to Lunch · Today" pill shows the preset and can be cleared. On desktop the panel is already visible, so + only sets the preset. A modal would duplicate search, voice and scan.
+- **The meal's +:** goes to Log, not a modal, with the meal preset. An "Adding to Lunch · Today" pill shows the preset and can be cleared. On desktop the panel is already visible, so + sets the preset there; the pill pulses briefly, the panel's outline flashes for under a second, and the pill is announced to screen readers (owner report 2026-10-30: the change was easy to miss; no motion with reduced motion). Focus stays put, so the panel keeps the same tiles as the phone's Log screen. A modal would duplicate search, voice and scan.
 - **Picking a food** opens a sheet (bottom sheet on phone, 440 px right-side sheet on desktop) with these steps:
   1. The basis line, then the amount (decimal comma) and unit chips.
   2. Day chips: Today / Yesterday, or the viewed day plus Today.

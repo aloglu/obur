@@ -19,8 +19,10 @@
 		onpick: (foodId: string) => void;
 		onquick: () => void;
 		onclearpreset: () => void;
+		/** Desktop: bumped each time a meal's + chooses the meal, to replay the pill's pulse. */
+		presetRequest?: number;
 	}
-	let { date, today, preset, onpick, onquick, onclearpreset }: Props = $props();
+	let { date, today, preset, onpick, onquick, onclearpreset, presetRequest = 0 }: Props = $props();
 
 	let query = $state('');
 	let focused = $state(false);
@@ -99,20 +101,26 @@
 {/snippet}
 
 <div class="flex flex-col gap-3">
-	{#if preset}
-		<div
-			class="flex items-center gap-2 self-start rounded-full bg-soft py-1 pr-1 pl-3.5 text-[14px] font-semibold text-accent"
-		>
-			{m.log_adding_to({ meal: mealName(preset), day: dayTitle(date, today) })}
-			<button
-				type="button"
-				onclick={onclearpreset}
-				aria-label={m.log_clear_preset()}
-				class="grid size-9 place-items-center rounded-full"
-				><X size={16} aria-hidden="true" /></button
-			>
-		</div>
-	{/if}
+	<!-- Announced when a meal's + sets it, since focus stays on that button. -->
+	<div aria-live="polite" class="flex flex-col empty:hidden">
+		{#if preset}
+			<!-- Keyed by the request too, so choosing a meal again replays the short pulse. -->
+			{#key `${preset}:${presetRequest}`}
+				<div
+					class="preset flex items-center gap-2 self-start rounded-full bg-soft py-1 pr-1 pl-3.5 text-[14px] font-semibold text-accent"
+				>
+					{m.log_adding_to({ meal: mealName(preset), day: dayTitle(date, today) })}
+					<button
+						type="button"
+						onclick={onclearpreset}
+						aria-label={m.log_clear_preset()}
+						class="grid size-9 place-items-center rounded-full"
+						><X size={16} aria-hidden="true" /></button
+					>
+				</div>
+			{/key}
+		{/if}
+	</div>
 
 	<div class="flex items-center gap-2">
 		<label
@@ -207,3 +215,24 @@
 		>
 	{/if}
 </div>
+
+<style>
+	@media (prefers-reduced-motion: no-preference) {
+		.preset {
+			animation: preset-pulse 600ms ease-out;
+		}
+	}
+	@keyframes preset-pulse {
+		0% {
+			transform: scale(0.92);
+			box-shadow: 0 0 0 0 var(--color-accent);
+		}
+		60% {
+			transform: scale(1.03);
+		}
+		100% {
+			transform: scale(1);
+			box-shadow: 0 0 0 10px transparent;
+		}
+	}
+</style>

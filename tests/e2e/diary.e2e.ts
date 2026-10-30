@@ -33,6 +33,12 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Next day' })).toBeDisabled();
+	if (!isPhone(page)) {
+		// The Log panel starts level with the Budget card, not with the day header.
+		const panel = await page.getByRole('complementary', { name: 'Log' }).boundingBox();
+		const budget = await page.getByRole('region', { name: 'Budget' }).boundingBox();
+		expect(Math.abs(panel!.y - budget!.y)).toBeLessThan(1);
+	}
 
 	// Log three slices to lunch.
 	await openLogFor(page, 'Lunch');

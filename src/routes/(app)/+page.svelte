@@ -41,6 +41,14 @@
 	let editing = $state<DiaryEntry | null>(null);
 	// Bumped after each save so the desktop Log panel starts fresh for the next food.
 	let panelKey = $state(0);
+	let panelFocus = $state(0);
+	let flash = $state(false);
+	$effect(() => {
+		if (panelFocus === 0) return;
+		flash = true;
+		const t = setTimeout(() => (flash = false), 900);
+		return () => clearTimeout(t);
+	});
 	let highlight = $state<string | undefined>(page.url.searchParams.get('highlight') ?? undefined);
 
 	const eaten = $derived(data.totals.energy_kcal?.value ?? 0);
@@ -61,8 +69,11 @@
 	const isDesktop = () => matchMedia('(min-width: 760px)').matches;
 
 	function add(meal: Meal) {
-		if (isDesktop()) preset = meal;
-		else goto(logHref(meal, data.date));
+		// Desktop: the panel is already on screen, so + chooses the meal there and draws the eye to it.
+		if (isDesktop()) {
+			preset = meal;
+			panelFocus += 1;
+		} else goto(logHref(meal, data.date));
 	}
 
 	async function logged(entry: DiaryEntry | null) {
@@ -140,70 +151,78 @@
 
 <svelte:head><title>{m.nav_today()} · {m.app_name()}</title></svelte:head>
 
+<!-- Desktop: the day header sits in the first row, so the Log panel starts level with the Budget card. -->
 <div
-	class="mx-auto grid max-w-[1064px] gap-6 px-3.5 py-3 desk:grid-cols-[minmax(0,1fr)_380px] desk:px-7 desk:py-5"
+	class="mx-auto grid max-w-[1064px] gap-6 px-3.5 py-3 desk:grid-cols-[minmax(0,1fr)_380px] desk:gap-x-6 desk:gap-y-3 desk:px-7 desk:py-5"
 >
-	<main class="flex min-w-0 flex-col gap-3">
+	<main class="flex min-w-0 flex-col gap-3 desk:row-span-2 desk:grid desk:grid-rows-subgrid">
 		<DayHeader date={data.date} today={data.today} onmove={move} />
-		<BudgetCard
-			{eaten}
-			budget={data.budget}
-			manual={data.target?.mode === 'manual'}
-			floor={data.target?.floorKcal ?? 0}
-			onaddactivity={() => (addingActivity = true)}
-		/>
-		<NutrientsCard
-			totals={data.totals}
-			carbs={carbohydrateDay(data.entries)}
-			entryCount={data.entries.length}
-			targets={data.macros}
-		/>
-		<div class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
-			<WaterCard
-				date={data.date}
-				today={data.today}
-				entries={data.water.entries}
-				totalMl={data.water.totalMl}
-				onchange={invalidateAll}
+		<div class="flex min-w-0 flex-col gap-3">
+			<BudgetCard
+				{eaten}
+				budget={data.budget}
+				manual={data.target?.mode === 'manual'}
+				floor={data.target?.floorKcal ?? 0}
+				onaddactivity={() => (addingActivity = true)}
 			/>
-			<WeightCard
-				date={data.date}
-				today={data.today}
-				latest={data.latestWeight}
-				onchange={invalidateAll}
+			<NutrientsCard
+				totals={data.totals}
+				carbs={carbohydrateDay(data.entries)}
+				entryCount={data.entries.length}
+				targets={data.macros}
 			/>
-		</div>
-		{#each MEALS as meal (meal)}
-			<MealCard
-				{meal}
-				entries={byMeal[meal]}
-				{highlight}
-				onadd={() => add(meal)}
-				onopen={(e) => (editing = e)}
-				pending={pendingFor(meal)}
-				onpending={(op) => (pendingOpen = op)}
-			/>
-		{/each}
-		<div class="flex flex-col items-start gap-1 px-1">
-			<button
-				type="button"
-				onclick={toggleComplete}
-				aria-pressed={data.complete}
-				class={[
-					'inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-[15px] font-bold',
-					data.complete ? 'border-good bg-surface text-good' : 'border-line bg-surface text-text'
-				]}
-			>
-				<CircleCheck size={20} aria-hidden="true" />{data.complete
-					? m.day_completed()
-					: m.day_complete()}
-			</button>
-			<p class="text-[13px] text-muted">{m.day_complete_hint()}</p>
+			<div class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+				<WaterCard
+					date={data.date}
+					today={data.today}
+					entries={data.water.entries}
+					totalMl={data.water.totalMl}
+					onchange={invalidateAll}
+				/>
+				<WeightCard
+					date={data.date}
+					today={data.today}
+					latest={data.latestWeight}
+					onchange={invalidateAll}
+				/>
+			</div>
+			{#each MEALS as meal (meal)}
+				<MealCard
+					{meal}
+					entries={byMeal[meal]}
+					{highlight}
+					onadd={() => add(meal)}
+					onopen={(e) => (editing = e)}
+					pending={pendingFor(meal)}
+					onpending={(op) => (pendingOpen = op)}
+				/>
+			{/each}
+			<div class="flex flex-col items-start gap-1 px-1">
+				<button
+					type="button"
+					onclick={toggleComplete}
+					aria-pressed={data.complete}
+					class={[
+						'inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-[15px] font-bold',
+						data.complete ? 'border-good bg-surface text-good' : 'border-line bg-surface text-text'
+					]}
+				>
+					<CircleCheck size={20} aria-hidden="true" />{data.complete
+						? m.day_completed()
+						: m.day_complete()}
+				</button>
+				<p class="text-[13px] text-muted">{m.day_complete_hint()}</p>
+			</div>
 		</div>
 	</main>
 
-	<aside class="hidden desk:block" aria-label={m.log_title()}>
-		<div class="sticky top-5 rounded-card bg-surface p-[18px] shadow-card">
+	<aside class="hidden desk:col-start-2 desk:row-start-2 desk:block" aria-label={m.log_title()}>
+		<div
+			class={[
+				'sticky top-5 rounded-card bg-surface p-[18px] shadow-card outline-3 outline-offset-2 transition-[outline-color] duration-300',
+				flash ? 'outline-accent' : 'outline-transparent'
+			]}
+		>
 			<h2 class="mb-3 text-[22px] font-[750]">{m.log_title()}</h2>
 			{#key panelKey}
 				<LogPanel
@@ -213,6 +232,7 @@
 					onpick={(id) => (picking = id)}
 					onquick={() => (quick = true)}
 					onclearpreset={() => (preset = null)}
+					presetRequest={panelFocus}
 				/>
 			{/key}
 		</div>

@@ -86,7 +86,7 @@ Phase 2 (2026-10-30, after water/weight editing): `npm run check` 0 errors; `npm
 
 ## Exact next step
 
-Session order (2026-10-30, second session): issue 3 (done), Phase 2 step 4 (automatic recalculation, owner chose it 2026-10-30), issues 1–2 (water and weight edit/delete), issues 4–5 (desktop), then step 5 (saved meals). Step 4 done (2026-10-30): `goals.followWeight` and `followLatestWeight` (weight POST, delete and restore), toast detail, Profile note replacing the 3 kg nudge; 6 real-Postgres tests and an extended onboarding browser test. Issues 1–2 done (2026-10-30): `PATCH /api/v1/body/{weight,water}/<id>` with revision checks, keyset-paged weigh-ins (`GET /api/v1/body/weight?limit=&after=`), `ReadingsSheet` from Edit on the Water and Weight cards; weight edits, deletes and restores move a calculated budget too. 3 more real-Postgres tests, 2 browser tests on both projects. Not covered: activity entries still have only the toast's Undo (same gap; not reported). Next: issues 4–5 (desktop + and Log panel alignment).
+Session order (2026-10-30, second session): issue 3 (done), Phase 2 step 4 (automatic recalculation, owner chose it 2026-10-30), issues 1–2 (water and weight edit/delete), issues 4–5 (desktop), then step 5 (saved meals). Step 4 done (2026-10-30): `goals.followWeight` and `followLatestWeight` (weight POST, delete and restore), toast detail, Profile note replacing the 3 kg nudge; 6 real-Postgres tests and an extended onboarding browser test. Issues 1–2 done (2026-10-30): `PATCH /api/v1/body/{weight,water}/<id>` with revision checks, keyset-paged weigh-ins (`GET /api/v1/body/weight?limit=&after=`), `ReadingsSheet` from Edit on the Water and Weight cards; weight edits, deletes and restores move a calculated budget too. 3 more real-Postgres tests, 2 browser tests on both projects. Not covered: activity entries still have only the toast's Undo (same gap; not reported). Issues 4–5 done (2026-10-30): desktop + pulses the pill and flashes the panel (live region for screen readers); the Log panel aligns with the Budget card (subgrid); alignment asserted in the diary browser test; desktop Today screenshots regenerated and reviewed. Next: step 5, saved meals.
 
 ## Owner-reported issues to schedule (2026-10-30)
 
@@ -95,8 +95,8 @@ Reported for later; the assistant decides when to fit them in.
 1. **Fixed 2026-10-30.** **Water can't be edited or deleted** after the Undo toast is gone. Add edit/delete for a day's water (the body module already has trash and restore).
 2. **Fixed 2026-10-30.** **Weight likewise:** edit or delete a recorded weight for a date.
 3. **Fixed 2026-10-30.** Unit choices now leave out a serving whose label only restates its size (`unitOptions`, with tests); it stays when editing an entry logged in it. Original report — **LoseIt-imported foods show a wrong extra unit:** in a food's amount sheet, under Unit, a per-100 g food (e.g. Lor Peyniri) shows both "g" and "100g", apparently because its basis amount is 100. Check the unit options for imported foods (basis serving shown as a unit).
-4. **Desktop "+" on a meal card** only adds a meal pill to the Log panel, which is easy to miss (the owner first thought nothing happened). Rethink adding to a meal on desktop; the phone behaviour (open Log) is acceptable but could adopt a better shared solution.
-5. **Desktop Today layout:** the Log panel should align vertically with the Budget card, not with the top of the Today column.
+4. **Fixed 2026-10-30 (owner to judge on desktop).** **Desktop "+" on a meal card** only adds a meal pill to the Log panel, which is easy to miss (the owner first thought nothing happened). Rethink adding to a meal on desktop; the phone behaviour (open Log) is acceptable but could adopt a better shared solution.
+5. **Fixed 2026-10-30.** **Desktop Today layout:** the Log panel should align vertically with the Budget card, not with the top of the Today column.
 
 ## Implementation notes
 
