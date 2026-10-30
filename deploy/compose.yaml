@@ -96,7 +96,9 @@ services:
       OBUR_STATUS_DIR: /app/status
       # Speak: the speech service below. Set SPEECH_URL= (empty) in .env to switch Speak off.
       SPEECH_URL: ${SPEECH_URL-http://speech:8000}
-    networks: [default, speech]
+      # Scan a label: the OCR service below. Set OCR_URL= (empty) in .env to switch scanning off.
+      OCR_URL: ${OCR_URL-http://ocr:8000}
+    networks: [default, speech, ocr]
     volumes:
       - ${OBUR_DATA_DIR:-./data}/status:/app/status:ro
     ports:
@@ -149,6 +151,23 @@ services:
     security_opt: ['no-new-privileges:true']
     mem_limit: ${SPEECH_MEMORY_LIMIT:-2g}
 
+  # Label reading for Scan (ocr/): one photo at a time, held in memory only, no logs of what was read. No published port
+  # and no internet: only the web app reaches it.
+  ocr:
+    image: obur-ocr:current
+    restart: unless-stopped
+    networks: [ocr]
+    environment:
+      OCR_THREADS: ${OCR_THREADS:-4}
+      OCR_MAX_QUEUE: ${OCR_MAX_QUEUE:-3}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    mem_limit: ${OCR_MEMORY_LIMIT:-1g}
+
 networks:
   speech:
+    internal: true
+  ocr:
     internal: true

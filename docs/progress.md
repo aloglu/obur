@@ -219,7 +219,15 @@ Step 1 done: `label-parser` (table and running-text layouts; header columns per 
 %RI; drift-following row assignment; impossible values dropped; no fallback from a table to text). Development set,
 PP-OCRv6 small at 1280 px (Phase 0 OCR output): 85 % of values right (72/85), 0 wrong, 13 missing (values the OCR
 never read), basis right 10/10, 8/10 labels fully right. Noisier OCR (2000 px; tiny model) gives 2–13 wrong values,
-mostly the tiny model's `%`→`9`: the warnings remain needed. `node scripts/label-eval.ts <ocr.jsonl> <truth.tsv>`. Next: batch 2 features (Profile details, editable macro targets, saved meal
+mostly the tiny model's `%`→`9`: the warnings remain needed. `node scripts/label-eval.ts <ocr.jsonl> <truth.tsv>`.
+
+Steps 2–3 done: OCR service `ocr/` (pinned PP-OCRv6 small, checked; reproduces the Phase 0 development scores
+exactly; runs with no network; 0.3–0.6 s per label on the desktop); `OCR_URL`, `POST /api/v1/scan` (30 per 10
+minutes, writes nothing), the Scan page and tile, `?food=` on Log to open the amount sheet; foods record
+`label_scan`. Compose `ocr` service and `obur-ctl` (`obur-ocr` image, logs/restart ocr): the owner must copy both
+files on the server (deploy/unraid/README.md) before Scan appears; until then it stays "Coming soon". Browser tests
+use the stand-in service (answers keyed by photo width so the two browsers don't race). Next: freeze the parser and
+run the held-out evaluation on the 12 new photos. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

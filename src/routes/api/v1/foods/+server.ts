@@ -16,9 +16,17 @@ export const GET: RequestHandler = ({ url, locals }) =>
 
 export const POST: RequestHandler = ({ request, locals }) =>
 	respondCatalog(async () => {
-		const body = await readJson(request, v.object({ food: FoodInput }));
+		// A food confirmed from a label scan records that it came from one; anything else is hand-made.
+		const body = await readJson(
+			request,
+			v.object({ food: FoodInput, source: v.optional(v.picklist(['manual', 'label_scan'])) })
+		);
 		return json(
-			{ id: await catalog.createFood(locals.session!.userId, body.food) },
+			{
+				id: await catalog.createFood(locals.session!.userId, body.food, {
+					origin: body.source ?? 'manual'
+				})
+			},
 			{ status: 201 }
 		);
 	});

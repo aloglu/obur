@@ -21,3 +21,6 @@ export const dayHref = (date: string, highlight?: string) =>
 /** The Log tab with a preset meal and day. */
 export const logHref = (meal: Meal, date: string) =>
 	withQuery(resolve('/(app)/log'), { meal, date });
+
+/** The Log tab with a food's amount sheet open (nothing is logged until Save). */
+export const logFoodHref = (foodId: string) => withQuery(resolve('/(app)/log'), { food: foodId });

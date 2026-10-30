@@ -1,0 +1,115 @@
+import { expect, test, type Page } from '@playwright/test';
+import { SPEECH_STUB } from '../../playwright.config.ts';
+import { signedInAs } from './fixtures.ts';
+
+const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
+// Small images: the stand-in OCR answers by the photo's width (3 or 5 px), so each test gets its own made-up table
+// even while both browsers run at once.
+const png = (b64: string) => Buffer.from(b64, 'base64');
+const WIDE3 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAADklEQVR4nGP4DwMMcBYAs2AR7za3GVIAAAAASUVORK5CYII='
+);
+const WIDE5 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAAAUAAAACCAIAAAAfCIEKAAAADklEQVR4nGP4jwoY0PgA3k8d47BbHWEAAAAASUVORK5CYII='
+);
+const line = (text: string, x: number, y: number, w = text.length * 8) => ({
+	text,
+	box: [
+		[x, y],
+		[x + w, y],
+		[x + w, y + 20],
+		[x, y + 20]
+	],
+	score: 0.95
+});
+const TABLE = [
+	line('Enerji ve', 100, 60),
+	line('Besin Öğeleri', 100, 82),
+	line('100 g', 300, 60, 50),
+	line('için', 300, 82, 40),
+	line('1 porsiyon', 400, 60, 80),
+	line('için (30 g)', 400, 82, 80),
+	line('%RA*', 520, 70, 40),
+	...[
+		['Enerji (kJ ve kcal)', '1673/400', '502/120', '%20'],
+		['Yağ (g)', '18', '5,4', '%26'],
+		['- Doymuş yağ (g)', '2,5', '0,8', '%13'],
+		['Karbonhidrat (g)', '52', '15,6', '%20'],
+		['-Şekerler (g)', '24', '7,2', '%27'],
+		['Protein (g)', '6,5', '2', '%13'],
+		['Tuz (g)', '<0,1', '<0,1', '%1']
+	].flatMap(([name, a, b, c], i) => [
+		line(name, 100, 120 + i * 26),
+		line(a, 300, 120 + i * 26, 60),
+		line(b, 400, 120 + i * 26, 60),
+		line(c, 520, 120 + i * 26, 40)
+	])
+];
+
+test('scan a label: the proposal fills the food form, the person checks and names it, then logs it', async ({
+	page,
+	request
+}, testInfo) => {
+	await signedInAs(page, `Tarayıcı ${testInfo.project.name}`);
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: { width: 3, status: 200, body: { lines: TABLE, ocrMs: 900, queueMs: 0 } }
+	});
+	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.getByRole('link', { name: 'Scan a label' }).click();
+	await page.getByLabel('Choose photo').setInputFiles({
+		name: 'label.png',
+		mimeType: 'image/png',
+		buffer: WIDE3
+	});
+	await expect(page.getByText('Check every value against the photo')).toBeVisible();
+	// The photo went out small and as JPEG (drawn again on the phone, which drops its location data).
+	const sent = await (await request.get(`${SPEECH_STUB}/last-ocr`)).json();
+	expect(sent).toMatchObject({ jpeg: true, width: 3 });
+	await expect(page.getByRole('img', { name: 'Your photo of the label' })).toBeVisible();
+
+	// Values per 100 g from the table, the bound kept, the serving offered as a portion; the name is typed.
+	await expect(page.locator('#n-energy_kcal')).toHaveValue('400');
+	await expect(page.locator('#n-fat')).toHaveValue('18');
+	await expect(page.locator('#n-carbohydrate')).toHaveValue('52');
+	await expect(page.locator('#n-salt')).toHaveValue('0,1');
+	await expect(
+		page.locator('#n-salt').locator('..').getByRole('checkbox', { name: 'Less than' })
+	).toBeChecked();
+	await page.getByLabel('Product name').fill(`Fındıklı gofret ${testInfo.project.name}`);
+	await page.getByRole('button', { name: 'Save food' }).click();
+
+	// Saved, then straight to the amount sheet in Log; nothing is logged until Save there.
+	const sheet = page.getByRole('dialog', {
+		name: new RegExp(`Fındıklı gofret ${testInfo.project.name}`)
+	});
+	await expect(sheet).toBeVisible();
+	await expect(sheet.getByRole('radio', { name: 'porsiyon (30 g)' })).toBeVisible();
+	await sheet.getByRole('radio', { name: 'porsiyon (30 g)' }).click();
+	await sheet.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect(page.getByRole('main')).toContainText(`Fındıklı gofret ${testInfo.project.name}`);
+});
+
+test('a label that cannot be read says so and leaves the form empty to fill in', async ({
+	page,
+	request
+}, testInfo) => {
+	await signedInAs(page, `Boş ${testInfo.project.name}`);
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: { width: 5, status: 200, body: { lines: [line('Net Miktar: 400 g', 20, 40)], ocrMs: 1 } }
+	});
+	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.getByRole('link', { name: 'Scan a label' }).click();
+	await page
+		.getByLabel('Choose photo')
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE5 });
+	await expect(page.getByText('No nutrition table could be read.')).toBeVisible();
+	await expect(page.locator('#n-energy_kcal')).toHaveValue('');
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: { width: 5, status: 503, body: { error: 'busy' } }
+	});
+	await page
+		.getByLabel('Choose photo')
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE5 });
+	await expect(page.getByText('The server is reading other labels.')).toBeVisible();
+});

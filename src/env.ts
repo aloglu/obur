@@ -39,6 +39,17 @@ export const variables = defineEnvVars({
 			return url.origin;
 		}
 	},
+	OCR_URL: {
+		description:
+			'Base URL of the OCR service on the internal network, e.g. http://ocr:8000. Unset: label scanning is off.',
+		schema: (value) => {
+			if (!value) return null;
+			const url = new URL(value);
+			if (url.protocol !== 'http:' && url.protocol !== 'https:')
+				throw new Error('OCR_URL must be http(s)');
+			return url.origin;
+		}
+	},
 	OBUR_STATUS_DIR: {
 		description:
 			'Folder with the backup status file written by the database container (read-only here).',

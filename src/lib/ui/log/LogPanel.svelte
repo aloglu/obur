@@ -27,6 +27,8 @@
 		onclearpreset: () => void;
 		/** Opens Speak; the tile is enabled only when given (a speech service is configured). */
 		onspeak?: () => void;
+		/** Label scanning is configured: the Scan tile links to it. */
+		scan?: boolean;
 		/** Opens the confirmation for a typed sentence; offered only when given. */
 		onentry?: (entry: ParsedEntry) => void;
 		/** Opens a saved meal; saved meals are listed only when given. */
@@ -43,6 +45,7 @@
 		onclearpreset,
 		onpickmeal,
 		onentry,
+		scan = false,
 		onspeak,
 		presetRequest = 0
 	}: Props = $props();
@@ -329,20 +332,32 @@
 						>{m.log_coming_soon()}</span
 					>{/if}
 			</button>
-			<button
-				type="button"
-				disabled
-				aria-describedby="coming-soon"
-				class="flex min-h-32 flex-col items-center justify-center gap-2 rounded-tile bg-surface2 p-3 opacity-70"
-			>
-				<span class="grid size-14 place-items-center rounded-button bg-scan-bg text-scan"
-					><ScanLine size={28} aria-hidden="true" /></span
+			{#if scan}
+				<a
+					href={resolve('/(app)/scan')}
+					class="flex min-h-32 flex-col items-center justify-center gap-2 rounded-tile bg-surface2 p-3"
 				>
-				<span class="text-[15px] font-semibold">{m.log_scan()}</span>
-				<span class="rounded-full bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
-					>{m.log_coming_soon()}</span
+					<span class="grid size-14 place-items-center rounded-button bg-scan-bg text-scan"
+						><ScanLine size={28} aria-hidden="true" /></span
+					>
+					<span class="text-[15px] font-semibold">{m.log_scan()}</span>
+				</a>
+			{:else}
+				<button
+					type="button"
+					disabled
+					aria-describedby="coming-soon"
+					class="flex min-h-32 flex-col items-center justify-center gap-2 rounded-tile bg-surface2 p-3 opacity-70"
 				>
-			</button>
+					<span class="grid size-14 place-items-center rounded-button bg-scan-bg text-scan"
+						><ScanLine size={28} aria-hidden="true" /></span
+					>
+					<span class="text-[15px] font-semibold">{m.log_scan()}</span>
+					<span class="rounded-full bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
+						>{m.log_coming_soon()}</span
+					>
+				</button>
+			{/if}
 		</div>
 		<span id="coming-soon" class="sr-only">{m.log_coming_soon()}</span>
 		<button

@@ -65,4 +65,5 @@ uploaded source is in `/mnt/user/appdata/obur-lab/deploy/source`; on the Unraid 
    `compose.yaml` needs before switching.
 
 The speech service (added 2026-10-30) is the first change made this way: it adds the `obur-speech` image to `obur-ctl`
-and the `speech` service and internal network to `compose.yaml`.
+and the `speech` service and internal network to `compose.yaml`. The OCR service for Scan (added 2026-10-30) is the
+second: the `obur-ocr` image, and the `ocr` service and internal network. Until both files are copied, Scan stays off.

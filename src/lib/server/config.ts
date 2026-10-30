@@ -1,5 +1,11 @@
 // Server configuration derived from validated environment variables (src/env.ts).
-import { PUBLIC_ORIGIN, SPEECH_URL, WEBAUTHN_RP_ID, WEBAUTHN_RP_NAME } from '$app/env/private';
+import {
+	OCR_URL,
+	PUBLIC_ORIGIN,
+	SPEECH_URL,
+	WEBAUTHN_RP_ID,
+	WEBAUTHN_RP_NAME
+} from '$app/env/private';
 
 export interface ServerConfig {
 	origin: string;
@@ -8,6 +14,8 @@ export interface ServerConfig {
 	secureCookies: boolean;
 	/** The speech service, or null when Speak is switched off. */
 	speechUrl: string | null;
+	/** The OCR service, or null when label scanning is switched off. */
+	ocrUrl: string | null;
 }
 
 /** The passkey domain must be the origin's host or a parent domain of it. */
@@ -26,7 +34,8 @@ function load(): ServerConfig {
 		rpId: WEBAUTHN_RP_ID.toLowerCase(),
 		rpName: WEBAUTHN_RP_NAME ?? 'obur',
 		secureCookies: new URL(PUBLIC_ORIGIN).protocol === 'https:',
-		speechUrl: SPEECH_URL ?? null
+		speechUrl: SPEECH_URL ?? null,
+		ocrUrl: OCR_URL ?? null
 	};
 }
 

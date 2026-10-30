@@ -286,6 +286,7 @@
 					onpickmeal={(id) => (openSaved = id)}
 					onentry={(e) => ((heard = false), (typedEntry = e))}
 					onspeak={data.speech ? () => (speaking = true) : undefined}
+					scan={data.scan}
 					presetRequest={panelFocus}
 				/>
 			{/key}

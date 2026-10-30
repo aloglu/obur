@@ -1,0 +1,4 @@
+# Pinned as measured in Phase 0 (docs/feasibility.md, spikes/ocr/requirements.lock).
+rapidocr==3.9.2
+onnxruntime==1.31.0
+pillow==13.0.0

@@ -12,7 +12,7 @@ const E2E_DATABASE = 'obur_e2e';
 const onE2e = (url = '') =>
 	Object.assign(new URL(url), { pathname: `/${E2E_DATABASE}` }).toString();
 const PORT = 4173;
-/** A stand-in speech service (tests/e2e/speech-stub.mjs). */
+/** A stand-in speech and OCR service (tests/e2e/speech-stub.ts). */
 export const SPEECH_STUB = `http://127.0.0.1:${PORT + 1}`;
 
 /** Environment for the app under test, also used by tests that call operator commands. */
@@ -22,6 +22,7 @@ export const e2eEnv = {
 	DATABASE_MIGRATOR_URL: onE2e(process.env.DATABASE_MIGRATOR_URL),
 	PUBLIC_ORIGIN: `http://localhost:${PORT}`,
 	SPEECH_URL: SPEECH_STUB,
+	OCR_URL: SPEECH_STUB,
 	WEBAUTHN_RP_ID: 'localhost'
 };
 

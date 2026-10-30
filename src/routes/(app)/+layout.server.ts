@@ -6,5 +6,6 @@ export const load: LayoutServerLoad = ({ locals }) => ({
 	zone: locals.zone,
 	today: localDate(new Date(), locals.zone),
 	/** Speak is offered only when a speech service is configured. */
-	speech: config.speechUrl !== null
+	speech: config.speechUrl !== null,
+	scan: config.ocrUrl !== null
 });

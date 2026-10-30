@@ -34,7 +34,11 @@
 	let preset = $state<Meal | null>(
 		MEALS.includes(requestedMeal as Meal) ? (requestedMeal as Meal) : null
 	);
-	let picking = $state<string | null>(null);
+	// A link may open a food's amount sheet (after a label scan, say); nothing is logged until Save.
+	const requestedFood = params.get('food');
+	let picking = $state<string | null>(
+		requestedFood && /^[0-9a-f-]{36}$/i.test(requestedFood) ? requestedFood : null
+	);
 	let quick = $state(false);
 	let openSaved = $state<string | null>(null);
 	let typedEntry = $state<ParsedEntry | null>(null);
@@ -81,6 +85,7 @@
 		onpickmeal={(id) => (openSaved = id)}
 		onentry={(e) => ((heard = false), (typedEntry = e))}
 		onspeak={data.speech ? () => (speaking = true) : undefined}
+		scan={data.scan}
 	/>
 </main>
 
