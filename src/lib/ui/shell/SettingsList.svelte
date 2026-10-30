@@ -71,6 +71,11 @@
 			>
 		</li>
 		<li>
+			<a href={resolve('/(app)/saved-meals')} class={row}
+				>{m.more_saved_meals()}<ChevronRight size={20} class="text-muted" aria-hidden="true" /></a
+			>
+		</li>
+		<li>
 			<a href={resolve('/(app)/settings/security')} class={row}
 				>{m.more_security()}<ChevronRight size={20} class="text-muted" aria-hidden="true" /></a
 			>

@@ -19,6 +19,9 @@
 	import EditEntrySheet from '#lib/ui/log/EditEntrySheet.svelte';
 	import LogPanel from '#lib/ui/log/LogPanel.svelte';
 	import QuickAddSheet from '#lib/ui/log/QuickAddSheet.svelte';
+	import SavedMealSheet from '#lib/ui/log/SavedMealSheet.svelte';
+	import SaveMealSheet from '#lib/ui/log/SaveMealSheet.svelte';
+	import { showLoggedMeal } from '#lib/client/saved-meal-toast.ts';
 	import BudgetCard from '#lib/ui/today/BudgetCard.svelte';
 	import DayHeader from '#lib/ui/today/DayHeader.svelte';
 	import MealCard from '#lib/ui/today/MealCard.svelte';
@@ -33,6 +36,8 @@
 	let quick = $state(false);
 	let addingActivity = $state(false);
 	let pendingOpen = $state<QueuedOp | null>(null);
+	let savingMeal = $state<Meal | null>(null);
+	let openSaved = $state<string | null>(null);
 	const pendingFor = (meal: Meal) =>
 		offline.items.filter(
 			(i) =>
@@ -137,6 +142,16 @@
 		});
 	}
 
+	async function loggedMeal(entries: DiaryEntry[]) {
+		openSaved = null;
+		preset = null;
+		panelKey += 1;
+		if (entries[0].localDate !== data.date) await goto(dayHref(entries[0].localDate));
+		await invalidateAll();
+		highlight = entries[0].id;
+		showLoggedMeal(entries, invalidateAll);
+	}
+
 	async function toggleComplete() {
 		await api('PUT', `/api/v1/diary/days/${data.date}`, { complete: !data.complete });
 		await invalidateAll();
@@ -192,6 +207,7 @@
 					entries={byMeal[meal]}
 					{highlight}
 					onadd={() => add(meal)}
+					onsave={() => (savingMeal = meal)}
 					onopen={(e) => (editing = e)}
 					pending={pendingFor(meal)}
 					onpending={(op) => (pendingOpen = op)}
@@ -232,6 +248,7 @@
 					onpick={(id) => (picking = id)}
 					onquick={() => (quick = true)}
 					onclearpreset={() => (preset = null)}
+					onpickmeal={(id) => (openSaved = id)}
 					presetRequest={panelFocus}
 				/>
 			{/key}
@@ -265,6 +282,31 @@
 		ondeleted={deleted}
 		onconflict={conflict}
 		onclose={() => (editing = null)}
+	/>
+{/if}
+{#if savingMeal}
+	<SaveMealSheet
+		meal={savingMeal}
+		entries={byMeal[savingMeal]}
+		onsaved={(saved) => {
+			savingMeal = null;
+			showToast({ message: m.saved_toast({ name: saved.name }), detail: m.saved_toast_detail() });
+		}}
+		onclose={() => (savingMeal = null)}
+	/>
+{/if}
+{#if openSaved}
+	<SavedMealSheet
+		savedMealId={openSaved}
+		date={data.date}
+		today={data.today}
+		meal={sheetMeal}
+		onlogged={loggedMeal}
+		ondeleted={(name) => {
+			openSaved = null;
+			showToast({ message: m.saved_deleted({ name }) });
+		}}
+		onclose={() => (openSaved = null)}
 	/>
 {/if}
 {#if addingActivity}

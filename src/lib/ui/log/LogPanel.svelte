@@ -1,16 +1,19 @@
 <script lang="ts">
 	// docs/ui.md "Log": search; Speak and Scan tiles (Coming soon until each feature works); suggestions only while
 	// the empty field is focused; typing shows results; the meal preset pill.
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import Bookmark from '@lucide/svelte/icons/bookmark';
 	import Mic from '@lucide/svelte/icons/mic';
 	import ScanLine from '@lucide/svelte/icons/scan-line';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
-	import type { Meal } from '#lib/shared/diary-types.ts';
+	import type { Meal, SavedMealSummary } from '#lib/shared/diary-types.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { dayTitle, kcal, mealName } from '#lib/shared/format.ts';
+	import { foldForSearch } from '#lib/shared/search-text.ts';
 
 	interface Props {
 		date: string;
@@ -19,10 +22,21 @@
 		onpick: (foodId: string) => void;
 		onquick: () => void;
 		onclearpreset: () => void;
+		/** Opens a saved meal; saved meals are listed only when given. */
+		onpickmeal?: (savedMealId: string) => void;
 		/** Desktop: bumped each time a meal's + chooses the meal, to replay the pill's pulse. */
 		presetRequest?: number;
 	}
-	let { date, today, preset, onpick, onquick, onclearpreset, presetRequest = 0 }: Props = $props();
+	let {
+		date,
+		today,
+		preset,
+		onpick,
+		onquick,
+		onclearpreset,
+		onpickmeal,
+		presetRequest = 0
+	}: Props = $props();
 
 	let query = $state('');
 	let focused = $state(false);
@@ -38,12 +52,37 @@
 
 	// Refreshed on every focus: logging, undo or edits elsewhere change what is recent.
 	async function loadRecent() {
+		if (onpickmeal) void loadSavedMeals();
 		try {
 			recent = (await api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')).results;
 		} catch {
 			// Keep what was shown; offline, the saved copy normally answers.
 		}
 	}
+
+	let savedMeals = $state<SavedMealSummary[]>([]);
+	async function loadSavedMeals() {
+		try {
+			savedMeals = (await api<{ meals: SavedMealSummary[] }>('GET', '/api/v1/saved-meals')).meals;
+		} catch {
+			// Offline: saved meals need a connection to log anyway.
+		}
+	}
+	// Also on mount: a search typed before the page finished loading never saw the focus event.
+	onMount(() => {
+		if (onpickmeal) void loadSavedMeals();
+	});
+	// Few enough to match here, with the same Turkish-aware folding as food search.
+	const matchingMeals = $derived.by(() => {
+		const q = foldForSearch(query.trim());
+		return q ? savedMeals.filter((s) => foldForSearch(s.name).includes(q)) : [];
+	});
+	const mealSummary = (s: SavedMealSummary) => {
+		const total = kcal(s.kcal) + (s.partial ? '+' : '');
+		return s.itemCount === 1
+			? m.saved_one_item({ kcal: total })
+			: m.saved_many_items({ count: String(s.itemCount), kcal: total });
+	};
 
 	$effect(() => {
 		const q = query.trim();
@@ -76,6 +115,34 @@
 	const per = (r: FoodSearchResult) =>
 		r.basis === 'serving' ? (r.servingLabel ?? '') : r.basis === '100g' ? '100 g' : '100 ml';
 </script>
+
+{#snippet mealList(items: SavedMealSummary[])}
+	<section aria-labelledby="saved-heading">
+		<h2
+			id="saved-heading"
+			class="px-2 text-[12px] font-bold tracking-[0.06em] text-muted uppercase"
+		>
+			{m.saved_title()}
+		</h2>
+		<ul class="flex flex-col">
+			{#each items as s (s.id)}
+				<li>
+					<button
+						type="button"
+						onclick={() => onpickmeal?.(s.id)}
+						class="flex min-h-14 w-full items-center gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
+					>
+						<Bookmark size={18} class="shrink-0 text-accent" aria-hidden="true" />
+						<span class="min-w-0 flex-1">
+							<span class="line-clamp-2 text-[15px] font-semibold break-words">{s.name}</span>
+							<span class="block text-[13px] text-muted">{mealSummary(s)}</span>
+						</span>
+					</button>
+				</li>
+			{/each}
+		</ul>
+	</section>
+{/snippet}
 
 {#snippet foodList(items: FoodSearchResult[])}
 	<ul class="flex flex-col">
@@ -151,6 +218,7 @@
 	</div>
 
 	{#if typing}
+		{#if matchingMeals.length}{@render mealList(matchingMeals)}{/if}
 		<section aria-label={m.log_results()}>
 			{#if searchFailed}
 				<div class="flex flex-col items-start gap-2 py-2">
@@ -174,6 +242,8 @@
 			{/if}
 		</section>
 	{:else if showSuggestions}
+		<!-- The five most recently changed; search finds the rest. -->
+		{#if savedMeals.length}{@render mealList(savedMeals.slice(0, 5))}{/if}
 		<section aria-labelledby="recent-heading">
 			<h2
 				id="recent-heading"

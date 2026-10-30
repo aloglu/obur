@@ -2,7 +2,7 @@
 // numbers, days and quantities.
 import { m } from '#lib/paraglide/messages.js';
 import { addDays } from './diary-rules.ts';
-import type { Meal, SnapshotUnit } from './diary-types.ts';
+import type { FoodSnapshot, Meal, SnapshotUnit } from './diary-types.ts';
 import { formatDecimal } from './numbers.ts';
 
 export const mealName = (meal: Meal): string =>
@@ -98,3 +98,23 @@ export function quantityText(
 }
 
 export const unitLabel = (unit: string): string => UNIT_LABEL[unit] ?? unit;
+
+/** The content of a diary entry or a saved meal's item. */
+interface EntryLike {
+	kind: 'food' | 'quick';
+	food: FoodSnapshot | null;
+	amount: number | null;
+	unit: SnapshotUnit | null;
+	description: string | null;
+}
+
+/** "Untad Premium Light Ekmek", or a quick add's description. */
+export const entryName = (e: EntryLike): string =>
+	e.kind === 'quick'
+		? (e.description ?? m.entry_quick())
+		: `${e.food?.brand ? `${e.food.brand} ` : ''}${e.food?.name ?? ''}`;
+
+export const entryQuantity = (e: EntryLike): string =>
+	e.kind === 'quick'
+		? m.entry_quick()
+		: quantityText(e.amount!, e.unit!, e.food?.servingLabel ?? null);

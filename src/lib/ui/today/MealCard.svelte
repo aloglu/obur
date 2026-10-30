@@ -1,34 +1,38 @@
 <script lang="ts">
 	// docs/ui.md "Meal cards": total, + button, entry rows with a two-line clamped name, quantity, badges and kcal.
+	import BookmarkPlus from '@lucide/svelte/icons/bookmark-plus';
 	import Plus from '@lucide/svelte/icons/plus';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { DiaryEntry, Meal } from '#lib/shared/diary-types.ts';
 	import type { QueuedOp } from '#lib/client/offline/store.ts';
-	import { kcal, mealName, quantityText } from '#lib/shared/format.ts';
+	import { entryName, entryQuantity, kcal, mealName } from '#lib/shared/format.ts';
 
 	interface Props {
 		meal: Meal;
 		entries: DiaryEntry[];
 		highlight?: string;
 		onadd: () => void;
+		/** Offered once the meal has entries on the server. */
+		onsave?: () => void;
 		onopen: (entry: DiaryEntry) => void;
 		/** Entries kept on this device and not yet on the server. */
 		pending?: QueuedOp[];
 		onpending?: (op: QueuedOp) => void;
 	}
-	let { meal, entries, highlight, onadd, onopen, pending = [], onpending }: Props = $props();
+	let {
+		meal,
+		entries,
+		highlight,
+		onadd,
+		onsave,
+		onopen,
+		pending = [],
+		onpending
+	}: Props = $props();
 
 	const total = $derived(
 		entries.reduce((sum, e) => sum + (e.nutrients.energy_kcal?.value ?? 0), 0)
 	);
-	const name = (e: DiaryEntry) =>
-		e.kind === 'quick'
-			? (e.description ?? m.entry_quick())
-			: `${e.food?.brand ? `${e.food.brand} ` : ''}${e.food?.name ?? ''}`;
-	const quantity = (e: DiaryEntry) =>
-		e.kind === 'quick'
-			? m.entry_quick()
-			: quantityText(e.amount!, e.unit!, e.food?.servingLabel ?? null);
 </script>
 
 <section class="rounded-card bg-surface p-[18px] shadow-card" aria-labelledby="meal-{meal}">
@@ -36,6 +40,16 @@
 		<h2 id="meal-{meal}" class="text-[19px] font-bold">{mealName(meal)}</h2>
 		<div class="flex items-center gap-3">
 			<span class="text-[15px] font-semibold text-muted tabular-nums">{kcal(total)} kcal</span>
+			{#if onsave && entries.length > 0}
+				<button
+					type="button"
+					onclick={onsave}
+					aria-label={m.saved_save_label({ meal: mealName(meal) })}
+					class="-mx-1.5 grid size-11 place-items-center rounded-full text-muted hover:bg-surface2"
+				>
+					<BookmarkPlus size={20} aria-hidden="true" />
+				</button>
+			{/if}
 			<button
 				type="button"
 				onclick={onadd}
@@ -61,9 +75,9 @@
 						]}
 					>
 						<span class="min-w-0 flex-1">
-							<span class="line-clamp-2 text-[15px] font-semibold break-words">{name(e)}</span>
+							<span class="line-clamp-2 text-[15px] font-semibold break-words">{entryName(e)}</span>
 							<span class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
-								{quantity(e)}
+								{entryQuantity(e)}
 								{#if e.kind === 'quick'}<span
 										class="rounded-full bg-surface2 px-2 py-0.5 text-[12px] font-semibold"
 										>{m.entry_macros_unknown()}</span

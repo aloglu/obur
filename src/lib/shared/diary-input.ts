@@ -55,3 +55,32 @@ export const UpdateEntry = v.object({
 
 export type CreateEntry = v.InferOutput<typeof CreateEntry>;
 export type UpdateEntry = v.InferOutput<typeof UpdateEntry>;
+
+const Uuid = v.pipe(v.string(), v.uuid());
+const Revision = v.pipe(v.number(), v.integer(), v.minValue(1));
+export const SavedMealName = v.pipe(
+	v.string(),
+	v.transform((s) => s.normalize('NFC').replace(/\s+/g, ' ').trim()),
+	v.minLength(1),
+	v.maxLength(120)
+);
+
+export const CreateSavedMeal = v.object({
+	id: v.optional(Uuid),
+	name: SavedMealName,
+	entryIds: v.pipe(v.array(Uuid), v.minLength(1), v.maxLength(100))
+});
+
+export const RenameSavedMeal = v.object({ revision: Revision, name: SavedMealName });
+export const RefreshSavedMeal = v.object({ revision: Revision });
+
+export const LogSavedMeal = v.object({
+	date: DateString,
+	meal: v.picklist(MEALS),
+	zone: Zone,
+	items: v.pipe(
+		v.array(v.object({ itemId: Uuid, entryId: Uuid })),
+		v.minLength(1),
+		v.maxLength(100)
+	)
+});
