@@ -34,6 +34,23 @@
 	let busy = $state(false);
 	let saveProblem = $state('');
 
+	// Whether saving opens Log for the new food, or stays here for the next label (scanning groceries in one go).
+	// A per-device convenience, so browser storage is enough; it may be unavailable, and then it stays on.
+	const LOG_AFTER = 'obur:scan-log-after-save';
+	let logAfter = $state(true);
+	try {
+		logAfter = localStorage.getItem(LOG_AFTER) !== 'no';
+	} catch {
+		// Storage blocked: keep the default.
+	}
+	function rememberLogAfter() {
+		try {
+			localStorage.setItem(LOG_AFTER, logAfter ? 'yes' : 'no');
+		} catch {
+			// Not remembered on this device; the choice still applies now.
+		}
+	}
+
 	/** About 1600 px on the long side as JPEG: OCR gains nothing above that, and drawing drops the location data. */
 	async function shrink(file: File): Promise<Blob> {
 		const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -143,7 +160,15 @@
 				source: 'label_scan'
 			});
 			showToast({ message: m.scan_saved({ name: food.name }) });
-			await goto(logFoodHref(id));
+			if (logAfter) {
+				await goto(logFoodHref(id));
+				return;
+			}
+			// Ready for the next label.
+			proposal = null;
+			if (photo) URL.revokeObjectURL(photo);
+			photo = null;
+			window.scrollTo({ top: 0 });
 		} catch (e) {
 			saveProblem =
 				e instanceof ApiError && e.code === 'energy_required'
@@ -228,6 +253,15 @@
 			{#if proposal.nutrients.length && !proposal.basis}<Notice>{m.scan_basis_unknown()}</Notice
 				>{/if}
 			{#if saveProblem}<Notice>{saveProblem}</Notice>{/if}
+			<label class="flex min-h-11 cursor-pointer items-center gap-3 px-1">
+				<input
+					type="checkbox"
+					bind:checked={logAfter}
+					onchange={rememberLogAfter}
+					class="size-5 shrink-0 accent-accent"
+				/>
+				<span class="text-[15px] font-semibold">{m.scan_log_after()}</span>
+			</label>
 			<Card title={m.scan_new_food()}>
 				{#key proposal}<FoodForm {initial} {busy} onsave={save} />{/key}
 			</Card>

@@ -9,6 +9,9 @@ const png = (b64: string) => Buffer.from(b64, 'base64');
 const WIDE3 = png(
 	'iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAADklEQVR4nGP4DwMMcBYAs2AR7za3GVIAAAAASUVORK5CYII='
 );
+const WIDE7 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAAAcAAAACCAIAAAAb/VE3AAAAD0lEQVR4nGP4jw0wYBUFAJi9KdeqIjuUAAAAAElFTkSuQmCC'
+);
 const WIDE5 = png(
 	'iVBORw0KGgoAAAANSUhEUgAAAAUAAAACCAIAAAAfCIEKAAAADklEQVR4nGP4jwoY0PgA3k8d47BbHWEAAAAASUVORK5CYII='
 );
@@ -112,4 +115,33 @@ test('a label that cannot be read says so and leaves the form empty to fill in',
 		.getByLabel('Choose photo')
 		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE5 });
 	await expect(page.getByText('The server is reading other labels.')).toBeVisible();
+});
+
+test('scanning several labels in a row: saving can stay on Scan instead of opening Log', async ({
+	page,
+	request
+}, testInfo) => {
+	await signedInAs(page, `Toplu ${testInfo.project.name}`);
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: { width: 7, status: 200, body: { lines: TABLE, ocrMs: 1 } }
+	});
+	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.getByRole('link', { name: 'Scan a label' }).click();
+	const choose = () =>
+		page
+			.getByLabel('Choose photo')
+			.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE7 });
+	await choose();
+	await page.getByLabel('Log it after saving').uncheck();
+	await page.getByLabel('Product name').fill(`Gofret 1 ${testInfo.project.name}`);
+	await page.getByRole('button', { name: 'Save food' }).click();
+	await expect(page.getByText(`Saved “Gofret 1 ${testInfo.project.name}”`)).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Scan a label' })).toBeVisible();
+	await expect(page.getByLabel('Product name')).toBeHidden();
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	// The choice is remembered on this device.
+	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.getByRole('link', { name: 'Scan a label' }).click();
+	await choose();
+	await expect(page.getByLabel('Log it after saving')).not.toBeChecked();
 });
