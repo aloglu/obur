@@ -173,7 +173,9 @@ and units, remove, add foods, create from scratch; one atomic `PUT /api/v1/saved
 checked, idempotent create); Log's sheet is for logging with an Edit meal link. DB tests for replace/create/conflicts/
 isolation; e2e for edit and create journeys. Budget circle alternatives published for the owner as an Artifact (2026-10-30): the current ring, A
 "number and bar", B "the sum" (equation tiles), C "half gauge", each at phone size with morning/evening/over states,
-a pick and notes. Waiting for the owner's choice; then build it on Today and record it in docs/ui.md. Next: batch 2 features (Profile details, editable macro targets, saved meal
+a pick and notes. The owner picked A (2026-10-30) and asked to keep the
+equation off the card face; built with the breakdown behind a tap on Budget. Next: the typed-entry gap list, a fresh
+held-out voice set, and the cut-over day (owner undecided); ask the owner what to prioritise. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

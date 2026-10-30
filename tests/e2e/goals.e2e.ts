@@ -4,6 +4,17 @@ import { apiAs, signedInAs } from './fixtures.ts';
 /** A birth date that makes the person exactly `years` old today (birthdays count from the day itself). */
 const bornYearsAgo = (years: number) => `${new Date().getFullYear() - years}-01-01`;
 
+/** Opens the budget's breakdown (it starts closed) and checks its base, activity and goal rows. */
+async function expectBreakdown(page: Page, base: number, activity: number, goal: number) {
+	const budget = page.getByRole('region', { name: 'Budget' });
+	const toggle = budget.getByRole('button', { name: /^Budget/ });
+	if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+	const rows = budget.locator('#budget-breakdown');
+	await expect(rows).toContainText(`${base} kcal`);
+	await expect(rows).toContainText(`+ ${activity} kcal`);
+	await expect(rows).toContainText(`− ${goal} kcal`);
+}
+
 async function fillDetails(page: Page, birthDate: string) {
 	await page.goto('/onboarding');
 	await page.getByLabel('Height (cm)').fill('180');
@@ -32,7 +43,7 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(budget).toContainText('1586 kcal');
-	await expect(budget).toContainText('2136 base + 0 activity − 550 goal');
+	await expectBreakdown(page, 2136, 0, 550);
 	await expect(budget).toContainText('kcal left');
 	// Macro targets: protein 1.2 g × 80 kg = 96 g; fat 30 % of 1,586 kcal = 53 g; carbohydrate (1,586 − 384 − 477) / 4 = 181 g.
 	const nutrients = page.getByRole('region', { name: 'Nutrients' });
@@ -47,7 +58,7 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await sheet.getByLabel('Calories burned (kcal)').fill('300');
 	await sheet.getByRole('button', { name: 'Add to budget' }).click();
 	await expect(budget).toContainText('1886 kcal');
-	await expect(budget).toContainText('2136 base + 300 activity − 550 goal');
+	await expectBreakdown(page, 2136, 300, 550);
 
 	// Marking the day complete is a switch.
 	const complete = page.getByRole('switch', { name: 'Day complete' });
@@ -64,9 +75,9 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	const toast = page.getByRole('status');
 	await expect(toast).toContainText('Saved 78 kg');
 	await expect(toast).toContainText('Budget now 1562 kcal (was 1586)');
-	await expect(budget).toContainText('2112 base + 300 activity − 550 goal');
+	await expectBreakdown(page, 2112, 300, 550);
 	await toast.getByRole('button', { name: 'Undo' }).click();
-	await expect(budget).toContainText('2136 base + 300 activity − 550 goal');
+	await expectBreakdown(page, 2136, 300, 550);
 
 	// The Profile page shows the target and says it follows the weight.
 	await page.goto('/profile');
@@ -111,7 +122,8 @@ test('under-18s get no calculated target but can enter a professional’s number
 	await page.getByRole('button', { name: 'Use this budget' }).click();
 	const budget = page.getByRole('region', { name: 'Budget' });
 	await expect(budget).toContainText('2000 kcal');
-	await expect(budget).toContainText('Your own target');
+	await budget.getByRole('button', { name: /^Budget/ }).click();
+	await expect(budget.locator('#budget-breakdown')).toContainText('Your own target');
 
 	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
 	await apiAs(page, 'POST', '/api/v1/diary/entries', {
@@ -138,7 +150,7 @@ test('day totals replace each other, and the budget settings apply from today', 
 	await page.getByRole('radio', { name: '0,5 kg/week' }).click();
 	await page.getByLabel(/Goal weight/).fill('75');
 	await page.getByRole('button', { name: 'Save my budget' }).click();
-	await expect(budget).toContainText('2136 base + 0 activity − 550 goal');
+	await expectBreakdown(page, 2136, 0, 550);
 
 	// A day total, then a newer one: the newer replaces it; one activity adds on top.
 	const addActivity = async (kind: 'One activity' | 'Day total', value: string) => {
@@ -152,11 +164,11 @@ test('day totals replace each other, and the budget settings apply from today', 
 		await expect(sheet).toBeHidden();
 	};
 	await addActivity('Day total', '300');
-	await expect(budget).toContainText('2136 base + 300 activity − 550 goal');
+	await expectBreakdown(page, 2136, 300, 550);
 	await addActivity('Day total', '650');
-	await expect(budget).toContainText('2136 base + 650 activity − 550 goal');
+	await expectBreakdown(page, 2136, 650, 550);
 	await addActivity('One activity', '100');
-	await expect(budget).toContainText('2136 base + 750 activity − 550 goal');
+	await expectBreakdown(page, 2136, 750, 550);
 	await budget.getByRole('button', { name: 'Add activity' }).click();
 	await expect(page.getByRole('dialog', { name: 'Activity' })).toContainText(
 		'Day total so far: 650 kcal'
@@ -193,7 +205,7 @@ test('day totals replace each other, and the budget settings apply from today', 
 	await expect(page.getByRole('button', { name: 'Saved' })).toBeVisible();
 
 	await page.goto('/');
-	await expect(budget).toContainText('2136 base + 0 activity − 550 goal');
+	await expectBreakdown(page, 2136, 0, 550);
 	await expect(budget).toContainText('750 kcal burned, not added (your budget setting).');
 	// 1,586 kcal: protein 30 % / 4 = 119 g, carbs 10 % / 4 = 40 g, fat 60 % / 9 = 106 g.
 	const nutrients = page.getByRole('region', { name: 'Nutrients' });
