@@ -119,8 +119,10 @@ portions (147 of 152 custom-food rows are grams or millilitres, 3 name a portion
 2. Macro defaults: protein 1.2 g per kg (goal weight when lower), fat 30 % of the budget, carbohydrate the rest.
 3. Done: a setting for whether burned calories count (all activity); plus watch totals. Imported LoseIt rows stay uncounted history.
 4. Done: voice accepted as is; the owner notes failing sentences during use.
-5. Provisional screens to review when convenient (in the Claude app if wanted): Profile, onboarding, Your data,
-   Household, food create/edit, saved meals, typed entry and Speak, water and weight editing.
+5. In progress: provisional screen review on an Artifact (private to the owner; the artifact link is in the session, not
+   recorded here): phone screenshots in light and dark from `tests/e2e/review-screens.e2e.ts` (runs only with a
+   `.review-shots` marker file), questions per screen, and per-screen verdict and notes saved in the artifact's
+   `notes` collection for Claude to read back. Outcomes go into `docs/ui.md`.
 6. Cut-over: the day to stop logging in LoseIt. On that day, a final LoseIt export imported into obur adds only the
    days since the first import (overlapping exports are matched).
 
