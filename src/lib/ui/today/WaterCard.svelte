@@ -125,8 +125,9 @@
 		<form class="flex flex-col gap-1" onsubmit={addOther} novalidate>
 			<div
 				class={[
-					'flex min-h-11 items-center rounded-full border bg-surface2 pl-4',
-					amountError ? 'border-bad' : 'border-line focus-within:border-accent'
+					// A ring, not a border: the field keeps the 44 px height of the button it replaces.
+					'flex h-11 items-center rounded-full bg-surface2 pl-4 ring-1',
+					amountError ? 'ring-bad' : 'ring-line focus-within:ring-accent'
 				]}
 			>
 				<!-- svelte-ignore a11y_autofocus -->

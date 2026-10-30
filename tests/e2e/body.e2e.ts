@@ -14,8 +14,11 @@ test('water: quick additions add up and can be undone', async ({ page }) => {
 	await expect(water).toContainText('250 ml');
 
 	// Any other amount: the button becomes a field; its suffix switches between ml and l per entry.
+	const height = async () => (await water.boundingBox())!.height;
+	const closed = await height();
 	await water.getByRole('button', { name: 'Other amount' }).click();
 	const amount = water.getByLabel('Amount of water');
+	expect(await height()).toBe(closed); // the field takes the button's place without growing the card
 	await amount.fill('12');
 	await water.getByRole('button', { name: 'Unit: millilitres. Switch to litres' }).click();
 	await water.getByRole('button', { name: 'Add water' }).click();
