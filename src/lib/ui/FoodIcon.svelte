@@ -1,7 +1,8 @@
 <script lang="ts">
 	// A food's icon (docs/ui.md, "Food icons"): the chosen OpenMoji icon, else the one its name suggests, else a plate,
-	// on a light tile in both themes. Decorative: the food's name is always written beside it.
-	import { GENERIC_ICON, iconUrl, suggestIcon } from '#lib/shared/food-icons.ts';
+	// on a tile that follows the theme. Decorative: the food's name is always written beside it.
+	import { GENERIC_ICON, suggestIcon } from '#lib/shared/food-icons.ts';
+	import IconImage from './IconImage.svelte';
 
 	interface Props {
 		icon?: string | null;
@@ -20,5 +21,5 @@
 	style:height="{size}px"
 	aria-hidden="true"
 >
-	<img src={iconUrl(hex)} alt="" width={size * 0.72} height={size * 0.72} loading="lazy" />
+	<IconImage {hex} size={size * 0.72} />
 </span>

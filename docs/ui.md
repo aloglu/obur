@@ -185,8 +185,9 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
 - A food shows its chosen icon, else the one its name suggests (`shared/food-icons.ts`: English and Turkish words,
   the match nearest the end of the name wins), else a plate. Quick adds use their description.
 - Shown as a 40 px tile with a 28 px icon, left of the name, in meal cards, Log search and recent foods, the Foods list,
-  and the saved meal and recipe editors. The tile stays light in both themes (`--icon-tile`) so the black outlines
-  show in dark mode. Decorative: the name always sits beside it.
+  and the saved meal and recipe editors. The tile follows the theme (`--icon-tile`); in dark the icons use a variant
+  with OpenMoji's black outlines redrawn light (`static/icons/food/dark/`, from `node scripts/food-icons-dark.ts`;
+  owner found the bright tiles out of place in dark mode, 2026-10-30). Decorative: the name always sits beside it.
 - The food form's **Icon** row shows the current icon and whether it is suggested or chosen; **Change icon** opens a
   picker (search in English or Turkish, a grid of tiles, "Use the suggestion from the name" when one is chosen).
 

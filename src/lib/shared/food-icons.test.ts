@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { FOOD_ICONS, suggestIcon } from './food-icons.ts';
 
@@ -11,6 +11,11 @@ describe('food icons', () => {
 			.map((f) => f.replace('.svg', ''))
 			.sort();
 		expect([...new Set(FOOD_ICONS.map((i) => i.hex))].sort()).toEqual(files);
+		// Each has a dark-theme variant with no black left (node scripts/food-icons-dark.ts).
+		const dark = readdirSync('static/icons/food/dark').filter((f) => f.endsWith('.svg'));
+		expect(dark.map((f) => f.replace('.svg', '')).sort()).toEqual(files);
+		for (const f of dark)
+			expect(readFileSync(`static/icons/food/dark/${f}`, 'utf8')).not.toMatch(/"#000/);
 	});
 
 	it('suggests from the word that names the thing, in Turkish and English', () => {

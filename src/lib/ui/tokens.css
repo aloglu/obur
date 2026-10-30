@@ -18,7 +18,7 @@
 	--warn: #8a4b00;
 	--warn-soft: #fcefd9;
 	--track: #efe6db;
-	/* Food icon tiles stay light in both themes: OpenMoji's black outlines need a light ground. */
+	/* Food icon tiles; in dark the icons use their light-outlined variant (static/icons/food/dark). */
 	--icon-tile: #f3ece3;
 	--protein: #c2410c;
 	--carb: #9e6510;
@@ -54,7 +54,7 @@
 		--warn: #f2b65a;
 		--warn-soft: #3a2c14;
 		--track: #342d26;
-		--icon-tile: #e9e0d4;
+		--icon-tile: #332c26;
 		--protein: #ff8f55;
 		--carb: #e7b45c;
 		--fat: #9cc77a;
@@ -89,7 +89,7 @@
 	--warn: #f2b65a;
 	--warn-soft: #3a2c14;
 	--track: #342d26;
-	--icon-tile: #e9e0d4;
+	--icon-tile: #332c26;
 	--protein: #ff8f55;
 	--carb: #e7b45c;
 	--fat: #9cc77a;

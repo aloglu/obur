@@ -2,7 +2,8 @@
 	// Choosing a food's icon (docs/ui.md, "Food icons"): search by word in English or Turkish, or browse all; the
 	// name's suggestion is offered first. Choosing closes the sheet.
 	import { m } from '#lib/paraglide/messages.js';
-	import { FOOD_ICONS, GENERIC_ICON, iconUrl } from '#lib/shared/food-icons.ts';
+	import { FOOD_ICONS, GENERIC_ICON } from '#lib/shared/food-icons.ts';
+	import IconImage from '../IconImage.svelte';
 	import { foldForSearch } from '#lib/shared/search-text.ts';
 	import Sheet from '../Sheet.svelte';
 	import TextField from '../TextField.svelte';
@@ -40,7 +41,7 @@
 			class="flex min-h-12 items-center gap-3 rounded-input bg-surface2 px-3 text-left text-[15px] font-semibold"
 		>
 			<span class="grid size-10 place-items-center rounded-small bg-icon-tile" aria-hidden="true"
-				><img src={iconUrl(suggested ?? GENERIC_ICON)} alt="" width="28" height="28" /></span
+				><IconImage hex={suggested ?? GENERIC_ICON} size={28} /></span
 			>
 			{suggested ? m.icon_use_suggestion() : m.icon_use_plate()}
 		</button>
@@ -62,7 +63,7 @@
 						chosen === icon.hex && 'ring-3 ring-accent'
 					]}
 				>
-					<img src={iconUrl(icon.hex)} alt="" width="36" height="36" loading="lazy" />
+					<IconImage hex={icon.hex} size={36} />
 				</button>
 			</li>
 		{/each}

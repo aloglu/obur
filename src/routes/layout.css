@@ -3,6 +3,18 @@
 @import '@fontsource-variable/bricolage-grotesque';
 @import '../lib/ui/tokens.css';
 
+/* dark: the same rule as the tokens (system dark unless light is chosen, or dark chosen). */
+@custom-variant dark {
+	@media (prefers-color-scheme: dark) {
+		&:where(:root:not([data-theme='light']) *) {
+			@slot;
+		}
+	}
+	&:where(:root[data-theme='dark'] *) {
+		@slot;
+	}
+}
+
 @layer base {
 	html {
 		background: var(--bg);

@@ -14,7 +14,9 @@ export interface FoodIcon {
 /** The icon for a meal or quick add with no better match: a plate. */
 export const GENERIC_ICON = '1F37D';
 
-export const iconUrl = (hex: string) => `/icons/food/${hex}.svg`;
+/** The icon's file; `dark` is the variant with light outlines for the dark theme. */
+export const iconUrl = (hex: string, dark = false) =>
+	`/icons/food/${dark ? 'dark/' : ''}${hex}.svg`;
 
 export const FOOD_ICONS: FoodIcon[] = [
 	// Fruit
