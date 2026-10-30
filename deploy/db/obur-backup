@@ -134,7 +134,9 @@ restore_check_repo() {
 	local repo=$1 key=$2 dir port=5499 started detail ok=false target segment
 	started=$(now)
 	dir=$(mktemp -d /tmp/restore-check.XXXXXX)
-	trap 'pg_ctl -D "$dir" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$dir"' RETURN
+	# Cleans up when this function returns, then removes itself: a RETURN trap would otherwise fire again when the
+	# calling function returns, where $dir no longer exists.
+	trap 'pg_ctl -D "$dir" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$dir"; trap - RETURN' RETURN
 	# The recovery point to prove: the live database's current position, archived now.
 	target=$("${PSQL[@]}" -c 'select pg_current_wal_lsn()')
 	segment=$("${PSQL[@]}" -c "select pg_walfile_name('$target')")
