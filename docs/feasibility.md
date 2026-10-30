@@ -245,3 +245,29 @@ Private data stays in `~/obur-private`.
 unflagged wrong values to be fixed first. The fixes are specific (explicit energy units, value lines that belong to
 no row, two-line names, basis from the title, no silent basis). After an improvement round these 12 photos become
 development data, so a fresh set of about 10 is needed for the next honest held-out number.
+
+**Improvement round (2026-10-30), after the held-out score.** The 12 photos are now development data. Changes, all
+general: row names must share the table's left edge (per-portion badges beside a table are ignored); values must sit
+clearly right of the names; a line of kJ or kcal belongs to the energy row (two-line energy) and a line of grams never
+does; units written beside the values decide kJ against kcal; "davon / of which / bunlardan" before a name and ß are
+handled; names after a slash in bilingual rows count; a name must end its word ("Fett" is not "Fettsäuren"); a
+name-column line that is no nutrient (a misread "Lif", a vitamin) keeps its numbers; a second line of a name belongs to
+its row; a short bracket after a name is its unit, never a value ("(g)" read as "(9)"); with only %RI columns the
+amounts are the numbers left of them; the basis comes from the title when no column says it; a value may follow the
+drift so far or sit level with its row, and a tie goes to the row above. The energy check now counts a "less than"
+value at its bound instead of skipping the check, and the Scan screen says when the basis wasn't read.
+
+| Same OCR output, parser after the round | Phase 0 labels | The 12 new photos (no longer held out) |
+| --- | --- | --- |
+| Values right | 84% (71/85) | 77% (80/104) |
+| Wrong values | 1 | 3 |
+| Of those, flagged by a warning on the same label | 0 | 3 (2 by the value itself) |
+| Basis right | 10/10 | 12/12 |
+| Labels fully right | 7/10 | 5/12 |
+
+Noisier OCR on the Phase 0 labels also improved (2000 px: 2 → 1 wrong; tiny model: 9 → 2 wrong). Every remaining wrong
+value is an OCR misread that dropped a decimal comma or digit ("2,5" → "25", "7,8" → "8", "2,2" → "22"); the parser
+cannot see these, the person checks every value against the photo, and the warnings catch the large ones. Missing
+values (21 on the new photos) are mostly very small or pale print the OCR did not read; they stay empty. An honest
+held-out number now needs new photos (the owner has few new products: options are counting edits in real use, a
+friend's kitchen, or new purchases over time).

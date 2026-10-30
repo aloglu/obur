@@ -34,7 +34,8 @@ type Code = Extract<
 	| 'salt'
 	| 'sodium'
 >;
-type Row = Code | 'energy';
+/** 'other': a name-column line that is no nutrient we read (a misread name, vitamins); it keeps its numbers. */
+type Row = Code | 'energy' | 'other';
 
 /** Row names, folded (lower case, no diacritics). More specific names first: "doymus yag" before "yag". */
 const NAMES: [Row, string[]][] = [
@@ -47,7 +48,8 @@ const NAMES: [Row, string[]][] = [
 			'saturated fat',
 			'saturates',
 			'of which saturates',
-			'gesattigte fettsauren'
+			'gesattigte fettsauren',
+			'gesattigte'
 		]
 	],
 	['sugars', ['sekerler', 'seker', 'sugars', 'sugar', 'zucker']],
@@ -66,6 +68,7 @@ export function fold(text: string): string {
 		.normalize('NFC')
 		.replace(/[İIı]/g, 'i')
 		.toLowerCase()
+		.replace(/ß/g, 'ss')
 		.normalize('NFD')
 		.replace(/\p{M}+/gu, '');
 }
@@ -89,16 +92,30 @@ const allowed = (name: string) => (name.length >= 9 ? 2 : name.length >= 5 ? 1 :
 
 /** The row a text starts with (after dashes and bullets), and where the name ends; undefined if none. */
 function rowAt(text: string): { row: Row; end: number } | undefined {
-	const m = /^[\s\-–•·*.]*/.exec(text)!;
+	// Leading dashes and bullets, and "of which" sub-row words ("davon Zucker", "bunlardan şekerler").
+	const m = /^[\s\-–•·*.]*(?:(?:davon|of which|bunlardan|dont)\s+)?/.exec(text)!;
 	const rest = text.slice(m[0].length);
 	for (const [row, names] of NAMES) {
 		for (const name of names) {
 			// Compare the same number of letters, so "sekerierr (g)" can match "sekerler".
 			const head = rest.slice(0, name.length);
 			const next = rest[name.length] ?? ' ';
-			if (/\p{L}/u.test(next) && distance(head, name) > 0) continue;
+			// The name must end the word: "Fett" is not "Fettsäuren".
+			if (/\p{L}/u.test(next)) continue;
 			if (distance(head, name) <= allowed(name)) return { row, end: m[0].length + name.length };
 		}
+	}
+	return undefined;
+}
+
+/** A row name at the start of a line, or after a slash in a bilingual one ("Selede / Sugars (g)"). */
+function rowName(text: string): { row: Row; end: number } | undefined {
+	const first = rowAt(text);
+	if (first) return first;
+	const head = text.split(/\d/)[0];
+	for (let i = head.indexOf('/'); i >= 0; i = head.indexOf('/', i + 1)) {
+		const hit = rowAt(text.slice(i + 1));
+		if (hit) return { row: hit.row, end: i + 1 + hit.end };
 	}
 	return undefined;
 }
@@ -112,6 +129,8 @@ interface Num {
 	second: number | null;
 	lessThan: boolean;
 	unit: 'kj' | 'kcal' | 'mg' | 'g' | 'ml' | null;
+	/** The units written after each of two values ("92,2 kcal/389,6 kj"). */
+	units: [string | null, string | null];
 	percent: boolean;
 	/** Horizontal position in the image. */
 	x: number;
@@ -131,6 +150,7 @@ function numbers(text: string, x0 = 0, x1 = 0): Num[] {
 			second: m[5] ? Number(m[5].replace(',', '.')) : null,
 			lessThan: !!m[2],
 			unit: m[4] && m[6] ? null : unit,
+			units: [m[4] ?? null, m[5] ? (m[6] ?? null) : null],
 			// "1,4g %2": a number with a unit is an amount; the % belongs to the next number.
 			percent: !!m[1] || (!!m[7] && !unit),
 			x: x0 + (x1 - x0) * at
@@ -231,7 +251,16 @@ function energy(nums: Num[], label: string): NutrientValue[] {
 	for (const n of nums) {
 		const q = n.lessThan ? ('less_than' as const) : ('reported' as const);
 		if (n.second !== null) {
-			const [kj, kcal] = kjFirst ? [n.value, n.second] : [n.second, n.value];
+			// Units written beside the values decide; otherwise the row label's order (kJ first by default).
+			const first =
+				n.units[0] === 'kcal' || n.units[1] === 'kj'
+					? 'kcal'
+					: n.units[0] === 'kj' || n.units[1] === 'kcal'
+						? 'kj'
+						: kjFirst
+							? 'kj'
+							: 'kcal';
+			const [kj, kcal] = first === 'kj' ? [n.value, n.second] : [n.second, n.value];
 			out.push(
 				{ code: 'energy_kj', value: kj, qualifier: q },
 				{ code: 'energy_kcal', value: kcal, qualifier: q }
@@ -268,14 +297,30 @@ function add(out: Map<string, NutrientValue>, values: NutrientValue[], per100 = 
 }
 
 function parseTable(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined {
-	const labels = lines
-		.map((l) => ({ line: l, hit: NOT_A_ROW.test(l.folded) ? undefined : rowAt(l.folded) }))
+	let labels = lines
+		.map((l) => ({ line: l, hit: NOT_A_ROW.test(l.folded) ? undefined : rowName(l.folded) }))
 		.filter((r): r is { line: Line; hit: { row: Row; end: number } } => !!r.hit)
 		// "Enerji ve / Besin Öğeleri" is the table's title, not its energy row.
 		.filter(
 			(r) => !(r.hit.row === 'energy' && /^\s*(ve|ye|and|&)\b/.test(r.line.folded.slice(r.hit.end)))
 		)
 		.sort((a, b) => a.line.cy - b.line.cy);
+	if (labels.length < 3) return undefined;
+	// Row names in a table share one left edge (sub-rows indent a little); names off to the side, such as
+	// per-portion badges beside the table, are not rows.
+	const reach = Math.max(
+		40,
+		2.5 * ([...labels.map((r) => r.line.h)].sort((a, b) => a - b)[labels.length >> 1] || 16)
+	);
+	const edge = labels
+		.map((r) => r.line.x0)
+		.reduce((best, x) =>
+			labels.filter((o) => Math.abs(o.line.x0 - x) <= reach).length >
+			labels.filter((o) => Math.abs(o.line.x0 - best) <= reach).length
+				? x
+				: best
+		);
+	labels = labels.filter((r) => Math.abs(r.line.x0 - edge) <= reach);
 	if (labels.length < 3) return undefined;
 	// Lines that each name several nutrients are running text, not table rows.
 	if (labels.filter((r) => namesIn(r.line.folded) >= 2).length >= 2) return undefined;
@@ -294,6 +339,20 @@ function parseTable(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined 
 	const left = Math.min(...best.map((r) => r.line.x0));
 	const top = best[0].line.cy;
 	const bottom = best[best.length - 1].line.cy;
+	// Other lines starting at the names' edge between the rows are rows too (a misread "Lif" as "Jif", a vitamin):
+	// they keep their numbers instead of passing them to a neighbour.
+	for (const l of lines) {
+		if (best.some((r) => r.line === l) || l.cy <= top || l.cy >= bottom) continue;
+		if (Math.abs(l.x0 - edge) > reach || !/\p{L}{2}/u.test(l.text) || l.text.length > 60) continue;
+		if (NOT_A_ROW.test(l.folded) || /^\s*[\d<%]/.test(l.folded)) continue;
+		// The second line of a name just above ("davon gesättigte / Fettsäuren") belongs to that row.
+		if (
+			best.some((r) => r.hit.row !== 'other' && l.cy > r.line.cy && l.cy - r.line.cy < rowGap * 0.8)
+		)
+			continue;
+		best.push({ line: l, hit: { row: 'other', end: l.text.search(/\d|$/) } });
+	}
+	best.sort((a, b) => a.line.cy - b.line.cy);
 	const columns = headerColumns(
 		lines.filter((l) => l.x1 > left),
 		top - rowGap * 0.5,
@@ -303,7 +362,10 @@ function parseTable(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined 
 	// Each number joins the nearest row within reach; numbers on a row's own line stay with it.
 	const cells = new Map<(typeof best)[number], Num[]>(best.map((r) => [r, []]));
 	for (const r of best) {
-		const own = r.line.text.slice(r.hit.end);
+		// A short bracket after the name is its unit, "(g)", which the OCR may read as "(9)": never a value.
+		const own = r.line.text
+			.slice(r.hit.end)
+			.replace(/\([^)]{0,12}\)/g, (m) => ' '.repeat(m.length));
 		const share = r.hit.end / Math.max(r.line.text.length, 1);
 		cells.get(r)!.push(...numbers(own, r.line.x0 + (r.line.x1 - r.line.x0) * share, r.line.x1));
 	}
@@ -313,7 +375,8 @@ function parseTable(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined 
 		(l) =>
 			!best.some((r) => r.line === l) &&
 			!rowAt(l.folded) &&
-			l.x0 >= left &&
+			// Values sit clearly right of where the names start (a stray number in the names column is not one).
+			l.x0 >= left + rowGap * 2 &&
 			l.cy >= top - rowGap * 0.6 &&
 			l.cy <= bottom + rowGap * 1.2 &&
 			numbers(l.text).length > 0
@@ -328,14 +391,34 @@ function parseTable(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined 
 		let offset = 0;
 		let after = -1;
 		for (const l of stack) {
+			// A line of kJ or kcal belongs to the energy row (energy is often on two lines), and one in grams never
+			// does.
+			const nums = numbers(l.text);
+			const energyLine = nums.every(
+				(n) => n.unit === 'kj' || n.unit === 'kcal' || n.units[0] !== null
+			);
+			const massLine = nums.some((n) => n.unit === 'g' || n.unit === 'mg');
+			const energyRow = best.findIndex((r) => r.hit.row === 'energy');
+			if (
+				energyLine &&
+				energyRow >= 0 &&
+				Math.abs(l.cy - best[energyRow].line.cy) <= rowGap * 1.5
+			) {
+				cells.get(best[energyRow])!.push(...numbers(l.text, l.x0, l.x1));
+				after = Math.max(after, energyRow);
+				continue;
+			}
 			let pick = -1;
+			// Values sit level with their name or a little below, rarely above: a tie goes to the row above.
+			const missFor = (i: number) => {
+				const dy = l.cy - best[i].line.cy;
+				// Close to the drift so far, or simply level with the row: one odd offset (a two-line energy row) must
+				// not push every later value off its row.
+				return Math.min(Math.abs(dy - offset), Math.abs(dy)) + (dy < 0 ? rowGap * 0.2 : 0);
+			};
 			for (let i = after + 1; i < best.length; i++) {
-				const miss = Math.abs(l.cy - best[i].line.cy - offset);
-				if (
-					miss <= rowGap * 0.75 &&
-					(pick < 0 || miss < Math.abs(l.cy - best[pick].line.cy - offset))
-				)
-					pick = i;
+				if (massLine && best[i].hit.row === 'energy') continue;
+				if (missFor(i) <= rowGap * 0.75 && (pick < 0 || missFor(i) < missFor(pick))) pick = i;
 			}
 			if (pick < 0) continue;
 			cells.get(best[pick])!.push(...numbers(l.text, l.x0, l.x1));
@@ -364,24 +447,42 @@ function parseTable(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined 
 					: plain && all.length === amountColumns.length
 						? amountColumns[i]
 						: columns.reduce((a, b) => (Math.abs(b.x - n.x) < Math.abs(a.x - n.x) ? b : a));
-			nums = all.filter(
-				(n, i) => !n.percent && (chosen ? columnOf(n, i) === chosen : columnOf(n, i).kind !== 'ri')
+			// With only %RI columns found, the amounts are the numbers left of the first of them.
+			const firstRi = Math.min(...ordered.filter((c) => c.kind === 'ri').map((c) => c.x));
+			nums = all.filter((n, i) =>
+				n.percent
+					? false
+					: chosen
+						? columnOf(n, i) === chosen
+						: amountColumns.length
+							? columnOf(n, i).kind !== 'ri'
+							: n.x < firstRi - rowGap
 			);
 		} else nums = all.filter((n) => !n.percent).slice(0, 1);
-		if (!nums.length) continue;
+		if (!nums.length || r.hit.row === 'other') continue;
 		const per100 = chosen?.kind !== 'serving';
 		if (r.hit.row === 'energy') add(out, energy(nums, r.line.folded), per100);
 		else add(out, [amount(r.hit.row, nums[0])], per100);
 	}
 	const portion = amounts.map((c) => ('portion' in c ? c.portion : null)).find(Boolean) ?? null;
+	// No basis column: the title may say it ("Enerji ve Besin Öğeleri (100g'da)", "100 g için Besin Öğeleri").
+	const titled = chosen
+		? null
+		: lines
+				.filter(
+					(l) => l.cy < top && l.cy > top - rowGap * 6 && /100\s*(g|ml)\b|100(g|ml)/.test(l.folded)
+				)
+				.map((l) => (/100\s*ml/.test(l.folded) ? ('100ml' as const) : ('100g' as const)))[0];
 	return {
-		basis: chosen
-			? chosen.kind === 'per100'
-				? chosen.unit === 'ml'
-					? '100ml'
-					: '100g'
-				: 'serving'
-			: null,
+		basis:
+			titled ??
+			(chosen
+				? chosen.kind === 'per100'
+					? chosen.unit === 'ml'
+						? '100ml'
+						: '100g'
+					: 'serving'
+				: null),
 		portion,
 		nutrients: [...out.values()],
 		layout: 'table'
@@ -435,7 +536,7 @@ function parseText(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined {
 		const nums = numbers(text.slice(k.end, until)).filter((n) => !n.percent);
 		if (!nums.length) continue;
 		if (k.row === 'energy') add(out, energy(nums, text.slice(k.at, until)));
-		else add(out, [amount(k.row, nums[0])]);
+		else if (k.row !== 'other') add(out, [amount(k.row, nums[0])]);
 	}
 	const basis = /100\s*ml/.test(basisText) ? '100ml' : /100\s*g/.test(basisText) ? '100g' : null;
 	return { basis, portion: null, nutrients: [...out.values()], layout: 'text' };

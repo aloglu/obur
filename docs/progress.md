@@ -234,7 +234,14 @@ shippable; the owner has not yet copied the OCR server files, so Scan is still o
 the wrong values are fixed). Truth: `~/obur-private/labels-prepared-heldout/ground_truth.tsv`; OCR output:
 `~/obur-private/results/ocr/heldout-B-1280-service.jsonl`. Next: an improvement round (explicit energy units;
 value lines belonging to no row; two-line names; basis from the title; the Scan screen must not assume a basis),
-treating these 12 as development data; then a fresh held-out set from the owner. Next: batch 2 features (Profile details, editable macro targets, saved meal
+treating these 12 as development data; then a fresh held-out set from the owner.
+
+Improvement round done (2026-10-30, docs/feasibility.md): new photos 61% → 77% right, wrong 14 → 3 (all OCR
+misreads; all on labels that show a warning), basis 12/12; Phase 0 set 84%, 1 wrong (OCR "7,8" → "8"). 15 parser
+unit tests; energy check counts "less than" at its bound; Scan says when the basis is unknown. The owner has no 10
+new products for a fresh held-out set: offered (a) counting how many proposed values are changed before saving (counts
+only, needs the owner's OK), (b) a friend's kitchen, (c) new purchases over time. Pending: the owner's choice, and
+copying compose.yaml and obur-ctl on the server to switch Scan on. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

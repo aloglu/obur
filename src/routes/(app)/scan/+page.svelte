@@ -224,6 +224,9 @@
 			<Notice tone="info">
 				{proposal.nutrients.length ? m.scan_check() : m.scan_nothing_read()}
 			</Notice>
+			<!-- The form needs a basis; when the label didn't say, it starts at per 100 g and asks to check it. -->
+			{#if proposal.nutrients.length && !proposal.basis}<Notice>{m.scan_basis_unknown()}</Notice
+				>{/if}
 			{#if saveProblem}<Notice>{saveProblem}</Notice>{/if}
 			<Card title={m.scan_new_food()}>
 				{#key proposal}<FoodForm {initial} {busy} onsave={save} />{/key}

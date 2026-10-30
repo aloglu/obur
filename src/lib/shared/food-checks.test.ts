@@ -133,4 +133,17 @@ describe('FoodInput', () => {
 		expect(v.safeParse(FoodInput, { ...base, barcode: '8697409148963' }).success).toBe(true);
 		expect(v.safeParse(FoodInput, { ...base, barcode: '86974-0914' }).success).toBe(false);
 	});
+
+	it('checks energy against the macros with a "less than" value at its bound', () => {
+		// Dried apricots with protein misread as 25 g (2,5 on the label) and fat "<0,5".
+		const values = [
+			n('energy_kcal', 298),
+			n('fat', 0.5, 'less_than'),
+			n('carbohydrate_excl_fibre', 69),
+			n('protein', 25)
+		];
+		expect(foodWarnings('100g', values)).toContain('energy_macros_mismatch');
+		values[3] = n('protein', 2.5);
+		expect(foodWarnings('100g', values)).not.toContain('energy_macros_mismatch');
+	});
 });

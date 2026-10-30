@@ -230,6 +230,7 @@
 	"scan_check": "Check every value against the photo. Values it couldn't read are empty: fill them in, or leave them unknown.",
 	"scan_nothing_read": "No nutrition table could be read. Try again closer and in better light, or enter the values yourself.",
 	"scan_new_food": "New food",
+	"scan_basis_unknown": "The label didn't say clearly what the values are per. Check “Values are per” below before saving.",
 	"scan_show_photo": "Show photo",
 	"scan_hide_photo": "Hide photo",
 	"scan_photo_alt": "Your photo of the label",

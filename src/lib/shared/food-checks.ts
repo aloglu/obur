@@ -54,10 +54,12 @@ export function foodWarnings(basis: Basis, values: NutrientValue[]): FoodWarning
 			warnings.push('energy_units_mismatch');
 		}
 	}
-	// Only when every main contributor is known; rounded labels legitimately differ, so the margin is generous.
-	if (has('energy_kcal') && has('fat') && has('carbohydrate_excl_fibre') && has('protein')) {
+	// Only when every main contributor is known; rounded labels legitimately differ, so the margin is generous. A
+	// "less than" value counts at its bound: it is small, and skipping the check would hide a misread elsewhere.
+	const known = (c: NutrientCode) => any.has(c);
+	if (has('energy_kcal') && known('fat') && known('carbohydrate_excl_fibre') && known('protein')) {
 		const computed = Object.entries(KCAL_PER_G).reduce(
-			(sum, [c, f]) => sum + val(c as NutrientCode) * (f ?? 0),
+			(sum, [c, f]) => sum + (any.get(c as NutrientCode) ?? 0) * (f ?? 0),
 			0
 		);
 		const reported = val('energy_kcal');

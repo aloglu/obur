@@ -119,6 +119,127 @@ describe('tables', () => {
 	});
 });
 
+describe('layouts seen in held-out photos', () => {
+	/** A one-column table: names at x 100, values at x 300, rows 26 px apart from y 120. */
+	const simple = (rows: [string, string][], title = "Enerji ve Besin Öğeleri (100g'da)") => [
+		line(title, 100, 80, 300),
+		...rows.flatMap(([name, value], i) => [
+			line(name, 100, 120 + i * 26),
+			line(value, 300, 120 + i * 26, 60)
+		])
+	];
+
+	it('takes the basis from the title, and reads energy written kcal first with its units', () => {
+		const p = parseLabel(
+			simple([
+				['Enerji', '92,2 kcal/389,6 kj'],
+				['Yağ', '1,8g'],
+				['Karbonhidrat', '2g'],
+				['Protein', '17g']
+			])
+		);
+		expect(p.basis).toBe('100g');
+		expect(value(p, 'energy_kcal')?.value).toBe(92.2);
+		expect(value(p, 'energy_kj')?.value).toBe(389.6);
+	});
+
+	it('keeps energy on two lines on the energy row, and the next rows in place', () => {
+		const p = parseLabel([
+			line('100 g için', 300, 80, 80),
+			line('Enerji', 100, 120),
+			line('1358 kJ', 300, 118, 60),
+			line('338 kcal', 300, 136, 60),
+			line('Yağ', 100, 160),
+			line('2.1 g', 300, 160, 50),
+			line('Doymuş Yağ', 100, 186),
+			line('0.39 g', 300, 186, 50),
+			line('Karbonhidrat', 100, 212),
+			line('59 g', 300, 212, 50)
+		]);
+		expect(value(p, 'energy_kj')?.value).toBe(1358);
+		expect(value(p, 'energy_kcal')?.value).toBe(338);
+		expect(value(p, 'fat')?.value).toBe(2.1);
+		expect(value(p, 'saturated_fat')?.value).toBe(0.39);
+		expect(value(p, 'carbohydrate_excl_fibre')?.value).toBe(59);
+	});
+
+	it('ignores per-portion badges beside the table and stray numbers in the names column', () => {
+		const p = parseLabel([
+			...simple([
+				['Enerji (kJ/kcal)', '1266/298'],
+				['Yağ (g)', '<0,5'],
+				['Karbonhidrat (g)', '69'],
+				['-Şekerler (g)', '42'],
+				['Protein (g)', '2,5']
+			]),
+			line('DOYMUŞ', 0, 120, 50),
+			line('0,23g', 0, 140, 40),
+			line('PROTEIN', 0, 190, 50),
+			line('6,72g', 0, 210, 40),
+			line('24', 104, 200, 16)
+		]);
+		expect(value(p, 'saturated_fat')).toBeUndefined();
+		expect(value(p, 'sugars')?.value).toBe(42);
+		expect(value(p, 'protein')?.value).toBe(2.5);
+	});
+
+	it('gives a misread row name its own numbers instead of passing them on', () => {
+		const p = parseLabel(
+			simple([
+				['Enerji (kJ/kcal)', '1358/338'],
+				['Şeker', '2.6 g'],
+				['Jif', '10.9 g'],
+				['Protein', '11.2 g'],
+				['Tuz', '0.07 g']
+			])
+		);
+		expect(value(p, 'protein')?.value).toBe(11.2);
+		expect(value(p, 'fibre')).toBeUndefined();
+		expect(p.nutrients.some((n) => n.value === 10.9)).toBe(false);
+	});
+
+	it('reads German sub-rows ("davon …") and Eiweiß, with a name over two lines', () => {
+		const p = parseLabel([
+			line('pro 100 g', 300, 80, 80),
+			line('Energie', 100, 120),
+			line('292 kJ', 300, 120, 50),
+			line('68 kcal', 300, 140, 50),
+			line('Fett', 100, 164),
+			line('0,1 g', 300, 172, 40),
+			line('davon gesättigte', 100, 188),
+			line('Fettsäuren', 100, 206),
+			line('0 g', 300, 208, 30),
+			line('Kohlenhydrate', 100, 232),
+			line('6,5 g', 300, 232, 40),
+			line('davon Zucker', 100, 252),
+			line('3,5 g', 300, 252, 40),
+			line('Eiweiß', 100, 278),
+			line('9,8 g', 300, 278, 40),
+			line('Salz', 100, 304),
+			line('18,2 g', 300, 304, 40)
+		]);
+		expect(p.basis).toBe('100g');
+		expect(value(p, 'fat')?.value).toBe(0.1);
+		expect(value(p, 'saturated_fat')?.value).toBe(0);
+		expect(value(p, 'sugars')?.value).toBe(3.5);
+		expect(value(p, 'protein')?.value).toBe(9.8);
+		expect(value(p, 'salt')?.value).toBe(18.2);
+	});
+
+	it('never takes a "(g)" the OCR read as "(9)" for a value', () => {
+		const p = parseLabel(
+			simple([
+				['Enerji (kJ/kcal)', '608/144'],
+				['Yağ (9)', ''],
+				['Karbonhidrat (9)', ''],
+				['Protein (9)', '']
+			]).filter((l) => l.text !== '')
+		);
+		expect(p.nutrients.some((n) => n.value === 9)).toBe(false);
+		expect(value(p, 'energy_kcal')?.value).toBe(144);
+	});
+});
+
 describe('running text', () => {
 	it('reads the first basis only, after the ingredients, telling saturated fat from fat', () => {
 		const p = parseLabel([
