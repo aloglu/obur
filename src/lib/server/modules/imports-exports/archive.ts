@@ -177,6 +177,26 @@ export const SavedMealRecord = v.object({
 	items: v.pipe(v.array(SavedMealItemRecord), v.minLength(1), v.maxLength(100))
 });
 
+/** Added 2026-10-30 (Phase 3): a recipe's servings, cooked weight and pinned ingredients. Its food is in foods.json. */
+export const RecipeRecord = v.object({
+	foodId: Uuid,
+	servings: v.pipe(v.number(), v.gtValue(0), v.maxValue(1000)),
+	cookedYieldG: v.nullable(v.pipe(v.number(), v.gtValue(0), v.maxValue(100_000))),
+	ingredients: v.pipe(
+		v.array(
+			v.object({
+				foodId: v.nullable(Uuid),
+				food: FoodSnapshot,
+				amount: Positive,
+				unit: SnapshotUnit,
+				nutrients: EntryNutrients
+			})
+		),
+		v.minLength(1),
+		v.maxLength(100)
+	)
+});
+
 const Reading = {
 	id: Uuid,
 	localDate: DateString,
@@ -275,10 +295,11 @@ const DATA_FILES = {
 	'data/water.json': v.array(WaterRecord),
 	'data/activity.json': v.array(ActivityRecord),
 	'data/targets.json': v.array(TargetRecord),
-	'data/saved-meals.json': v.array(SavedMealRecord)
+	'data/saved-meals.json': v.array(SavedMealRecord),
+	'data/recipes.json': v.array(RecipeRecord)
 } as const;
 /** Added to format version 1 later (2026-10-30): absent in older archives, read as empty. */
-const OPTIONAL_FILES = new Set<string>(['data/saved-meals.json']);
+const OPTIONAL_FILES = new Set<string>(['data/saved-meals.json', 'data/recipes.json']);
 const CSV_FILES = ['csv/diary.csv', 'csv/weight.csv', 'csv/water.csv', 'csv/activity.csv'] as const;
 
 export interface PortableData {
@@ -291,6 +312,7 @@ export interface PortableData {
 	activity: v.InferOutput<typeof ActivityRecord>[];
 	targets: v.InferOutput<typeof TargetRecord>[];
 	savedMeals: v.InferOutput<typeof SavedMealRecord>[];
+	recipes: v.InferOutput<typeof RecipeRecord>[];
 }
 
 const KEYS: Record<keyof typeof DATA_FILES, keyof PortableData> = {
@@ -302,7 +324,8 @@ const KEYS: Record<keyof typeof DATA_FILES, keyof PortableData> = {
 	'data/water.json': 'water',
 	'data/activity.json': 'activity',
 	'data/targets.json': 'targets',
-	'data/saved-meals.json': 'savedMeals'
+	'data/saved-meals.json': 'savedMeals',
+	'data/recipes.json': 'recipes'
 };
 
 const Manifest = v.object({

@@ -197,7 +197,12 @@ Step 2 done: `/api/v1/recipes/[id]` (GET owner only, PUT create/replace) and `/r
 page, editor (`ui/recipes/RecipeEditor.svelte`) and More entry; the saved meal editor's item list extracted to
 `ui/items/` (drafts.ts, ItemsCard, AddFoodSheet) and shared by both editors; the food page sends owners to the recipe
 editor and tells others it's a recipe. e2e: create, log by grams, edit without changing the diary, another member
-sees totals only. Next: step 3, recipes in the archive export/import (ingredients in the dependency closure). Next: batch 2 features (Profile details, editable macro targets, saved meal
+sees totals only. 
+
+Step 3 done: `data/recipes.json` (optional file in format version 1), ingredient foods in the dependency closure,
+recipes attached on import only with the food the import creates. The round trip compares recipes field by field.
+Recipes (Phase 3 part 1) complete and deployed. Next: the owner's review of the recipe screens; label scanning
+waits for the owner's ~10 label photos. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

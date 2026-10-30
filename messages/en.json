@@ -587,7 +587,7 @@
 	"signout_pending": "{count} entries on this device haven't been sent yet. Signing out will discard them. Sign out anyway?",
 	"data_title": "Your data",
 	"data_export_title": "Export",
-	"data_export_body": "A ZIP file with everything you've logged, your foods, targets and profile, as JSON with CSV copies for spreadsheets. Passkeys, sessions and other people's data are not included.",
+	"data_export_body": "A ZIP file with everything you've logged, your foods, recipes, saved meals, targets and profile, as JSON with CSV copies for spreadsheets. Passkeys, sessions and other people's data are not included.",
 	"data_export_button": "Download export",
 	"data_export_done": "Export downloaded",
 	"data_import_title": "Import",

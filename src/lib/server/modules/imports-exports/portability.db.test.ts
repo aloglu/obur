@@ -7,7 +7,7 @@ import * as v from 'valibot';
 import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
 import { FoodInput } from '../../../shared/food-input.ts';
 import { createBody } from '../body/index.ts';
-import { createCatalog } from '../catalog/index.ts';
+import { createCatalog, createRecipes } from '../catalog/index.ts';
 import { createDiary, createSavedMeals } from '../diary/index.ts';
 import { createGoals } from '../goals/index.ts';
 import { ArchiveError, readArchive, sha256, type PortableData } from './archive.ts';
@@ -23,6 +23,7 @@ const diary = createDiary(db);
 const body = createBody(db);
 const goals = createGoals(db);
 const savedMeals = createSavedMeals(db);
+const recipes = createRecipes(db);
 const portability = createPortability(db);
 
 const AYSE = randomUUID(); // admin
@@ -159,6 +160,27 @@ async function buildHistory() {
 		entryIds: [bread.id, tea.id, drink.id]
 	});
 	await admin`delete from diary_entries where id = ${drink.id}`;
+	// A private recipe from the person's own bread and the shared ayran, weighed after cooking.
+	await recipes.save(MEHMET, {
+		id: randomUUID(),
+		version: null,
+		name: 'Ayranlı tost',
+		visibility: 'private',
+		servings: 2,
+		cookedYieldG: 240,
+		ingredients: [
+			{
+				food: await catalog.getFood(MEHMET, ekmek),
+				amount: 100,
+				unit: { kind: 'mass', unit: 'g' }
+			},
+			{
+				food: await catalog.getFood(MEHMET, ayran),
+				amount: 200,
+				unit: { kind: 'volume', unit: 'ml' }
+			}
+		]
+	});
 	return { ekmek, borek, old, variant, ayran };
 }
 
@@ -223,6 +245,17 @@ function semantic(data: PortableData) {
 				items: sm.items.map((i) => ({ ...i, foodId: i.foodId ? foodName.get(i.foodId) : null }))
 			}))
 		),
+		recipes: byText(
+			data.recipes.map((r) => ({
+				name: foodName.get(r.foodId),
+				servings: r.servings,
+				cookedYieldG: r.cookedYieldG,
+				ingredients: r.ingredients.map((i) => ({
+					...i,
+					foodId: i.foodId ? foodName.get(i.foodId) : null
+				}))
+			}))
+		),
 		completions: byText(data.dayCompletions)
 	};
 }
@@ -269,6 +302,7 @@ describe('export', () => {
 		expect(Object.keys(names).sort()).toEqual([
 			'Annemin böreği',
 			'Ayran (shared)',
+			'Ayranlı tost',
 			'Eski yoğurt',
 			'Premium Light Ekmek',
 			'Premium Light Ekmek (shared)'
@@ -276,7 +310,14 @@ describe('export', () => {
 		// Ayşe's shared bread: content only, not her provenance.
 		const shared = data.foods.find((f) => !f.mine)!;
 		expect(shared).toMatchObject({ name: 'Premium Light Ekmek', sourceMeta: null });
-		expect(data.foods.filter((f) => f.mine)).toHaveLength(3);
+		expect(data.foods.filter((f) => f.mine)).toHaveLength(4);
+		// The recipe travels with its pinned ingredients; its food is among the person's own.
+		expect(data.recipes).toHaveLength(1);
+		expect(data.recipes[0]).toMatchObject({ servings: 2, cookedYieldG: 240 });
+		expect(data.recipes[0].ingredients.map((i) => i.food.name)).toEqual([
+			'Premium Light Ekmek',
+			'Ayran'
+		]);
 		expect(names['Annemin böreği'].nutrients).toContainEqual({
 			code: 'sugars',
 			value: 0.5,
@@ -410,7 +451,7 @@ describe('import', () => {
 		const same = await portability.previewImport(MEHMET, archive);
 		expect(same.sameInstallation).toBe(true);
 		expect(same.counts.diary).toEqual({ new: 0, unchanged: 6, changed: 0, skipped: 0 });
-		expect(same.counts.food).toMatchObject({ new: 0, unchanged: 5 });
+		expect(same.counts.food).toMatchObject({ new: 0, unchanged: 6 });
 		expect(same.counts.saved_meal).toEqual({ new: 0, unchanged: 1, changed: 0, skipped: 0 });
 
 		const [entry] = await diary.day(MEHMET, '2026-10-01');
@@ -448,8 +489,17 @@ describe('import', () => {
 		const archive = await portability.exportArchive(MEHMET);
 		const preview = await portability.previewImport(ZEYNEP, archive);
 		// Mehmet's own foods are invisible to Zeynep and become her private copies; Ayşe's shared bread is reused.
-		expect(preview.counts.food).toEqual({ new: 3, unchanged: 2, changed: 0, skipped: 0 });
+		expect(preview.counts.food).toEqual({ new: 4, unchanged: 2, changed: 0, skipped: 0 });
 		await portability.applyImport(ZEYNEP, archive);
+		// Her copy of the recipe is a working recipe of her own, its ingredients linked to foods she can see.
+		const [recipe] = await admin`select food_id from recipes where owner_id = ${ZEYNEP}`;
+		const ingredients = await admin`select food_id from recipe_ingredients
+			where recipe_id = ${recipe.food_id} order by position`;
+		expect(ingredients).toHaveLength(2);
+		expect(ingredients.every((i) => i.food_id !== null)).toBe(true);
+		// The same file again is refused, so no second ingredient list appears.
+		await expect(portability.applyImport(ZEYNEP, archive)).rejects.toThrow('already_imported');
+		expect(await admin`select 1 from recipes where owner_id = ${ZEYNEP}`).toHaveLength(1);
 		const linked = await admin`select food_id from diary_entries
 			where user_id = ${ZEYNEP} and local_date = '2026-10-01' and meal = 'breakfast'`;
 		expect(linked[0].food_id).toBe(ekmek);

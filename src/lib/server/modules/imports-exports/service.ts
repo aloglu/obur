@@ -14,7 +14,13 @@ import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { foodSearchKey } from '../../../shared/search-text.ts';
 import { users } from '../auth/index.ts';
 import { activityEntries, waterEntries, weightEntries } from '../body/index.ts';
-import { foodNutrients, foods, foodServings } from '../catalog/index.ts';
+import {
+	foodNutrients,
+	foods,
+	foodServings,
+	recipeIngredients,
+	recipes
+} from '../catalog/index.ts';
 import { dayCompletions, diaryEntries, savedMealItems, savedMeals } from '../diary/index.ts';
 import { goalVersions, profiles } from '../goals/index.ts';
 import { readArchive, sha256, writeArchive, type PortableData } from './archive.ts';
@@ -81,13 +87,21 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 		.where(eq(savedMealItems.userId, userId))
 		.orderBy(savedMealItems.position);
 
-	// The person's own foods, plus every food their diary and saved meals refer to and the foods those were derived from, as far
+	const recipeRows = await tx.select().from(recipes).where(eq(recipes.ownerId, userId));
+	const ingredientRows = await tx
+		.select()
+		.from(recipeIngredients)
+		.where(eq(recipeIngredients.ownerId, userId))
+		.orderBy(recipeIngredients.position);
+
+	// The person's own foods, plus every food their diary, saved meals and recipes refer to and the foods those were derived from, as far
 	// as they can see them (RLS): enough to interpret and reuse their data.
 	const wanted = new Set<string>();
 	const owned = await tx.select({ id: foods.id }).from(foods).where(eq(foods.ownerId, userId));
 	owned.forEach((f) => wanted.add(f.id));
 	diary.forEach((e) => e.foodId && wanted.add(e.foodId));
 	mealItems.forEach((i) => i.foodId && wanted.add(i.foodId));
+	ingredientRows.forEach((i) => i.foodId && wanted.add(i.foodId));
 	let foodRows: (typeof foods.$inferSelect)[] = [];
 	let pending = [...wanted];
 	while (pending.length) {
@@ -257,6 +271,20 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 					amount: i.amount,
 					unit: i.unit,
 					description: i.description,
+					nutrients: i.nutrients as never
+				}))
+		})),
+		recipes: recipeRows.map((r) => ({
+			foodId: r.foodId,
+			servings: r.servings,
+			cookedYieldG: r.cookedYieldG,
+			ingredients: ingredientRows
+				.filter((i) => i.recipeId === r.foodId)
+				.map((i) => ({
+					foodId: i.foodId,
+					food: i.food,
+					amount: i.amount,
+					unit: i.unit,
 					nutrients: i.nutrients as never
 				}))
 		}))
@@ -440,9 +468,11 @@ async function plan(
 	}
 	for (const f of data.foods) foodMap.set(f.id, decisions.get(key('food', f.id))!.localId);
 	if (
-		[...data.diary, ...data.savedMeals.flatMap((sm) => sm.items)].some(
-			(e) => e.foodId && !foodMap.has(e.foodId)
-		)
+		[
+			...data.diary,
+			...data.savedMeals.flatMap((sm) => sm.items),
+			...data.recipes.flatMap((r) => r.ingredients)
+		].some((e) => e.foodId && !foodMap.has(e.foodId))
 	)
 		warnings.add('food_links_dropped');
 
@@ -838,6 +868,37 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 		(chunk) => tx.insert(savedMealItems).values(chunk)
 	);
 	newMeals.forEach((sm) => remember('saved_meal', sm.id));
+
+	// A recipe comes with its food: attached only when this import creates that food, so a retry (the food is
+	// already remembered) or a food matched to one already here never gets a second ingredient list.
+	const newFoodIds = new Set(newFoods.map((f) => f.id));
+	const newRecipes = data.recipes.filter((r) => newFoodIds.has(r.foodId));
+	await chunked(newRecipes, (chunk) =>
+		tx.insert(recipes).values(
+			chunk.map((r) => ({
+				foodId: localId('food', r.foodId),
+				ownerId: userId,
+				servings: r.servings,
+				cookedYieldG: r.cookedYieldG
+			}))
+		)
+	);
+	await chunked(
+		newRecipes.flatMap((r) =>
+			r.ingredients.map((i, position) => ({
+				id: randomUUID(),
+				recipeId: localId('food', r.foodId),
+				ownerId: userId,
+				position,
+				foodId: i.foodId ? (p.foodMap.get(i.foodId) ?? null) : null,
+				food: i.food,
+				amount: i.amount,
+				unit: i.unit,
+				nutrients: i.nutrients
+			}))
+		),
+		(chunk) => tx.insert(recipeIngredients).values(chunk)
+	);
 
 	if (p.importTargets) {
 		const newTargets = data.targets.filter((t) => isNew('target', t.id));
