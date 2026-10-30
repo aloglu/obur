@@ -5,7 +5,8 @@
 import type { Meal } from '../../../shared/diary-types.ts';
 
 /** A count word the person used ("3 slices", "bir kutu"); matched to the food's own portions later. */
-export type CountWord = 'slice' | 'can' | 'bottle' | 'glass' | 'container' | 'package' | 'piece';
+export type CountWord =
+	'slice' | 'can' | 'bottle' | 'glass' | 'container' | 'package' | 'piece' | 'portion' | 'handful';
 
 export type ParsedUnit =
 	| { kind: 'g' }
@@ -157,11 +158,18 @@ function readNumbers(tokens: Token[]): Token[] {
 			i += used;
 			continue;
 		}
-		if (t.f === 'yarim' || t.f === 'half') {
-			// "half a container", "yarım kutu", "half"
-			const skip = t.f === 'half' && (at(i + 1) === 'a' || at(i + 1) === 'an') ? 2 : 1;
-			out.push({ raw: t.raw, f: t.f, n: 0.5 });
+		if (t.f === 'yarim' || t.f === 'half' || t.f === 'ceyrek' || t.f === 'quarter') {
+			// "half a container", "yarım kutu", "çeyrek iceberg", "a quarter of"
+			const value = t.f === 'ceyrek' || t.f === 'quarter' ? 0.25 : 0.5;
+			let skip = 1;
+			if (/^(half|quarter)$/.test(t.f) && (at(i + 1) === 'a' || at(i + 1) === 'an')) skip = 2;
+			out.push({ raw: t.raw, f: t.f, n: value });
 			i += skip;
+			continue;
+		}
+		if ((t.f === 'a' || t.f === 'an') && at(i + 1) === 'quarter') {
+			out.push({ raw: 'a quarter', f: 'quarter', n: 0.25 });
+			i += 2;
 			continue;
 		}
 		if ((t.f === 'a' || t.f === 'an') && at(i + 1) === 'half') {
@@ -266,6 +274,9 @@ function unitOf(f: string): UnitHit | null {
 	if (/^(paket|paketi|package|packages|pack|packet)$/.test(f))
 		return { kind: 'count', word: 'package' };
 	if (/^(tane|adet|piece|pieces|parca)$/.test(f)) return { kind: 'count', word: 'piece' };
+	if (/^(porsiyon|portion|portions|serving|servings|tabak|plate|plates)$/.test(f))
+		return { kind: 'count', word: 'portion' };
+	if (/^(avuc|avucu|handful|handfuls)$/.test(f)) return { kind: 'count', word: 'handful' };
 	return null;
 }
 
@@ -295,6 +306,7 @@ const FILLERS = new Set(
 		'yaninda ile lutfen ta te da de',
 		'i ate eat eaten had have drank drink drunk log add put record please my me to of the for at as with in',
 		'this that some',
+		'tukettim tukettik tuketti yedin yaptim yaptik doktum kendime icin',
 		// placeholders: "bir şey", "something"
 		'sey seyler something thing stuff'
 	]
@@ -351,6 +363,11 @@ function readContext(tokens: Token[], today: number): { rest: Token[]; ctx: Cont
 			i += 1;
 			continue;
 		}
+		if (w === 'bu' && /^gun(ku)?$/.test(f(i + 1))) {
+			ctx.daysAgo = 0; // "bu gün", as speech sometimes writes "bugün"
+			i += 2;
+			continue;
+		}
 		if (/^bugun(ku)?$/.test(w) || w === 'today') {
 			ctx.daysAgo = 0;
 			i += 1;
@@ -365,11 +382,36 @@ function readContext(tokens: Token[], today: number): { rest: Token[]; ctx: Cont
 			i += f(i + 2) === 'gunu' ? 3 : 2;
 			continue;
 		}
-		if ((w === 'this' || w === 'bu') && /^(morning|sabah)$/.test(f(i + 1))) {
+		// "bu akşam", "bu öğlen", "this morning": today and that meal.
+		if (w === 'this' || w === 'bu') {
+			const meal = mealAt(tokens, i + 1);
+			if (meal) {
+				ctx.daysAgo ??= 0;
+				setMeal(meal.meal);
+				i += 1 + meal.used;
+				continue;
+			}
+		}
+		// "az önce", "demin", "just now": today.
+		if ((w === 'az' && f(i + 1) === 'once') || (w === 'just' && f(i + 1) === 'now')) {
 			ctx.daysAgo ??= 0;
-			setMeal('breakfast');
 			i += 2;
 			continue;
+		}
+		if (w === 'demin' || (w === 'biraz' && f(i + 1) === 'once')) {
+			ctx.daysAgo ??= 0;
+			i += w === 'demin' ? 1 : 2;
+			continue;
+		}
+		// "iki akşam önce": two days ago, at dinner.
+		if (n !== undefined && f(i + 2) === 'once') {
+			const meal = mealAt(tokens, i + 1);
+			if (meal && meal.used === 1) {
+				ctx.daysAgo = n;
+				setMeal(meal.meal);
+				i += 3;
+				continue;
+			}
 		}
 		// Meals ("akşam yemeğinde", "öğle yemeği", "Lunch'ta", "as a snack", "ara öğün olarak").
 		const meal = mealAt(tokens, i);
@@ -391,7 +433,8 @@ function mealAt(tokens: Token[], i: number): { meal: Meal; used: number; weak?: 
 	const w = f(i);
 	const withYemek = (meal: Meal) => ({ meal, used: f(i + 1).startsWith('yemeg') ? 2 : 1 });
 	if (w.startsWith('kahvalti') || w === 'breakfast') return { meal: 'breakfast', used: 1 };
-	if (/^ogle(n|nde|de|yin|ye)?$/.test(w)) return withYemek('lunch');
+	if (/^ogle(n|nde|de|yin|ye)?$/.test(w))
+		return /^arasi(nda)?$/.test(f(i + 1)) ? { meal: 'lunch', used: 2 } : withYemek('lunch');
 	if (w === 'lunch') return { meal: 'lunch', used: 1 };
 	if (/^aksam(i|lari|ki|da)?$/.test(w)) return withYemek('dinner');
 	if (w === 'dinner' || w === 'supper' || w === 'tonight' || w === 'evening')
@@ -401,6 +444,10 @@ function mealAt(tokens: Token[], i: number): { meal: Meal; used: number; weak?: 
 		return { meal: 'breakfast', used: 1, weak: true };
 	if (w === 'ara' && f(i + 1).startsWith('ogun')) return { meal: 'snacks', used: 2 };
 	if (w.startsWith('atistirmalik') || /^snacks?$/.test(w)) return { meal: 'snacks', used: 1 };
+	// Late eating goes to Snacks: "gece", "son öğün olarak", "yatmadan önce".
+	if (w === 'son' && f(i + 1).startsWith('ogun')) return { meal: 'snacks', used: 2 };
+	if (w === 'yatmadan' && f(i + 1) === 'once') return { meal: 'snacks', used: 2 };
+	if (/^gece(leyin)?$/.test(w)) return { meal: 'snacks', used: 1, weak: true };
 	return null;
 }
 
@@ -418,18 +465,30 @@ const words = (tokens: Token[]) =>
 		.join(' ')
 		.trim();
 
-/** Splits a list of items where a separator is followed by a new quantity (so "bar, caramel flavour" stays one). */
+/**
+ * Splits a list of items. A comma splits only before a new quantity (so "bar, caramel flavour" stays one); a joining
+ * word ("ve", "and", "artı", "üzerine") also splits when there are words on both sides ("makarna ve üzerine mayonez").
+ */
 function splitItems(tokens: Token[]): Token[][] {
-	const isSep = (t: Token) => t.sep || /^(ve|and|yaninda|plus|also|ayrica)$/.test(t.f);
+	const JOIN = /^(ve|and|yaninda|yanimda|plus|arti|uzerine|also|ayrica)$/;
+	const isSep = (t: Token) => t.sep || JOIN.test(t.f);
+	const named = (t: Token) =>
+		t.n === undefined && !t.sep && !t.vague && !FILLERS.has(t.f) && !JOIN.test(t.f);
 	const parts: Token[][] = [[]];
 	for (let i = 0; i < tokens.length; i++) {
 		const t = tokens[i];
 		if (isSep(t)) {
+			// "ve üzerine": a joining word at the start of an item adds nothing.
+			if (!parts.at(-1)!.length) continue;
 			let j = i + 1;
 			while (tokens[j] && (isSep(tokens[j]) || FILLERS.has(tokens[j].f))) j += 1;
 			const next = tokens[j];
 			const startsQuantity = next && (next.n !== undefined || next.vague || isUnitWord(next.f));
-			if (startsQuantity && parts.at(-1)!.length) {
+			const following = tokens.slice(j);
+			const end = following.findIndex(isSep);
+			const namesNext = (end < 0 ? following : following.slice(0, end)).some(named);
+			const joins = !t.sep && namesNext && parts.at(-1)!.some(named);
+			if ((startsQuantity || joins) && parts.at(-1)!.length) {
 				parts.push([]);
 				continue;
 			}
@@ -482,7 +541,8 @@ function readItem(tokens: Token[]): Proposal | null {
 	const foodWords = text.split(' ').map(fold).filter(Boolean);
 	if (foodWords.length && foodWords.every((w) => WATER_WORDS.has(w)))
 		return { kind: 'water', amount: amountFor(unit), unit: parsedUnit(unit) };
-	if (!text) return null;
+	if (!text && amount === null) return null;
+	// A quantity with no food words ("…, 200 gram") is attached to the item before it by parseEntry.
 	return { kind: 'food', text, amount: amountFor(unit), unit: parsedUnit(unit), vague };
 }
 
@@ -495,8 +555,15 @@ export function parseEntry(text: string, todayWeekday: number): ParseResult {
 	const empty: ParseResult = { ...ctx, items: [] };
 	if (!rest.length) return empty;
 
-	// A weigh-in: "bugün 82,4 kiloydum", "I weighed 82.4 kilos".
-	if (rest.some((t) => WEIGHT_WORD.test(t.f))) {
+	// A weigh-in: "bugün 82,4 kiloydum", "120 kilo geldim", "I weighed 82.4 kilos".
+	const weighIn = rest.some(
+		(t, k) =>
+			WEIGHT_WORD.test(t.f) ||
+			(/^(kilo|kg|kilogram)$/.test(t.f) &&
+				/^(geldim|ciktim|oldum|gosterdi|cikti|geliyorum|cikiyorum)$/.test(rest[k + 1]?.f ?? '')) ||
+			(t.f === 'tarti' && /^(gosterdi|dedi)$/.test(rest.at(-1)?.f ?? ''))
+	);
+	if (weighIn) {
 		const value = rest.find((t) => t.n !== undefined)?.n;
 		return value === undefined ? empty : { ...ctx, items: [{ kind: 'weight', kg: value }] };
 	}
@@ -508,8 +575,20 @@ export function parseEntry(text: string, todayWeekday: number): ParseResult {
 			? empty
 			: { ...ctx, items: [{ kind: 'activity', kcal: value, note: note || null }] };
 	}
-	const items = splitItems(rest)
-		.map(readItem)
-		.filter((p): p is Proposal => p !== null);
+	const items: Proposal[] = [];
+	for (const p of splitItems(rest).map(readItem)) {
+		if (!p) continue;
+		if (p.kind === 'food' && !p.text) {
+			// "…yedim, 200 gram": the amount said after the food.
+			const before = items.at(-1);
+			if (before?.kind === 'food' && before.amount === null) {
+				before.amount = p.amount;
+				before.unit = p.unit;
+				before.vague = false;
+			}
+			continue;
+		}
+		items.push(p);
+	}
 	return { ...ctx, items };
 }

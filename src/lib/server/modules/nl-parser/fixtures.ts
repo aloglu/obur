@@ -1,7 +1,7 @@
 // Development sentences for the parser, written for it (not anyone's recordings): English, Turkish and mixed, with
 // decimal commas, relative days, half quantities, several items, vague amounts and the other intents. Each case is the
 // complete expected result; a case passes only when everything matches. Held-out evaluation uses separate data.
-import type { ParseResult } from './parse.ts';
+import type { CountWord, ParseResult } from './parse.ts';
 
 /** Fixtures assume today is a Friday (ISO weekday 5). */
 export const TODAY_WEEKDAY = 5;
@@ -15,9 +15,7 @@ const food = (
 type ParseResultItemUnit = Extract<ParseResult['items'][number], { kind: 'food' }>['unit'];
 const g = { kind: 'g' } as const;
 const ml = { kind: 'ml' } as const;
-const count = (
-	word: 'slice' | 'can' | 'bottle' | 'glass' | 'container' | 'package' | 'piece' | null
-) => ({ kind: 'count', word }) as const;
+const count = (word: CountWord | null) => ({ kind: 'count', word }) as const;
 
 export const DEV_CASES: [string, ParseResult][] = [
 	// Turkish
@@ -127,6 +125,83 @@ export const DEV_CASES: [string, ParseResult][] = [
 	[
 		'Yüzde on beş yağlı peynirden 40 gram yedim',
 		{ daysAgo: null, meal: null, items: [food('%15 yağlı peynirden', 40, g)] }
+	],
+	// Added after the held-out evaluation (2026-10-30), written for the gaps it found
+	['Bu akşam 180 gram somon yedim', { daysAgo: 0, meal: 'dinner', items: [food('somon', 180, g)] }],
+	[
+		'Öğle arasında iki dilim pizza yedim',
+		{ daysAgo: null, meal: 'lunch', items: [food('pizza', 2, count('slice'))] }
+	],
+	['Az önce bir elma yedim', { daysAgo: 0, meal: null, items: [food('elma', 1, count(null))] }],
+	[
+		'Üç akşam önce 250 gram köfte yedim',
+		{ daysAgo: 3, meal: 'dinner', items: [food('köfte', 250, g)] }
+	],
+	[
+		'Gece bir bardak süt içtim',
+		{ daysAgo: null, meal: 'snacks', items: [food('süt', 1, count('glass'))] }
+	],
+	[
+		'Yatmadan önce yarım kase yoğurt yedim',
+		{ daysAgo: null, meal: 'snacks', items: [food('yoğurt', 0.5, count('container'))] }
+	],
+	[
+		'Son öğün olarak bir muz',
+		{ daysAgo: null, meal: 'snacks', items: [food('muz', 1, count(null))] }
+	],
+	[
+		'Çeyrek karpuz yedim',
+		{ daysAgo: null, meal: null, items: [food('karpuz', 0.25, count(null))] }
+	],
+	[
+		'Dün bir porsiyon mantı yedim',
+		{ daysAgo: 1, meal: null, items: [food('mantı', 1, count('portion'))] }
+	],
+	[
+		'Bir tabak kuru fasulye',
+		{ daysAgo: null, meal: null, items: [food('kuru fasulye', 1, count('portion'))] }
+	],
+	[
+		'Bir avuç kaju yedim',
+		{ daysAgo: null, meal: null, items: [food('kaju', 1, count('handful'))] }
+	],
+	[
+		'Simit yedim, iki tane',
+		{ daysAgo: null, meal: null, items: [food('Simit', 2, count('piece'))] }
+	],
+	[
+		'Kahvaltıda peynir yedim, 60 gram',
+		{ daysAgo: null, meal: 'breakfast', items: [food('peynir', 60, g)] }
+	],
+	['Pilav yaptım kendime, 200 gram', { daysAgo: null, meal: null, items: [food('Pilav', 200, g)] }],
+	[
+		'Makarna ve üzerine rendelenmiş peynir yedim',
+		{
+			daysAgo: null,
+			meal: null,
+			items: [food('Makarna', null, null), food('rendelenmiş peynir', null, null)]
+		}
+	],
+	[
+		'80 gram yulaf artı 150 ml süt',
+		{ daysAgo: null, meal: null, items: [food('yulaf', 80, g), food('süt', 150, ml)] }
+	],
+	[
+		'Dün iki adet yumurta tükettim',
+		{ daysAgo: 1, meal: null, items: [food('yumurta', 2, count('piece'))] }
+	],
+	['Bugün 95,5 kilo geldim', { daysAgo: 0, meal: null, items: [{ kind: 'weight', kg: 95.5 }] }],
+	[
+		'Sabah tartıda 91 kilo çıktım',
+		{ daysAgo: null, meal: 'breakfast', items: [{ kind: 'weight', kg: 91 }] }
+	],
+	[
+		'Just now I had a quarter of a pizza',
+		{ daysAgo: 0, meal: null, items: [food('pizza', 0.25, count(null))] }
+	],
+	[
+		'Bu gün öğlende 90 gram hindi füme yedim',
+		{ daysAgo: 0, meal: 'lunch', items: [food('hindi füme', 90, g)] }
 	],
 	// English
 	[

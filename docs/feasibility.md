@@ -193,3 +193,19 @@ from Done to the confirmation screen for a long two-item sentence.
 **Next.** These 46 clips are now development data. Improvements to the parser gaps above and a fixed bilingual
 vocabulary in the prompt (meal and unit words) can be measured on them; a later, smaller fresh set is needed for the
 next held-out number.
+
+**Improvement round (same day, on these 46 clips as development data).** Parser gaps closed with new development
+sentences (80 cases), and a fixed bilingual prompt of meal, amount and unit words placed before each person's foods.
+The prompt is written as ordinary sentences: a comma-separated word list made Whisper put commas between words, which
+split items, and lowered the owner's numbers from 87% to 77%. Three prompt variants were tried on these clips, so the
+figures below are tuned on them and overstate what new recordings would show; the example sentence also shares common
+words (ekmek, tavuk, kola, kraker) with some clips.
+
+| Speaker | Same as typed | Numbers right | Transcript exact |
+| --- | --- | --- | --- |
+| Owner (31), before → after | 35% → 61% | 84% → 97% | 16% → 42% |
+| Second speaker (15), before → after | 20% → 33% | 73% → 93% | 13% → 27% |
+
+The serious "yarım" → "yarın" error and "ara öğün" → "arayın" no longer occur on these clips. Remaining: brand names
+(Untad, San Pellegrino, Heinz, Eker), descriptive sentences, and days the recogniser drops ("Bugün" heard as "Ben").
+A fresh set of 10–15 clips is needed for the next held-out number.

@@ -6,7 +6,18 @@ import type { UnitOption } from './unit-options.ts';
 
 /** The word the person used for a count ("slice", "can"), or g/ml, for display when no unit could be chosen. */
 export type SaidUnit =
-	'g' | 'ml' | 'slice' | 'can' | 'bottle' | 'glass' | 'container' | 'package' | 'piece' | null;
+	| 'g'
+	| 'ml'
+	| 'slice'
+	| 'can'
+	| 'bottle'
+	| 'glass'
+	| 'container'
+	| 'package'
+	| 'piece'
+	| 'portion'
+	| 'handful'
+	| null;
 
 export type EntryItem =
 	| {

@@ -2,6 +2,7 @@
 // typed text. The audio is held in memory for the one request and never stored or logged. The prompt lists the
 // person's recent foods and brands, which helps the recogniser with names (docs/feasibility.md, Speech).
 import { RateLimiter } from '#lib/server/modules/auth/index.ts';
+import { SPEECH_VOCABULARY } from '#lib/server/modules/nl-parser/index.ts';
 import type { ParsedEntry } from '#lib/shared/entry-types.ts';
 import { catalog } from './catalog.ts';
 import { config } from './config.ts';
@@ -29,7 +30,7 @@ export class SpeechFailure extends Error {
 	}
 }
 
-/** Up to about 30 names, most recent first: brands and food names the person actually logs. */
+/** The meal and unit words, then up to about 30 names, most recent first: brands and foods the person logs. */
 async function promptFor(userId: string): Promise<string> {
 	const ids = await diary.recentFoodIds(userId, 30);
 	const foods = await catalog.foodsById(userId, ids);
@@ -38,7 +39,7 @@ async function promptFor(userId: string): Promise<string> {
 		if (f.brand) words.add(f.brand);
 		words.add(f.name);
 	}
-	return [...words].join(', ').slice(0, 500);
+	return `${SPEECH_VOCABULARY} ${[...words].join(', ')}`.slice(0, 600);
 }
 
 export async function understandSpeech(

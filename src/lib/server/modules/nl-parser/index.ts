@@ -9,3 +9,4 @@ export {
 	type Proposal
 } from './parse.ts';
 export { unitForFood, type FoodUnit } from './units.ts';
+export { SPEECH_VOCABULARY } from './vocabulary.ts';

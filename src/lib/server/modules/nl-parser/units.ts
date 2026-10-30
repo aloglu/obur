@@ -21,7 +21,10 @@ const SYNONYMS: Record<CountWord, string[]> = {
 	glass: ['glass', 'bardak', 'cup'],
 	container: ['container', 'kutu', 'kap', 'tub', 'pot', 'kase', 'cup'],
 	package: ['package', 'paket', 'pack', 'packet', 'bar'],
-	piece: ['piece', 'tane', 'adet', 'medium', 'each', 'whole']
+	piece: ['piece', 'tane', 'adet', 'medium', 'each', 'whole'],
+	portion: ['portion', 'porsiyon', 'serving', 'servis', 'tabak', 'plate'],
+	// A handful has no fixed size: only a portion the food names so.
+	handful: ['handful', 'avuc']
 };
 const words = (s: string) => fold(s).split(/[^a-z0-9]+/);
 
@@ -40,7 +43,12 @@ export function unitForFood(
 	if (food.basis === 'serving') {
 		const label = food.servingLabel ? words(food.servingLabel) : [];
 		// "1 bar", "1 kutu": the food's own serving, when the word fits it or none was said.
-		if (!parsed.word || parsed.word === 'piece' || label.some((w) => wanted.includes(w)))
+		if (
+			!parsed.word ||
+			parsed.word === 'piece' ||
+			parsed.word === 'portion' ||
+			label.some((w) => wanted.includes(w))
+		)
 			return { kind: 'basis_serving' };
 	}
 	return null;
