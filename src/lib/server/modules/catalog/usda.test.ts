@@ -65,10 +65,10 @@ describe('curatedFromUsda', () => {
 
 	it('takes up to eight portions with their stated gram weights, per one portion, without labelling references', () => {
 		expect(curatedFromUsda('sr_legacy', banana).portions).toEqual([
-			{ name: 'cup, mashed', grams: 225 },
-			{ name: 'medium (7" to 7-7/8" long)', grams: 118 },
-			{ name: 'cup, sliced', grams: 150 },
-			{ name: 'can 12 fl oz', grams: 355 },
+			{ name: 'US cup (237 ml), mashed', grams: 225 },
+			{ name: 'medium (18–20 cm long)', grams: 118 },
+			{ name: 'US cup (237 ml), sliced', grams: 150 },
+			{ name: 'can (355 ml)', grams: 355 },
 			{ name: 'extra 0', grams: 10 },
 			{ name: 'extra 1', grams: 10 },
 			{ name: 'extra 2', grams: 10 },

@@ -11,6 +11,7 @@ import {
 	type NutrientCode,
 	type NutrientValue
 } from '../../../shared/nutrients.ts';
+import { metricPortionName } from './metric-portion.ts';
 
 export type UsdaDataset = 'sr_legacy' | 'foundation';
 
@@ -160,8 +161,9 @@ export function curatedFromUsda(dataset: UsdaDataset, raw: unknown): CuratedFood
 	for (const p of food.foodPortions) {
 		if (p.measureUnit?.name === 'RACC') continue; // a US labelling reference amount, not a portion
 		const count = p.amount ?? p.value;
-		const name = portionName(p);
-		if (/^NLEA serving$/i.test(name)) continue; // likewise
+		const usName = portionName(p);
+		if (/^NLEA serving$/i.test(usName)) continue; // likewise
+		const name = usName && metricPortionName(usName);
 		if (!name || !count || count <= 0 || !p.gramWeight || p.gramWeight <= 0) continue;
 		if (portions.some((x) => x.name === name)) continue;
 		portions.push({ name, grams: round(p.gramWeight / count, 2) });

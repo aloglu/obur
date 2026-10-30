@@ -44,6 +44,13 @@ const foods = SELECTION.map((s) => {
 	const record = records.get(id);
 	if (!record) throw new Error(`${id} (${s.name}) is not in the datasets given`);
 	const food = curatedFromUsda(s.dataset, record);
+	// Names people choose by are metric (US cups say so); fail rather than ship a US measure unnoticed.
+	for (const p of food.portions)
+		if (
+			/"|\b(oz|lb|pound|inch|inches|dia|tbsp|tsp|quart)\b/i.test(p.name) ||
+			/^cup\b/i.test(p.name)
+		)
+			throw new Error(`${id} (${s.name}): portion "${p.name}" still has a US measure`);
 	const kcal = food.nutrients.find((n) => n.code === 'energy_kcal')!.value;
 	console.log(
 		`${s.name.padEnd(38)} ← ${food.description.slice(0, 70).padEnd(70)} ${String(kcal).padStart(6)} kcal  ${food.portions.length} portions`

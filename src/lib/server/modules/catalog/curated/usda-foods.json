@@ -108,27 +108,27 @@
 			],
 			"portions": [
 				{
-					"name": "cup, ground",
+					"name": "US cup (237 ml), ground",
 					"grams": 80
 				},
 				{
-					"name": "cup, chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 117
 				},
 				{
-					"name": "cup, in shell, edible yield (7 nuts)",
+					"name": "US cup (237 ml), in shell, edible yield (7 nuts)",
 					"grams": 28
 				},
 				{
-					"name": "cup pieces or chips",
+					"name": "US cup (237 ml), pieces or chips",
 					"grams": 120
 				},
 				{
-					"name": "cup shelled (50 halves)",
+					"name": "US cup (237 ml), shelled (50 halves)",
 					"grams": 100
 				},
 				{
-					"name": "oz (14 halves)",
+					"name": "14 halves",
 					"grams": 28.35
 				}
 			],
@@ -240,7 +240,7 @@
 			],
 			"portions": [
 				{
-					"name": "oz (23 whole kernels)",
+					"name": "23 whole kernels",
 					"grams": 28.35
 				},
 				{
@@ -248,19 +248,19 @@
 					"grams": 1.2
 				},
 				{
-					"name": "cup, whole",
+					"name": "US cup (237 ml), whole",
 					"grams": 143
 				},
 				{
-					"name": "cup, slivered",
+					"name": "US cup (237 ml), slivered",
 					"grams": 108
 				},
 				{
-					"name": "cup, ground",
+					"name": "US cup (237 ml), ground",
 					"grams": 95
 				},
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 92
 				}
 			],
@@ -367,7 +367,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup, chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 115
 				},
 				{
@@ -375,15 +375,15 @@
 					"grams": 1.4
 				},
 				{
-					"name": "cup, whole",
+					"name": "US cup (237 ml), whole",
 					"grams": 135
 				},
 				{
-					"name": "cup, ground",
+					"name": "US cup (237 ml), ground",
 					"grams": 75
 				},
 				{
-					"name": "oz (21 whole kernels)",
+					"name": "21 whole kernels",
 					"grams": 28.35
 				}
 			],
@@ -495,11 +495,11 @@
 			],
 			"portions": [
 				{
-					"name": "oz (49 kernels)",
+					"name": "49 kernels",
 					"grams": 28.35
 				},
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 123
 				},
 				{
@@ -610,11 +610,7 @@
 			],
 			"portions": [
 				{
-					"name": "oz",
-					"grams": 28.35
-				},
-				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 146
 				}
 			],
@@ -721,11 +717,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup, whole or halves",
+					"name": "US cup (237 ml), whole or halves",
 					"grams": 134
 				},
 				{
-					"name": "oz (10-12 kernels)",
+					"name": "10-12 kernels",
 					"grams": 28.35
 				}
 			],
@@ -827,11 +823,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 140
 				},
 				{
-					"name": "cup, with hulls, edible yield",
+					"name": "US cup (237 ml), with hulls, edible yield",
 					"grams": 46
 				}
 			],
@@ -933,7 +929,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup, shredded",
+					"name": "US cup (237 ml), shredded",
 					"grams": 80
 				},
 				{
@@ -941,7 +937,7 @@
 					"grams": 397
 				},
 				{
-					"name": "piece (2\" x 2\" x 1/2\")",
+					"name": "piece (5 cm × 5 cm × 1,3 cm)",
 					"grams": 45
 				}
 			],
@@ -1048,7 +1044,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 149
 				},
 				{
@@ -1159,7 +1155,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup, halves",
+					"name": "US cup (237 ml), halves",
 					"grams": 130
 				},
 				{
@@ -1275,31 +1271,31 @@
 			],
 			"portions": [
 				{
-					"name": "extra large (9\" or longer)",
+					"name": "extra large (23 cm or longer)",
 					"grams": 152
 				},
 				{
-					"name": "large (8\" to 8-7/8\" long)",
+					"name": "large (20–23 cm long)",
 					"grams": 136
 				},
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 150
 				},
 				{
-					"name": "small (6\" to 6-7/8\" long)",
+					"name": "small (15–17 cm long)",
 					"grams": 101
 				},
 				{
-					"name": "extra small (less than 6\" long)",
+					"name": "extra small (less than 15 cm long)",
 					"grams": 81
 				},
 				{
-					"name": "medium (7\" to 7-7/8\" long)",
+					"name": "medium (18–20 cm long)",
 					"grams": 118
 				},
 				{
-					"name": "cup, mashed",
+					"name": "US cup (237 ml), mashed",
 					"grams": 225
 				}
 			],
@@ -1411,27 +1407,27 @@
 			],
 			"portions": [
 				{
-					"name": "cup slices",
+					"name": "US cup (237 ml), slices",
 					"grams": 109
 				},
 				{
-					"name": "medium (3\" dia)",
+					"name": "medium (8 cm across)",
 					"grams": 182
 				},
 				{
-					"name": "small (2-3/4\" dia)",
+					"name": "small (7 cm across)",
 					"grams": 149
 				},
 				{
-					"name": "cup, quartered or chopped",
+					"name": "US cup (237 ml), quartered or chopped",
 					"grams": 125
 				},
 				{
-					"name": "extra small (2-1/2\" dia)",
+					"name": "extra small (6 cm across)",
 					"grams": 101
 				},
 				{
-					"name": "large (3-1/4\" dia)",
+					"name": "large (8 cm across)",
 					"grams": 223
 				}
 			],
@@ -1546,7 +1542,7 @@
 					"grams": 230
 				},
 				{
-					"name": "cup, cubes",
+					"name": "US cup (237 ml), cubes",
 					"grams": 161
 				},
 				{
@@ -1554,7 +1550,7 @@
 					"grams": 148
 				},
 				{
-					"name": "cup, slices",
+					"name": "US cup (237 ml), slices",
 					"grams": 140
 				}
 			],
@@ -1666,11 +1662,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup sections, without membranes",
+					"name": "US cup (237 ml), sections, without membranes",
 					"grams": 165
 				},
 				{
-					"name": "fruit (2-7/8\" dia)",
+					"name": "fruit (7 cm across)",
 					"grams": 140
 				}
 			],
@@ -1782,19 +1778,19 @@
 			],
 			"portions": [
 				{
-					"name": "medium (2-1/2\" dia)",
+					"name": "medium (6 cm across)",
 					"grams": 88
 				},
 				{
-					"name": "small (2-1/4\" dia)",
+					"name": "small (6 cm across)",
 					"grams": 76
 				},
 				{
-					"name": "large (2-3/4\" dia)",
+					"name": "large (7 cm across)",
 					"grams": 120
 				},
 				{
-					"name": "cup, sections",
+					"name": "US cup (237 ml), sections",
 					"grams": 195
 				}
 			],
@@ -1901,19 +1897,19 @@
 			],
 			"portions": [
 				{
-					"name": "cup, sections",
+					"name": "US cup (237 ml), sections",
 					"grams": 212
 				},
 				{
-					"name": "fruit (2-3/8\" dia)",
+					"name": "fruit (6 cm across)",
 					"grams": 84
 				},
 				{
-					"name": "fruit (2-1/8\" dia)",
+					"name": "fruit (5 cm across)",
 					"grams": 58
 				},
 				{
-					"name": "wedge or slice (1/8 of one 2-1/8\" dia lemon)",
+					"name": "wedge or slice (1/8 of one 5 cm across lemon)",
 					"grams": 7
 				}
 			],
@@ -2033,12 +2029,8 @@
 					"grams": 48
 				},
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 244
-				},
-				{
-					"name": "fl oz",
-					"grams": 30.5
 				}
 			],
 			"name": "Lemon juice",
@@ -2149,35 +2141,35 @@
 			],
 			"portions": [
 				{
-					"name": "cup, pureed",
+					"name": "US cup (237 ml), pureed",
 					"grams": 232
 				},
 				{
-					"name": "large (1-3/8\" dia)",
+					"name": "large (3 cm across)",
 					"grams": 18
 				},
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 166
 				},
 				{
-					"name": "pint as purchased, yields",
+					"name": "US pint (473 ml) as purchased, yields",
 					"grams": 357
 				},
 				{
-					"name": "cup, halves",
+					"name": "US cup (237 ml), halves",
 					"grams": 152
 				},
 				{
-					"name": "medium (1-1/4\" dia)",
+					"name": "medium (3 cm across)",
 					"grams": 12
 				},
 				{
-					"name": "extra large (1-5/8\" dia)",
+					"name": "extra large (4 cm across)",
 					"grams": 27
 				},
 				{
-					"name": "cup, whole",
+					"name": "US cup (237 ml), whole",
 					"grams": 144
 				}
 			],
@@ -2289,7 +2281,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 148
 				},
 				{
@@ -2405,11 +2397,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup, without pits",
+					"name": "US cup (237 ml), without pits",
 					"grams": 154
 				},
 				{
-					"name": "cup, with pits, yields",
+					"name": "US cup (237 ml), with pits, yields",
 					"grams": 138
 				},
 				{
@@ -2525,7 +2517,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 151
 				},
 				{
@@ -2641,23 +2633,23 @@
 			],
 			"portions": [
 				{
-					"name": "small (2-1/2\" dia)",
+					"name": "small (6 cm across)",
 					"grams": 130
 				},
 				{
-					"name": "large (2-3/4\" dia)",
+					"name": "large (7 cm across)",
 					"grams": 175
 				},
 				{
-					"name": "medium (2-2/3\" dia)",
+					"name": "medium (7 cm across)",
 					"grams": 150
 				},
 				{
-					"name": "cup slices",
+					"name": "US cup (237 ml), slices",
 					"grams": 154
 				},
 				{
-					"name": "extra large (3\" dia)",
+					"name": "extra large (8 cm across)",
 					"grams": 224
 				}
 			],
@@ -2769,11 +2761,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 165
 				},
 				{
-					"name": "fruit (2-1/8\" dia)",
+					"name": "fruit (5 cm across)",
 					"grams": 66
 				}
 			],
@@ -2885,7 +2877,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup, diced",
+					"name": "US cup (237 ml), diced",
 					"grams": 152
 				},
 				{
@@ -2893,7 +2885,7 @@
 					"grams": 12.2
 				},
 				{
-					"name": "cup, balls",
+					"name": "US cup (237 ml), balls",
 					"grams": 154
 				},
 				{
@@ -2901,7 +2893,7 @@
 					"grams": 286
 				},
 				{
-					"name": "melon (15\" long x 7-1/2\" dia)",
+					"name": "melon (38 cm long × 19 cm across)",
 					"grams": 4518
 				}
 			],
@@ -3013,7 +3005,7 @@
 			],
 			"portions": [
 				{
-					"name": "melon, small (about 4-1/4\" dia)",
+					"name": "melon, small (about 11 cm across)",
 					"grams": 441
 				},
 				{
@@ -3025,23 +3017,23 @@
 					"grams": 69
 				},
 				{
-					"name": "cup, cubes",
+					"name": "US cup (237 ml), cubes",
 					"grams": 160
 				},
 				{
-					"name": "cup, diced",
+					"name": "US cup (237 ml), diced",
 					"grams": 156
 				},
 				{
-					"name": "melon, large (about 6-1/2\" dia)",
+					"name": "melon, large (about 17 cm across)",
 					"grams": 814
 				},
 				{
-					"name": "melon, medium (about 5\" dia)",
+					"name": "melon, medium (about 13 cm across)",
 					"grams": 552
 				},
 				{
-					"name": "cup, balls",
+					"name": "US cup (237 ml), balls",
 					"grams": 177
 				}
 			],
@@ -3153,11 +3145,11 @@
 			],
 			"portions": [
 				{
-					"name": "fruit (2\" dia)",
+					"name": "fruit (5 cm across)",
 					"grams": 69
 				},
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 180
 				}
 			],
@@ -3264,11 +3256,11 @@
 			],
 			"portions": [
 				{
-					"name": "pomegranate (4\" dia)",
+					"name": "pomegranate (10 cm across)",
 					"grams": 282
 				},
 				{
-					"name": "cup arils (seed/juice sacs)",
+					"name": "US cup (237 ml), arils (seed/juice sacs)",
 					"grams": 174
 				}
 			],
@@ -3452,15 +3444,15 @@
 			],
 			"portions": [
 				{
-					"name": "cup, pureed",
+					"name": "US cup (237 ml), pureed",
 					"grams": 230
 				},
 				{
-					"name": "cup, cubes",
+					"name": "US cup (237 ml), cubes",
 					"grams": 150
 				},
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 146
 				},
 				{
@@ -3576,15 +3568,15 @@
 			],
 			"portions": [
 				{
-					"name": "medium whole (2-3/5\" dia)",
+					"name": "medium whole (7 cm across)",
 					"grams": 123
 				},
 				{
-					"name": "slice, medium (1/4\" thick)",
+					"name": "slice, medium (0,6 cm thick)",
 					"grams": 20
 				},
 				{
-					"name": "large whole (3\" dia)",
+					"name": "large whole (8 cm across)",
 					"grams": 182
 				},
 				{
@@ -3600,11 +3592,11 @@
 					"grams": 15
 				},
 				{
-					"name": "cup, chopped or sliced",
+					"name": "US cup (237 ml), chopped or sliced",
 					"grams": 180
 				},
 				{
-					"name": "small whole (2-2/5\" dia)",
+					"name": "small whole (6 cm across)",
 					"grams": 91
 				}
 			],
@@ -3716,11 +3708,11 @@
 			],
 			"portions": [
 				{
-					"name": "cucumber (8-1/4\")",
+					"name": "cucumber (21 cm)",
 					"grams": 301
 				},
 				{
-					"name": "cup slices",
+					"name": "US cup (237 ml), slices",
 					"grams": 104
 				}
 			],
@@ -3827,11 +3819,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup (about 23 slices)",
+					"name": "US cup (237 ml), about 23 slices",
 					"grams": 155
 				},
 				{
-					"name": "large (4\" long)",
+					"name": "large (10 cm long)",
 					"grams": 135
 				},
 				{
@@ -3839,7 +3831,7 @@
 					"grams": 7
 				},
 				{
-					"name": "cup, chopped or diced",
+					"name": "US cup (237 ml), chopped or diced",
 					"grams": 143
 				},
 				{
@@ -3955,7 +3947,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup grated",
+					"name": "US cup (237 ml), grated",
 					"grams": 110
 				},
 				{
@@ -3963,11 +3955,11 @@
 					"grams": 3
 				},
 				{
-					"name": "strip large (3\" long)",
+					"name": "strip large (8 cm long)",
 					"grams": 7
 				},
 				{
-					"name": "small (5-1/2\" long)",
+					"name": "small (14 cm long)",
 					"grams": 50
 				},
 				{
@@ -3975,11 +3967,11 @@
 					"grams": 61
 				},
 				{
-					"name": "large (7-1/4\" to 8-/1/2\" long)",
+					"name": "large (18–22 cm long)",
 					"grams": 72
 				},
 				{
-					"name": "cup chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 128
 				},
 				{
@@ -4211,7 +4203,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup shredded",
+					"name": "US cup (237 ml), shredded",
 					"grams": 47
 				},
 				{
@@ -4339,15 +4331,15 @@
 					"grams": 33
 				},
 				{
-					"name": "head, medium (about 5-3/4\" dia)",
+					"name": "head, medium (about 15 cm across)",
 					"grams": 908
 				},
 				{
-					"name": "cup, chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 89
 				},
 				{
-					"name": "cup, shredded",
+					"name": "US cup (237 ml), shredded",
 					"grams": 70
 				},
 				{
@@ -4359,11 +4351,11 @@
 					"grams": 15
 				},
 				{
-					"name": "head, large (about 7\" dia)",
+					"name": "head, large (about 18 cm across)",
 					"grams": 1248
 				},
 				{
-					"name": "head, small (about 4-1/2\" dia)",
+					"name": "head, small (about 11 cm across)",
 					"grams": 714
 				}
 			],
@@ -4475,11 +4467,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup, shredded",
+					"name": "US cup (237 ml), shredded",
 					"grams": 70
 				},
 				{
-					"name": "cup, chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 89
 				},
 				{
@@ -4487,15 +4479,15 @@
 					"grams": 23
 				},
 				{
-					"name": "head, medium (about 5\" dia)",
+					"name": "head, medium (about 13 cm across)",
 					"grams": 839
 				},
 				{
-					"name": "head, large (about 5-1/2\" dia)",
+					"name": "head, large (about 14 cm across)",
 					"grams": 1134
 				},
 				{
-					"name": "head, small (4\" dia)",
+					"name": "head, small (10 cm across)",
 					"grams": 567
 				}
 			],
@@ -4610,11 +4602,11 @@
 					"grams": 10
 				},
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 30
 				},
 				{
-					"name": "package (10 oz)",
+					"name": "package (283 g)",
 					"grams": 284
 				}
 			],
@@ -4721,7 +4713,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 180
 				}
 			],
@@ -4833,7 +4825,7 @@
 			],
 			"portions": [
 				{
-					"name": "large (2-1/4 per pound, approx 3-3/4\" long, 3\" dia.)",
+					"name": "large (about 5 per kg, approx 10 cm long, 8 cm across)",
 					"grams": 164
 				},
 				{
@@ -4841,19 +4833,19 @@
 					"grams": 9.3
 				},
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 92
 				},
 				{
-					"name": "cup, chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 149
 				},
 				{
-					"name": "ring (3\" dia., 1/4\" thick)",
+					"name": "ring (8 cm across, 0,6 cm thick)",
 					"grams": 10
 				},
 				{
-					"name": "medium (approx 2-3/4\" long, 2-1/2 dia.)",
+					"name": "medium (approx 7 cm long, 6 cm across)",
 					"grams": 119
 				},
 				{
@@ -4953,7 +4945,7 @@
 					"grams": 5.2
 				},
 				{
-					"name": "pepper, large (3-3/4\" long, 3\" dia)",
+					"name": "pepper, large (10 cm long, 8 cm across)",
 					"grams": 186
 				}
 			],
@@ -5065,15 +5057,15 @@
 			],
 			"portions": [
 				{
-					"name": "cup, chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 149
 				},
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 92
 				},
 				{
-					"name": "ring (3\" dia, 1/4\" thick)",
+					"name": "ring (8 cm across, 0,6 cm thick)",
 					"grams": 10
 				},
 				{
@@ -5081,11 +5073,11 @@
 					"grams": 2.7
 				},
 				{
-					"name": "large (2-1/4 per lb, approx 3-3/4\" long, 3\" dia)",
+					"name": "large (about 5 per kg, approx 10 cm long, 8 cm across)",
 					"grams": 164
 				},
 				{
-					"name": "medium (approx 2-3/4\" long, 2-1/2\" dia)",
+					"name": "medium (approx 7 cm long, 6 cm across)",
 					"grams": 119
 				},
 				{
@@ -5093,7 +5085,7 @@
 					"grams": 74
 				},
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 9.3
 				}
 			],
@@ -5205,15 +5197,15 @@
 			],
 			"portions": [
 				{
-					"name": "cup, chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 160
 				},
 				{
-					"name": "slice, medium (1/8\" thick)",
+					"name": "slice, medium (0,3 cm thick)",
 					"grams": 14
 				},
 				{
-					"name": "medium (2-1/2\" dia)",
+					"name": "medium (6 cm across)",
 					"grams": 110
 				},
 				{
@@ -5225,11 +5217,11 @@
 					"grams": 6
 				},
 				{
-					"name": "tbsp chopped",
+					"name": "tablespoon, chopped",
 					"grams": 10
 				},
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 115
 				},
 				{
@@ -5340,7 +5332,7 @@
 			],
 			"portions": [
 				{
-					"name": "tsp",
+					"name": "teaspoon",
 					"grams": 2.8
 				},
 				{
@@ -5352,7 +5344,7 @@
 					"grams": 3
 				},
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 136
 				}
 			],
@@ -5459,11 +5451,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 60
 				},
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 3.8
 				},
 				{
@@ -5574,15 +5566,15 @@
 			],
 			"portions": [
 				{
-					"name": "eggplant, unpeeled (approx 1-1/4 lb)",
+					"name": "eggplant, unpeeled (approx 567 g)",
 					"grams": 548
 				},
 				{
-					"name": "eggplant, peeled (yield from 1-1/4 lb)",
+					"name": "eggplant, peeled (yield from 567 g)",
 					"grams": 458
 				},
 				{
-					"name": "cup, cubes",
+					"name": "US cup (237 ml), cubes",
 					"grams": 82
 				}
 			],
@@ -5710,11 +5702,11 @@
 					"grams": 118
 				},
 				{
-					"name": "cup, chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 124
 				},
 				{
-					"name": "cup, sliced",
+					"name": "US cup (237 ml), sliced",
 					"grams": 113
 				}
 			],
@@ -5830,7 +5822,7 @@
 					"grams": 608
 				},
 				{
-					"name": "cup, chopped or diced",
+					"name": "US cup (237 ml), chopped or diced",
 					"grams": 88
 				},
 				{
@@ -5838,11 +5830,11 @@
 					"grams": 151
 				},
 				{
-					"name": "spear (about 5\" long)",
+					"name": "spear (about 13 cm long)",
 					"grams": 31
 				},
 				{
-					"name": "cup chopped",
+					"name": "US cup (237 ml), chopped",
 					"grams": 91
 				}
 			],
@@ -5953,19 +5945,19 @@
 					"grams": 13
 				},
 				{
-					"name": "head medium (5-6\" dia.)",
+					"name": "head medium (13–15 cm across)",
 					"grams": 588
 				},
 				{
-					"name": "head small (4\" dia.)",
+					"name": "head small (10 cm across)",
 					"grams": 265
 				},
 				{
-					"name": "head large (6-7\" dia.)",
+					"name": "head large (15–18 cm across)",
 					"grams": 840
 				},
 				{
-					"name": "cup chopped (1/2\" pieces)",
+					"name": "US cup (237 ml), chopped (1,3 cm pieces)",
 					"grams": 107
 				}
 			],
@@ -6081,7 +6073,7 @@
 					"grams": 10
 				},
 				{
-					"name": "cup, pieces or slices",
+					"name": "US cup (237 ml), pieces or slices",
 					"grams": 70
 				},
 				{
@@ -6089,7 +6081,7 @@
 					"grams": 6
 				},
 				{
-					"name": "cup, whole",
+					"name": "US cup (237 ml), whole",
 					"grams": 96
 				},
 				{
@@ -6101,7 +6093,7 @@
 					"grams": 23
 				},
 				{
-					"name": "cup pieces",
+					"name": "US cup (237 ml), pieces",
 					"grams": 70
 				}
 			],
@@ -6213,19 +6205,19 @@
 			],
 			"portions": [
 				{
-					"name": "Potato small (1-3/4\" to 2-1/2\" dia)",
+					"name": "Potato small (4–6 cm across)",
 					"grams": 170
 				},
 				{
-					"name": "cup, diced",
+					"name": "US cup (237 ml), diced",
 					"grams": 150
 				},
 				{
-					"name": "Potato large (3\" to 4-1/4\" dia)",
+					"name": "Potato large (8–11 cm across)",
 					"grams": 369
 				},
 				{
-					"name": "Potato medium (2-1/4\" to 3-1/4\" dia)",
+					"name": "Potato medium (6–8 cm across)",
 					"grams": 213
 				}
 			],
@@ -6332,19 +6324,19 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 156
 				},
 				{
-					"name": "medium (2-1/4\" to 2-1/4\" dia.)",
+					"name": "medium (6 cm across)",
 					"grams": 167
 				},
 				{
-					"name": "small (1-3/4\" to 2-1/2\" dia.)",
+					"name": "small (4–6 cm across)",
 					"grams": 125
 				},
 				{
-					"name": "large (3\" to 4-1/4\" dia.)",
+					"name": "large (8–11 cm across)",
 					"grams": 300
 				}
 			],
@@ -6456,11 +6448,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup, cubes",
+					"name": "US cup (237 ml), cubes",
 					"grams": 133
 				},
 				{
-					"name": "sweetpotato, 5\" long",
+					"name": "sweetpotato, 13 cm long",
 					"grams": 130
 				}
 			],
@@ -6567,11 +6559,11 @@
 			],
 			"portions": [
 				{
-					"name": "package (10 oz) yields",
+					"name": "package (283 g) yields",
 					"grams": 253
 				},
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 160
 				}
 			],
@@ -6678,7 +6670,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 198
 				}
 			],
@@ -6785,7 +6777,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 192
 				}
 			],
@@ -6892,7 +6884,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 164
 				}
 			],
@@ -6999,7 +6991,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 177
 				}
 			],
@@ -7101,7 +7093,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 158
 				}
 			],
@@ -7203,11 +7195,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 182
 				},
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 8.4
 				}
 			],
@@ -7319,35 +7311,35 @@
 			],
 			"portions": [
 				{
-					"name": "cup rotini",
+					"name": "US cup (237 ml), rotini",
 					"grams": 107
 				},
 				{
-					"name": "cup shells",
+					"name": "US cup (237 ml), shells",
 					"grams": 105
 				},
 				{
-					"name": "cup penne",
+					"name": "US cup (237 ml), penne",
 					"grams": 107
 				},
 				{
-					"name": "cup farfalle",
+					"name": "US cup (237 ml), farfalle",
 					"grams": 107
 				},
 				{
-					"name": "cup spaghetti not packed",
+					"name": "US cup (237 ml), spaghetti not packed",
 					"grams": 124
 				},
 				{
-					"name": "cup packed",
+					"name": "US cup (237 ml), packed",
 					"grams": 151
 				},
 				{
-					"name": "cup lasagne",
+					"name": "US cup (237 ml), lasagne",
 					"grams": 116
 				},
 				{
-					"name": "cup elbows packed",
+					"name": "US cup (237 ml), elbows packed",
 					"grams": 132
 				}
 			],
@@ -7454,7 +7446,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 81
 				}
 			],
@@ -7574,11 +7566,11 @@
 					"grams": 12
 				},
 				{
-					"name": "cup, cubes",
+					"name": "US cup (237 ml), cubes",
 					"grams": 35
 				},
 				{
-					"name": "cup, crumbs",
+					"name": "US cup (237 ml), crumbs",
 					"grams": 45
 				},
 				{
@@ -7706,10 +7698,6 @@
 			],
 			"portions": [
 				{
-					"name": "oz",
-					"grams": 28.35
-				},
-				{
 					"name": "slice",
 					"grams": 32
 				}
@@ -7817,7 +7805,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup (4.86 large eggs)",
+					"name": "US cup (237 ml), 4,86 large eggs",
 					"grams": 243
 				},
 				{
@@ -7948,7 +7936,7 @@
 					"grams": 61
 				},
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 15
 				}
 			],
@@ -8050,20 +8038,12 @@
 			],
 			"portions": [
 				{
-					"name": "fl oz",
-					"grams": 30.5
-				},
-				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 244
 				},
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 15
-				},
-				{
-					"name": "quart",
-					"grams": 976
 				}
 			],
 			"name": "Milk, whole (3.25%)",
@@ -8169,16 +8149,8 @@
 			],
 			"portions": [
 				{
-					"name": "quart",
-					"grams": 976
-				},
-				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 244
-				},
-				{
-					"name": "fl oz",
-					"grams": 30.5
 				}
 			],
 			"name": "Milk, reduced fat (2%)",
@@ -8279,15 +8251,7 @@
 			],
 			"portions": [
 				{
-					"name": "fl oz",
-					"grams": 30.5
-				},
-				{
-					"name": "quart",
-					"grams": 976
-				},
-				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 244
 				}
 			],
@@ -8389,19 +8353,19 @@
 			],
 			"portions": [
 				{
-					"name": "container (8 oz)",
+					"name": "container (227 g)",
 					"grams": 227
 				},
 				{
-					"name": "container (6 oz)",
+					"name": "container (170 g)",
 					"grams": 170
 				},
 				{
-					"name": "container (4 oz)",
+					"name": "container (113 g)",
 					"grams": 226
 				},
 				{
-					"name": "cup (8 fl oz)",
+					"name": "US cup (237 ml)",
 					"grams": 245
 				}
 			],
@@ -8610,19 +8574,15 @@
 			],
 			"portions": [
 				{
-					"name": "cup, crumbled",
+					"name": "US cup (237 ml), crumbled",
 					"grams": 150
 				},
 				{
-					"name": "oz",
-					"grams": 28.35
-				},
-				{
-					"name": "cubic inch",
+					"name": "2,5 cm cube",
 					"grams": 17
 				},
 				{
-					"name": "wedge (1.33 oz)",
+					"name": "wedge (38 g)",
 					"grams": 38
 				}
 			],
@@ -8722,12 +8682,7 @@
 					"qualifier": "reported"
 				}
 			],
-			"portions": [
-				{
-					"name": "oz",
-					"grams": 28.35
-				}
-			],
+			"portions": [],
 			"name": "Goat cheese, soft",
 			"aliases": ["keçi peyniri"]
 		},
@@ -8826,11 +8781,7 @@
 			],
 			"portions": [
 				{
-					"name": "oz",
-					"grams": 28.35
-				},
-				{
-					"name": "cup, shredded",
+					"name": "US cup (237 ml), shredded",
 					"grams": 112
 				},
 				{
@@ -8936,27 +8887,23 @@
 			],
 			"portions": [
 				{
-					"name": "cup, melted",
+					"name": "US cup (237 ml), melted",
 					"grams": 244
 				},
 				{
-					"name": "slice (1 oz)",
+					"name": "slice (28 g)",
 					"grams": 28
 				},
 				{
-					"name": "cup, shredded",
+					"name": "US cup (237 ml), shredded",
 					"grams": 113
 				},
 				{
-					"name": "oz",
-					"grams": 28.35
-				},
-				{
-					"name": "cubic inch",
+					"name": "2,5 cm cube",
 					"grams": 17
 				},
 				{
-					"name": "cup, diced",
+					"name": "US cup (237 ml), diced",
 					"grams": 132
 				}
 			],
@@ -9063,12 +9010,8 @@
 			],
 			"portions": [
 				{
-					"name": "cup (not packed)",
+					"name": "US cup (237 ml), not packed",
 					"grams": 226
-				},
-				{
-					"name": "oz",
-					"grams": 28.25
 				}
 			],
 			"name": "Cottage cheese, 2% fat",
@@ -9174,7 +9117,7 @@
 			],
 			"portions": [
 				{
-					"name": "pat (1\" sq, 1/3\" high)",
+					"name": "pat (2,5 cm square, 0,8 cm high)",
 					"grams": 5
 				},
 				{
@@ -9182,11 +9125,11 @@
 					"grams": 113
 				},
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 227
 				},
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 14.2
 				}
 			],
@@ -9292,10 +9235,6 @@
 				}
 			],
 			"portions": [
-				{
-					"name": "oz",
-					"grams": 28.25
-				},
 				{
 					"name": "package",
 					"grams": 926
@@ -9403,11 +9342,11 @@
 			],
 			"portions": [
 				{
-					"name": "cup, chopped or diced",
+					"name": "US cup (237 ml), chopped or diced",
 					"grams": 140
 				},
 				{
-					"name": "unit (yield from 1 lb ready-to-cook chicken)",
+					"name": "unit (yield from 454 g ready-to-cook chicken)",
 					"grams": 52
 				},
 				{
@@ -9518,10 +9457,6 @@
 			],
 			"portions": [
 				{
-					"name": "oz",
-					"grams": 28.25
-				},
-				{
 					"name": "thigh without skin",
 					"grams": 149
 				}
@@ -9631,10 +9566,6 @@
 				{
 					"name": "breast",
 					"grams": 863
-				},
-				{
-					"name": "oz",
-					"grams": 28.33
 				}
 			],
 			"name": "Turkey breast, roasted (meat only)",
@@ -9738,12 +9669,7 @@
 					"qualifier": "reported"
 				}
 			],
-			"portions": [
-				{
-					"name": "oz",
-					"grams": 28.25
-				}
-			],
+			"portions": [],
 			"name": "Ground beef, 10% fat, raw",
 			"aliases": ["kıyma", "dana kıyma"]
 		},
@@ -9840,16 +9766,7 @@
 					"qualifier": "reported"
 				}
 			],
-			"portions": [
-				{
-					"name": "lb",
-					"grams": 453.6
-				},
-				{
-					"name": "oz",
-					"grams": 28.25
-				}
-			],
+			"portions": [],
 			"name": "Beef tenderloin, lean, raw",
 			"aliases": ["bonfile", "dana bonfile"]
 		},
@@ -9953,10 +9870,6 @@
 			],
 			"portions": [
 				{
-					"name": "oz",
-					"grams": 28.33
-				},
-				{
 					"name": "slice",
 					"grams": 81
 				}
@@ -10052,16 +9965,7 @@
 					"qualifier": "reported"
 				}
 			],
-			"portions": [
-				{
-					"name": "lb",
-					"grams": 453.6
-				},
-				{
-					"name": "oz",
-					"grams": 28.35
-				}
-			],
+			"portions": [],
 			"name": "Lamb leg, lean, raw",
 			"aliases": ["kuzu but", "kuzu"]
 		},
@@ -10159,10 +10063,6 @@
 				}
 			],
 			"portions": [
-				{
-					"name": "oz",
-					"grams": 28.33
-				},
 				{
 					"name": "fillet",
 					"grams": 396
@@ -10271,19 +10171,15 @@
 			],
 			"portions": [
 				{
-					"name": "oz",
-					"grams": 28.33
-				},
-				{
 					"name": "can",
 					"grams": 165
 				},
 				{
-					"name": "can (12.5 oz), drained",
+					"name": "can (354 g), drained",
 					"grams": 315
 				},
 				{
-					"name": "cup, solid or chunks",
+					"name": "US cup (237 ml), solid or chunks",
 					"grams": 154
 				}
 			],
@@ -10385,15 +10281,15 @@
 			],
 			"portions": [
 				{
-					"name": "small (2-2/3\" x 1/2\" x 1/4\")",
+					"name": "small (7 cm × 1,3 cm × 0,6 cm)",
 					"grams": 12
 				},
 				{
-					"name": "can (3.75 oz)",
+					"name": "can (106 g)",
 					"grams": 92
 				},
 				{
-					"name": "cup, drained",
+					"name": "US cup (237 ml), drained",
 					"grams": 149
 				},
 				{
@@ -10401,12 +10297,8 @@
 					"grams": 12
 				},
 				{
-					"name": "cubic inch",
+					"name": "2,5 cm cube",
 					"grams": 16
-				},
-				{
-					"name": "oz",
-					"grams": 28.35
 				}
 			],
 			"name": "Sardines, canned in oil, drained",
@@ -10505,12 +10397,7 @@
 					"qualifier": "reported"
 				}
 			],
-			"portions": [
-				{
-					"name": "oz",
-					"grams": 28.33
-				}
-			],
+			"portions": [],
 			"name": "Anchovy, raw",
 			"aliases": ["hamsi"]
 		},
@@ -10616,10 +10503,6 @@
 				{
 					"name": "piece",
 					"grams": 106
-				},
-				{
-					"name": "oz",
-					"grams": 28.33
 				}
 			],
 			"name": "Swordfish, cooked",
@@ -10724,10 +10607,6 @@
 				}
 			],
 			"portions": [
-				{
-					"name": "oz",
-					"grams": 28.33
-				},
 				{
 					"name": "fillet",
 					"grams": 408
@@ -10835,11 +10714,11 @@
 					"grams": 13.5
 				},
 				{
-					"name": "tsp",
+					"name": "teaspoon",
 					"grams": 4.5
 				},
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 216
 				}
 			],
@@ -11053,7 +10932,7 @@
 			],
 			"portions": [
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 8.4
 				},
 				{
@@ -11163,12 +11042,8 @@
 			],
 			"portions": [
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 15
-				},
-				{
-					"name": "oz",
-					"grams": 28.35
 				}
 			],
 			"name": "Tahini",
@@ -11279,11 +11154,11 @@
 			],
 			"portions": [
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 15
 				},
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 246
 				}
 			],
@@ -11394,11 +11269,11 @@
 					"grams": 9
 				},
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 17
 				},
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 240
 				}
 			],
@@ -11500,15 +11375,15 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 339
 				},
 				{
-					"name": "tbsp",
+					"name": "tablespoon",
 					"grams": 21
 				},
 				{
-					"name": "packet (0.5 oz)",
+					"name": "packet (14 g)",
 					"grams": 14
 				}
 			],
@@ -11610,7 +11485,7 @@
 			],
 			"portions": [
 				{
-					"name": "cup",
+					"name": "US cup (237 ml)",
 					"grams": 200
 				},
 				{
@@ -11618,7 +11493,7 @@
 					"grams": 2.3
 				},
 				{
-					"name": "tsp",
+					"name": "teaspoon",
 					"grams": 4.2
 				},
 				{
@@ -11729,11 +11604,7 @@
 			],
 			"portions": [
 				{
-					"name": "fl oz",
-					"grams": 29.6
-				},
-				{
-					"name": "cup (8 fl oz)",
+					"name": "US cup (237 ml)",
 					"grams": 237
 				}
 			],
@@ -11840,12 +11711,8 @@
 			],
 			"portions": [
 				{
-					"name": "cup (8 fl oz)",
+					"name": "US cup (237 ml)",
 					"grams": 237
-				},
-				{
-					"name": "fl oz",
-					"grams": 29.6
 				}
 			],
 			"name": "Coffee, brewed",
@@ -11951,32 +11818,28 @@
 			],
 			"portions": [
 				{
-					"name": "serving medium 21 fl oz",
+					"name": "serving medium (621 ml)",
 					"grams": 486
 				},
 				{
-					"name": "serving small 16 fl oz",
+					"name": "serving small (473 ml)",
 					"grams": 347
 				},
 				{
-					"name": "can 12 fl oz",
+					"name": "can (355 ml)",
 					"grams": 355
 				},
 				{
-					"name": "serving large 32 fl oz",
+					"name": "serving large (946 ml)",
 					"grams": 722
 				},
 				{
-					"name": "bottle 16 fl oz",
+					"name": "bottle (473 ml)",
 					"grams": 473
 				},
 				{
-					"name": "serving child 12 fl oz",
+					"name": "serving child (355 ml)",
 					"grams": 258
-				},
-				{
-					"name": "fl oz",
-					"grams": 29.6
 				}
 			],
 			"name": "Diet cola",

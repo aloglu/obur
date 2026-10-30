@@ -38,18 +38,25 @@ describe('loading', () => {
 		expect(await loadCuratedFoods(migrator, real)).toMatchObject({ added: real.foods.length });
 		expect(await loadCuratedFoods(migrator, real)).toEqual({
 			added: 0,
-			renamed: 0,
+			updated: 0,
 			unchanged: real.foods.length
 		});
 		const [{ n }] = await admin`select count(*)::int as n from foods where origin = 'curated'`;
 		expect(n).toBe(real.foods.length);
 	});
 
-	it('follows renames and new aliases, but never overwrites an edited food', async () => {
+	it('follows renames, new aliases and new portion names, but never overwrites an edited food', async () => {
 		await loadCuratedFoods(migrator, subset('Walnuts', 'Banana'));
 		const renamed = subset('Walnuts', 'Banana');
 		renamed.foods = renamed.foods.map((f) =>
-			f.name === 'Walnuts' ? { ...f, name: 'Walnuts, shelled', aliases: ['ceviz içi'] } : f
+			f.name === 'Walnuts'
+				? {
+						...f,
+						name: 'Walnuts, shelled',
+						aliases: ['ceviz içi'],
+						portions: [{ name: '14 halves (renamed)', grams: 28.35 }]
+					}
+				: f
 		);
 		const [banana] = await catalog.searchFoods(ADMIN, 'banana');
 		const detail = await catalog.getFood(ADMIN, banana.id);
@@ -72,11 +79,13 @@ describe('loading', () => {
 		renamed.foods = renamed.foods.map((f) => (f.name === 'Banana' ? { ...f, name: 'Bananas' } : f));
 		expect(await loadCuratedFoods(migrator, renamed)).toEqual({
 			added: 0,
-			renamed: 1,
+			updated: 1,
 			unchanged: 1
 		});
-		expect((await catalog.searchFoods(MEHMET, 'ceviz ici')).map((f) => f.name)).toEqual([
-			'Walnuts, shelled'
+		const [walnuts] = await catalog.searchFoods(MEHMET, 'ceviz ici');
+		expect(walnuts.name).toBe('Walnuts, shelled');
+		expect((await catalog.getFood(MEHMET, walnuts.id)).servings.map((s) => s.name)).toEqual([
+			'14 halves (renamed)'
 		]);
 		// The edit stays, and so do the food's aliases.
 		expect((await catalog.searchFoods(MEHMET, 'muz')).map((f) => f.name)).toEqual([

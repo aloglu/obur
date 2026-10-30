@@ -11,7 +11,9 @@ test('a curated food is found by its Turkish name and logged by a USDA portion',
 	await page.getByRole('searchbox').fill('muz');
 	await page.getByRole('button', { name: /^Banana/ }).click();
 	const sheet = page.getByRole('dialog', { name: 'Banana' });
-	await sheet.getByRole('radio', { name: /^medium/ }).click();
+	// Portion names are metric; the gram weight is USDA's.
+	await expect(sheet).not.toContainText('"');
+	await sheet.getByRole('radio', { name: 'medium (18–20 cm long) (118 g)' }).click();
 	await sheet.getByLabel('Amount').fill('1');
 	// 89 kcal per 100 g × 118 g.
 	await expect(sheet).toContainText('105 kcal');

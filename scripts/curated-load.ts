@@ -9,7 +9,7 @@ const sql = postgres(url, { max: 1, onnotice: () => {} });
 try {
 	const result = await loadCuratedFoods(sql, readCuratedFile());
 	console.log(
-		`Curated foods: ${result.added} added, ${result.renamed} renamed, ${result.unchanged} unchanged.`
+		`Curated foods: ${result.added} added, ${result.updated} updated, ${result.unchanged} unchanged.`
 	);
 } finally {
 	await sql.end();
