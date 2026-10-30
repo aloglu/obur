@@ -1,7 +1,8 @@
 # obur production stack: one database, the web app, the background worker, and on-demand tools.
 # Settings come from the .env file next to this one (see .env.example). Nothing here holds secrets.
 #
-# Only the web app is reachable from outside, on OBUR_PORT; put it behind HTTPS (e.g. a Cloudflare Tunnel).
+# Only the web app is reachable from outside, on OBUR_PORT; put it behind HTTPS (e.g. a Cloudflare Tunnel). The speech
+# service sits on an internal network shared only with the web app, with no internet access.
 # Data lives in OBUR_DATA_DIR (database, backup status) and OBUR_BACKUP_DIR (encrypted backups).
 name: obur
 
@@ -93,6 +94,9 @@ services:
       PROTOCOL_HEADER: x-forwarded-proto
       DATABASE_URL: postgres://obur_app:${OBUR_APP_DB_PASSWORD:?Set OBUR_APP_DB_PASSWORD in .env}@db:5432/obur
       OBUR_STATUS_DIR: /app/status
+      # Speak: the speech service below. Set SPEECH_URL= (empty) in .env to switch Speak off.
+      SPEECH_URL: ${SPEECH_URL-http://speech:8000}
+    networks: [default, speech]
     volumes:
       - ${OBUR_DATA_DIR:-./data}/status:/app/status:ro
     ports:
@@ -129,3 +133,22 @@ services:
       DATABASE_MIGRATOR_URL: postgres://obur_migrator:${OBUR_MIGRATOR_DB_PASSWORD:?Set OBUR_MIGRATOR_DB_PASSWORD in .env}@db:5432/obur
       DATABASE_URL: postgres://obur_app:${OBUR_APP_DB_PASSWORD}@db:5432/obur
       DATABASE_WORKER_URL: postgres://obur_worker:${OBUR_WORKER_DB_PASSWORD}@db:5432/obur
+
+  # Speech to text for Speak (speech/): one clip at a time, audio in memory only, no logs of what was said. No published
+  # port and no internet: only the web app reaches it.
+  speech:
+    image: obur-speech:current
+    restart: unless-stopped
+    networks: [speech]
+    environment:
+      SPEECH_THREADS: ${SPEECH_THREADS:-4}
+      SPEECH_MAX_QUEUE: ${SPEECH_MAX_QUEUE:-3}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    mem_limit: ${SPEECH_MEMORY_LIMIT:-2g}
+
+networks:
+  speech:
+    internal: true

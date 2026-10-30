@@ -49,3 +49,20 @@ key that opens them side by side.
 `./deploy/pilot.sh` deploys the committed HEAD: it refuses uncommitted changes, uploads the source with `git archive`
 (only committed files), then runs `build` and `deploy` (which backs up first). The SSH aliases default to `obur-lab`
 (upload) and `obur-host` (forced command) and can be overridden with `OBUR_UPLOAD_HOST` and `OBUR_CTL_HOST`.
+
+## Updating `compose.yaml` and `obur-ctl` on the server
+
+Both live where the deploy key cannot write, so changes to them are copied by hand after review. After a deploy, the
+uploaded source is in `/mnt/user/appdata/obur-lab/deploy/source`; on the Unraid host, as root:
+
+1. Review what changed: `diff /boot/config/obur/obur-ctl /mnt/user/appdata/obur-lab/deploy/source/deploy/unraid/obur-ctl`
+   and `diff /mnt/user/appdata/obur/compose.yaml /mnt/user/appdata/obur-lab/deploy/source/deploy/compose.yaml`.
+2. Copy `obur-ctl` first (it can build images the old `compose.yaml` does not use yet):
+   `cp /mnt/user/appdata/obur-lab/deploy/source/deploy/unraid/obur-ctl /boot/config/obur/obur-ctl`
+3. Then `compose.yaml`:
+   `cp /mnt/user/appdata/obur-lab/deploy/source/deploy/compose.yaml /mnt/user/appdata/obur/compose.yaml`
+4. Deploy again (`./deploy/pilot.sh` from the development machine): the new `obur-ctl` builds every image the new
+   `compose.yaml` needs before switching.
+
+The speech service (added 2026-10-30) is the first change made this way: it adds the `obur-speech` image to `obur-ctl`
+and the `speech` service and internal network to `compose.yaml`.

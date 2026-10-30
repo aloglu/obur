@@ -103,6 +103,14 @@ describe('obur-ctl', () => {
 		expect(backup).toBeGreaterThan(-1);
 		expect(backup).toBeLessThan(tag);
 		expect(tag).toBeLessThan(migrate);
+		// All three images switch together.
+		for (const image of ['obur-app', 'obur-db', 'obur-speech'])
+			expect(steps).toContain(`docker tag ${image}:candidate ${image}:current`);
+	});
+
+	it('allows the speech service in logs and restart', () => {
+		expect(run('logs speech 20').status).toBe(0);
+		expect(run('restart speech').status).toBe(0);
 	});
 
 	it('builds only from the obur-lab upload folder', () => {
