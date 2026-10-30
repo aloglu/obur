@@ -98,6 +98,12 @@ Reported for later; the assistant decides when to fit them in.
 4. **Fixed 2026-10-30 (owner to judge on desktop).** **Desktop "+" on a meal card** only adds a meal pill to the Log panel, which is easy to miss (the owner first thought nothing happened). Rethink adding to a meal on desktop; the phone behaviour (open Log) is acceptable but could adopt a better shared solution.
 5. **Fixed 2026-10-30.** **Desktop Today layout:** the Log panel should align vertically with the Budget card, not with the top of the Today column.
 
+## Typed entry gaps to close (owner, collected during use)
+
+Owner's approach (2026-10-30): note phrasings that fail during real use and close them in batches; each fix gets a development test case written for it.
+
+- Weight with a verb after "kilo": "Bugün 120 kilo geldim", "Bugün 120 kilo çıktım" are not read as a weigh-in ("120 kiloyum" is). Likely also "tartıda 120 çıktım", "120 kilo gösterdi".
+
 ## Implementation notes
 
 - SvelteKit 3 removed the `$lib` alias; use `#lib`. Import a module's public entry by its full path, `#lib/server/modules/<name>/index.ts` (TypeScript does not resolve a folder's index through the `#lib/*` mapping).
