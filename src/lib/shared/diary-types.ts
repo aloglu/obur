@@ -56,3 +56,30 @@ export interface NutrientTotal {
 }
 
 export type DayTotals = Partial<Record<NutrientCode, NutrientTotal>>;
+
+/** One item of a saved meal: like a diary entry's content, with its own snapshot. */
+export interface SavedMealItem {
+	id: string;
+	kind: 'food' | 'quick';
+	foodId: string | null;
+	food: FoodSnapshot | null;
+	amount: number | null;
+	unit: SnapshotUnit | null;
+	description: string | null;
+	nutrients: EntryNutrients;
+}
+
+export interface SavedMealSummary {
+	id: string;
+	name: string;
+	itemCount: number;
+	/** Sum of the items' known energy; `partial` when an item's energy is unknown. */
+	kcal: number;
+	partial: boolean;
+	revision: number;
+	updatedAt: string;
+}
+
+export interface SavedMeal extends SavedMealSummary {
+	items: SavedMealItem[];
+}

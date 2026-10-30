@@ -119,32 +119,41 @@ function sameRequest(
 	return pick(existing) === pick(candidate);
 }
 
+/**
+ * Inserts an entry inside the caller's transaction, or returns the existing one for a retry of the same request.
+ * A reused ID with different content is a conflict; a purged ID is gone.
+ */
+export async function insertEntry(
+	tx: Tx,
+	values: Omit<Row, 'createdAt' | 'updatedAt' | 'energyKcal'>
+): Promise<DiaryEntry> {
+	const [existing] = await tx.select().from(diaryEntries).where(eq(diaryEntries.id, values.id));
+	if (existing) {
+		if (!sameRequest(existing, values)) throw new DiaryError('conflict');
+		return toEntry(existing);
+	}
+	const [purged] = await tx
+		.select({ id: purgedRecords.id })
+		.from(purgedRecords)
+		.where(eq(purgedRecords.id, values.id));
+	if (purged) throw new DiaryError('gone');
+	try {
+		const [row] = await tx.insert(diaryEntries).values(values).returning();
+		return toEntry(row);
+	} catch (e) {
+		// Another person's row with this ID (invisible under RLS) or a concurrent identical retry.
+		const code = (e as { cause?: { code?: string } }).cause?.code;
+		if (code === '23505') throw new DiaryError('conflict');
+		throw e;
+	}
+}
+
 export function createDiary(db: Database, now: () => Date = () => new Date()) {
 	async function insert(
 		userId: string,
 		values: Omit<Row, 'createdAt' | 'updatedAt' | 'energyKcal'>
 	): Promise<DiaryEntry> {
-		return withUser(db, userId, async (tx) => {
-			const [existing] = await tx.select().from(diaryEntries).where(eq(diaryEntries.id, values.id));
-			if (existing) {
-				if (!sameRequest(existing, values)) throw new DiaryError('conflict');
-				return toEntry(existing);
-			}
-			const [purged] = await tx
-				.select({ id: purgedRecords.id })
-				.from(purgedRecords)
-				.where(eq(purgedRecords.id, values.id));
-			if (purged) throw new DiaryError('gone');
-			try {
-				const [row] = await tx.insert(diaryEntries).values(values).returning();
-				return toEntry(row);
-			} catch (e) {
-				// Another person's row with this ID (invisible under RLS) or a concurrent identical retry.
-				const code = (e as { cause?: { code?: string } }).cause?.code;
-				if (code === '23505') throw new DiaryError('conflict');
-				throw e;
-			}
-		});
+		return withUser(db, userId, (tx) => insertEntry(tx, values));
 	}
 
 	async function current(tx: Tx, id: string): Promise<Row> {

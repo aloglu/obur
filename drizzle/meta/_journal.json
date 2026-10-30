@@ -141,6 +141,20 @@
       "when": 1793308534594,
       "tag": "0019_nutrient_carbohydrate_unspecified",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793343587030,
+      "tag": "0020_saved_meals",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793343600420,
+      "tag": "0021_saved_meals_rls",
+      "breakpoints": true
     }
   ]
 }

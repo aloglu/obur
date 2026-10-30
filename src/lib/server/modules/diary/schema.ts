@@ -10,6 +10,8 @@ import {
 	primaryKey,
 	text,
 	timestamp,
+	foreignKey,
+	unique,
 	uuid
 } from 'drizzle-orm/pg-core';
 import { users } from '../auth/index.ts';
@@ -110,5 +112,67 @@ export const purgedRecords = pgTable(
 	},
 	(t) => [
 		check('purged_records_kind_valid', sql`${t.kind} in ('diary', 'weight', 'water', 'activity')`)
+	]
+);
+
+// Saved meals: a named list of items, each with its own snapshot like a diary entry (docs/design.md, "Diary and
+// logging rules"). Logging one creates ordinary entries; refreshing items to current food values is explicit.
+export const savedMeals = pgTable(
+	'saved_meals',
+	{
+		id: uuid('id').primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		name: text('name').notNull(),
+		revision: integer('revision').notNull().default(1),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		unique('saved_meals_id_user').on(t.id, t.userId),
+		check('saved_meals_name_length', sql`char_length(${t.name}) between 1 and 120`),
+		check('saved_meals_revision_positive', sql`${t.revision} >= 1`),
+		index('saved_meals_user_idx').on(t.userId, t.updatedAt)
+	]
+);
+
+export const savedMealItems = pgTable(
+	'saved_meal_items',
+	{
+		id: uuid('id').primaryKey(),
+		savedMealId: uuid('saved_meal_id').notNull(),
+		// Must match the meal's owner (composite foreign key), so an item can never hang off someone else's meal.
+		userId: uuid('user_id').notNull(),
+		position: integer('position').notNull(),
+		kind: text('kind', { enum: ['food', 'quick'] }).notNull(),
+		foodId: uuid('food_id').references(() => foods.id, { onDelete: 'set null' }),
+		food: jsonb('food').$type<FoodSnapshot>(),
+		amount: numeric('amount', { precision: 12, scale: 4, mode: 'number' }),
+		unit: jsonb('unit').$type<SnapshotUnit>(),
+		description: text('description'),
+		nutrients: jsonb('nutrients').$type<EntryNutrients>().notNull()
+	},
+	(t) => [
+		foreignKey({
+			name: 'saved_meal_items_meal_owner',
+			columns: [t.savedMealId, t.userId],
+			foreignColumns: [savedMeals.id, savedMeals.userId]
+		}).onDelete('cascade'),
+		unique('saved_meal_items_position').on(t.savedMealId, t.position),
+		check('saved_meal_items_kind_valid', sql`${t.kind} in ('food', 'quick')`),
+		check(
+			'saved_meal_items_shape',
+			sql`(${t.kind} = 'food' and ${t.food} is not null and ${t.amount} > 0 and ${t.unit} is not null)
+				or (${t.kind} = 'quick' and ${t.food} is null and ${t.amount} is null and ${t.unit} is null
+					and ${t.foodId} is null and (${t.nutrients} -> 'energy_kcal') is not null)`
+		),
+		check(
+			'saved_meal_items_description_length',
+			sql`${t.description} is null or char_length(${t.description}) between 1 and 200`
+		),
+		check('saved_meal_items_nutrients_object', sql`jsonb_typeof(${t.nutrients}) = 'object'`),
+		check('saved_meal_items_position_range', sql`${t.position} between 0 and 99`),
+		index('saved_meal_items_user_idx').on(t.userId)
 	]
 );
