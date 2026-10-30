@@ -158,7 +158,8 @@ with a divider; food form "<" explained and **More nutrients (optional)** for th
 and magnesium would need new nutrient codes: not added); Household row buttons one width. Rules recorded in
 docs/ui.md. The weight card note was a misreading (the owner confirmed they align). Follow-up: every
 clickable control shows a pointer cursor and disabled ones the arrow (one base rule in layout.css; Tailwind 4 had reset
-buttons to the default cursor). Next: batch 2 features (Profile details, editable macro targets, saved meal
+buttons to the default cursor). Water reworked after the owner's second look: +250 / +500 full width, **Other
+amount** below turning into a field with an ml / l suffix. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

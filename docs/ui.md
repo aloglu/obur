@@ -30,7 +30,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - **Budget card:** a ring showing eaten ÷ budget with "kcal left" or "kcal over" in the middle. Eaten, Budget and the equation (base + activity − deficit) sit beside it, never wrapped below. The ring is 128 px on phone and 150 px on desktop.
 - **Ring colours:** accent while under budget. When over, the ring and number turn **red** (`bad`). This was the owner's explicit choice.
 - **Nutrients card:** protein, carbohydrate and fat bars against their targets. Fibre, sugars, saturated fat and salt sit in a 2×2 grid. Unknown values show a "+" and "N entries unknown", never zero.
-- **Water and weight:** side-by-side cards with +250 / +500 ml buttons plus **Other** (an inline field taking ml or litres, "750" or "3,5 l", up to 10 l; added 2026-10-30) and a decimal-comma weight input. Each card has an **Edit** link (shown once something is recorded) that opens a sheet: Water lists the viewed day's additions, Weigh-ins lists all readings newest first, 20 at a time with **Show older**. Each row has Edit (inline value, decimal comma) and Delete; a deleted row stays in place, struck through, with its own Undo, because a toast would sit behind the sheet. A weight change that moves a calculated budget says so at the top of the sheet (added 2026-10-30, provisional).
+- **Water and weight:** side-by-side cards with +250 / +500 ml buttons stretched across the first row and a full-width **Other amount** button below them that turns, in place, into a field with a tappable **ml / l** suffix (per entry, starting at ml; a typed "3,5 l" also works; up to 10 l) and a round check button (owner review 2026-10-30), and a decimal-comma weight input. Each card has an **Edit** link (shown once something is recorded) that opens a sheet: Water lists the viewed day's additions, Weigh-ins lists all readings newest first, 20 at a time with **Show older**. Each row has Edit (inline value, decimal comma) and Delete; a deleted row stays in place, struck through, with its own Undo, because a toast would sit behind the sheet. A weight change that moves a calculated budget says so at the top of the sheet (added 2026-10-30, provisional).
 - **Meal cards:** Breakfast, Lunch, Dinner and Snacks, each with its kcal total and a **+** button. Each entry row shows a two-line clamped name, quantity, badges ("Waiting to sync", "Macros unknown") and kcal. Tapping an entry opens Edit.
 - **Desktop layout:** two columns, with Today on the left and the Log panel as a sticky 380 px panel on the right, starting level with the Budget card (the day header sits above, in Today's column only).
 
@@ -186,7 +186,8 @@ The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps.
 ### Rules from the owner's screen review (2026-10-30)
 
 - **Never stack two choices.** Two chips or buttons offered as a choice sit side by side at equal width (the shared
-  `Chips` component does this for two options); shorten the labels rather than shrink the text.
+  `Chips` component does this for two options); shorten the labels rather than shrink the text. The exception is a
+  different kind of action under a row of choices, using the full width (Water's **Other amount** below +250 / +500).
 - **Row buttons in a list share one width,** whatever the length of the name beside them; long names truncate.
 - **No sentences broken across lines for numbers.** Show figures as a headline plus labelled rows (Profile's Current
   budget) instead of one long line.

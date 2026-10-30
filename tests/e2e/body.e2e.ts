@@ -13,14 +13,15 @@ test('water: quick additions add up and can be undone', async ({ page }) => {
 	await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
 	await expect(water).toContainText('250 ml');
 
-	// Any other amount, in millilitres or litres.
-	await water.getByRole('button', { name: 'Other' }).click();
-	const amount = water.getByLabel('Amount (ml, or l for litres)');
-	await amount.fill('12 l');
-	await water.getByRole('button', { name: 'Add', exact: true }).click();
+	// Any other amount: the button becomes a field; its suffix switches between ml and l per entry.
+	await water.getByRole('button', { name: 'Other amount' }).click();
+	const amount = water.getByLabel('Amount of water');
+	await amount.fill('12');
+	await water.getByRole('button', { name: 'Unit: millilitres. Switch to litres' }).click();
+	await water.getByRole('button', { name: 'Add water' }).click();
 	await expect(water).toContainText('up to 10 l');
-	await amount.fill('3,5 l');
-	await water.getByRole('button', { name: 'Add', exact: true }).click();
+	await amount.fill('3,5');
+	await water.getByRole('button', { name: 'Add water' }).click();
 	await expect(water).toContainText('3750 ml');
 	await expect(amount).toBeHidden();
 

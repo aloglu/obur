@@ -40,13 +40,14 @@ export function countedActivity(
 }
 
 /**
- * A typed water amount in millilitres: "750", "750 ml", "3,5 l" or "3.5L" (comma or dot decimals). A bare number is
- * millilitres, like the quick buttons. Undefined when unreadable or outside 1 ml–10 l (the database range).
+ * A typed water amount in millilitres: "750", "750 ml", "3,5 l" or "3.5L" (comma or dot decimals). A bare number is in
+ * `unit`, the field's chosen suffix. Undefined when unreadable or outside 1 ml–10 l (the database range).
  */
-export function parseWaterMl(input: string): number | undefined {
+export function parseWaterMl(input: string, unit: 'ml' | 'l' = 'ml'): number | undefined {
 	const match = /^\s*(\d+(?:[.,]\d+)?|[.,]\d+)\s*(ml|l|lt|litre|liter)?\s*$/i.exec(input);
 	if (!match) return undefined;
 	const value = Number(match[1].replace(',', '.'));
-	const ml = Math.round(match[2] && match[2].toLowerCase() !== 'ml' ? value * 1000 : value);
+	const litres = match[2] ? match[2].toLowerCase() !== 'ml' : unit === 'l';
+	const ml = Math.round(litres ? value * 1000 : value);
 	return ml >= 1 && ml <= 10_000 ? ml : undefined;
 }

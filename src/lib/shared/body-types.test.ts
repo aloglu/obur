@@ -38,6 +38,13 @@ describe('parseWaterMl', () => {
 		expect(parseWaterMl('0,33 l')).toBe(330);
 	});
 
+	it('reads a bare number in the chosen unit; a typed unit wins', () => {
+		expect(parseWaterMl('3,5', 'l')).toBe(3500);
+		expect(parseWaterMl('750 ml', 'l')).toBe(750);
+		expect(parseWaterMl('2 l', 'ml')).toBe(2000);
+		expect(parseWaterMl('12', 'l')).toBeUndefined();
+	});
+
 	it('refuses unreadable or out-of-range amounts', () => {
 		for (const bad of ['', 'l', 'two', '1.000,5', '0', '0 l', '11 l', '12000', '-250'])
 			expect(parseWaterMl(bad)).toBeUndefined();

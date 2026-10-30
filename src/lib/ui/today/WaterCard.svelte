@@ -1,6 +1,7 @@
 <script lang="ts">
 	// docs/ui.md "Water and weight": +250 / +500 ml buttons and any other amount (ml or l); each addition can be undone
 	// from the toast.
+	import Check from '@lucide/svelte/icons/check';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import { offline, submit } from '#lib/client/offline/sync.svelte.ts';
@@ -24,6 +25,14 @@
 	let other = $state(false);
 	let amount = $state('');
 	let amountError = $state('');
+	let unit = $state<'ml' | 'l'>('ml');
+
+	function close() {
+		other = false;
+		amount = '';
+		amountError = '';
+		unit = 'ml';
+	}
 	const pendingMl = $derived(
 		offline.items.reduce(
 			(sum, i) =>
@@ -36,16 +45,13 @@
 
 	async function addOther(event: SubmitEvent) {
 		event.preventDefault();
-		const ml = parseWaterMl(amount);
+		const ml = parseWaterMl(amount, unit);
 		if (ml === undefined) {
 			amountError = m.water_other_invalid();
 			return;
 		}
 		amountError = '';
-		if (await add(ml)) {
-			amount = '';
-			other = false;
-		}
+		if (await add(ml)) close();
 	}
 
 	/** True once saved or queued. */
@@ -101,32 +107,28 @@
 			{m.offline_water_pending({ ml: String(pendingMl) })}
 		</p>
 	{/if}
-	<div class="flex gap-2">
+	<!-- Quick amounts share the first row; the second is "Other amount", which turns into a field in place with a
+	     tappable ml / l suffix (owner review 2026-10-30). -->
+	<div class="grid grid-cols-2 gap-2">
 		{#each [250, 500] as ml (ml)}
 			<button
 				type="button"
 				disabled={busy}
 				onclick={() => add(ml)}
 				aria-label={m.water_add_label({ ml: String(ml) })}
-				class="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-soft px-2 text-[15px] font-bold whitespace-nowrap text-accent disabled:opacity-50"
+				class="min-h-11 rounded-full bg-soft px-2 text-[15px] font-bold whitespace-nowrap text-accent disabled:opacity-50"
 				>{m.water_add({ ml: String(ml) })}</button
 			>
 		{/each}
-		<button
-			type="button"
-			disabled={busy}
-			aria-expanded={other}
-			onclick={() => (other = !other)}
-			class="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-surface2 px-2 text-[15px] font-bold whitespace-nowrap text-text disabled:opacity-50"
-			>{m.water_other()}</button
-		>
 	</div>
 	{#if other}
 		<form class="flex flex-col gap-1" onsubmit={addOther} novalidate>
-			<label for="water-amount" class="text-[13px] font-semibold text-muted"
-				>{m.water_other_label()}</label
+			<div
+				class={[
+					'flex min-h-11 items-center rounded-full border bg-surface2 pl-4',
+					amountError ? 'border-bad' : 'border-line focus-within:border-accent'
+				]}
 			>
-			<div class="flex gap-2">
 				<!-- svelte-ignore a11y_autofocus -->
 				<input
 					id="water-amount"
@@ -134,22 +136,45 @@
 					autofocus
 					inputmode="decimal"
 					autocomplete="off"
+					aria-label={m.water_other_label()}
 					placeholder={m.water_other_placeholder()}
 					aria-invalid={amountError ? 'true' : undefined}
 					aria-describedby={amountError ? 'water-amount-error' : undefined}
-					class="min-h-11 min-w-0 flex-1 rounded-input border border-line bg-surface px-3 text-[16px]"
+					onkeydown={(e) => {
+						if (e.key === 'Escape') close();
+					}}
+					class="min-w-0 flex-1 bg-transparent text-[16px] font-semibold tabular-nums outline-none"
 				/>
+				<button
+					type="button"
+					onclick={() => (unit = unit === 'ml' ? 'l' : 'ml')}
+					aria-label={unit === 'ml' ? m.water_unit_ml() : m.water_unit_l()}
+					class="min-h-11 min-w-11 px-2 text-[15px] font-bold text-accent underline decoration-dotted underline-offset-4"
+					>{unit}</button
+				>
 				<button
 					type="submit"
 					disabled={busy}
-					class="min-h-11 rounded-input bg-accent px-4 text-[15px] font-bold text-on-accent disabled:opacity-50"
-					>{m.water_other_add()}</button
+					aria-label={m.water_other_add()}
+					class="grid size-11 place-items-center disabled:opacity-50"
 				>
+					<span class="grid size-9 place-items-center rounded-full bg-accent text-on-accent"
+						><Check size={20} aria-hidden="true" /></span
+					>
+				</button>
 			</div>
 			{#if amountError}
-				<p id="water-amount-error" class="text-[13px] font-semibold text-bad">{amountError}</p>
+				<p id="water-amount-error" class="px-1 text-[13px] font-semibold text-bad">{amountError}</p>
 			{/if}
 		</form>
+	{:else}
+		<button
+			type="button"
+			disabled={busy}
+			onclick={() => (other = true)}
+			class="min-h-11 rounded-full bg-surface2 px-2 text-[15px] font-bold text-text disabled:opacity-50"
+			>{m.water_other()}</button
+		>
 	{/if}
 </section>
 
