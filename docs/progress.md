@@ -127,6 +127,8 @@ portions (147 of 152 custom-food rows are grams or millilitres, 3 name a portion
 **Later, not blocking:** a fresh 10–15 clip voice held-out set; the typed-entry gap list below; hosted CI stays off by
 the owner's choice (checks run locally before each deploy).
 
+Owner feedback 2026-10-30, done: the amount preview is now a shared `MacroPreview` (kcal headline, coloured Protein/Carbs/Fat, carbs fall back to the imported unstated value with a note instead of "?"), used in the amount, Check and log and edit sheets; browser test added.
+
 ## Typed entry gaps to close (owner, collected during use)
 
 Owner's approach (2026-10-30): note phrasings that fail during real use and close them in batches; each fix gets a development test case written for it.

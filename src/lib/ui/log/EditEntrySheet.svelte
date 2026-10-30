@@ -7,13 +7,15 @@
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { snapshotNutrients } from '#lib/shared/diary-rules.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
-	import { kcal, mealName } from '#lib/shared/format.ts';
+	import { mealName } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import { optionKeyFor, unitOptions, type MeasureOption } from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
 	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
+	import MacroPreview from './MacroPreview.svelte';
+	import type { NutrientValue } from '#lib/shared/nutrients.ts';
 	import TextField from '../TextField.svelte';
 
 	interface Props {
@@ -70,9 +72,10 @@
 		}
 		return i;
 	});
-	const previewKcal = $derived.by(() => {
+	const preview = $derived.by(() => {
 		if (!snapshot || !storedUnit || amount === undefined) return undefined;
-		return snapshotNutrients(snapshot, amount, storedUnit)?.energy_kcal?.value;
+		const scaled = snapshotNutrients(snapshot, amount, storedUnit);
+		return scaled && Object.entries(scaled).map(([code, v]) => ({ code, ...v }) as NutrientValue);
 	});
 
 	async function patch(body: Record<string, unknown>, movedTo?: Meal) {
@@ -141,9 +144,7 @@
 				bind:value={optionKey}
 				options={options.map((o) => ({ value: o.key, label: o.label }))}
 			/>
-			<p class="text-[15px] font-semibold tabular-nums" aria-live="polite">
-				{previewKcal === undefined ? '—' : m.amount_preview({ kcal: kcal(previewKcal) })}
-			</p>
+			<MacroPreview nutrients={preview} />
 		{/if}
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<Button type="submit" wide disabled={busy}>{m.edit_save()}</Button>

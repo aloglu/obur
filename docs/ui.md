@@ -44,7 +44,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
   1. The basis line, then the amount (decimal comma) and unit chips.
   2. Day chips: Today / Yesterday, or the viewed day plus Today.
   3. Meal chips.
-  4. A live kcal and P/C/F preview, then Save.
+  4. A live preview, then Save: kcal as the headline, then Protein, Carbs and Fat, each with a dot in its Nutrients-card colour (owner request 2026-10-30; the earlier one-line "P · C · F" was hard to read). Unknown is "?"; estimates show "≈" and bounds "<"; carbohydrate falls back to an imported value of unstated definition, with a note. The same preview is used on Check and log cards and when editing an entry.
   5. After Save it returns to Today, briefly highlights the new row and shows a toast.
 - **Speak:**
   1. A pulsing mic with "Listening… say what you ate" and a bilingual example, plus Done.

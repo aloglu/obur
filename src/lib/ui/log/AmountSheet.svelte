@@ -18,6 +18,7 @@
 	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
+	import MacroPreview from './MacroPreview.svelte';
 
 	interface Props {
 		foodId: string;
@@ -62,25 +63,11 @@
 		return i;
 	}
 
+	/** The nutrients for the chosen amount, or undefined while the amount or unit is missing. */
 	const preview = $derived.by(() => {
 		if (!food || !option || amount === undefined) return undefined;
 		const factor = basisFactor(food, amount, toUnit(option));
-		if (factor === undefined) return undefined;
-		const scaled = Object.fromEntries(
-			scaleNutrients(food.nutrients, factor).map((n) => [n.code, n.value])
-		);
-		const g = (code: string) =>
-			scaled[code] === undefined
-				? m.amount_unknown_short()
-				: `${formatDecimal(scaled[code], ',', 1)} g`;
-		return {
-			kcal: scaled.energy_kcal === undefined ? m.amount_unknown_short() : kcal(scaled.energy_kcal),
-			macros: m.amount_macros({
-				protein: g('protein'),
-				carbs: g('carbohydrate_excl_fibre'),
-				fat: g('fat')
-			})
-		};
+		return factor === undefined ? undefined : scaleNutrients(food.nutrients, factor);
 	});
 
 	const basisLine = $derived.by(() => {
@@ -179,15 +166,7 @@
 				bind:value={meal}
 				options={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
 			/>
-			<div
-				class="flex items-baseline justify-between rounded-small bg-surface2 px-3.5 py-3"
-				aria-live="polite"
-			>
-				<span class="font-display text-[22px] font-extrabold tabular-nums"
-					>{preview ? m.amount_preview({ kcal: preview.kcal }) : '—'}</span
-				>
-				<span class="text-[13px] text-muted">{preview?.macros ?? ''}</span>
-			</div>
+			<MacroPreview nutrients={preview} />
 			{#if problem}<Notice>{problem}</Notice>{/if}
 			<Button type="submit" wide disabled={busy || amount === undefined || !preview}
 				>{busy ? m.common_working() : m.amount_save()}</Button

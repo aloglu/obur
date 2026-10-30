@@ -22,6 +22,7 @@
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 	import TextField from '../TextField.svelte';
+	import MacroPreview from './MacroPreview.svelte';
 
 	interface Props {
 		entry: ParsedEntry;
@@ -147,18 +148,14 @@
 		return i;
 	}
 
-	/** The card's kcal, or undefined while something is missing. */
-	function foodKcal(card: Extract<Card, { kind: 'food' }>): number | null | undefined {
+	/** The card's nutrients for its amount, or undefined while something is missing. */
+	function foodNutrients(card: Extract<Card, { kind: 'food' }>) {
 		const option =
 			card.food && unitOptions(card.food, measures).find((o) => o.key === card.optionKey);
 		const amount = parseDecimal(card.amountText);
 		if (!card.food || !option || amount === undefined || amount <= 0) return undefined;
 		const factor = basisFactor(card.food, amount, toUnit(option));
-		if (factor === undefined) return undefined;
-		return (
-			scaleNutrients(card.food.nutrients, factor).find((n) => n.code === 'energy_kcal')?.value ??
-			null
-		);
+		return factor === undefined ? undefined : scaleNutrients(card.food.nutrients, factor);
 	}
 
 	const positive = (t: string, max: number) => {
@@ -167,7 +164,7 @@
 	};
 	const valid = (c: Card) =>
 		c.kind === 'food'
-			? foodKcal(c) !== undefined
+			? foodNutrients(c) !== undefined
 			: c.kind === 'quick'
 				? positive(c.kcalText, 20_000) !== undefined
 				: c.kind === 'water'
@@ -347,14 +344,7 @@
 							{#if !card.optionKey}<p class="text-[13px] text-warn">
 									{m.entry_unit_choose({ said: card.said ?? '' })}
 								</p>{/if}
-							{@const value = foodKcal(card)}
-							<p class="text-[15px] font-bold tabular-nums" aria-live="polite">
-								{value === undefined
-									? ''
-									: value === null
-										? m.amount_unknown_short()
-										: `${kcal(value)} kcal`}
-							</p>
+							<MacroPreview nutrients={foodNutrients(card)} />
 						{/if}
 					{/if}
 				{:else if card.kind === 'quick'}
