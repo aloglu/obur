@@ -12,6 +12,17 @@ test('water: quick additions add up and can be undone', async ({ page }) => {
 	await expect(water).toContainText('750 ml');
 	await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
 	await expect(water).toContainText('250 ml');
+
+	// Any other amount, in millilitres or litres.
+	await water.getByRole('button', { name: 'Other' }).click();
+	const amount = water.getByLabel('Amount (ml, or l for litres)');
+	await amount.fill('12 l');
+	await water.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(water).toContainText('up to 10 l');
+	await amount.fill('3,5 l');
+	await water.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(water).toContainText('3750 ml');
+	await expect(amount).toBeHidden();
 });
 
 test('weight: decimal comma input, validation, and readings stay private', async ({

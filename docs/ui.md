@@ -30,7 +30,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - **Budget card:** a ring showing eaten ÷ budget with "kcal left" or "kcal over" in the middle. Eaten, Budget and the equation (base + activity − deficit) sit beside it, never wrapped below. The ring is 128 px on phone and 150 px on desktop.
 - **Ring colours:** accent while under budget. When over, the ring and number turn **red** (`bad`). This was the owner's explicit choice.
 - **Nutrients card:** protein, carbohydrate and fat bars against their targets. Fibre, sugars, saturated fat and salt sit in a 2×2 grid. Unknown values show a "+" and "N entries unknown", never zero.
-- **Water and weight:** side-by-side cards with +250 / +500 ml buttons and a decimal-comma weight input. Each card has an **Edit** link (shown once something is recorded) that opens a sheet: Water lists the viewed day's additions, Weigh-ins lists all readings newest first, 20 at a time with **Show older**. Each row has Edit (inline value, decimal comma) and Delete; a deleted row stays in place, struck through, with its own Undo, because a toast would sit behind the sheet. A weight change that moves a calculated budget says so at the top of the sheet (added 2026-10-30, provisional).
+- **Water and weight:** side-by-side cards with +250 / +500 ml buttons plus **Other** (an inline field taking ml or litres, "750" or "3,5 l", up to 10 l; added 2026-10-30) and a decimal-comma weight input. Each card has an **Edit** link (shown once something is recorded) that opens a sheet: Water lists the viewed day's additions, Weigh-ins lists all readings newest first, 20 at a time with **Show older**. Each row has Edit (inline value, decimal comma) and Delete; a deleted row stays in place, struck through, with its own Undo, because a toast would sit behind the sheet. A weight change that moves a calculated budget says so at the top of the sheet (added 2026-10-30, provisional).
 - **Meal cards:** Breakfast, Lunch, Dinner and Snacks, each with its kcal total and a **+** button. Each entry row shows a two-line clamped name, quantity, badges ("Waiting to sync", "Macros unknown") and kcal. Tapping an entry opens Edit.
 - **Desktop layout:** two columns, with Today on the left and the Log panel as a sticky 380 px panel on the right, starting level with the Budget card (the day header sits above, in Today's column only).
 
@@ -183,6 +183,20 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
 
 The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps. In the app, use Lucide (ISC licence) in the same style.
 
+### Rules from the owner's screen review (2026-10-30)
+
+- **Never stack two choices.** Two chips or buttons offered as a choice sit side by side at equal width (the shared
+  `Chips` component does this for two options); shorten the labels rather than shrink the text.
+- **Row buttons in a list share one width,** whatever the length of the name beside them; long names truncate.
+- **No sentences broken across lines for numbers.** Show figures as a headline plus labelled rows (Profile's Current
+  budget) instead of one long line.
+- **Card contents align with the card title.** Rows keep their padded highlight by sitting in a list pulled out by
+  the same padding.
+- **Small round actions in a card header** (meal card + and bookmark): a 36 px circle inside a 44 px tap target, alike
+  in shape, told apart by colour (accent for adding, muted for secondary actions).
+- **Live result previews keep their layout still:** the number that changes sits in a fixed-width column, so the
+  values beside it don't move as it gains or loses digits.
+
 ## 4. Deliberately left open
 
 - **Progress below the calendar:** weight chart, averages, per-kilo achievements, and the "joy" moment when an achievement lands.
@@ -191,10 +205,10 @@ The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps.
 - **Voice quick adds:** voice could also handle "500 calories, dinner". If it does, the Quick add button could move to the no-results state only.
 - **Voice error states:** nothing heard, low confidence, a food not found (offer to create it or quick add), voice turned off in `.env` (hide the tile).
 - **Scan error states:** no table found, several tables, kJ/kcal mismatch, a per-serving label without a serving size, scan turned off in `.env` (hide the tile).
-- **Marking a day complete:** the control on Today (and its undo) is not designed yet. The calendar depends on it.
+- **Marking a day complete:** a full-width **Day complete** switch below the meal cards, styled like a card, with its hint below (owner review 2026-10-30). Turning it off is the undo. The calendar depends on it.
 - **Offline and pending:** only the "Waiting to sync" badge is designed. A global offline indicator and sync-failure states are not.
 - **Saved meals (provisional, built 2026-10-30, owner to review):** a muted bookmark button beside a meal card's total (only when it has entries) opens **Save as a meal**: a name (defaults to the meal's name) and a checklist of the meal's entries, all ticked. In Log, saved meals appear above Recent when the search field is focused (the five most recently changed) and above food results when their name matches (Turkish-insensitive). Picking one opens a sheet titled with its name: the item checklist, the same Day and Meal chips as the amount sheet, and **Log N items · X kcal**, which creates ordinary entries with one Undo in the toast. Below a divider, **Manage** offers Rename, **Update to current food values** (with a note that saved items keep their values otherwise and logged entries never change) and **Delete saved meal** with an inline confirmation. More/Settings has a **Saved meals** page listing them all. Saved meals need a connection (not part of the offline queue).
-- **Other logging flows:** recipes. A provisional food create/edit screen (`/foods/new`, `/foods/[id]`) was built in Phase 1 step 4 following the scan confirmation layout above: basis chips, one row per value with empty rows marked unknown, a "<" toggle per value, live plausibility warnings, portions, Shared/Only me, an EU-Turkey/US label switch (US maps carbohydrate to total carbohydrate and salt to sodium), "Make my own variant" and Archive. It needs the owner's review before it is considered designed.
+- **Other logging flows:** recipes. A provisional food create/edit screen (`/foods/new`, `/foods/[id]`) was built in Phase 1 step 4 following the scan confirmation layout above: basis chips, one row per value with empty rows marked unknown, a "<" (less than) checkbox per value, explained in the hint above the rows, an optional **More nutrients** disclosure for the source-backed extra codes (fat types, cholesterol, starch, polyols, calcium, potassium, iron; open when the food has any), live plausibility warnings, portions, Shared/Only me, an EU-Turkey/US label switch (US maps carbohydrate to total carbohydrate and salt to sodium), "Make my own variant" and Archive. It needs the owner's review before it is considered designed.
 - **Calendar details:** which month it opens on when you come from a past day (the demo always opens the current month); a just-under day that looks almost full.
 - **Day titles:** for older days, whether "Thu 15 Oct" in the title duplicates the long date underneath.
 - **Tablet:** only the 760 px switch was checked.

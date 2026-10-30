@@ -11,7 +11,12 @@ describe('editing a food through the form', () => {
 	];
 
 	it('keeps values the form does not show, except derived ones', () => {
-		expect(preservedNutrients(initial, true).map((n) => n.code)).toEqual(['potassium', 'starch']);
+		// Reported potassium is a "More nutrients" row, so the form writes it; the starch estimate is kept.
+		expect(preservedNutrients(initial, true).map((n) => n.code)).toEqual(['starch']);
+	});
+
+	it('replaces a kept value when a new one is entered for that nutrient', () => {
+		expect(preservedNutrients(initial, true, ['starch'])).toEqual([]);
 	});
 
 	it('drops them when the basis changes, leaving them unknown', () => {

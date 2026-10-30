@@ -233,21 +233,36 @@
 					onpending={(op) => (pendingOpen = op)}
 				/>
 			{/each}
-			<div class="flex flex-col items-start gap-1 px-1">
+			<!-- A full-width switch like the cards above (owner review 2026-10-30). -->
+			<div class="flex flex-col gap-2.5">
 				<button
 					type="button"
+					role="switch"
+					aria-checked={data.complete}
 					onclick={toggleComplete}
-					aria-pressed={data.complete}
-					class={[
-						'inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-[15px] font-bold',
-						data.complete ? 'border-good bg-surface text-good' : 'border-line bg-surface text-text'
-					]}
+					class="flex min-h-14 w-full items-center gap-3 rounded-card bg-surface px-[18px] py-3 text-left shadow-card"
 				>
-					<CircleCheck size={20} aria-hidden="true" />{data.complete
-						? m.day_completed()
-						: m.day_complete()}
+					<CircleCheck
+						size={22}
+						aria-hidden="true"
+						class={data.complete ? 'text-good' : 'text-muted'}
+					/>
+					<span class="flex-1 text-[16px] font-bold">{m.day_complete_switch()}</span>
+					<span
+						aria-hidden="true"
+						class={[
+							'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+							data.complete ? 'bg-good' : 'bg-line'
+						]}
+						><span
+							class={[
+								'absolute top-0.5 size-6 rounded-full bg-surface shadow-card transition-[left] motion-reduce:transition-none',
+								data.complete ? 'left-[22px]' : 'left-0.5'
+							]}
+						></span></span
+					>
 				</button>
-				<p class="text-[13px] text-muted">{m.day_complete_hint()}</p>
+				<p class="px-1 text-[13px] text-muted">{m.day_complete_hint()}</p>
 			</div>
 		</div>
 	</main>

@@ -8,10 +8,12 @@
 	import Chips from '#lib/ui/Chips.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 	import { dayTitle, kcal } from '#lib/shared/format.ts';
+	import { budgetForDay } from '#lib/shared/goals.ts';
 	import Card from '#lib/ui/Card.svelte';
 
 	let { data } = $props();
 	const t = $derived(data.target);
+	const day = $derived(budgetForDay(t, 0));
 	let busy = $state(false);
 	let problem = $state('');
 	// Follows the saved setting, but a tap shows at once (re-rendering must not put back the old value).
@@ -38,18 +40,28 @@
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<h1 class="text-[24px] font-[750]">{m.profile_title()}</h1>
 	<Card title={m.profile_target()}>
-		{#if t?.mode === 'calculated'}
-			<p class="text-[15px] tabular-nums">
-				{m.profile_target_calculated({
-					base: kcal(t.baseBurnKcal ?? 0),
-					deficit: kcal(t.deficitKcal),
-					floor: kcal(t.floorKcal)
-				})}
+		<!-- A headline and labelled rows, so nothing wraps mid-sentence (owner review 2026-10-30). -->
+		{#if t && day}
+			<p class="flex items-baseline gap-2">
+				<span class="font-display text-[28px] leading-none font-extrabold tabular-nums"
+					>{kcal(day.budget)}</span
+				>
+				<span class="text-[15px] font-semibold text-muted">{m.profile_target_per_day()}</span>
 			</p>
-		{:else if t?.mode === 'manual'}
-			<p class="text-[15px] tabular-nums">
-				{m.profile_target_manual({ kcal: kcal(t.baseBurnKcal ?? 0) })}
-			</p>
+			{#if t.mode === 'calculated'}
+				<dl class="flex flex-col text-[15px]">
+					{#each [[m.profile_target_base(), kcal(t.baseBurnKcal ?? 0)], [m.profile_target_goal(), `− ${kcal(t.deficitKcal)}`], [m.profile_target_floor(), kcal(t.floorKcal)]] as [label, value] (label)}
+						<div
+							class="flex min-h-9 items-center justify-between gap-3 border-b border-line last:border-0"
+						>
+							<dt class="text-muted">{label}</dt>
+							<dd class="font-semibold tabular-nums">{value} kcal</dd>
+						</div>
+					{/each}
+				</dl>
+			{:else}
+				<p class="text-[15px] text-muted">{m.profile_target_own()}</p>
+			{/if}
 		{:else}
 			<p class="text-[15px]">{m.profile_target_none()}</p>
 		{/if}

@@ -49,18 +49,13 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await expect(budget).toContainText('1886 kcal');
 	await expect(budget).toContainText('2136 base + 300 activity − 550 goal');
 
-	// Marking the day complete is a toggle.
-	const complete = page.getByRole('button', { name: 'Mark day complete' });
+	// Marking the day complete is a switch.
+	const complete = page.getByRole('switch', { name: 'Day complete' });
+	await expect(complete).toHaveAttribute('aria-checked', 'false');
 	await complete.click();
-	await expect(page.getByRole('button', { name: 'Day complete' })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
-	await page.getByRole('button', { name: 'Day complete' }).click();
-	await expect(page.getByRole('button', { name: 'Mark day complete' })).toHaveAttribute(
-		'aria-pressed',
-		'false'
-	);
+	await expect(complete).toHaveAttribute('aria-checked', 'true');
+	await complete.click();
+	await expect(complete).toHaveAttribute('aria-checked', 'false');
 
 	// A new weight moves the calculated budget from today on (base 2,136 − 10 × 2 × 1.2 = 2,112); Undo moves it back.
 	const weight = page.getByRole('region', { name: 'Weight' });
@@ -75,7 +70,9 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 
 	// The Profile page shows the target and says it follows the weight.
 	await page.goto('/profile');
-	await expect(page.getByText('Calculated: 2136 base − 550 goal, minimum 1500')).toBeVisible();
+	await expect(page.getByText('1586', { exact: true })).toBeVisible();
+	for (const value of ['2136 kcal', '− 550 kcal', '1500 kcal'])
+		await expect(page.getByRole('definition').filter({ hasText: value })).toBeVisible();
 	await expect(page.getByText('Updates from the day you log a new weight.')).toBeVisible();
 });
 
@@ -110,7 +107,7 @@ test('under-18s get no calculated target but can enter a professional’s number
 	await expect(budget).toContainText('kcal over');
 });
 
-test('watch totals replace each other, and the budget settings apply from today', async ({
+test('day totals replace each other, and the budget settings apply from today', async ({
 	page
 }) => {
 	await signedInAs(page, 'Saat');
@@ -123,26 +120,26 @@ test('watch totals replace each other, and the budget settings apply from today'
 	await page.getByRole('button', { name: 'Save my budget' }).click();
 	await expect(budget).toContainText('2136 base + 0 activity − 550 goal');
 
-	// A watch total, then a newer one: the newer replaces it; a workout adds on top.
-	const addActivity = async (kind: 'A workout' | 'Watch total today', value: string) => {
+	// A day total, then a newer one: the newer replaces it; one activity adds on top.
+	const addActivity = async (kind: 'One activity' | 'Day total', value: string) => {
 		await budget.getByRole('button', { name: 'Add activity' }).click();
 		const sheet = page.getByRole('dialog', { name: 'Activity' });
 		await sheet.getByRole('radio', { name: kind }).click();
 		await sheet.getByLabel('Calories burned (kcal)').fill(value);
 		await sheet
-			.getByRole('button', { name: kind === 'A workout' ? 'Add to budget' : 'Save watch total' })
+			.getByRole('button', { name: kind === 'One activity' ? 'Add to budget' : 'Save day total' })
 			.click();
 		await expect(sheet).toBeHidden();
 	};
-	await addActivity('Watch total today', '300');
+	await addActivity('Day total', '300');
 	await expect(budget).toContainText('2136 base + 300 activity − 550 goal');
-	await addActivity('Watch total today', '650');
+	await addActivity('Day total', '650');
 	await expect(budget).toContainText('2136 base + 650 activity − 550 goal');
-	await addActivity('A workout', '100');
+	await addActivity('One activity', '100');
 	await expect(budget).toContainText('2136 base + 750 activity − 550 goal');
 	await budget.getByRole('button', { name: 'Add activity' }).click();
 	await expect(page.getByRole('dialog', { name: 'Activity' })).toContainText(
-		"Today's watch total so far: 650 kcal"
+		'Day total so far: 650 kcal'
 	);
 	await page
 		.getByRole('dialog', { name: 'Activity' })
@@ -153,12 +150,12 @@ test('watch totals replace each other, and the budget settings apply from today'
 	await page.goto('/profile');
 	await page.getByLabel('Add calories I burn to my budget').uncheck();
 	await expect(page.getByRole('status')).toContainText('Budget settings saved');
-	await expect(page.getByRole('radio', { name: 'Keep my deficit' })).toHaveAttribute(
+	await expect(page.getByRole('radio', { name: 'Keep deficit' })).toHaveAttribute(
 		'aria-checked',
 		'true'
 	);
-	await page.getByRole('radio', { name: 'Switch to maintenance' }).click();
-	await expect(page.getByRole('radio', { name: 'Switch to maintenance' })).toHaveAttribute(
+	await page.getByRole('radio', { name: 'Maintain' }).click();
+	await expect(page.getByRole('radio', { name: 'Maintain' })).toHaveAttribute(
 		'aria-checked',
 		'true'
 	);

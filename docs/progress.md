@@ -150,6 +150,16 @@ note), amount preview (with a note), food edit, USDA food, Your data, Household 
    foods, create from scratch; logging from Log).
 3. Design decision: the Today budget circle (the owner is open to replacing it); alternatives as an Artifact first.
 
+Batch 1 done (2026-10-30): water **Other** amount (ml or l, up to 10 l); meal card rows aligned with the title and
+36 px round + / bookmark buttons; **Day complete** as a full-width switch; Profile's Current budget as a headline and
+rows; two-choice chips always side by side (shared `Chips`, food form groups; basis chips one row of three); activity
+kinds **One activity** / **Day total**, device-neutral; Turkish Speak example; amount preview kcal in a fixed column
+with a divider; food form "<" explained and **More nutrients (optional)** for the nine existing extra codes (vitamins
+and magnesium would need new nutrient codes: not added); Household row buttons one width. Rules recorded in
+docs/ui.md. Open: the weight card "Save aligned with Edit" note — the right edges already line up in the screenshots,
+so the owner was asked what they meant. Next: batch 2 features (Profile details, editable macro targets, saved meal
+editor), then the budget circle alternatives Artifact.
+
 ## Typed entry gaps to close (owner, collected during use)
 
 Owner's approach (2026-10-30): note phrasings that fail during real use and close them in batches; each fix gets a development test case written for it.

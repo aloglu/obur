@@ -38,32 +38,40 @@
 <section class="rounded-card bg-surface p-[18px] shadow-card" aria-labelledby="meal-{meal}">
 	<div class="flex items-center justify-between gap-3">
 		<h2 id="meal-{meal}" class="text-[19px] font-bold">{mealName(meal)}</h2>
-		<div class="flex items-center gap-3">
-			<span class="text-[15px] font-semibold text-muted tabular-nums">{kcal(total)} kcal</span>
+		<!-- Two small round icon buttons, alike but for colour; each keeps a 44 px tap target around its 36 px circle. -->
+		<div class="-mr-1 flex items-center">
+			<span class="mr-1.5 text-[15px] font-semibold text-muted tabular-nums"
+				>{kcal(total)} kcal</span
+			>
 			{#if onsave && entries.length > 0}
 				<button
 					type="button"
 					onclick={onsave}
 					aria-label={m.saved_save_label({ meal: mealName(meal) })}
-					class="-mx-1.5 grid size-11 place-items-center rounded-full text-muted hover:bg-surface2"
+					class="group grid size-11 place-items-center"
 				>
-					<BookmarkPlus size={20} aria-hidden="true" />
+					<span
+						class="grid size-9 place-items-center rounded-full bg-surface2 text-muted group-hover:text-text"
+						><BookmarkPlus size={18} aria-hidden="true" /></span
+					>
 				</button>
 			{/if}
 			<button
 				type="button"
 				onclick={onadd}
 				aria-label={m.meal_add({ meal: mealName(meal) })}
-				class="grid size-11 place-items-center rounded-full bg-soft text-accent"
+				class="grid size-11 place-items-center"
 			>
-				<Plus size={22} aria-hidden="true" />
+				<span class="grid size-9 place-items-center rounded-full bg-soft text-accent"
+					><Plus size={20} aria-hidden="true" /></span
+				>
 			</button>
 		</div>
 	</div>
 	{#if entries.length === 0 && pending.length === 0}
 		<p class="mt-1 text-[14px] text-muted">{m.meal_empty()}</p>
 	{:else}
-		<ul class="mt-2 flex flex-col">
+		<ul class="-mx-2 mt-2 flex flex-col">
 			{#each entries as e (e.id)}
 				<li>
 					<button

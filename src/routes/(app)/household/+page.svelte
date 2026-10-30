@@ -163,12 +163,16 @@
 						</p>
 					</div>
 					{#if member.id !== data.user?.id}
-						<Button
-							variant="danger"
-							disabled={busy}
-							onclick={() => ((deleting = member), (removeShared = 'keep'))}
-							>{m.household_delete_member()}</Button
-						>
+						<!-- Row buttons share one width, whatever the name's length (owner review 2026-10-30). -->
+						<div class="w-[10.5rem] shrink-0">
+							<Button
+								variant="danger"
+								wide
+								disabled={busy}
+								onclick={() => ((deleting = member), (removeShared = 'keep'))}
+								>{m.household_delete_member()}</Button
+							>
+						</div>
 					{/if}
 				</li>
 			{/each}
@@ -202,9 +206,11 @@
 							<p class="text-[13px] text-muted">{status(i)}</p>
 						</div>
 						{#if !i.usedAt && !i.revokedAt && new Date(i.expiresAt) > new Date()}
-							<Button variant="danger" disabled={busy} onclick={() => revoke(i)}
-								>{m.household_revoke()}</Button
-							>
+							<div class="w-[10.5rem] shrink-0">
+								<Button variant="danger" wide disabled={busy} onclick={() => revoke(i)}
+									>{m.household_revoke()}</Button
+								>
+							</div>
 						{/if}
 					</li>
 				{/each}

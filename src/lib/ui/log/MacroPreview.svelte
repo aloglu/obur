@@ -29,8 +29,11 @@
 </script>
 
 <div class="flex flex-col gap-1.5 rounded-small bg-surface2 px-3.5 py-3" aria-live="polite">
+	<!-- kcal in a fixed-width column (up to four digits) with a divider, so the macros stay put as it changes. -->
 	<div class="flex items-center gap-4">
-		<p class="flex shrink-0 items-baseline gap-1">
+		<p
+			class="flex w-[7rem] shrink-0 flex-wrap content-center items-baseline gap-1 self-stretch border-r border-line pr-3"
+		>
 			<span class="font-display text-[26px] leading-none font-extrabold tabular-nums"
 				>{nutrients ? (energy ? kcal(energy.value) : m.amount_unknown_short()) : '—'}</span
 			>

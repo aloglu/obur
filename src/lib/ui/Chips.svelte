@@ -1,5 +1,6 @@
 <script lang="ts" generics="T extends string">
-	// A single-choice row of chips (radio group semantics).
+	// A single-choice row of chips (radio group semantics). Two options always sit side by side at equal width, never
+	// stacked (docs/ui.md); more options wrap.
 	interface Option {
 		value: T;
 		label: string;
@@ -16,7 +17,11 @@
 
 <fieldset class="flex flex-col gap-1.5">
 	<legend class="mb-1.5 text-[13px] font-[650] text-muted">{label}</legend>
-	<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+	<div
+		class={options.length === 2 ? 'grid grid-cols-2 gap-2' : 'flex flex-wrap gap-2'}
+		role="radiogroup"
+		aria-label={label}
+	>
 		{#each options as option (option.value)}
 			<button
 				type="button"
@@ -28,7 +33,7 @@
 					onchange?.(option.value);
 				}}
 				class={[
-					'min-h-11 rounded-full border px-4 text-[15px] font-semibold disabled:opacity-40',
+					'min-h-11 rounded-full border px-4 py-1.5 text-[15px] leading-tight font-semibold disabled:opacity-40',
 					value === option.value
 						? 'border-accent bg-soft text-accent'
 						: 'border-line bg-surface2 text-text'

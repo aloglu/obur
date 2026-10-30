@@ -1,12 +1,13 @@
 <script lang="ts">
 	// Create or edit a food. Layout follows the label-scan confirmation in docs/ui.md (basis chips, one row per
 	// value, empty rows highlighted as unknown). Food editing itself is not designed yet; see docs/ui.md.
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { foodWarnings, type FoodWarning } from '#lib/shared/food-checks.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
-	import { portionSource, preservedNutrients } from '#lib/shared/food-edit.ts';
+	import { EXTRA_CODES, portionSource, preservedNutrients } from '#lib/shared/food-edit.ts';
 	import { deriveNutrients, type NutrientCode, type NutrientValue } from '#lib/shared/nutrients.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import type { Basis } from '#lib/shared/quantity.ts';
@@ -33,6 +34,7 @@
 		| 'fibre'
 		| 'protein'
 		| 'salt';
+	type Extra = (typeof EXTRA_CODES)[number];
 	const FIELDS: Field[] = [
 		'energy_kcal',
 		'energy_kj',
@@ -98,6 +100,21 @@
 			unit: s.unit
 		}))
 	);
+	let extras = $state(
+		Object.fromEntries(
+			EXTRA_CODES.map((code) => {
+				const found = reported(code);
+				return [
+					code,
+					{
+						text: found ? formatDecimal(found.value, ',', 4) : '',
+						lessThan: found?.qualifier === 'less_than'
+					}
+				];
+			})
+		) as Record<Extra, { text: string; lessThan: boolean }>
+	);
+	const extrasOpen = untrack(() => EXTRA_CODES.some((c) => extras[c].text !== ''));
 	let showErrors = $state(false);
 
 	const values = $derived.by(() => {
@@ -111,6 +128,11 @@
 					qualifier: rows[field].lessThan ? 'less_than' : 'reported'
 				});
 			}
+		}
+		for (const code of EXTRA_CODES) {
+			const value = parseDecimal(extras[code].text);
+			if (value !== undefined)
+				out.push({ code, value, qualifier: extras[code].lessThan ? 'less_than' : 'reported' });
 		}
 		return out;
 	});
@@ -129,6 +151,17 @@
 			protein: m.nutrient_protein(),
 			salt: labelType === 'eu' ? m.nutrient_salt() : m.nutrient_sodium()
 		})[field];
+	const extraLabel: Record<Extra, () => string> = {
+		monounsaturated_fat: m.nutrient_monounsaturated_fat,
+		polyunsaturated_fat: m.nutrient_polyunsaturated_fat,
+		trans_fat: m.nutrient_trans_fat,
+		cholesterol: m.nutrient_cholesterol,
+		starch: m.nutrient_starch,
+		polyols: m.nutrient_polyols,
+		calcium: m.nutrient_calcium,
+		potassium: m.nutrient_potassium,
+		iron: m.nutrient_iron
+	};
 	const warningText: Record<FoodWarning, () => string> = {
 		sugars_exceed_carbohydrate: m.warning_sugars_exceed_carbohydrate,
 		saturated_exceeds_fat: m.warning_saturated_exceeds_fat,
@@ -144,6 +177,7 @@
 		showErrors = true;
 		const anyInvalid =
 			FIELDS.some((f) => invalid(rows[f].text)) ||
+			EXTRA_CODES.some((c) => invalid(extras[c].text)) ||
 			portions.some((p) => parseDecimal(p.text) === undefined || !p.name.trim()) ||
 			(basis === 'serving' && invalid(servingSizeText));
 		if (anyInvalid || !name.trim() || (basis === 'serving' && !servingLabel.trim())) return;
@@ -157,7 +191,14 @@
 			servingSize: size ? { amount: size, unit: servingSizeUnit } : null,
 			barcode: start?.barcode ?? null,
 			// Values the form does not show are kept while the basis stays the same (food-edit.ts).
-			nutrients: [...values, ...preservedNutrients(start?.nutrients ?? [], basis === start?.basis)],
+			nutrients: [
+				...values,
+				...preservedNutrients(
+					start?.nutrients ?? [],
+					basis === start?.basis,
+					values.map((v) => v.code)
+				)
+			],
 			servings: portions.map((p) => {
 				const portion = { name: p.name, amount: parseDecimal(p.text)!, unit: p.unit };
 				return { ...portion, source: portionSource(start?.servings ?? [], portion) };
@@ -166,10 +207,42 @@
 	}
 
 	const chip = (active: boolean) => [
-		'min-h-11 rounded-full px-4 text-[15px] font-semibold border',
+		'min-h-11 rounded-full px-2 py-1.5 text-[15px] leading-tight font-semibold border',
 		active ? 'bg-soft text-accent border-accent' : 'bg-surface2 text-text border-line'
 	];
 </script>
+
+{#snippet row(id: string, text: string, value: { text: string; lessThan: boolean }, core: boolean)}
+	{@const empty = value.text.trim() === ''}
+	{@const bad = invalid(value.text)}
+	<!-- Core rows mark an empty value as unknown; the optional extra rows stay quiet. -->
+	<div
+		class={[
+			'flex min-h-14 items-center gap-2 rounded-input px-3',
+			empty && core ? 'bg-warn-soft' : 'bg-surface2'
+		]}
+	>
+		<label for={id} class="min-w-0 flex-1 text-[15px] font-semibold">
+			{text}
+			{#if empty && core}<span class="ml-1 text-[13px] font-semibold text-warn"
+					>· {m.food_unknown()}</span
+				>{/if}
+			{#if bad}<span class="block text-[13px] text-bad">{m.food_invalid_number()}</span>{/if}
+		</label>
+		<label class="flex min-h-11 items-center gap-1.5 text-[15px] font-semibold text-muted">
+			<input type="checkbox" bind:checked={value.lessThan} class="size-5 accent-accent" />
+			<span aria-hidden="true">&lt;</span><span class="sr-only">{m.food_less_than()}</span>
+		</label>
+		<input
+			{id}
+			bind:value={value.text}
+			inputmode="decimal"
+			autocomplete="off"
+			aria-invalid={bad}
+			class="h-11 w-24 rounded-small border border-line bg-surface px-2 text-right text-[16px] font-semibold tabular-nums"
+		/>
+	</div>
+{/snippet}
 
 <form class="flex flex-col gap-4" onsubmit={submit} novalidate>
 	<TextField label={m.food_name()} bind:value={name} required maxlength={200} />
@@ -177,7 +250,7 @@
 
 	<fieldset class="flex flex-col gap-2">
 		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_visibility()}</legend>
-		<div class="flex flex-wrap gap-2">
+		<div class="grid grid-cols-2 gap-2">
 			<button
 				type="button"
 				class={chip(visibility === 'shared')}
@@ -195,7 +268,7 @@
 
 	<fieldset class="flex flex-col gap-2">
 		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_basis()}</legend>
-		<div class="flex flex-wrap gap-2">
+		<div class="grid grid-cols-3 gap-2">
 			{#each [['100g', m.food_basis_100g()], ['100ml', m.food_basis_100ml()], ['serving', m.food_basis_serving()]] as const as [value, text] (value)}
 				<button
 					type="button"
@@ -238,7 +311,7 @@
 
 	<fieldset class="flex flex-col gap-2">
 		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_label_type()}</legend>
-		<div class="flex flex-wrap gap-2">
+		<div class="grid grid-cols-2 gap-2">
 			<button
 				type="button"
 				class={chip(labelType === 'eu')}
@@ -258,35 +331,24 @@
 		<h2 id="values-heading" class="text-[17px] font-bold">{m.food_values()}</h2>
 		<p class="text-[13px] text-muted">{m.food_values_hint()}</p>
 		{#each FIELDS as field (field)}
-			{@const empty = rows[field].text.trim() === ''}
-			{@const bad = invalid(rows[field].text)}
-			<div
-				class={[
-					'flex min-h-14 items-center gap-2 rounded-input px-3',
-					empty ? 'bg-warn-soft' : 'bg-surface2'
-				]}
-			>
-				<label for="n-{field}" class="min-w-0 flex-1 text-[15px] font-semibold">
-					{label(field)}
-					{#if empty}<span class="ml-1 text-[13px] font-semibold text-warn"
-							>· {m.food_unknown()}</span
-						>{/if}
-					{#if bad}<span class="block text-[13px] text-bad">{m.food_invalid_number()}</span>{/if}
-				</label>
-				<label class="flex min-h-11 items-center gap-1.5 text-[13px] text-muted">
-					<input type="checkbox" bind:checked={rows[field].lessThan} class="size-5 accent-accent" />
-					&lt;<span class="sr-only">{m.food_less_than()}</span>
-				</label>
-				<input
-					id="n-{field}"
-					bind:value={rows[field].text}
-					inputmode="decimal"
-					autocomplete="off"
-					aria-invalid={bad}
-					class="h-11 w-24 rounded-small border border-line bg-surface px-2 text-right text-[16px] font-semibold tabular-nums"
-				/>
-			</div>
+			{@render row(`n-${field}`, label(field), rows[field], true)}
 		{/each}
+		<details class="group flex flex-col" open={extrasOpen}>
+			<summary
+				class="flex min-h-11 cursor-pointer items-center gap-2 text-[15px] font-semibold text-accent"
+			>
+				<ChevronRight
+					size={18}
+					aria-hidden="true"
+					class="transition-transform group-open:rotate-90 motion-reduce:transition-none"
+				/>{m.food_more_nutrients()}
+			</summary>
+			<div class="mt-1 flex flex-col gap-2">
+				{#each EXTRA_CODES as code (code)}
+					{@render row(`n-${code}`, extraLabel[code](), extras[code], false)}
+				{/each}
+			</div>
+		</details>
 	</section>
 
 	{#each warnings as w (w)}<Notice>{warningText[w]()}</Notice>{/each}
