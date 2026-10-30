@@ -2,18 +2,10 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { dayTitle, kcal } from '#lib/shared/format.ts';
-	import { formatDecimal } from '#lib/shared/numbers.ts';
 	import Card from '#lib/ui/Card.svelte';
-	import Notice from '#lib/ui/Notice.svelte';
 
 	let { data } = $props();
 	const t = $derived(data.target);
-	// Suggest recalculating after a few kilos of change (docs/design.md).
-	const change = $derived.by(() => {
-		const before = t?.inputs?.weightKg;
-		if (t?.mode !== 'calculated' || typeof before !== 'number' || !data.latestWeight) return 0;
-		return data.latestWeight.value - before;
-	});
 </script>
 
 <svelte:head><title>{m.profile_title()} · {m.app_name()}</title></svelte:head>
@@ -39,10 +31,8 @@
 		{#if t}<p class="text-[13px] text-muted">
 				{m.profile_since({ day: dayTitle(t.effectiveFrom, data.today) })}
 			</p>{/if}
-		{#if Math.abs(change) >= 3}
-			<Notice tone="info"
-				>{m.profile_recalc_hint({ kg: formatDecimal(Math.abs(change), ',', 1) })}</Notice
-			>
+		{#if t?.mode === 'calculated'}
+			<p class="text-[13px] text-muted">{m.profile_follows_weight()}</p>
 		{/if}
 		<a
 			href={resolve('/(app)/onboarding')}

@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { body, respondBody } from '#lib/server/body.ts';
+import { budgetNote, followLatestWeight } from '#lib/server/goals.ts';
 import { readJson } from '#lib/server/http.ts';
 import { DateString, Zone } from '#lib/shared/diary-input.ts';
 import type { RequestHandler } from './$types';
@@ -19,8 +20,18 @@ export const POST: RequestHandler = ({ params, request, locals }) =>
 		const userId = locals.session!.userId;
 		if (params.kind === 'weight') {
 			const r = await readJson(request, Reading(700));
+			const reading = await body.logWeight(
+				userId,
+				{ id: r.id, localDate: r.date, zone: r.zone },
+				r.value
+			);
+			// A calculated budget follows the latest weight from today on (the reply says how it changed).
+			const change = await followLatestWeight(userId, locals.zone);
 			return json(
-				await body.logWeight(userId, { id: r.id, localDate: r.date, zone: r.zone }, r.value),
+				{
+					...reading,
+					budget: budgetNote(change)
+				},
 				{ status: 201 }
 			);
 		}

@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { body, respondBody } from '#lib/server/body.ts';
+import { budgetNote, followLatestWeight } from '#lib/server/goals.ts';
 import type { RequestHandler } from './$types';
 
 /** Trash actions: ?action=delete or ?action=restore on a weight or water reading. */
@@ -18,5 +19,10 @@ export const POST: RequestHandler = ({ params, url, locals }) =>
 		const run = kind?.[action as keyof typeof kind];
 		if (!run) error(400, 'Unknown action');
 		await run(userId, params.id);
-		return json({ ok: true });
+		if (params.kind !== 'weight') return json({ ok: true });
+		const change = await followLatestWeight(userId, locals.zone);
+		return json({
+			ok: true,
+			budget: budgetNote(change)
+		});
 	});

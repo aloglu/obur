@@ -86,7 +86,7 @@ Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 10 (2026-10-29): `npm 
 
 ## Exact next step
 
-Session order (2026-10-30, second session): issue 3 (done), Phase 2 step 4 (automatic recalculation, owner chose it 2026-10-30), issues 1–2 (water and weight edit/delete), issues 4–5 (desktop), then step 5 (saved meals). Next: step 4.
+Session order (2026-10-30, second session): issue 3 (done), Phase 2 step 4 (automatic recalculation, owner chose it 2026-10-30), issues 1–2 (water and weight edit/delete), issues 4–5 (desktop), then step 5 (saved meals). Step 4 done (2026-10-30): `goals.followWeight` and `followLatestWeight` (weight POST, delete and restore), toast detail, Profile note replacing the 3 kg nudge; 6 real-Postgres tests and an extended onboarding browser test. Next: issues 1–2 (water and weight edit/delete).
 
 ## Owner-reported issues to schedule (2026-10-30)
 
@@ -114,6 +114,8 @@ Reported for later; the assistant decides when to fit them in.
 - Throwaway probe scripts live in `spikes/` and never import from or get imported by `src/`. Their outputs that contain real data go to `~/obur-private/results/`; only aggregate numbers and redacted fixtures reach `docs/feasibility.md`.
 
 ## Unresolved questions
+
+- When a calculated target's goal weight is reached, should the deficit stop (maintain)? Today it continues. Ask the owner when convenient.
 
 
 - Test phone: iPhone 13, iOS 27.0.1. Second authenticators for recovery tests: two YubiKeys.

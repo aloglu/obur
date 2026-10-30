@@ -165,6 +165,96 @@ describe('versions', () => {
 	});
 });
 
+describe('following the latest weight', () => {
+	const calculated = {
+		mode: 'calculated' as const,
+		effectiveFrom: '2026-06-01',
+		rateKgPerWeek: 0.5,
+		goalWeightKg: 75,
+		floorKcal: 1500,
+		proteinGPerKg: 1.5,
+		fatShare: 0.25
+	};
+
+	it('records a version from today with the same choices; past days keep their budget', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		const first = await goals.setTarget(MEHMET, calculated, 80);
+		const change = await goals.followWeight(MEHMET, '2026-06-10', 78);
+		expect(change).toMatchObject({ beforeKcal: 2136 - 550, afterKcal: 2112 - 550 });
+		expect(change!.target).toMatchObject({
+			effectiveFrom: '2026-06-10',
+			mode: 'calculated',
+			baseBurnKcal: 2112,
+			deficitKcal: 550,
+			floorKcal: 1500,
+			goalWeightKg: 75,
+			proteinGPerKg: 1.5,
+			proteinBasisKg: 75,
+			fatShare: 0.25
+		});
+		expect(change!.target.inputs).toMatchObject({ weightKg: 78, source: 'weight' });
+		expect((await goals.targetFor(MEHMET, '2026-06-09'))?.id).toBe(first.id);
+		expect((await goals.targetFor(MEHMET, '2026-06-10'))?.id).toBe(change!.target.id);
+	});
+
+	it('does nothing when the numbers stay the same, so repeating it is harmless', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		await goals.setTarget(MEHMET, calculated, 80);
+		expect(await goals.followWeight(MEHMET, '2026-06-10', 80)).toBeNull();
+		expect(await goals.followWeight(MEHMET, '2026-06-10', 79)).not.toBeNull();
+		expect(await goals.followWeight(MEHMET, '2026-06-10', 79)).toBeNull();
+		expect(await goals.history(MEHMET)).toHaveLength(2);
+	});
+
+	it('keeps the requested rate, so a cap from a lower weight is lifted again later', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		await goals.setTarget(MEHMET, { ...calculated, rateKgPerWeek: 1 }, 120);
+		const lower = await goals.followWeight(MEHMET, '2026-06-10', 60);
+		expect(lower!.target).toMatchObject({ rateKgPerWeek: 0.6, deficitKcal: 660 });
+		const higher = await goals.followWeight(MEHMET, '2026-06-11', 110);
+		expect(higher!.target).toMatchObject({ rateKgPerWeek: 1, deficitKcal: 1100 });
+	});
+
+	it('keeps a fixed base burn and only updates the weight-based parts', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		await goals.setTarget(
+			MEHMET,
+			{ ...calculated, goalWeightKg: null, fixedBaseBurnKcal: 2400 },
+			80
+		);
+		const change = await goals.followWeight(MEHMET, '2026-06-10', 78);
+		expect(change!.target).toMatchObject({ baseBurnKcal: 2400, proteinBasisKg: 78 });
+		expect(change!.target.inputs.formula).toBe('fixed');
+	});
+
+	it('leaves manual, none and refused targets alone', async () => {
+		await goals.setTarget(
+			MEHMET,
+			{ mode: 'manual', effectiveFrom: '2026-06-01', budgetKcal: 2000 },
+			null
+		);
+		expect(await goals.followWeight(MEHMET, '2026-06-10', 70)).toBeNull();
+		await goals.setTarget(MEHMET, { mode: 'none', effectiveFrom: '2026-06-02' }, null);
+		expect(await goals.followWeight(MEHMET, '2026-06-10', 70)).toBeNull();
+
+		await goals.saveProfile(AYSE, { ...adult, sex: 'female' });
+		await goals.setTarget(AYSE, calculated, 70);
+		await goals.saveProfile(AYSE, { ...adult, sex: 'female', pregnant: true });
+		expect(await goals.followWeight(AYSE, '2026-06-10', 72)).toBeNull();
+		expect(await goals.followWeight(AYSE, '2026-06-10', null)).toBeNull();
+		expect(await goals.history(MEHMET)).toHaveLength(2);
+		expect(await goals.history(AYSE)).toHaveLength(1);
+	});
+
+	it("never reads or changes another person's targets", async () => {
+		await goals.saveProfile(MEHMET, adult);
+		await goals.setTarget(MEHMET, calculated, 80);
+		expect(await goals.followWeight(AYSE, '2026-06-10', 70)).toBeNull();
+		expect(await goals.history(MEHMET)).toHaveLength(1);
+		expect(await goals.history(AYSE)).toHaveLength(0);
+	});
+});
+
 describe('privacy', () => {
 	it('keeps profiles and targets private, even from the admin', async () => {
 		await goals.saveProfile(MEHMET, adult);

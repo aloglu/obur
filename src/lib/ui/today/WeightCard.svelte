@@ -7,7 +7,7 @@
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { BodyReading } from '#lib/shared/body-types.ts';
-	import { dayTitle } from '#lib/shared/format.ts';
+	import { dayTitle, kcal } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 
 	interface Props {
@@ -27,10 +27,14 @@
 	const kg = $derived(parseDecimal(text));
 	const invalid = $derived(text.trim() !== '' && (kg === undefined || kg <= 0 || kg >= 700));
 
+	type BudgetChange = { beforeKcal: number; afterKcal: number } | null;
+	const budgetDetail = (b: BudgetChange | undefined) =>
+		b ? m.toast_budget_now({ after: kcal(b.afterKcal), before: kcal(b.beforeKcal) }) : undefined;
+
 	async function save(value: number) {
 		busy = true;
 		try {
-			const result = await submit<{ id: string }>(
+			const result = await submit<{ id: string; budget?: BudgetChange }>(
 				'/api/v1/body/weight',
 				{ id: crypto.randomUUID(), date, zone: deviceZone(), value },
 				{ kind: 'weight', localDate: date, kg: value }
@@ -44,6 +48,8 @@
 			await onchange();
 			showToast({
 				message: m.toast_weight({ kg: formatDecimal(value, ',', 2) }),
+				// A calculated budget follows the latest weight; Undo moves it back the same way.
+				detail: budgetDetail(r.budget),
 				undo: async () => {
 					await api('POST', `/api/v1/body/weight/${r.id}?action=delete`, {});
 					await onchange();

@@ -62,9 +62,21 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 		'false'
 	);
 
-	// The Profile page shows the target.
+	// A new weight moves the calculated budget from today on (base 2,136 − 10 × 2 × 1.2 = 2,112); Undo moves it back.
+	const weight = page.getByRole('region', { name: 'Weight' });
+	await weight.getByLabel('Weight (kg)').fill('78');
+	await weight.getByRole('button', { name: 'Save' }).click();
+	const toast = page.getByRole('status');
+	await expect(toast).toContainText('Saved 78 kg');
+	await expect(toast).toContainText('Budget now 1562 kcal (was 1586)');
+	await expect(budget).toContainText('2112 base + 300 activity − 550 goal');
+	await toast.getByRole('button', { name: 'Undo' }).click();
+	await expect(budget).toContainText('2136 base + 300 activity − 550 goal');
+
+	// The Profile page shows the target and says it follows the weight.
 	await page.goto('/profile');
 	await expect(page.getByText('Calculated: 2136 base − 550 goal, minimum 1500')).toBeVisible();
+	await expect(page.getByText('Updates from the day you log a new weight.')).toBeVisible();
 });
 
 test('under-18s get no calculated target but can enter a professional’s number; over budget shows red', async ({

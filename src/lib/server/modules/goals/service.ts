@@ -1,7 +1,7 @@
 // Profiles and versioned targets (docs/design.md, "Targets, profile and activity"). Targets are estimates; minors,
 // pregnancy and breastfeeding get no calculated targets, but a professional's target can be entered by hand.
 import { desc, eq, lte } from 'drizzle-orm';
-import { withUser, type Database } from '../../db/identity.ts';
+import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import {
 	ageOn,
 	baseBurn,
@@ -69,6 +69,87 @@ const toVersion = (r: VersionRow): TargetVersion => ({
 	inputs: r.inputs as Record<string, unknown>,
 	createdAt: r.createdAt.toISOString()
 });
+
+type CalculatedRequest = Extract<TargetRequest, { mode: 'calculated' }>;
+
+/** The row for a calculated target; refuses when the profile is incomplete or targets are not allowed. */
+async function calculatedValues(
+	tx: Tx,
+	userId: string,
+	request: CalculatedRequest,
+	currentWeightKg: number | null
+): Promise<typeof goalVersions.$inferInsert> {
+	const [p] = await tx.select().from(profiles).where(eq(profiles.userId, userId));
+	if (!p?.birthDate || !p.sex || !p.heightCm) throw new GoalError('profile_incomplete');
+	if (
+		!targetsAllowed(
+			{ birthDate: p.birthDate, pregnant: p.pregnant, breastfeeding: p.breastfeeding },
+			request.effectiveFrom
+		)
+	) {
+		throw new GoalError('targets_not_allowed');
+	}
+	if (!currentWeightKg) throw new GoalError('weight_required');
+	const facts = {
+		sex: p.sex,
+		birthDate: p.birthDate,
+		heightCm: p.heightCm,
+		weightKg: currentWeightKg,
+		bodyFatPct: p.bodyFatPct
+	};
+	const burn = baseBurn(facts, request.effectiveFrom);
+	const fixed = request.fixedBaseBurnKcal ? Math.round(request.fixedBaseBurnKcal) : null;
+	const rate = Math.min(Math.max(request.rateKgPerWeek, 0), maxRate(currentWeightKg));
+	const goal = request.goalWeightKg ?? null;
+	return {
+		userId,
+		effectiveFrom: request.effectiveFrom,
+		calculationVersion: CALCULATION_VERSION,
+		mode: 'calculated',
+		baseBurnKcal: fixed ?? burn.kcal,
+		deficitKcal: dailyDeficit(rate, currentWeightKg),
+		floorKcal: Math.round(request.floorKcal ?? DEFAULT_FLOOR[p.sex]),
+		goalWeightKg: goal,
+		rateKgPerWeek: rate,
+		proteinGPerKg: request.proteinGPerKg ?? DEFAULT_PROTEIN_G_PER_KG,
+		proteinBasisKg: goal !== null && goal < currentWeightKg ? goal : currentWeightKg,
+		fatShare: request.fatShare ?? DEFAULT_FAT_SHARE,
+		inputs: {
+			weightKg: currentWeightKg,
+			heightCm: p.heightCm,
+			age: ageOn(p.birthDate, request.effectiveFrom),
+			sex: p.sex,
+			bodyFatPct: p.bodyFatPct,
+			formula: fixed ? 'fixed' : burn.formula,
+			bmr: fixed ? null : Math.round(burn.bmr),
+			sedentaryFactor: SEDENTARY_FACTOR,
+			requestedRateKgPerWeek: request.rateKgPerWeek
+		}
+	};
+}
+
+/** The same choices as an earlier calculated version, from a new date. */
+function repeatRequest(v: VersionRow, effectiveFrom: string): CalculatedRequest {
+	const inputs = v.inputs as Record<string, unknown>;
+	const requested = inputs.requestedRateKgPerWeek;
+	return {
+		mode: 'calculated',
+		effectiveFrom,
+		rateKgPerWeek: typeof requested === 'number' ? requested : (v.rateKgPerWeek ?? 0),
+		goalWeightKg: v.goalWeightKg,
+		fixedBaseBurnKcal: inputs.formula === 'fixed' ? v.baseBurnKcal : null,
+		floorKcal: v.floorKcal,
+		proteinGPerKg: v.proteinGPerKg,
+		fatShare: v.fatShare
+	};
+}
+
+/** A budget change caused by a new weight, for the confirmation. */
+export interface BudgetChange {
+	beforeKcal: number;
+	afterKcal: number;
+	target: TargetVersion;
+}
 
 export function createGoals(db: Database) {
 	return {
@@ -142,54 +223,55 @@ export function createGoals(db: Database) {
 						inputs: { source: 'manual' }
 					};
 				} else {
-					const [p] = await tx.select().from(profiles).where(eq(profiles.userId, userId));
-					if (!p?.birthDate || !p.sex || !p.heightCm) throw new GoalError('profile_incomplete');
-					if (
-						!targetsAllowed(
-							{ birthDate: p.birthDate, pregnant: p.pregnant, breastfeeding: p.breastfeeding },
-							request.effectiveFrom
-						)
-					) {
-						throw new GoalError('targets_not_allowed');
-					}
-					if (!currentWeightKg) throw new GoalError('weight_required');
-					const facts = {
-						sex: p.sex,
-						birthDate: p.birthDate,
-						heightCm: p.heightCm,
-						weightKg: currentWeightKg,
-						bodyFatPct: p.bodyFatPct
-					};
-					const burn = baseBurn(facts, request.effectiveFrom);
-					const fixed = request.fixedBaseBurnKcal ? Math.round(request.fixedBaseBurnKcal) : null;
-					const rate = Math.min(Math.max(request.rateKgPerWeek, 0), maxRate(currentWeightKg));
-					const goal = request.goalWeightKg ?? null;
-					values = {
-						...base,
-						mode: 'calculated',
-						baseBurnKcal: fixed ?? burn.kcal,
-						deficitKcal: dailyDeficit(rate, currentWeightKg),
-						floorKcal: Math.round(request.floorKcal ?? DEFAULT_FLOOR[p.sex]),
-						goalWeightKg: goal,
-						rateKgPerWeek: rate,
-						proteinGPerKg: request.proteinGPerKg ?? DEFAULT_PROTEIN_G_PER_KG,
-						proteinBasisKg: goal !== null && goal < currentWeightKg ? goal : currentWeightKg,
-						fatShare: request.fatShare ?? DEFAULT_FAT_SHARE,
-						inputs: {
-							weightKg: currentWeightKg,
-							heightCm: p.heightCm,
-							age: ageOn(p.birthDate, request.effectiveFrom),
-							sex: p.sex,
-							bodyFatPct: p.bodyFatPct,
-							formula: fixed ? 'fixed' : burn.formula,
-							bmr: fixed ? null : Math.round(burn.bmr),
-							sedentaryFactor: SEDENTARY_FACTOR,
-							requestedRateKgPerWeek: request.rateKgPerWeek
-						}
-					};
+					values = await calculatedValues(tx, userId, request, currentWeightKg);
 				}
 				const [row] = await tx.insert(goalVersions).values(values).returning();
 				return toVersion(row);
+			});
+		},
+
+		/**
+		 * Keeps a calculated target in step with the latest weight (docs/design.md, "Targets, profile and
+		 * activity"): when the latest reading on or before `today` changes the numbers of the calculated target in
+		 * force today, records a new version from today with the same choices. Past days never change; manual
+		 * targets, "none" and refused calculations are left alone. Safe to call again: no change, no new version.
+		 */
+		async followWeight(
+			userId: string,
+			today: string,
+			latestWeightKg: number | null
+		): Promise<BudgetChange | null> {
+			if (!latestWeightKg) return null;
+			return withUser(db, userId, async (tx) => {
+				const [current] = await tx
+					.select()
+					.from(goalVersions)
+					.where(lte(goalVersions.effectiveFrom, today))
+					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
+					.limit(1);
+				if (current?.mode !== 'calculated') return null;
+				let values: typeof goalVersions.$inferInsert;
+				try {
+					values = await calculatedValues(
+						tx,
+						userId,
+						repeatRequest(current, today),
+						latestWeightKg
+					);
+				} catch (e) {
+					if (e instanceof GoalError) return null;
+					throw e;
+				}
+				const same =
+					values.baseBurnKcal === current.baseBurnKcal &&
+					values.deficitKcal === current.deficitKcal &&
+					values.proteinBasisKg === current.proteinBasisKg &&
+					(current.inputs as Record<string, unknown>).weightKg === latestWeightKg;
+				if (same) return null;
+				values.inputs = { ...(values.inputs as Record<string, unknown>), source: 'weight' };
+				const [row] = await tx.insert(goalVersions).values(values).returning();
+				const budget = (r: VersionRow) => Math.max(r.floorKcal, r.baseBurnKcal! - r.deficitKcal);
+				return { beforeKcal: budget(current), afterKcal: budget(row), target: toVersion(row) };
 			});
 		}
 	};
