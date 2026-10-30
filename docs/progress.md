@@ -133,6 +133,23 @@ Owner feedback 2026-10-30, done: the amount preview is now a shared `MacroPrevie
 
 Owner decisions 2026-10-30, done: budget settings on target versions (migration 0024: `count_activity`, `at_goal`; Profile card; `PATCH /api/v1/targets/settings`), maintenance at goal when chosen, watch totals (`activity_entries.kind`: `extra` adds, `day_total` newest replaces; `countedActivity` and the range SQL), export/import fields (optional for older archives). Tests: unit, 4 real-Postgres, 1 browser journey. Found while testing: the settings switch flipped back when the busy flag re-rendered it (fixed with local state). Owner's decision 2 (macro defaults) needs a plain explanation; decision 6 (cut-over day) is open.
 
+## Owner's screen review (2026-10-30, notes read from the review artifact)
+
+Marked good: onboarding, water and weigh-in editing, save as a meal, saved meals list, Check and log, Speak (with a
+note), amount preview (with a note), food edit, USDA food, Your data, Household (with a note). Work list:
+
+1. Small fixes (batch 1): water card takes any amount (end-of-day 3–4 l in one entry); weight card Save aligned with
+   Edit; meal card header and items aligned, a lighter +, bookmark styled alike in another colour; Mark day complete as a
+   full-width switch with space above its hint; Profile budget text without awkward breaks; never stack two choice chips
+   (shorter labels, same text size) as a general rule; activity wording device-neutral and the two kinds clearer (keep
+   the explanation); a better Turkish Speak example; amount preview with more space between kcal and macros, macros not
+   moving with the kcal digits; food form "<" explained, optional "More nutrients" for existing extra codes; Household
+   buttons of equal size.
+2. Features: Profile shows and edits height, weight, goal and birth date; editable macro targets (Balanced default, or
+   percentages of the budget); saved meals managed separately from logging (an editor: rename, amounts, add/remove
+   foods, create from scratch; logging from Log).
+3. Design decision: the Today budget circle (the owner is open to replacing it); alternatives as an Artifact first.
+
 ## Typed entry gaps to close (owner, collected during use)
 
 Owner's approach (2026-10-30): note phrasings that fail during real use and close them in batches; each fix gets a development test case written for it.
