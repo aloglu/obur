@@ -1,0 +1,4 @@
+Food icons: OpenMoji, the open-source emoji and icon project (https://openmoji.org), version 15.1.0.
+License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/).
+Changes: numbers rounded to two decimals, element IDs and whitespace removed; artwork unchanged.
+These icon files are licensed under CC BY-SA 4.0; the rest of obur is MIT-licensed.
