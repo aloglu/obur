@@ -279,3 +279,14 @@ Owner's approach (2026-10-30): note phrasings that fail during real use and clos
 
 - Private GitHub repository `aloglu/obur` (created 2026-10-29), remote `origin`, branch `main`. Push after each commit so the off-machine copy stays current. The rules about private data and real hostnames still apply as if the repository were public.
 - No hosted CI (owner decision, 2026-10-29: the account's Actions allowance is nearly used up). GitHub Actions is disabled in the repository settings and there are no workflow files; do not add any without asking. Checks run locally before every deploy: `npm run check`, `npm run lint`, `npx vitest run`, `npm run test:e2e`.
+
+## Next features under discussion (2026-10-30)
+
+- Barcodes (Phase 3): explained to the owner (barcode read on the phone with a bundled open-source reader, since iOS
+  Safari has no BarcodeDetector; household products only, no outside lookups; unknown barcode leads into the label
+  scan and is attached on save). Not started; the owner asked first about it.
+- Food icons (owner request): an icon per food, suggested from the name, shown in rows. The owner rejected Fluent
+  Emoji, Twemoji and Noto as ugly and likes OpenMoji's style. Comparison Artifact of OpenMoji-like sets (OpenMoji 35/35
+  foods; Emoji One 31; Firefox OS 23; IconPark 22; with icons Sticker/Pastel 21; Streamline Emojis 20; Streamline
+  Ultimate 11; licences noted) published for the owner's pick; the link is in the session. Icons are bundled into the
+  app (no runtime fetching); the set's licence needs a credit line (OpenMoji: CC BY-SA 4.0 for the icons only).
