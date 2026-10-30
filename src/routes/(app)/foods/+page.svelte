@@ -4,6 +4,7 @@
 	import { api } from '#lib/client/api.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import FoodIcon from '#lib/ui/FoodIcon.svelte';
 	import TextField from '#lib/ui/TextField.svelte';
 
 	let query = $state('');
@@ -68,9 +69,10 @@
 			<li>
 				<a
 					href={resolve('/(app)/foods/[id]', { id: r.id })}
-					class="flex min-h-14 items-center justify-between gap-3 py-2"
+					class="flex min-h-14 items-center gap-3 py-2"
 				>
-					<span class="min-w-0">
+					<FoodIcon icon={r.icon} name={r.name} brand={r.brand} />
+					<span class="min-w-0 flex-1">
 						<span class="line-clamp-2 text-[15px] font-semibold"
 							>{r.brand ? `${r.brand} ` : ''}{r.name}</span
 						>

@@ -7,6 +7,7 @@
 	import TextCursorInput from '@lucide/svelte/icons/text-cursor-input';
 	import Mic from '@lucide/svelte/icons/mic';
 	import ScanLine from '@lucide/svelte/icons/scan-line';
+	import FoodIcon from '../FoodIcon.svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 	import { m } from '#lib/paraglide/messages.js';
@@ -194,6 +195,7 @@
 					onclick={() => onpick(r.id)}
 					class="flex min-h-14 w-full items-center gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
 				>
+					<FoodIcon icon={r.icon} name={r.name} brand={r.brand} />
 					<span class="min-w-0 flex-1">
 						<span class="line-clamp-2 text-[15px] font-semibold break-words"
 							>{r.brand ? `${r.brand} ` : ''}{r.name}</span

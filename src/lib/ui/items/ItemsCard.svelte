@@ -8,6 +8,7 @@
 	import { kcal } from '#lib/shared/format.ts';
 	import type { MeasureOption, UnitOption } from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
+	import FoodIcon from '../FoodIcon.svelte';
 	import Chips from '../Chips.svelte';
 	import MacroPreview from '../log/MacroPreview.svelte';
 	import AddFoodSheet from './AddFoodSheet.svelte';
@@ -74,6 +75,11 @@
 					onclick={() => (open = open === d.key ? null : d.key)}
 					class="flex min-h-14 w-full items-center gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
 				>
+					<FoodIcon
+						icon={d.snapshot?.icon}
+						name={d.kind === 'quick' ? d.name : (d.snapshot?.name ?? d.name)}
+						brand={d.snapshot?.brand}
+					/>
 					<span class="min-w-0 flex-1">
 						<span class="line-clamp-2 text-[15px] font-semibold break-words">{d.name}</span>
 						<span class={['block text-[13px]', n ? 'text-muted' : 'font-semibold text-bad']}

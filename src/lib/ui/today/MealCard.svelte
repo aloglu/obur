@@ -5,6 +5,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import type { DiaryEntry, Meal } from '#lib/shared/diary-types.ts';
 	import type { QueuedOp } from '#lib/client/offline/store.ts';
+	import FoodIcon from '../FoodIcon.svelte';
 	import { entryName, entryQuantity, kcal, mealName } from '#lib/shared/format.ts';
 
 	interface Props {
@@ -82,6 +83,11 @@
 							e.id === highlight ? 'bg-soft' : 'hover:bg-surface2'
 						]}
 					>
+						<FoodIcon
+							icon={e.food?.icon}
+							name={e.kind === 'quick' ? (e.description ?? '') : (e.food?.name ?? '')}
+							brand={e.food?.brand}
+						/>
 						<span class="min-w-0 flex-1">
 							<span class="line-clamp-2 text-[15px] font-semibold break-words">{entryName(e)}</span>
 							<span class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
@@ -110,6 +116,7 @@
 							onclick={() => onpending?.(op)}
 							class="flex min-h-14 w-full items-center gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
 						>
+							<FoodIcon name={op.preview.name} />
 							<span class="min-w-0 flex-1">
 								<span class="line-clamp-2 text-[15px] font-semibold break-words"
 									>{op.preview.name}</span

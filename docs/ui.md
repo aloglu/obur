@@ -179,6 +179,17 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
 - **Voice mic pulse:** 700 ms.
 - **Reduced motion:** with `prefers-reduced-motion`, no movement or pulse; changes are instant.
 
+### Food icons (owner's choice 2026-10-30: OpenMoji)
+
+- OpenMoji 15.1.0 food and drink icons (CC BY-SA 4.0; credit at the foot of More), bundled in `static/icons/food/`.
+- A food shows its chosen icon, else the one its name suggests (`shared/food-icons.ts`: English and Turkish words,
+  the match nearest the end of the name wins), else a plate. Quick adds use their description.
+- Shown as a 40 px tile with a 28 px icon, left of the name, in meal cards, Log search and recent foods, the Foods list,
+  and the saved meal and recipe editors. The tile stays light in both themes (`--icon-tile`) so the black outlines
+  show in dark mode. Decorative: the name always sits beside it.
+- The food form's **Icon** row shows the current icon and whether it is suggested or chosen; **Change icon** opens a
+  picker (search in English or Turkish, a grid of tiles, "Use the suggestion from the name" when one is chosen).
+
 ### Icons
 
 The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps. In the app, use Lucide (ISC licence) in the same style.

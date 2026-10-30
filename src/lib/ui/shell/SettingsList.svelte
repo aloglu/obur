@@ -99,3 +99,13 @@
 	<p class="text-[15px]">{m.settings_signed_in_as({ name: displayName })}</p>
 	<Button variant="ghost" onclick={signOut}>{m.home_sign_out()}</Button>
 </Card>
+
+<!-- Credit the food icons' licence requires (static/icons/food/LICENSE.txt). -->
+<p class="px-1 text-[12.5px] text-muted">
+	<a
+		href="https://openmoji.org"
+		target="_blank"
+		rel="noreferrer"
+		class="underline decoration-dotted underline-offset-2">{m.icon_credit()}</a
+	>
+</p>

@@ -11,7 +11,10 @@
 	import { deriveNutrients, type NutrientCode, type NutrientValue } from '#lib/shared/nutrients.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import type { Basis } from '#lib/shared/quantity.ts';
+	import { suggestIcon } from '#lib/shared/food-icons.ts';
 	import Button from '../Button.svelte';
+	import FoodIcon from '../FoodIcon.svelte';
+	import IconPicker from './IconPicker.svelte';
 	import Notice from '../Notice.svelte';
 	import TextField from '../TextField.svelte';
 
@@ -80,6 +83,10 @@
 
 	let name = $state(start?.name ?? '');
 	let brand = $state(start?.brand ?? '');
+	// The chosen icon; null shows the one the name suggests (it follows the name as it is typed).
+	let icon = $state<string | null>(start?.icon ?? null);
+	let choosingIcon = $state(false);
+	const suggested = $derived(suggestIcon(name, brand));
 	let visibility = $state<'shared' | 'private'>(start?.visibility ?? 'shared');
 	let basis = $state<Basis>(start?.basis ?? '100g');
 	let servingLabel = $state(start?.servingLabel ?? '');
@@ -190,6 +197,7 @@
 			servingLabel: basis === 'serving' ? servingLabel : null,
 			servingSize: size ? { amount: size, unit: servingSizeUnit } : null,
 			barcode: start?.barcode ?? null,
+			icon,
 			// Values the form does not show are kept while the basis stays the same (food-edit.ts).
 			nutrients: [
 				...values,
@@ -247,6 +255,19 @@
 <form class="flex flex-col gap-4" onsubmit={submit} novalidate>
 	<TextField label={m.food_name()} bind:value={name} required maxlength={200} />
 	<TextField label={m.food_brand()} bind:value={brand} maxlength={120} />
+	<div class="flex items-center gap-3">
+		<FoodIcon {icon} name={name || '-'} {brand} />
+		<span class="flex min-w-0 flex-1 flex-col">
+			<span class="text-[13px] font-[650] text-muted">{m.icon_label()}</span>
+			<span class="text-[14px]">{icon ? m.icon_chosen() : m.icon_suggested()}</span>
+		</span>
+		<button
+			type="button"
+			onclick={() => (choosingIcon = true)}
+			class="min-h-11 rounded-input px-3 text-[15px] font-semibold text-accent"
+			>{m.icon_change()}</button
+		>
+	</div>
 
 	<fieldset class="flex flex-col gap-2">
 		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_visibility()}</legend>
@@ -401,3 +422,15 @@
 		>{busy ? m.common_working() : m.food_save()}</Button
 	>
 </form>
+
+{#if choosingIcon}
+	<IconPicker
+		{suggested}
+		chosen={icon}
+		onchoose={(hex) => {
+			icon = hex;
+			choosingIcon = false;
+		}}
+		onclose={() => (choosingIcon = false)}
+	/>
+{/if}

@@ -77,7 +77,8 @@ export function newDraft(food: FoodDetail, amount: number, option: UnitOption): 
 			servingLabel: food.servingLabel,
 			servingSize: food.servingSize ?? null,
 			servings: food.servings,
-			basisNutrients: food.nutrients
+			basisNutrients: food.nutrients,
+			icon: food.icon
 		},
 		amountText: formatDecimal(amount, ',', 2),
 		optionKey: option.key,
