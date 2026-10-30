@@ -171,7 +171,9 @@ isolation; e2e covers the Profile flow. Batch 2, step 2 done (2026-10-30): macro
 Batch 2, step 3 done (2026-10-30): saved meal editor (`/saved-meals/[id]`, `/saved-meals/new`): rename, item amounts
 and units, remove, add foods, create from scratch; one atomic `PUT /api/v1/saved-meals/[id]` (`saveContents`, revision
 checked, idempotent create); Log's sheet is for logging with an Edit meal link. DB tests for replace/create/conflicts/
-isolation; e2e for edit and create journeys. Next: the budget circle alternatives as an Artifact for the owner. Next: batch 2 features (Profile details, editable macro targets, saved meal
+isolation; e2e for edit and create journeys. Budget circle alternatives published for the owner as an Artifact (2026-10-30): the current ring, A
+"number and bar", B "the sum" (equation tiles), C "half gauge", each at phone size with morning/evening/over states,
+a pick and notes. Waiting for the owner's choice; then build it on Today and record it in docs/ui.md. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)
