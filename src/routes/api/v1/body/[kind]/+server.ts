@@ -69,16 +69,41 @@ export const POST: RequestHandler = ({ params, request, locals }) =>
 		error(404, 'Not found');
 	});
 
-/** GET /api/v1/body/weight?from=YYYY-MM-DD&to=YYYY-MM-DD */
+/**
+ * GET /api/v1/body/weight?from=YYYY-MM-DD&to=YYYY-MM-DD (a range, oldest first), or
+ * GET /api/v1/body/weight?limit=N[&after=<date>,<created at>,<id>] (a page, newest first).
+ */
 export const GET: RequestHandler = ({ params, url, locals }) =>
 	respondBody(async () => {
 		if (params.kind !== 'weight') error(404, 'Not found');
+		const userId = locals.session!.userId;
+		if (url.searchParams.has('limit')) {
+			const [localDate, createdAt, id] = (url.searchParams.get('after') ?? '').split(',');
+			const page = v.safeParse(
+				v.object({
+					limit: v.pipe(v.string(), v.toNumber(), v.integer(), v.minValue(1), v.maxValue(100)),
+					after: v.optional(
+						v.object({
+							localDate: DateString,
+							createdAt: v.pipe(v.string(), v.isoTimestamp()),
+							id: v.pipe(v.string(), v.uuid())
+						})
+					)
+				}),
+				{
+					limit: url.searchParams.get('limit'),
+					after: url.searchParams.has('after') ? { localDate, createdAt, id } : undefined
+				}
+			);
+			if (!page.success) error(400, 'Invalid page');
+			return json({
+				readings: await body.weightPage(userId, page.output.limit, page.output.after)
+			});
+		}
 		const range = v.safeParse(v.object({ from: DateString, to: DateString }), {
 			from: url.searchParams.get('from'),
 			to: url.searchParams.get('to')
 		});
 		if (!range.success) error(400, 'Invalid range');
-		return json({
-			readings: await body.weights(locals.session!.userId, range.output.from, range.output.to)
-		});
+		return json({ readings: await body.weights(userId, range.output.from, range.output.to) });
 	});

@@ -6,14 +6,21 @@
 	import { offline, submit } from '#lib/client/offline/sync.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
+	import type { BodyReading } from '#lib/shared/body-types.ts';
+	import { dayTitle } from '#lib/shared/format.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import ReadingsSheet from './ReadingsSheet.svelte';
 
-	let {
-		date,
-		totalMl,
-		onchange
-	}: { date: string; totalMl: number; onchange: () => Promise<void> } = $props();
+	interface Props {
+		date: string;
+		today: string;
+		entries: BodyReading[];
+		totalMl: number;
+		onchange: () => Promise<void>;
+	}
+	let { date, today, entries, totalMl, onchange }: Props = $props();
 	let busy = $state(false);
+	let editing = $state(false);
 	const pendingMl = $derived(
 		offline.items.reduce(
 			(sum, i) =>
@@ -55,7 +62,18 @@
 	class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
 	aria-labelledby="water-title"
 >
-	<h2 id="water-title" class="text-[19px] font-bold">{m.water_title()}</h2>
+	<div class="flex items-center justify-between gap-2">
+		<h2 id="water-title" class="text-[19px] font-bold">{m.water_title()}</h2>
+		{#if entries.length > 0}
+			<button
+				type="button"
+				onclick={() => (editing = true)}
+				aria-label={m.water_edit_label()}
+				class="-my-2 -mr-2 min-h-11 rounded-input px-2 text-[14px] font-semibold text-accent"
+				>{m.water_edit()}</button
+			>
+		{/if}
+	</div>
 	<p class="font-display text-[28px] leading-none font-extrabold tabular-nums">
 		{m.water_total({ ml: formatDecimal(totalMl, ',', 0) })}
 	</p>
@@ -78,3 +96,14 @@
 		{/each}
 	</div>
 </section>
+
+{#if editing}
+	<ReadingsSheet
+		kind="water"
+		title={m.water_sheet_title({ day: dayTitle(date, today) })}
+		readings={entries.toReversed()}
+		{today}
+		{onchange}
+		onclose={() => (editing = false)}
+	/>
+{/if}

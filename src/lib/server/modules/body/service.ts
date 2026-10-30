@@ -114,7 +114,34 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 		});
 	}
 
+	/** Changes a live reading's value; a stale revision is a conflict, a deleted reading is not found. */
+	async function edit(
+		userId: string,
+		table: typeof weightEntries | typeof waterEntries,
+		id: string,
+		revision: number,
+		value: number
+	): Promise<BodyReading> {
+		const valueColumn = table === weightEntries ? 'kg' : 'ml';
+		return withUser(db, userId, async (tx) => {
+			const [row] = await tx.select().from(table).where(eq(table.id, id));
+			if (!row || row.deletedAt) throw new BodyError('not_found');
+			if (row.revision !== revision) throw new BodyError('conflict');
+			const [updated] = await tx
+				.update(table)
+				.set({ [valueColumn]: value, revision: row.revision + 1, updatedAt: now() } as never)
+				.where(and(eq(table.id, id), eq(table.revision, revision)))
+				.returning();
+			if (!updated) throw new BodyError('conflict');
+			return toReading(updated, value);
+		});
+	}
+
 	return {
+		editWeight: (userId: string, id: string, revision: number, kg: number) =>
+			edit(userId, weightEntries, id, revision, kg),
+		editWater: (userId: string, id: string, revision: number, ml: number) =>
+			edit(userId, waterEntries, id, revision, ml),
 		logWeight: (userId: string, ctx: ReadingContext, kg: number) =>
 			insert(userId, weightEntries, ctx, kg),
 		logWater: (userId: string, ctx: ReadingContext, ml: number) =>
@@ -237,6 +264,35 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 					.limit(1)
 			);
 			return row ? toReading(row, row.kg) : null;
+		},
+
+		/**
+		 * A page of weigh-ins, newest first (latest day, then latest recorded), after an optional cursor: the last
+		 * reading of the previous page.
+		 */
+		async weightPage(
+			userId: string,
+			limit: number,
+			after?: { localDate: string; createdAt: string; id: string }
+		): Promise<BodyReading[]> {
+			// The cursor's time has millisecond precision (JSON); compare and order on the same precision.
+			const msCreated = sql`date_trunc('milliseconds', ${weightEntries.createdAt})`;
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select()
+					.from(weightEntries)
+					.where(
+						and(
+							isNull(weightEntries.deletedAt),
+							after
+								? sql`(${weightEntries.localDate}, ${msCreated}, ${weightEntries.id}) < (${after.localDate}::date, ${after.createdAt}::timestamptz, ${after.id}::uuid)`
+								: undefined
+						)
+					)
+					.orderBy(desc(weightEntries.localDate), desc(msCreated), desc(weightEntries.id))
+					.limit(limit)
+			);
+			return rows.map((r) => toReading(r, r.kg));
 		},
 
 		async weights(userId: string, from: string, to: string): Promise<BodyReading[]> {

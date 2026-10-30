@@ -67,3 +67,66 @@ test('weight: "same as last time" records a fresh reading for today', async ({ p
 	);
 	expect(readings).toHaveLength(2);
 });
+
+test('water: a reading can be edited or deleted after the toast is gone', async ({ page }) => {
+	await signedInAs(page, 'Deniz');
+	await page.goto('/');
+	const water = page.getByRole('region', { name: 'Water' });
+	await expect(water.getByRole('button', { name: 'Edit or delete water' })).toHaveCount(0);
+	await water.getByRole('button', { name: 'Add 250 ml of water' }).click();
+	await expect(water).toContainText('250 ml');
+	await water.getByRole('button', { name: 'Add 500 ml of water' }).click();
+	await expect(water).toContainText('750 ml');
+
+	await water.getByRole('button', { name: 'Edit or delete water' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Water · Today' });
+	await sheet.getByRole('button', { name: /^Edit 250 ml/ }).click();
+	await sheet.getByLabel(/New value in ml/).fill('330');
+	await sheet.getByRole('button', { name: 'Save' }).click();
+	await expect(water).toContainText('830 ml');
+
+	// A deleted row stays in the sheet with its own Undo.
+	await sheet.getByRole('button', { name: /^Delete 500 ml/ }).click();
+	await expect(water).toContainText('330 ml');
+	await sheet.getByRole('button', { name: /^Undo deleting 500 ml/ }).click();
+	await expect(water).toContainText('830 ml');
+	await sheet.getByRole('button', { name: /^Delete 500 ml/ }).click();
+	await sheet.getByRole('button', { name: 'Close' }).click();
+	await expect(water).toContainText('330 ml');
+	await page.reload();
+	await expect(water).toContainText('330 ml');
+});
+
+test('weight: older weigh-ins page in and can be edited or deleted', async ({ page }) => {
+	await signedInAs(page, 'Can');
+	const days = await page.evaluate(() =>
+		[0, 3, 400].map((back) => {
+			const d = new Date();
+			d.setDate(d.getDate() - back);
+			return d.toLocaleDateString('en-CA');
+		})
+	);
+	// 21 old readings make a second page; one more a year earlier sits behind a long gap.
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: days[2], zone: 'UTC', value: 90 });
+	for (let i = 0; i < 21; i++)
+		await apiAs(page, 'POST', '/api/v1/body/weight', { date: days[1], zone: 'UTC', value: 85 });
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: days[0], zone: 'UTC', value: 84.2 });
+
+	await page.goto('/');
+	const weight = page.getByRole('region', { name: 'Weight' });
+	await weight.getByRole('button', { name: 'Edit or delete weigh-ins' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Weigh-ins' });
+	await expect(sheet.getByRole('button', { name: /^Edit / })).toHaveCount(20);
+	await sheet.getByRole('button', { name: 'Show older' }).click();
+	await expect(sheet.getByRole('button', { name: /^Edit / })).toHaveCount(23);
+	await expect(sheet.getByRole('button', { name: /^Edit 90 kg/ })).toBeVisible();
+	await sheet.getByRole('button', { name: 'Show older' }).click();
+	await expect(sheet).toContainText('No older weigh-ins.');
+
+	await sheet.getByRole('button', { name: /^Edit 84,2 kg, Today/ }).click();
+	await sheet.getByLabel(/New value in kg/).fill('83,9');
+	await sheet.getByRole('button', { name: 'Save' }).click();
+	await expect(weight).toContainText('Last: 83,9 kg · Today');
+	await sheet.getByRole('button', { name: /^Delete 83,9 kg, Today/ }).click();
+	await expect(weight).toContainText('Last: 85 kg');
+});

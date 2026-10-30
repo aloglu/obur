@@ -159,7 +159,13 @@
 			targets={data.macros}
 		/>
 		<div class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
-			<WaterCard date={data.date} totalMl={data.water.totalMl} onchange={invalidateAll} />
+			<WaterCard
+				date={data.date}
+				today={data.today}
+				entries={data.water.entries}
+				totalMl={data.water.totalMl}
+				onchange={invalidateAll}
+			/>
 			<WeightCard
 				date={data.date}
 				today={data.today}

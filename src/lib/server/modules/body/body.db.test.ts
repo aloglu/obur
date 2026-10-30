@@ -72,6 +72,60 @@ describe('weight', () => {
 	});
 });
 
+describe('weight pages', () => {
+	it('pages newest first with a cursor, across gaps and same-day readings, skipping deleted ones', async () => {
+		const days = ['2024-01-05', '2025-06-01', '2026-10-24', '2026-10-24', '2026-10-25'];
+		const made = [];
+		for (const [i, d] of days.entries()) made.push(await body.logWeight(AYSE, at(d), 80 + i));
+		// Two readings in the same millisecond, as a cursor cannot tell them apart.
+		await admin`update weight_entries set created_at = date_trunc('milliseconds', now()) where local_date = '2026-10-24'`;
+		await body.removeWeight(AYSE, made[1].id);
+		await body.logWeight(MEHMET, at('2026-10-26'), 70);
+
+		const seen: number[] = [];
+		let after: { localDate: string; createdAt: string; id: string } | undefined;
+		for (;;) {
+			const page = await body.weightPage(AYSE, 2, after);
+			if (page.length === 0) break;
+			seen.push(...page.map((r) => r.value));
+			after = page.at(-1)!;
+		}
+		expect(seen).toHaveLength(4);
+		expect(seen[0]).toBe(84);
+		expect(seen.at(-1)).toBe(80);
+		expect(new Set(seen.slice(1, 3))).toEqual(new Set([82, 83]));
+	});
+});
+
+describe('editing', () => {
+	it('changes a value with the current revision and refuses a stale one', async () => {
+		const r = await body.logWeight(AYSE, at('2026-10-24'), 82.4);
+		const edited = await body.editWeight(AYSE, r.id, r.revision, 81.9);
+		expect(edited).toMatchObject({ id: r.id, value: 81.9, revision: 2, localDate: '2026-10-24' });
+		expect(await errorCode(body.editWeight(AYSE, r.id, r.revision, 80))).toBe('conflict');
+		expect((await body.latestWeight(AYSE, '2026-10-25'))?.value).toBe(81.9);
+
+		const w = await body.logWater(AYSE, at('2026-10-24'), 250);
+		await body.editWater(AYSE, w.id, w.revision, 330);
+		expect((await body.waterDay(AYSE, '2026-10-24')).totalMl).toBe(330);
+	});
+
+	it("refuses deleted readings, another person's readings and out-of-range values", async () => {
+		const r = await body.logWeight(AYSE, at('2026-10-24'), 82.4);
+		expect(await errorCode(body.editWeight(MEHMET, r.id, r.revision, 70))).toBe('not_found');
+		const w = await body.logWater(AYSE, at('2026-10-24'), 250);
+		expect(await errorCode(body.editWater(MEHMET, w.id, w.revision, 1))).toBe('not_found');
+		expect((await body.latestWeight(AYSE, '2026-10-25'))?.value).toBe(82.4);
+		// Even directly, the other person's update touches nothing.
+		const touched = await asUser(MEHMET, (tx) => tx`update weight_entries set kg = 1 returning id`);
+		expect(touched).toHaveLength(0);
+
+		expect(await errorCode(body.editWeight(AYSE, r.id, r.revision, 900))).toBe('23514');
+		await body.removeWeight(AYSE, r.id);
+		expect(await errorCode(body.editWeight(AYSE, r.id, r.revision + 1, 80))).toBe('not_found');
+	});
+});
+
 describe('water', () => {
 	it('totals a day and respects deletion', async () => {
 		const a = await body.logWater(AYSE, at('2026-10-25'), 250);

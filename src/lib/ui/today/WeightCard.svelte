@@ -9,6 +9,7 @@
 	import type { BodyReading } from '#lib/shared/body-types.ts';
 	import { dayTitle, kcal } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+	import ReadingsSheet from './ReadingsSheet.svelte';
 
 	interface Props {
 		date: string;
@@ -19,6 +20,26 @@
 	let { date, today, latest, onchange }: Props = $props();
 	let text = $state('');
 	let busy = $state(false);
+	let history = $state<BodyReading[] | null>(null);
+
+	const PAGE = 20;
+	const page = (after?: BodyReading) =>
+		api<{ readings: BodyReading[] }>(
+			'GET',
+			`/api/v1/body/weight?limit=${PAGE}` +
+				(after ? `&after=${after.localDate},${after.createdAt},${after.id}` : '')
+		).then((r) => r.readings);
+
+	async function openHistory() {
+		busy = true;
+		try {
+			history = await page();
+		} catch {
+			showToast({ message: m.error_generic() });
+		} finally {
+			busy = false;
+		}
+	}
 	const pendingKg = $derived(
 		offline.items.findLast(
 			(i) => i.status === 'pending' && i.preview.kind === 'weight' && i.preview.localDate === date
@@ -65,7 +86,19 @@
 	class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
 	aria-labelledby="weight-title"
 >
-	<h2 id="weight-title" class="text-[19px] font-bold">{m.weight_title()}</h2>
+	<div class="flex items-center justify-between gap-2">
+		<h2 id="weight-title" class="text-[19px] font-bold">{m.weight_title()}</h2>
+		{#if latest}
+			<button
+				type="button"
+				disabled={busy}
+				onclick={openHistory}
+				aria-label={m.weight_edit_label()}
+				class="-my-2 -mr-2 min-h-11 rounded-input px-2 text-[14px] font-semibold text-accent"
+				>{m.weight_edit()}</button
+			>
+		{/if}
+	</div>
 	<p class="text-[13px] text-muted">
 		{latest
 			? m.weight_last({
@@ -115,3 +148,15 @@
 		</button>
 	{/if}
 </section>
+
+{#if history}
+	<ReadingsSheet
+		kind="weight"
+		title={m.weight_sheet_title()}
+		readings={history}
+		{today}
+		older={page}
+		{onchange}
+		onclose={() => (history = null)}
+	/>
+{/if}
