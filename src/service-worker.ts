@@ -76,6 +76,14 @@ async function announce(request: Request, copy: 'live' | 'cached') {
 const UNREACHABLE_HOLD_MS = 60_000;
 let unreachableUntil = 0;
 
+// A page that has just reached the server (its queue sent something) ends the hold at once, so the refresh that
+// follows shows live data instead of the saved copy. The reply tells the page it may refresh now.
+sw.addEventListener('message', (event) => {
+	if (event.data?.type !== 'obur:reachable') return;
+	unreachableUntil = 0;
+	event.ports[0]?.postMessage('ok');
+});
+
 async function fromNetwork(request: Request, cache: Cache, key: string, announceLive: boolean) {
 	let response: Response;
 	try {

@@ -110,7 +110,7 @@ the weekly restore check now restores from both, and the first R2 restore passed
 portions (147 of 152 custom-food rows are grams or millilitres, 3 name a portion; database foods have no stated base).
 
 **Owner checks on the iPhone (short):**
-1. Offline: open the installed app in Airplane Mode, log water and a food, then reconnect: they send once.
+1. Done 2026-10-30: offline logging and sending work on the iPhone. Found: after sending, the entries vanished until the next navigation (the refresh met the service worker's saved copy during its one-minute hold). Fixed: the page tells the worker the server is back and waits for it before refreshing; the browser test is now strict (it reproduced the bug before the fix).
 2. The core logging target: a familiar food logged in about 10 seconds; a correction in 3 taps or fewer.
 3. Desktop: is the meal "+" now noticeable?
 

@@ -82,6 +82,24 @@ async function serverReachable(): Promise<boolean> {
 	}
 }
 
+/**
+ * Tells the service worker the server was just reached, and waits for it, so the page refresh after sending is
+ * live data rather than the saved copy it serves for a minute after a failure.
+ */
+async function networkIsBack(): Promise<void> {
+	const worker = navigator.serviceWorker?.controller;
+	if (!worker) return;
+	await new Promise<void>((resolve) => {
+		const channel = new MessageChannel();
+		const done = setTimeout(resolve, 500);
+		channel.port1.onmessage = () => {
+			clearTimeout(done);
+			resolve();
+		};
+		worker.postMessage({ type: 'obur:reachable' }, [channel.port2]);
+	});
+}
+
 async function refresh() {
 	offline.items = queue ? await queue.all() : [];
 }
@@ -102,7 +120,10 @@ export function startSync(ownerId: string, onSent: () => void): Promise<void> {
 		// Never while unreachable: a failed refresh makes SvelteKit reload the whole page.
 		const kick = () =>
 			void flush().then(async (sent) => {
-				if (sent > 0 || (offline.cachedCopy && (await serverReachable()))) onSent();
+				if (sent > 0 || (offline.cachedCopy && (await serverReachable()))) {
+					await networkIsBack();
+					onSent();
+				}
 			});
 		const onVisible = () => document.visibilityState === 'visible' && kick();
 		const onMessage = (event: MessageEvent) => {
@@ -172,7 +193,11 @@ export async function submit<T>(
 	await refresh();
 	// Keep trying in the background (it also finds out when the server is back).
 	if (waiting || Date.now() < unreachableUntil)
-		void flush().then((sent) => sent > 0 && sentHandler?.());
+		void flush().then(async (sent) => {
+			if (sent === 0) return;
+			await networkIsBack();
+			sentHandler?.();
+		});
 	return { status: 'queued' };
 }
 

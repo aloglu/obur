@@ -65,12 +65,9 @@ test('entries made offline wait visibly, then arrive once and in order', async (
 	await context.setOffline(false);
 	await page.evaluate(() => dispatchEvent(new Event('online')));
 	await expect(snacks.getByText('Waiting to sync')).toHaveCount(0);
-	// The first refresh can still meet the saved copy while the connection settles; the page says so and
-	// refreshes on the next attempt.
-	await expect(async () => {
-		await page.evaluate(() => dispatchEvent(new Event('online')));
-		await expect(snacks).toContainText('Simit', { timeout: 1000 });
-	}).toPass();
+	// One reconnect is enough: the sent entries appear as saved at once, and the saved-copy note goes (owner's iPhone
+	// check, 2026-10-30: they vanished until the next navigation, because the refresh met the saved copy).
+	await expect(snacks).toContainText('Simit');
 	await expect(page.getByText('Showing the copy saved on this device')).toHaveCount(0);
 	await expect(snacks).toContainText('Çay');
 	await expect(page.getByRole('region', { name: 'Water' })).toContainText('250 ml');
