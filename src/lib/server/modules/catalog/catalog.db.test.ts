@@ -96,6 +96,21 @@ describe('visibility', () => {
 	});
 });
 
+describe('icons', () => {
+	it('keeps a chosen icon, changes it with an edit, and refuses unknown ones in the app and the database', async () => {
+		const id = await catalog.createFood(MEHMET, food({ icon: '1F95B' }));
+		expect((await catalog.getFood(MEHMET, id)).icon).toBe('1F95B');
+		await catalog.updateFood(MEHMET, id, 1, food({ icon: null }));
+		expect((await catalog.getFood(MEHMET, id)).icon).toBeNull();
+		expect(() => food({ icon: 'NOT-AN-ICON' })).toThrow();
+		expect(
+			await errorCode(asUser(MEHMET, (tx) => tx`update foods set icon = 'x' where id = ${id}`))
+		).toBe('23514');
+		const [hit] = await catalog.searchFoods(MEHMET, 'ayran');
+		expect(hit).toMatchObject({ id, icon: null });
+	});
+});
+
 describe('edit rights', () => {
 	it('lets only the creator, or an admin for shared foods, edit', async () => {
 		const id = await catalog.createFood(MEHMET, food());

@@ -19,7 +19,8 @@ export function snapshotOf(food: FoodDetail): FoodSnapshot {
 		servingLabel: food.servingLabel,
 		servingSize: food.servingSize ?? null,
 		servings: food.servings.map(({ id, name, amount, unit }) => ({ id, name, amount, unit })),
-		basisNutrients: food.nutrients
+		basisNutrients: food.nutrients,
+		icon: food.icon
 	};
 }
 

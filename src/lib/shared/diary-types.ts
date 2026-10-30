@@ -22,6 +22,8 @@ export interface FoodSnapshot {
 	servings: FoodServing[];
 	/** Nutrients per basis, as the food had them when logged. */
 	basisNutrients: NutrientValue[];
+	/** The food's chosen icon when logged (display only; older snapshots have none). */
+	icon?: string | null;
 }
 
 export type EntryNutrients = Partial<Record<NutrientCode, { value: number; qualifier: Qualifier }>>;

@@ -10,6 +10,8 @@ export interface FoodDetail extends QuantityModel {
 	visibility: 'private' | 'shared';
 	servingLabel: string | null;
 	barcode: string | null;
+	/** The chosen icon; null shows the one the name suggests. */
+	icon: string | null;
 	origin: string;
 	/** Curated foods: the reference dataset the values come from. */
 	curatedDataset: 'sr_legacy' | 'foundation' | null;
@@ -35,4 +37,5 @@ export interface FoodSearchResult {
 	visibility: 'private' | 'shared';
 	mine: boolean;
 	kcal: number | null;
+	icon: string | null;
 }

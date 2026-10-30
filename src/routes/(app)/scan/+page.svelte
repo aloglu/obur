@@ -123,6 +123,7 @@
 			servingLabel: serving ? (p.portion?.name ?? '') : null,
 			servingSize: serving && p.portion ? { amount: p.portion.amount, unit: p.portion.unit } : null,
 			barcode: null,
+			icon: null,
 			origin: 'label_scan',
 			curatedDataset: null,
 			archived: false,

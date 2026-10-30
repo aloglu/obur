@@ -164,6 +164,7 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 				servingAmount: f.servingAmount,
 				servingUnit: f.servingUnit,
 				barcode: f.barcode,
+				icon: f.icon,
 				origin: f.origin,
 				// Provenance of someone else's food is not the exporting person's to take along.
 				sourceMeta: mine ? ((f.sourceMeta as Record<string, unknown> | null) ?? null) : null,
@@ -712,6 +713,7 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 				servingAmount: f.servingAmount,
 				servingUnit: f.servingUnit,
 				barcode: f.barcode,
+				icon: f.icon,
 				origin: f.origin,
 				sourceMeta: { ...(f.sourceMeta ?? {}), importedFrom: source },
 				derivedFrom:

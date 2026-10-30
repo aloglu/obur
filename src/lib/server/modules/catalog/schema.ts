@@ -39,6 +39,8 @@ export const foods = pgTable(
 		servingAmount: amount('serving_amount'),
 		servingUnit: text('serving_unit', { enum: ['g', 'ml'] }),
 		barcode: text('barcode'),
+		// The food's chosen OpenMoji icon (hexcode, shared/food-icons.ts); null shows the one its name suggests.
+		icon: text('icon'),
 		origin: text('origin', {
 			enum: ['manual', 'label_scan', 'loseit', 'curated', 'variant', 'recipe']
 		}).notNull(),
@@ -66,6 +68,10 @@ export const foods = pgTable(
 				and (${t.servingAmount} is null or (${t.basis} = 'serving' and ${t.servingAmount} > 0))`
 		),
 		check('foods_barcode_digits', sql`${t.barcode} is null or ${t.barcode} ~ '^[0-9]{8,14}$'`),
+		check(
+			'foods_icon_format',
+			sql`${t.icon} is null or ${t.icon} ~ '^[0-9A-F]{4,5}(-[0-9A-F]{4,5}){0,3}$'`
+		),
 		check('foods_version_positive', sql`${t.version} >= 1`),
 		index('foods_owner_id_idx').on(t.ownerId),
 		index('foods_barcode_idx').on(t.barcode),

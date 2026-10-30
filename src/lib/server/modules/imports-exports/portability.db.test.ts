@@ -69,6 +69,7 @@ async function buildHistory() {
 		MEHMET,
 		food({
 			name: 'Annemin böreği',
+			icon: '1F967',
 			visibility: 'private',
 			basis: 'serving',
 			servingLabel: '1 dilim',
@@ -196,6 +197,7 @@ function semantic(data: PortableData) {
 				brand: f.brand,
 				basis: f.basis,
 				servingLabel: f.servingLabel,
+				icon: f.icon,
 				archived: !!f.archivedAt,
 				derivedFrom: f.derivedFrom ? foodName.get(f.derivedFrom) : null,
 				nutrients: [...f.nutrients].sort((a, b) => a.code.localeCompare(b.code)),

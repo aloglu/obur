@@ -1,5 +1,6 @@
 // Validation for creating and editing foods, shared by the form and the API.
 import * as v from 'valibot';
+import { isFoodIcon } from './food-icons.ts';
 import { NUTRIENT_CODES, QUALIFIERS } from './nutrients.ts';
 
 const text = (min: number, max: number) =>
@@ -42,6 +43,8 @@ export const FoodInput = v.pipe(
 			null
 		),
 		barcode: v.optional(v.nullable(v.pipe(v.string(), v.regex(/^\d{8,14}$/))), null),
+		// Absent or null: no chosen icon (the name's suggestion shows).
+		icon: v.optional(v.nullable(v.pipe(v.string(), v.check(isFoodIcon, 'Unknown icon')))),
 		nutrients: v.pipe(v.array(NutrientInput), v.maxLength(NUTRIENT_CODES.length)),
 		servings: v.optional(v.pipe(v.array(ServingInput), v.maxLength(20)), [])
 	}),

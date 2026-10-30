@@ -60,6 +60,11 @@ export const FoodRecord = v.object({
 	servingAmount: v.nullable(Positive),
 	servingUnit: v.nullable(v.picklist(['g', 'ml'])),
 	barcode: v.nullable(v.pipe(v.string(), v.regex(/^[0-9]{8,14}$/))),
+	// Added 2026-10-30; older archives have no icons.
+	icon: v.optional(
+		v.nullable(v.pipe(v.string(), v.regex(/^[0-9A-F]{4,5}(-[0-9A-F]{4,5}){0,3}$/))),
+		null
+	),
 	origin: v.picklist(['manual', 'label_scan', 'loseit', 'curated', 'variant', 'recipe']),
 	sourceMeta: v.nullable(v.record(v.string(), v.unknown())),
 	derivedFrom: v.nullable(Uuid),

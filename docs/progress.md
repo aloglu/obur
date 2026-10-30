@@ -289,8 +289,9 @@ Owner's approach (2026-10-30): note phrasings that fail during real use and clos
   food and drink icons in `static/icons/food/` (minified, 0.36 MB, licence file; CC BY-SA 4.0 for the icons only) and
   `shared/food-icons.ts` (English and Turkish words per icon; `suggestIcon` takes the match nearest the end of the
   name, Turkish suffixes and k/p/t softening, English plurals; 92% of the owner's 251 logged food names get a
-  suggestion). Next: step 2 (a food's chosen icon stored, carried in snapshots and exports), step 3 (display in rows,
-  picker in the food form, credit line). Earlier note: an icon per food, suggested from the name, shown in rows. The owner rejected Fluent
+  suggestion). Step 2 done: `foods.icon` (migrations 0028–0029: format check, update
+  grant), FoodInput/FoodDetail/search and recent results, diary snapshots (`icon`, display only), archive (optional
+  field). Next: step 3 (display in rows, picker in the food form, credit line). Earlier note: an icon per food, suggested from the name, shown in rows. The owner rejected Fluent
   Emoji, Twemoji and Noto as ugly and likes OpenMoji's style. Comparison Artifact of OpenMoji-like sets (OpenMoji 35/35
   foods; Emoji One 31; Firefox OS 23; IconPark 22; with icons Sticker/Pastel 21; Streamline Emojis 20; Streamline
   Ultimate 11; licences noted) published for the owner's pick; the link is in the session. Icons are bundled into the

@@ -39,7 +39,8 @@ const columns = (input: FoodInput) => ({
 	servingLabel: input.basis === 'serving' ? input.servingLabel : null,
 	servingAmount: input.basis === 'serving' ? (input.servingSize?.amount ?? null) : null,
 	servingUnit: input.basis === 'serving' ? (input.servingSize?.unit ?? null) : null,
-	barcode: input.barcode
+	barcode: input.barcode,
+	icon: input.icon ?? null
 });
 
 /** A food as the signed-in person sees it (module-internal; recipes use it too). */
@@ -87,6 +88,7 @@ export async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefin
 				? { amount: f.servingAmount, unit: f.servingUnit }
 				: null,
 		barcode: f.barcode,
+		icon: f.icon,
 		origin: f.origin,
 		curatedDataset:
 			f.origin === 'curated'
@@ -201,6 +203,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						servingAmount: source.servingSize?.amount ?? null,
 						servingUnit: source.servingSize?.unit ?? null,
 						barcode: source.barcode,
+						icon: source.icon,
 						ownerId: userId,
 						origin: 'variant',
 						derivedFrom: source.id
@@ -265,6 +268,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						brand: foods.brand,
 						basis: foods.basis,
 						servingLabel: foods.servingLabel,
+						icon: foods.icon,
 						visibility: foods.visibility,
 						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
 						kcal: foodNutrients.value,
@@ -319,7 +323,8 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					servingLabel: r.servingLabel,
 					visibility: r.visibility,
 					mine: r.mine,
-					kcal: r.kcal
+					kcal: r.kcal,
+					icon: r.icon
 				}));
 			const full = await this.searchFoods(userId, text, limit, boostIds);
 			if (full[0]?.whole) return strip(full);

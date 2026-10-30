@@ -1,0 +1,2 @@
+ALTER TABLE "foods" ADD COLUMN "icon" text;--> statement-breakpoint
+ALTER TABLE "foods" ADD CONSTRAINT "foods_icon_format" CHECK ("foods"."icon" is null or "foods"."icon" ~ '^[0-9A-F]{4,5}(-[0-9A-F]{4,5}){0,3}$');
