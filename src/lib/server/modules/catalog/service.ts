@@ -233,7 +233,11 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			limit = 20,
 			/** Foods to rank first among real matches, e.g. the person's recent foods. */
 			boostIds: string[] = []
-		): Promise<FoodSearchResult[]> {
+		): Promise<
+			(FoodSearchResult & {
+				/** Every word matched (not only a typo-tolerant match). */ whole: boolean;
+			})[]
+		> {
 			const q = foldForSearch(query).slice(0, 100);
 			if (!q) return [];
 			const words = q.split(' ').filter(Boolean).slice(0, 8);
@@ -258,7 +262,8 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						servingLabel: foods.servingLabel,
 						visibility: foods.visibility,
 						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
-						kcal: foodNutrients.value
+						kcal: foodNutrients.value,
+						whole: sql<boolean>`(${allWords})`
 					})
 					.from(foods)
 					.leftJoin(
@@ -286,7 +291,48 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					)
 					.limit(Math.min(Math.max(limit, 1), 50))
 			);
-			return rows.map((r) => ({ ...r, mine: Boolean(r.mine) }));
+			return rows.map((r) => ({ ...r, mine: Boolean(r.mine), whole: Boolean(r.whole) }));
+		},
+
+		/**
+		 * Search for words taken from a sentence, which may carry extra words ("SEK protein süt after gym"). A match
+		 * on every word wins; otherwise the longest run of consecutive words that every word of matches, so extra words
+		 * never turn a real match into a typo match. Falls back to the typo-tolerant results.
+		 */
+		async searchFoodsLoose(
+			userId: string,
+			text: string,
+			limit = 5,
+			boostIds: string[] = []
+		): Promise<FoodSearchResult[]> {
+			const strip = (rows: (FoodSearchResult & { whole: boolean })[]): FoodSearchResult[] =>
+				rows.map((r) => ({
+					id: r.id,
+					name: r.name,
+					brand: r.brand,
+					basis: r.basis,
+					servingLabel: r.servingLabel,
+					visibility: r.visibility,
+					mine: r.mine,
+					kcal: r.kcal
+				}));
+			const full = await this.searchFoods(userId, text, limit, boostIds);
+			if (full[0]?.whole) return strip(full);
+			const words = foldForSearch(text).split(' ').filter(Boolean).slice(0, 8);
+			let tries = 0;
+			for (let size = words.length - 1; size >= 1; size--) {
+				for (let start = 0; start + size <= words.length; start++) {
+					if (++tries > 12) return strip(full);
+					const part = await this.searchFoods(
+						userId,
+						words.slice(start, start + size).join(' '),
+						limit,
+						boostIds
+					);
+					if (part[0]?.whole) return strip(part);
+				}
+			}
+			return strip(full);
 		},
 
 		/** Shared reference data; no personal rows, so no identity is needed. */

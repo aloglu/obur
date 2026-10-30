@@ -8,3 +8,4 @@ export {
 	type ParseResult,
 	type Proposal
 } from './parse.ts';
+export { unitForFood, type FoodUnit } from './units.ts';

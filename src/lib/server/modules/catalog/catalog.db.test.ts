@@ -313,6 +313,27 @@ describe('search', () => {
 		expect(boosted.map((r) => r.id)).toEqual([shared, own]);
 	});
 
+	it('finds a food in words taken from a sentence, preferring real matches on fewer words', async () => {
+		const names = async (text: string) =>
+			(await catalog.searchFoodsLoose(ZEYNEP, text)).map((r) => r.name);
+		expect(await names('Superfresh körpe ıspanak')).toEqual(['Körpe Ispanak']);
+		// Extra words would only allow a typo match; the words that all match win instead.
+		expect((await names('İçim mini top peynir after gym'))[0]).toBe('Mini Top Peynir');
+		expect((await names('ayran with ice cubes'))[0]).toBe('Ayran');
+		expect(await names('zzz qqq')).toEqual([]);
+	});
+
+	it('never proposes another person’s private food', async () => {
+		await catalog.createFood(
+			MEHMET,
+			food({ name: 'Gizli Börek', brand: null, visibility: 'private', basis: '100g' })
+		);
+		expect(await catalog.searchFoodsLoose(ZEYNEP, 'iki dilim gizli börek')).toEqual([]);
+		expect((await catalog.searchFoodsLoose(MEHMET, 'iki dilim gizli börek'))[0]?.name).toBe(
+			'Gizli Börek'
+		);
+	});
+
 	it('returns nothing for an empty or punctuation-only query', async () => {
 		expect(await catalog.searchFoods(ZEYNEP, '  ')).toEqual([]);
 		expect(await catalog.searchFoods(ZEYNEP, '%_')).toEqual([]);
