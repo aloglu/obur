@@ -361,10 +361,6 @@
 		today={data.today}
 		meal={sheetMeal}
 		onlogged={loggedMeal}
-		ondeleted={(name) => {
-			openSaved = null;
-			showToast({ message: m.saved_deleted({ name }) });
-		}}
 		onclose={() => (openSaved = null)}
 	/>
 {/if}

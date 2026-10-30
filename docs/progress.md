@@ -166,8 +166,12 @@ weigh-in; `goals.updateDetails` saves details and recalculates a calculated budg
 `PATCH /api/v1/profile/details`). DB tests cover recalculation, no-op, minors, manual budgets, validation and
 isolation; e2e covers the Profile flow. Batch 2, step 2 done (2026-10-30): macro targets on Profile: **Balanced** (default) or
 **My own %** (whole percents adding to 100, any budget), a budget setting versioned from today (migration 0025:
-`macro_mode`, `protein_share`, `carb_share`, with a sum check); exported and imported with the archive. Next: the
-saved meal editor (step 3), then the budget circle alternatives Artifact. Next: batch 2 features (Profile details, editable macro targets, saved meal
+`macro_mode`, `protein_share`, `carb_share`, with a sum check); exported and imported with the archive. 
+
+Batch 2, step 3 done (2026-10-30): saved meal editor (`/saved-meals/[id]`, `/saved-meals/new`): rename, item amounts
+and units, remove, add foods, create from scratch; one atomic `PUT /api/v1/saved-meals/[id]` (`saveContents`, revision
+checked, idempotent create); Log's sheet is for logging with an Edit meal link. DB tests for replace/create/conflicts/
+isolation; e2e for edit and create journeys. Next: the budget circle alternatives as an Artifact for the owner. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

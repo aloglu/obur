@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Logs a saved meal (docs/ui.md, "Saved meals"): pick items, day and meal, then one tap creates ordinary entries.
-	// Below, Manage renames, updates items to current food values (an explicit action) or deletes the saved meal.
+	// Edit meal opens the editor; managing and logging are separate (owner review 2026-10-30).
+	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
@@ -12,7 +13,6 @@
 	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
-	import TextField from '../TextField.svelte';
 	import ItemChecklist from './ItemChecklist.svelte';
 
 	interface Props {
@@ -21,21 +21,9 @@
 		today: string;
 		meal: Meal;
 		onlogged: (entries: DiaryEntry[]) => void;
-		/** Renamed, updated or deleted, so lists can refresh. */
-		onchanged?: () => void;
-		ondeleted: (name: string) => void;
 		onclose: () => void;
 	}
-	let {
-		savedMealId,
-		date,
-		today,
-		meal: presetMeal,
-		onlogged,
-		onchanged,
-		ondeleted,
-		onclose
-	}: Props = $props();
+	let { savedMealId, date, today, meal: presetMeal, onlogged, onclose }: Props = $props();
 
 	let saved = $state<SavedMeal | null>(null);
 	let chosen = $state<string[]>([]);
@@ -43,10 +31,6 @@
 	let meal = $state<Meal>(untrack(() => presetMeal));
 	let busy = $state(false);
 	let problem = $state('');
-	let note = $state('');
-	let renaming = $state(false);
-	let newName = $state('');
-	let confirmDelete = $state(false);
 	// Entry IDs per item, kept across retries so a lost reply never logs twice (not displayed, so not reactive).
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	const entryIds = new Map<string, string>();
@@ -71,7 +55,6 @@
 	async function run(action: () => Promise<void>) {
 		busy = true;
 		problem = '';
-		note = '';
 		try {
 			await action();
 		} catch (e) {
@@ -100,38 +83,6 @@
 			onlogged(entries);
 		});
 	};
-
-	const rename = (event: SubmitEvent) => {
-		event.preventDefault();
-		if (!saved || !newName.trim()) return;
-		return run(async () => {
-			saved = await api<SavedMeal>('PATCH', `/api/v1/saved-meals/${savedMealId}`, {
-				revision: saved!.revision,
-				name: newName
-			});
-			renaming = false;
-			onchanged?.();
-		});
-	};
-
-	const refresh = () =>
-		run(async () => {
-			const result = await api<{ meal: SavedMeal; refreshed: number; kept: number }>(
-				'POST',
-				`/api/v1/saved-meals/${savedMealId}/refresh`,
-				{ revision: saved!.revision }
-			);
-			saved = result.meal;
-			note = m.saved_refreshed({ refreshed: String(result.refreshed), kept: String(result.kept) });
-			onchanged?.();
-		});
-
-	const remove = () =>
-		run(async () => {
-			// A JSON body: SvelteKit refuses a bodyless cross-origin-looking DELETE behind the proxy as a form post.
-			await api('DELETE', `/api/v1/saved-meals/${savedMealId}`, {});
-			ondeleted(saved!.name);
-		});
 </script>
 
 <Sheet title={saved?.name ?? m.saved_title()} {onclose}>
@@ -159,73 +110,11 @@
 			>
 		</form>
 
-		<section class="flex flex-col gap-2 border-t border-line pt-4" aria-labelledby="saved-manage">
-			<h3 id="saved-manage" class="text-[13px] font-[650] text-muted">{m.saved_manage()}</h3>
-			{#if note}<Notice tone="info">{note}</Notice>{/if}
-			{#if renaming}
-				<form class="flex flex-col gap-2" onsubmit={rename}>
-					<TextField
-						label={m.saved_name()}
-						bind:value={newName}
-						maxlength={120}
-						autocomplete="off"
-					/>
-					<div class="flex gap-2">
-						<Button type="submit" disabled={busy || !newName.trim()}>{m.saved_rename_save()}</Button
-						>
-						<button
-							type="button"
-							onclick={() => (renaming = false)}
-							class="min-h-11 px-3 text-[15px] font-semibold text-muted">{m.common_cancel()}</button
-						>
-					</div>
-				</form>
-			{:else}
-				<button
-					type="button"
-					disabled={busy}
-					onclick={() => {
-						renaming = true;
-						newName = saved!.name;
-					}}
-					class="min-h-11 rounded-input border border-line text-[15px] font-semibold"
-					>{m.saved_rename()}</button
-				>
-			{/if}
-			<button
-				type="button"
-				disabled={busy}
-				onclick={refresh}
-				aria-describedby="saved-refresh-hint"
-				class="min-h-11 rounded-input border border-line text-[15px] font-semibold"
-				>{m.saved_refresh()}</button
-			>
-			<p id="saved-refresh-hint" class="text-[13px] text-muted">{m.saved_refresh_hint()}</p>
-			{#if confirmDelete}
-				<p class="text-[13px] text-muted">{m.saved_delete_hint()}</p>
-				<div class="flex gap-2">
-					<button
-						type="button"
-						disabled={busy}
-						onclick={remove}
-						class="min-h-11 flex-1 rounded-input border-2 border-bad bg-surface text-[15px] font-bold text-bad"
-						>{m.saved_delete_confirm()}</button
-					>
-					<button
-						type="button"
-						onclick={() => (confirmDelete = false)}
-						class="min-h-11 px-3 text-[15px] font-semibold text-muted">{m.common_cancel()}</button
-					>
-				</div>
-			{:else}
-				<button
-					type="button"
-					disabled={busy}
-					onclick={() => (confirmDelete = true)}
-					class="min-h-11 rounded-input text-[15px] font-semibold text-bad"
-					>{m.saved_delete()}</button
-				>
-			{/if}
-		</section>
+		<!-- Managing a meal is separate from logging it (owner review 2026-10-30). -->
+		<a
+			href={resolve('/(app)/saved-meals/[id]', { id: savedMealId })}
+			class="inline-flex min-h-11 items-center justify-center self-center px-3 text-[15px] font-semibold text-accent"
+			>{m.saved_edit()}</a
+		>
 	{/if}
 </Sheet>

@@ -102,3 +102,20 @@ export function optionKeyFor(unit: SnapshotUnit): string {
 			return unit.unit;
 	}
 }
+
+/** The stored unit an option means for a food's portions, for previews; undefined when it no longer exists. */
+export function snapshotUnitFor(
+	input: UnitOption['input'],
+	servings: { id: string; name: string; amount: number; unit: 'g' | 'ml' }[],
+	measures: MeasureOption[]
+): SnapshotUnit | undefined {
+	if (input.kind === 'measure') {
+		const m = measures.find((x) => x.code === input.code);
+		return m && { kind: 'measure', code: m.code, name: m.name, ml: m.ml };
+	}
+	if (input.kind === 'serving') {
+		const s = servings.find((x) => x.id === input.servingId);
+		return s && { kind: 'serving', servingId: s.id, name: s.name, amount: s.amount, unit: s.unit };
+	}
+	return input;
+}

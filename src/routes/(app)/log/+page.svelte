@@ -141,10 +141,6 @@
 			await goto(dayHref(entries[0].localDate, entries[0].id));
 			showLoggedMeal(entries, () => goto(dayHref(entries[0].localDate), { invalidateAll: true }));
 		}}
-		ondeleted={(name) => {
-			openSaved = null;
-			showToast({ message: m.saved_deleted({ name }) });
-		}}
 		onclose={() => (openSaved = null)}
 	/>
 {/if}

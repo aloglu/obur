@@ -18,6 +18,14 @@ import { DiaryError, insertEntry, snapshotOf, type EntryContext } from './servic
 
 export const MAX_ITEMS = 100;
 
+/**
+ * One item of an edited meal, units already resolved: a kept item (a food's amount and unit re-scaled from its own
+ * snapshot, as a diary correction is) or a new food, snapshotted now.
+ */
+export type MealItemEdit =
+	| { itemId: string; amount?: number; unit?: SnapshotUnit }
+	| { food: FoodDetail; amount: number; unit: SnapshotUnit };
+
 type MealRow = typeof savedMeals.$inferSelect;
 type ItemRow = typeof savedMealItems.$inferSelect;
 
@@ -152,6 +160,93 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 					})
 				);
 				return load(tx, id);
+			});
+		},
+
+		/**
+		 * Creates (`revision` null) or replaces a meal's name and contents in one transaction. A create is idempotent
+		 * by ID while the name matches; a replace needs the revision it was edited from. Kept items keep their ID and
+		 * snapshot; catalog changes never reach them here (that is `refresh`).
+		 */
+		async saveContents(
+			userId: string,
+			input: { id: string; revision: number | null; name: string; items: MealItemEdit[] }
+		): Promise<SavedMeal> {
+			if (input.items.length === 0 || input.items.length > MAX_ITEMS)
+				throw new DiaryError('not_found');
+			return withUser(db, userId, async (tx) => {
+				const [existing] = await tx.select().from(savedMeals).where(eq(savedMeals.id, input.id));
+				if (input.revision === null && existing) {
+					if (existing.name !== input.name) throw new DiaryError('conflict');
+					return load(tx, input.id);
+				}
+				if (input.revision !== null && !existing) throw new DiaryError('not_found');
+				if (input.revision !== null && existing.revision !== input.revision)
+					throw new DiaryError('conflict');
+				const old = new Map(
+					(
+						await tx.select().from(savedMealItems).where(eq(savedMealItems.savedMealId, input.id))
+					).map((r) => [r.id, r])
+				);
+				const seen = new Set<string>();
+				const rows = input.items.map((item) => {
+					if ('food' in item) {
+						const food = snapshotOf(item.food);
+						const nutrients = snapshotNutrients(food, item.amount, item.unit);
+						if (!nutrients) throw new DiaryError('conversion_unknown');
+						return {
+							id: randomUUID(),
+							kind: 'food' as const,
+							foodId: item.food.id,
+							food,
+							amount: item.amount,
+							unit: item.unit,
+							description: null,
+							nutrients
+						};
+					}
+					const row = old.get(item.itemId);
+					if (!row || seen.has(item.itemId)) throw new DiaryError('not_found');
+					seen.add(item.itemId);
+					const kept = {
+						id: row.id,
+						kind: row.kind,
+						foodId: row.foodId,
+						food: row.food,
+						amount: row.amount,
+						unit: row.unit,
+						description: row.description,
+						nutrients: row.nutrients
+					};
+					if (item.amount === undefined && !item.unit) return kept;
+					// Only a food's amount can change; quick items are kept or removed.
+					if (row.kind !== 'food') throw new DiaryError('not_found');
+					const amount = item.amount ?? row.amount!;
+					const unit = item.unit ?? row.unit!;
+					const nutrients = snapshotNutrients(row.food!, amount, unit);
+					if (!nutrients) throw new DiaryError('conversion_unknown');
+					return { ...kept, amount, unit, nutrients };
+				});
+				if (existing) {
+					await tx
+						.update(savedMeals)
+						.set({ name: input.name, revision: existing.revision + 1, updatedAt: now() })
+						.where(eq(savedMeals.id, input.id));
+					await tx.delete(savedMealItems).where(eq(savedMealItems.savedMealId, input.id));
+				} else {
+					try {
+						await tx.insert(savedMeals).values({ id: input.id, userId, name: input.name });
+					} catch (e) {
+						// Another person's meal with this ID, invisible under RLS.
+						if ((e as { cause?: { code?: string } }).cause?.code === '23505')
+							throw new DiaryError('conflict');
+						throw e;
+					}
+				}
+				await tx
+					.insert(savedMealItems)
+					.values(rows.map((r, position) => ({ ...r, savedMealId: input.id, userId, position })));
+				return load(tx, input.id);
 			});
 		},
 

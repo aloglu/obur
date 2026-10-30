@@ -226,6 +226,87 @@ describe('managing', () => {
 		expect(kept.meal.kcal).toBeCloseTo(250 * 0.52 + 120);
 	});
 
+	it('replaces contents in one step: amounts from the snapshot, removals, new foods, order and name', async () => {
+		const meal = await breakfast();
+		const [slices, tea] = meal.items;
+		await catalog.updateFood(MEHMET, breadId, 1, bread(250));
+		const food = await catalog.getFood(ZEYNEP, breadId);
+		const grams = { kind: 'mass' as const, unit: 'g' as const };
+		const edited = await saved.saveContents(ZEYNEP, {
+			id: meal.id,
+			revision: 1,
+			name: 'Hafta içi',
+			items: [
+				{ food, amount: 100, unit: grams },
+				{ itemId: slices.id, amount: 3 }
+			]
+		});
+		expect(edited).toMatchObject({ name: 'Hafta içi', revision: 2, itemCount: 2 });
+		// The new food uses today's catalog; the kept slices re-scale their own snapshot (193 kcal per 100 g).
+		expect(edited.items[0].nutrients.energy_kcal?.value).toBeCloseTo(250);
+		expect(edited.items[1]).toMatchObject({ id: slices.id, amount: 3 });
+		expect(edited.items[1].nutrients.energy_kcal?.value).toBeCloseTo(193 * 0.78);
+		expect(edited.items.map((i) => i.id)).not.toContain(tea.id);
+		expect(await asUser(ZEYNEP, (tx) => tx`select id from saved_meal_items`)).toHaveLength(2);
+		// A stale editor is refused, and nothing changes.
+		expect(
+			await errorCode(
+				saved.saveContents(ZEYNEP, {
+					id: meal.id,
+					revision: 1,
+					name: 'Eski',
+					items: [{ itemId: tea.id }]
+				})
+			)
+		).toBe('conflict');
+		expect((await saved.get(ZEYNEP, meal.id)).name).toBe('Hafta içi');
+	});
+
+	it('creates a meal from scratch, idempotently, and refuses unknown units, foreign items and quick amounts', async () => {
+		const food = await catalog.getFood(ZEYNEP, breadId);
+		const slice = resolveUnit(
+			{ kind: 'serving', servingId: food.servings[0].id },
+			food.servings,
+			[]
+		)!;
+		const id = randomUUID();
+		const input = {
+			id,
+			revision: null,
+			name: 'Ara öğün',
+			items: [{ food, amount: 1, unit: slice }]
+		};
+		const created = await saved.saveContents(ZEYNEP, input);
+		expect(created).toMatchObject({ name: 'Ara öğün', revision: 1, itemCount: 1 });
+		expect((await saved.saveContents(ZEYNEP, input)).id).toBe(id);
+		expect(await errorCode(saved.saveContents(ZEYNEP, { ...input, name: 'Başka' }))).toBe(
+			'conflict'
+		);
+		// Another person cannot reuse the ID or reach the meal.
+		expect(await errorCode(saved.saveContents(MEHMET, input))).toBe('conflict');
+		expect(
+			await errorCode(
+				saved.saveContents(MEHMET, {
+					...input,
+					revision: 1,
+					items: [{ food, amount: 1, unit: slice }]
+				})
+			)
+		).toBe('not_found');
+
+		const meal = await breakfast();
+		const [slices, tea] = meal.items;
+		const edit = (items: Parameters<typeof saved.saveContents>[1]['items']) =>
+			errorCode(saved.saveContents(ZEYNEP, { id: meal.id, revision: 1, name: 'X', items }));
+		expect(await edit([{ itemId: created.items[0].id }])).toBe('not_found');
+		expect(await edit([{ itemId: tea.id, amount: 2 }])).toBe('not_found');
+		expect(await edit([{ itemId: slices.id }, { itemId: slices.id }])).toBe('not_found');
+		expect(await edit([{ itemId: slices.id, unit: { kind: 'volume', unit: 'ml' } }])).toBe(
+			'conversion_unknown'
+		);
+		expect((await saved.get(ZEYNEP, meal.id)).revision).toBe(1);
+	});
+
 	it('lists meals with their item count and energy total', async () => {
 		await breakfast();
 		const [summary] = await saved.list(ZEYNEP);

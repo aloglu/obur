@@ -72,6 +72,26 @@ export const CreateSavedMeal = v.object({
 });
 
 export const RenameSavedMeal = v.object({ revision: Revision, name: SavedMealName });
+
+/**
+ * PUT a saved meal's whole contents from the editor: `revision` null creates it (idempotent by ID), a number
+ * replaces it if unchanged since. Items in order: kept ones by ID, with a changed amount or unit for a food, or
+ * new foods.
+ */
+export const SaveSavedMeal = v.object({
+	revision: v.nullable(Revision),
+	name: SavedMealName,
+	items: v.pipe(
+		v.array(
+			v.union([
+				v.object({ itemId: Uuid, amount: v.optional(Amount), unit: v.optional(UnitInput) }),
+				v.object({ foodId: Uuid, amount: Amount, unit: UnitInput })
+			])
+		),
+		v.minLength(1),
+		v.maxLength(100)
+	)
+});
 export const RefreshSavedMeal = v.object({ revision: Revision });
 
 export const LogSavedMeal = v.object({

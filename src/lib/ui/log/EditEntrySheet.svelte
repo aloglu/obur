@@ -9,7 +9,12 @@
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
 	import { mealName } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
-	import { optionKeyFor, unitOptions, type MeasureOption } from '#lib/shared/unit-options.ts';
+	import {
+		optionKeyFor,
+		snapshotUnitFor,
+		unitOptions,
+		type MeasureOption
+	} from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
 	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
@@ -51,27 +56,9 @@
 			? (start.description ?? m.entry_quick())
 			: `${snapshot?.brand ? `${snapshot.brand} ` : ''}${snapshot?.name ?? ''}`;
 
-	const storedUnit = $derived.by(() => {
-		const i = option?.input;
-		if (!i) return undefined;
-		if (i.kind === 'measure') {
-			const mm = measures.find((x) => x.code === i.code);
-			return mm && { kind: 'measure' as const, code: mm.code, name: mm.name, ml: mm.ml };
-		}
-		if (i.kind === 'serving') {
-			const s = snapshot?.servings.find((x) => x.id === i.servingId);
-			return (
-				s && {
-					kind: 'serving' as const,
-					servingId: s.id,
-					name: s.name,
-					amount: s.amount,
-					unit: s.unit
-				}
-			);
-		}
-		return i;
-	});
+	const storedUnit = $derived(
+		option && snapshotUnitFor(option.input, snapshot?.servings ?? [], measures)
+	);
 	const preview = $derived.by(() => {
 		if (!snapshot || !storedUnit || amount === undefined) return undefined;
 		const scaled = snapshotNutrients(snapshot, amount, storedUnit);

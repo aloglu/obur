@@ -10,6 +10,7 @@ export {
 export {
 	createSavedMeals,
 	MAX_ITEMS as SAVED_MEAL_MAX_ITEMS,
+	type MealItemEdit,
 	type SavedMeals
 } from './saved-meals.ts';
 export {
