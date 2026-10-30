@@ -22,6 +22,9 @@
 	import SavedMealSheet from '#lib/ui/log/SavedMealSheet.svelte';
 	import SaveMealSheet from '#lib/ui/log/SaveMealSheet.svelte';
 	import { showLoggedMeal } from '#lib/client/saved-meal-toast.ts';
+	import { showLoggedEntry } from '#lib/client/entry-toast.ts';
+	import EntrySheet from '#lib/ui/log/EntrySheet.svelte';
+	import type { LoggedEntry, ParsedEntry } from '#lib/shared/entry-types.ts';
 	import BudgetCard from '#lib/ui/today/BudgetCard.svelte';
 	import DayHeader from '#lib/ui/today/DayHeader.svelte';
 	import MealCard from '#lib/ui/today/MealCard.svelte';
@@ -38,6 +41,7 @@
 	let pendingOpen = $state<QueuedOp | null>(null);
 	let savingMeal = $state<Meal | null>(null);
 	let openSaved = $state<string | null>(null);
+	let typedEntry = $state<ParsedEntry | null>(null);
 	const pendingFor = (meal: Meal) =>
 		offline.items.filter(
 			(i) =>
@@ -152,6 +156,16 @@
 		showLoggedMeal(entries, invalidateAll);
 	}
 
+	async function loggedTyped(logged: LoggedEntry) {
+		typedEntry = null;
+		preset = null;
+		panelKey += 1;
+		if (logged.date !== data.date) await goto(dayHref(logged.date));
+		await invalidateAll();
+		if (logged.firstEntryId) highlight = logged.firstEntryId;
+		showLoggedEntry(logged, invalidateAll);
+	}
+
 	async function toggleComplete() {
 		await api('PUT', `/api/v1/diary/days/${data.date}`, { complete: !data.complete });
 		await invalidateAll();
@@ -249,6 +263,7 @@
 					onquick={() => (quick = true)}
 					onclearpreset={() => (preset = null)}
 					onpickmeal={(id) => (openSaved = id)}
+					onentry={(e) => (typedEntry = e)}
 					presetRequest={panelFocus}
 				/>
 			{/key}
@@ -293,6 +308,15 @@
 			showToast({ message: m.saved_toast({ name: saved.name }), detail: m.saved_toast_detail() });
 		}}
 		onclose={() => (savingMeal = null)}
+	/>
+{/if}
+{#if typedEntry}
+	<EntrySheet
+		entry={typedEntry}
+		today={data.today}
+		meal={sheetMeal}
+		onlogged={loggedTyped}
+		onclose={() => (typedEntry = null)}
 	/>
 {/if}
 {#if openSaved}

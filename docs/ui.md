@@ -51,6 +51,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
   2. "I heard" as editable text.
   3. One card per parsed food, with an editable amount, unit, kcal, meal and day, and a remove button.
   4. "Log all (N)" saves them; "Try again" restarts.
+- **Typed entry (provisional, built 2026-10-30, owner to review):** typing a sentence with more than a food's name in the Log search ("kahvaltıda iki dilim ekmek ve iki bardak su", "bugün 80,5 kiloydum") adds a **Log as typed** row above the results, with the number of items and the day. It opens **Check and log**, the same layout planned for Speak: "You typed" as an editable two-line text with **Read again**, then one card per item (food: a chooser among the candidates, amount, unit chips and live kcal, with prompts when the amount or unit is missing; calories only, water, weight and activity: their value), shared Day and Meal chips, and **Log all (N)**, enabled only when every card is complete. Each card has a remove button. After saving, one toast with one Undo for everything. Needs a connection.
 - **Scan a label:**
   1. A camera frame filling the sheet width, with the hint "Fill the frame with the nutrition table", and "Take photo" (or "Choose a photo" on desktop).
   2. A "Reading the nutrition table…" state that says it runs on your own server.

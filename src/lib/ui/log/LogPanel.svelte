@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import Bookmark from '@lucide/svelte/icons/bookmark';
+	import TextCursorInput from '@lucide/svelte/icons/text-cursor-input';
 	import Mic from '@lucide/svelte/icons/mic';
 	import ScanLine from '@lucide/svelte/icons/scan-line';
 	import Search from '@lucide/svelte/icons/search';
@@ -11,6 +12,8 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import type { Meal, SavedMealSummary } from '#lib/shared/diary-types.ts';
+	import type { ParsedEntry } from '#lib/shared/entry-types.ts';
+	import { deviceZone } from '#lib/client/prefs.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { dayTitle, kcal, mealName } from '#lib/shared/format.ts';
 	import { foldForSearch } from '#lib/shared/search-text.ts';
@@ -22,6 +25,8 @@
 		onpick: (foodId: string) => void;
 		onquick: () => void;
 		onclearpreset: () => void;
+		/** Opens the confirmation for a typed sentence; offered only when given. */
+		onentry?: (entry: ParsedEntry) => void;
 		/** Opens a saved meal; saved meals are listed only when given. */
 		onpickmeal?: (savedMealId: string) => void;
 		/** Desktop: bumped each time a meal's + chooses the meal, to replay the pill's pulse. */
@@ -35,6 +40,7 @@
 		onquick,
 		onclearpreset,
 		onpickmeal,
+		onentry,
 		presetRequest = 0
 	}: Props = $props();
 
@@ -48,6 +54,35 @@
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
 	const typing = $derived(query.trim().length > 0);
+
+	// A sentence with more than a food's name ("3 dilim ekmek", "iki bardak su") is offered as an entry to confirm.
+	let typed = $state<ParsedEntry | null>(null);
+	let parseTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		const q = query.trim();
+		clearTimeout(parseTimer);
+		typed = null;
+		if (!onentry || q.split(/\s+/).length < 2) return;
+		parseTimer = setTimeout(async () => {
+			try {
+				const entry = await api<ParsedEntry>('POST', '/api/v1/entry/parse', {
+					text: q,
+					date,
+					zone: deviceZone()
+				});
+				const worth =
+					entry.items.length > 1 ||
+					entry.items.some((i) => i.kind !== 'food' || i.amount !== null || i.vague);
+				if (q === query.trim() && worth) typed = entry;
+			} catch {
+				// Offline or unreachable: the ordinary search says so.
+			}
+		}, 250);
+	});
+	const typedSummary = (e: ParsedEntry) =>
+		e.items.length === 1
+			? m.log_as_typed_one({ day: dayTitle(e.date, today) })
+			: m.log_as_typed_many({ count: String(e.items.length), day: dayTitle(e.date, today) });
 	const showSuggestions = $derived(focused && !typing);
 
 	// Refreshed on every focus: logging, undo or edits elsewhere change what is recent.
@@ -218,6 +253,19 @@
 	</div>
 
 	{#if typing}
+		{#if typed}
+			<button
+				type="button"
+				onclick={() => typed && onentry?.(typed)}
+				class="flex min-h-14 w-full items-center gap-3 rounded-input bg-soft px-3 py-2 text-left"
+			>
+				<TextCursorInput size={20} class="shrink-0 text-accent" aria-hidden="true" />
+				<span class="min-w-0 flex-1">
+					<span class="block text-[15px] font-bold text-accent">{m.log_as_typed()}</span>
+					<span class="block text-[13px] text-muted">{typedSummary(typed)}</span>
+				</span>
+			</button>
+		{/if}
 		{#if matchingMeals.length}{@render mealList(matchingMeals)}{/if}
 		<section aria-label={m.log_results()}>
 			{#if searchFailed}

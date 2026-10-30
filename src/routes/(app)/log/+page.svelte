@@ -16,6 +16,9 @@
 	import QuickAddSheet from '#lib/ui/log/QuickAddSheet.svelte';
 	import SavedMealSheet from '#lib/ui/log/SavedMealSheet.svelte';
 	import { showLoggedMeal } from '#lib/client/saved-meal-toast.ts';
+	import { showLoggedEntry } from '#lib/client/entry-toast.ts';
+	import EntrySheet from '#lib/ui/log/EntrySheet.svelte';
+	import type { ParsedEntry } from '#lib/shared/entry-types.ts';
 
 	let { data } = $props();
 
@@ -33,6 +36,7 @@
 	let picking = $state<string | null>(null);
 	let quick = $state(false);
 	let openSaved = $state<string | null>(null);
+	let typedEntry = $state<ParsedEntry | null>(null);
 	const sheetMeal = $derived(preset ?? defaultMeal(new Date(), deviceZone()));
 
 	async function logged(entry: DiaryEntry | null) {
@@ -72,6 +76,7 @@
 		onquick={() => (quick = true)}
 		onclearpreset={() => (preset = null)}
 		onpickmeal={(id) => (openSaved = id)}
+		onentry={(e) => (typedEntry = e)}
 	/>
 </main>
 
@@ -95,6 +100,19 @@
 	/>
 {/if}
 
+{#if typedEntry}
+	<EntrySheet
+		entry={typedEntry}
+		today={data.today}
+		meal={sheetMeal}
+		onlogged={async (logged) => {
+			typedEntry = null;
+			await goto(dayHref(logged.date, logged.firstEntryId ?? undefined));
+			showLoggedEntry(logged, () => goto(dayHref(logged.date), { invalidateAll: true }));
+		}}
+		onclose={() => (typedEntry = null)}
+	/>
+{/if}
 {#if openSaved}
 	<SavedMealSheet
 		savedMealId={openSaved}

@@ -37,3 +37,12 @@ export interface ParsedEntry {
 	meal: Meal | null;
 	items: EntryItem[];
 }
+
+/** What the confirmation sheet saved, for the toast and its Undo (each path deletes one record). */
+export interface LoggedEntry {
+	count: number;
+	date: string;
+	undo: string[];
+	/** The first diary entry, to highlight. */
+	firstEntryId: string | null;
+}
