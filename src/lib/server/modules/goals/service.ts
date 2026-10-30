@@ -16,8 +16,10 @@ import {
 } from '../../../shared/goals.ts';
 import * as v from 'valibot';
 import {
+	ProfileDetailsInput,
 	ProfileInput,
 	type BudgetSettings,
+	type DetailsOutcome,
 	type Profile,
 	type TargetVersion
 } from '../../../shared/goal-types.ts';
@@ -309,6 +311,70 @@ export function createGoals(db: Database) {
 				values.inputs = { ...(values.inputs as Record<string, unknown>), source: 'settings' };
 				const [row] = await tx.insert(goalVersions).values(values).returning();
 				return toVersion(row);
+			});
+		},
+
+		/**
+		 * Saves the details Profile edits (height, birth date, sex, and the goal weight of a calculated budget) and,
+		 * in the same transaction, recalculates a calculated budget from `today` with the same choices when its
+		 * numbers change. Past days keep their budgets; manual budgets are left alone. When the new details no longer
+		 * allow a calculation (a birth date that makes the person a minor), the details are saved and the budget in
+		 * force stays, for the person to replace with their own number.
+		 */
+		async updateDetails(
+			userId: string,
+			today: string,
+			latestWeightKg: number | null,
+			raw: v.InferInput<typeof ProfileDetailsInput>
+		): Promise<{ profile: Profile; outcome: DetailsOutcome; target: TargetVersion | null }> {
+			const { goalWeightKg, ...facts } = v.parse(ProfileDetailsInput, raw);
+			return withUser(db, userId, async (tx) => {
+				const set = { ...facts, updatedAt: new Date() };
+				const [profileRow] = await tx
+					.insert(profiles)
+					.values({ userId, ...set })
+					.onConflictDoUpdate({ target: profiles.userId, set })
+					.returning();
+				const [current] = await tx
+					.select()
+					.from(goalVersions)
+					.where(lte(goalVersions.effectiveFrom, today))
+					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
+					.limit(1);
+				const done = (outcome: DetailsOutcome, row = current) => ({
+					profile: toProfile(profileRow),
+					outcome,
+					target: row ? toVersion(row) : null
+				});
+				if (current?.mode !== 'calculated') return done({ kind: 'unchanged' });
+				const request = {
+					...repeatRequest(current, today),
+					...(goalWeightKg !== undefined ? { goalWeightKg } : {})
+				};
+				let values: typeof goalVersions.$inferInsert;
+				try {
+					values = await calculatedValues(tx, userId, request, latestWeightKg);
+				} catch (e) {
+					if (e instanceof GoalError && e.code !== 'no_target')
+						return done({ kind: 'not_recalculated', reason: e.code });
+					throw e;
+				}
+				const inputs = values.inputs as Record<string, unknown>;
+				const before = current.inputs as Record<string, unknown>;
+				const same =
+					values.baseBurnKcal === current.baseBurnKcal &&
+					values.deficitKcal === current.deficitKcal &&
+					values.proteinBasisKg === current.proteinBasisKg &&
+					values.goalWeightKg === current.goalWeightKg &&
+					(['weightKg', 'heightCm', 'age', 'sex'] as const).every((k) => inputs[k] === before[k]);
+				if (same) return done({ kind: 'unchanged' });
+				values.inputs = { ...inputs, source: 'details' };
+				const [row] = await tx.insert(goalVersions).values(values).returning();
+				const budget = (r: VersionRow) => Math.max(r.floorKcal, r.baseBurnKcal! - r.deficitKcal);
+				return done(
+					{ kind: 'recalculated', beforeKcal: budget(current), afterKcal: budget(row) },
+					row
+				);
 			});
 		},
 

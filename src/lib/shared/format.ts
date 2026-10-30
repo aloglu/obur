@@ -52,6 +52,12 @@ export function dayAndMonth(date: string): string {
 	return `${WEEKDAYS[weekday]} ${d} ${MONTHS[mo - 1]}`;
 }
 
+/** "12 April 1992". */
+export function dateWithYear(date: string): string {
+	const { y, mo, d } = parts(date);
+	return `${d} ${MONTHS[mo - 1]} ${y}`;
+}
+
 /** "October 2026". */
 export function monthTitle(month: string): string {
 	const [y, mo] = month.split('-').map(Number);

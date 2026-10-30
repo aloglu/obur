@@ -255,6 +255,90 @@ describe('following the latest weight', () => {
 	});
 });
 
+describe('editing details on Profile', () => {
+	const calc = {
+		mode: 'calculated' as const,
+		effectiveFrom: '2026-06-01',
+		rateKgPerWeek: 0.5,
+		goalWeightKg: 75
+	};
+
+	it('saves the details and recalculates from today in one step; past days keep their budget', async () => {
+		await goals.saveProfile(MEHMET, { ...adult, decimalMark: '.', firstDayOfWeek: 7 });
+		const first = await goals.setTarget(MEHMET, calc, 80);
+		// 2 cm taller: 10·80 + 6.25·182 − 5·30 + 5 = 1792,5; × 1.2 = 2151.
+		const { profile, outcome, target } = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
+			...adult,
+			heightCm: 182,
+			goalWeightKg: 72
+		});
+		expect(profile).toMatchObject({ heightCm: 182, decimalMark: '.', firstDayOfWeek: 7 });
+		expect(outcome).toEqual({
+			kind: 'recalculated',
+			beforeKcal: 2136 - 550,
+			afterKcal: 2151 - 550
+		});
+		expect(target).toMatchObject({
+			effectiveFrom: '2026-06-10',
+			goalWeightKg: 72,
+			baseBurnKcal: 2151
+		});
+		expect(target!.inputs).toMatchObject({ heightCm: 182, source: 'details' });
+		expect((await goals.targetFor(MEHMET, '2026-06-09'))?.id).toBe(first.id);
+	});
+
+	it('records nothing when nothing changes, and keeps the goal when it is not sent', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		const first = await goals.setTarget(MEHMET, calc, 80);
+		const { outcome, target } = await goals.updateDetails(MEHMET, '2026-06-10', 80, adult);
+		expect(outcome).toEqual({ kind: 'unchanged' });
+		expect(target?.id).toBe(first.id);
+		expect(await goals.history(MEHMET)).toHaveLength(1);
+		// Clearing the goal is a change.
+		const cleared = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
+			...adult,
+			goalWeightKg: null
+		});
+		expect(cleared.target).toMatchObject({ goalWeightKg: null, proteinBasisKg: 80 });
+	});
+
+	it('saves details that no longer allow a calculation and leaves the budget in force', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		const first = await goals.setTarget(MEHMET, calc, 80);
+		const minor = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
+			...adult,
+			birthDate: '2012-01-01'
+		});
+		expect(minor.outcome).toEqual({ kind: 'not_recalculated', reason: 'targets_not_allowed' });
+		expect(minor.profile.birthDate).toBe('2012-01-01');
+		expect(minor.target?.id).toBe(first.id);
+	});
+
+	it('leaves a hand-set budget alone, works without one, and validates', async () => {
+		const none = await goals.updateDetails(AYSE, '2026-06-10', null, adult);
+		expect(none).toMatchObject({ outcome: { kind: 'unchanged' }, target: null });
+		await goals.setTarget(
+			AYSE,
+			{ mode: 'manual', effectiveFrom: '2026-06-01', budgetKcal: 1800 },
+			null
+		);
+		const manual = await goals.updateDetails(AYSE, '2026-06-10', 70, { ...adult, heightCm: 170 });
+		expect(manual.outcome).toEqual({ kind: 'unchanged' });
+		expect(await goals.history(AYSE)).toHaveLength(1);
+		await expect(
+			goals.updateDetails(AYSE, '2026-06-10', 70, { ...adult, heightCm: 20 })
+		).rejects.toThrow();
+	});
+
+	it("only touches the signed-in person's profile and targets", async () => {
+		await goals.saveProfile(AYSE, { ...adult, heightCm: 165, sex: 'female' });
+		await goals.setTarget(AYSE, calc, 70);
+		await goals.updateDetails(MEHMET, '2026-06-10', 80, adult);
+		expect((await goals.profile(AYSE))?.heightCm).toBe(165);
+		expect(await goals.history(AYSE)).toHaveLength(1);
+	});
+});
+
 describe('budget settings', () => {
 	const calc = {
 		mode: 'calculated' as const,

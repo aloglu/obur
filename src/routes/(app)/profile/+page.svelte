@@ -10,6 +10,7 @@
 	import { dayTitle, kcal } from '#lib/shared/format.ts';
 	import { budgetForDay } from '#lib/shared/goals.ts';
 	import Card from '#lib/ui/Card.svelte';
+	import DetailsCard from '#lib/ui/profile/DetailsCard.svelte';
 
 	let { data } = $props();
 	const t = $derived(data.target);
@@ -39,6 +40,12 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<h1 class="text-[24px] font-[750]">{m.profile_title()}</h1>
+	<DetailsCard
+		profile={data.profile}
+		latestWeight={data.latestWeight}
+		target={t}
+		today={data.today}
+	/>
 	<Card title={m.profile_target()}>
 		<!-- A headline and labelled rows, so nothing wraps mid-sentence (owner review 2026-10-30). -->
 		{#if t && day}

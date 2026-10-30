@@ -78,3 +78,27 @@ export const TargetInput = v.variant('mode', [
 	v.object({ mode: v.literal('none'), effectiveFrom: Day })
 ]);
 export type TargetInput = v.InferOutput<typeof TargetInput>;
+
+/**
+ * The details Profile edits (docs/design.md, "Targets, profile and activity"). `goalWeightKg` applies to a calculated
+ * budget only: absent leaves it as it is, null clears it.
+ */
+export const ProfileDetailsInput = v.object({
+	heightCm: v.pipe(v.number(), v.finite(), v.minValue(50), v.maxValue(260)),
+	birthDate: Day,
+	sex: v.picklist(['female', 'male']),
+	goalWeightKg: v.optional(
+		v.nullable(v.pipe(v.number(), v.finite(), v.minValue(20), v.maxValue(700)))
+	)
+});
+export type ProfileDetailsInput = v.InferOutput<typeof ProfileDetailsInput>;
+
+/** What saving the details did to a calculated budget. */
+export type DetailsOutcome =
+	| { kind: 'unchanged' }
+	| { kind: 'recalculated'; beforeKcal: number; afterKcal: number }
+	/** The budget in force stays as it was: a calculation is no longer allowed (a minor, say) or possible. */
+	| {
+			kind: 'not_recalculated';
+			reason: 'targets_not_allowed' | 'profile_incomplete' | 'weight_required';
+	  };

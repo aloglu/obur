@@ -159,7 +159,12 @@ and magnesium would need new nutrient codes: not added); Household row buttons o
 docs/ui.md. The weight card note was a misreading (the owner confirmed they align). Follow-up: every
 clickable control shows a pointer cursor and disabled ones the arrow (one base rule in layout.css; Tailwind 4 had reset
 buttons to the default cursor). Water reworked after the owner's second look: +250 / +500 full width, **Other
-amount** below turning into a field with an ml / l suffix. Next: batch 2 features (Profile details, editable macro targets, saved meal
+amount** below turning into a field with an ml / l suffix.
+
+Batch 2, step 1 done (2026-10-30): Profile **Your details** card (rows; Edit in place; a new weight becomes today's
+weigh-in; `goals.updateDetails` saves details and recalculates a calculated budget from today in one transaction,
+`PATCH /api/v1/profile/details`). DB tests cover recalculation, no-op, minors, manual budgets, validation and
+isolation; e2e covers the Profile flow. Next: editable macro targets (step 2), then the saved meal editor (step 3). Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

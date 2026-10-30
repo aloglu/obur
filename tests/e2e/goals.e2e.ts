@@ -74,6 +74,26 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	for (const value of ['2136 kcal', '− 550 kcal', '1500 kcal'])
 		await expect(page.getByRole('definition').filter({ hasText: value })).toBeVisible();
 	await expect(page.getByText('Updates from the day you log a new weight.')).toBeVisible();
+
+	// Your details: shown as rows, edited in place; the calculated budget follows from today.
+	const details = page.getByRole('region', { name: 'Your details' });
+	await expect(details).toContainText('180 cm');
+	await expect(details).toContainText('80 kg · Today');
+	await details.getByRole('button', { name: 'Edit your details' }).click();
+	await details.getByLabel('Height (cm)').fill('20');
+	await details.getByRole('button', { name: 'Save details' }).click();
+	await expect(details).toContainText('Check the highlighted values');
+	// 182 cm and 79 kg: 10·79 + 6.25·182 − 5·30 + 5 = 1,782.5; × 1.2 = 2,139 base.
+	await details.getByLabel('Height (cm)').fill('182');
+	await details.getByLabel('Weight (kg)').fill('79');
+	await details.getByLabel('Goal weight (kg, optional)').fill('74');
+	await details.getByRole('button', { name: 'Save details' }).click();
+	await expect(page.getByRole('status')).toContainText('Details saved');
+	await expect(page.getByRole('status')).toContainText('Budget now 1589 kcal (was 1586)');
+	await expect(details).toContainText('182 cm');
+	await expect(details).toContainText('79 kg · Today');
+	await expect(details).toContainText('74 kg');
+	await expect(page.getByRole('definition').filter({ hasText: '2139 kcal' })).toBeVisible();
 });
 
 test('under-18s get no calculated target but can enter a professional’s number; over budget shows red', async ({

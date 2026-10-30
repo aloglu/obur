@@ -232,6 +232,8 @@ Online edits use server revisions and expected-version checks. A stale edit gets
 
 **Onboarding** asks for height, weight, birth date and sex (the formulas need them), optionally body-fat % and waist. It shows BMI (kg/m²) with WHO adult categories, waist-to-height ratio when waist is given, and a note that BMI can't tell muscle from fat. None of it is presented as a diagnosis, and onboarding ends with a short note that targets are estimates, not medical advice. A person can also skip all of this and set a target by hand.
 
+**Profile** shows the details as rows (height, birth date with age, sex, latest weight with its day, and a calculated budget's goal weight) and edits them in place (owner request 2026-10-30). A new weight is saved as today's weigh-in. Saving the other details and a calculated budget's recalculation from today are one transaction, so past days keep their budgets; nothing is recorded when the numbers don't change. If the new details no longer allow a calculation (a birth date that makes the person a minor, for example), the details are saved, the budget in force stays, and the person is told to set their own number. A hand-set budget is left alone.
+
 **Base burn** is what the body uses on a day with no physical activity: BMR (Mifflin–St Jeor by default, Katch–McArdle when body-fat % is known) times a sedentary factor of about 1.2, which covers ordinary daily living. A person can replace it with a fixed number they choose.
 
 **Daily budget = base burn + calories burned through activity that day − the goal's deficit.** Example: base 2,000 kcal plus 1,000 kcal burned, with no deficit, gives 3,000 kcal.

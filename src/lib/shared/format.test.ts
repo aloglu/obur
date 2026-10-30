@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayTitle, longDate, quantityText } from './format.ts';
+import { dateWithYear, dayTitle, longDate, quantityText } from './format.ts';
 
 describe('format', () => {
 	it('titles days the same way in every engine', () => {
@@ -9,6 +9,7 @@ describe('format', () => {
 		expect(dayTitle('2025-12-31', '2026-01-02')).toBe('Wed 31 Dec');
 		expect(longDate('2026-10-20')).toBe('Tuesday 20 October 2026');
 		expect(longDate('2028-02-29')).toBe('Tuesday 29 February 2028');
+		expect(dateWithYear('1992-04-12')).toBe('12 April 1992');
 	});
 
 	it('describes quantities with decimal commas and readable portions', () => {
