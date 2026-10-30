@@ -14,6 +14,7 @@ import {
 	type AnyPgColumn
 } from 'drizzle-orm/pg-core';
 import { users } from '../auth/index.ts';
+import type { EntryNutrients, FoodSnapshot, SnapshotUnit } from '../../../shared/diary-types.ts';
 import { NUTRIENT_CODES, QUALIFIERS } from '../../../shared/nutrients.ts';
 
 // RLS policies and grants for these tables live in hand-written migrations under drizzle/.
@@ -39,7 +40,7 @@ export const foods = pgTable(
 		servingUnit: text('serving_unit', { enum: ['g', 'ml'] }),
 		barcode: text('barcode'),
 		origin: text('origin', {
-			enum: ['manual', 'label_scan', 'loseit', 'curated', 'variant']
+			enum: ['manual', 'label_scan', 'loseit', 'curated', 'variant', 'recipe']
 		}).notNull(),
 		// Provenance such as dataset release and source record ID; informational only.
 		sourceMeta: jsonb('source_meta'),
@@ -131,4 +132,59 @@ export const householdMeasures = pgTable(
 		position: integer('position').notNull()
 	},
 	(t) => [check('household_measures_ml_positive', sql`${t.ml} > 0`)]
+);
+
+// Recipes (docs/design.md, "Food catalog and recipes"): a recipe is a food (origin 'recipe', per serving) whose
+// values are the sum of its ingredients divided by its servings. Ingredients are pinned as snapshots, like diary
+// entries, so catalog edits never change a recipe until its owner updates it. Only the owner sees the ingredients;
+// others who can see a shared recipe see it as a plain food with totals. owner_id cascades, so deleting an account
+// always removes its ingredient lists, even when the recipe's food stays shared.
+export const recipes = pgTable(
+	'recipes',
+	{
+		foodId: uuid('food_id')
+			.primaryKey()
+			.references(() => foods.id, { onDelete: 'cascade' }),
+		ownerId: uuid('owner_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		servings: numeric('servings', { precision: 8, scale: 2, mode: 'number' }).notNull(),
+		// The finished dish's weight, when measured or entered; without it there are no per-gram values.
+		cookedYieldG: numeric('cooked_yield_g', { precision: 10, scale: 2, mode: 'number' })
+	},
+	(t) => [
+		check('recipes_servings_range', sql`${t.servings} > 0 and ${t.servings} <= 1000`),
+		check(
+			'recipes_cooked_yield_range',
+			sql`${t.cookedYieldG} is null or (${t.cookedYieldG} > 0 and ${t.cookedYieldG} <= 100000)`
+		),
+		index('recipes_owner_id_idx').on(t.ownerId)
+	]
+);
+
+export const recipeIngredients = pgTable(
+	'recipe_ingredients',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		recipeId: uuid('recipe_id')
+			.notNull()
+			.references(() => recipes.foodId, { onDelete: 'cascade' }),
+		ownerId: uuid('owner_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		position: integer('position').notNull(),
+		// The food it was taken from, while it exists; the snapshot is what the recipe uses.
+		foodId: uuid('food_id').references(() => foods.id, { onDelete: 'set null' }),
+		food: jsonb('food').$type<FoodSnapshot>().notNull(),
+		amount: amount('amount').notNull(),
+		unit: jsonb('unit').$type<SnapshotUnit>().notNull(),
+		nutrients: jsonb('nutrients').$type<EntryNutrients>().notNull()
+	},
+	(t) => [
+		unique('recipe_ingredients_position').on(t.recipeId, t.position),
+		check('recipe_ingredients_position_range', sql`${t.position} between 0 and 99`),
+		check('recipe_ingredients_amount_positive', sql`${t.amount} > 0`),
+		index('recipe_ingredients_owner_id_idx').on(t.ownerId),
+		index('recipe_ingredients_food_id_idx').on(t.foodId)
+	]
 );

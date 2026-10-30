@@ -4,7 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, gte, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
-import { snapshotNutrients } from '../../../shared/diary-rules.ts';
+import { snapshotNutrients, snapshotOf } from '../../../shared/diary-rules.ts';
 import type {
 	DiaryEntry,
 	EntryNutrients,
@@ -64,17 +64,8 @@ export function resolveUnit(
 	return input;
 }
 
-export function snapshotOf(food: FoodDetail): FoodSnapshot {
-	return {
-		name: food.name,
-		brand: food.brand,
-		basis: food.basis,
-		servingLabel: food.servingLabel,
-		servingSize: food.servingSize ?? null,
-		servings: food.servings.map(({ id, name, amount, unit }) => ({ id, name, amount, unit })),
-		basisNutrients: food.nutrients
-	};
-}
+// The snapshot rule is shared with recipes (catalog module); re-exported here for the diary's callers.
+export { snapshotOf };
 
 type Row = typeof diaryEntries.$inferSelect;
 

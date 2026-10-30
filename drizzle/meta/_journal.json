@@ -183,6 +183,20 @@
       "when": 1793374135542,
       "tag": "0025_macro_shares",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793379002330,
+      "tag": "0026_recipes",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793379010466,
+      "tag": "0027_recipes_rls",
+      "breakpoints": true
     }
   ]
 }

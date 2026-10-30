@@ -10,12 +10,14 @@ import { foldForSearch, foodSearchKey, searchKeyWithAliases } from '../../../sha
 import { foodNutrients, foods, foodServings, householdMeasures } from './schema.ts';
 
 export class CatalogError extends Error {
-	constructor(readonly code: 'not_found' | 'forbidden' | 'conflict' | 'energy_required') {
+	constructor(
+		readonly code: 'not_found' | 'forbidden' | 'conflict' | 'energy_required' | 'conversion_unknown'
+	) {
 		super(code);
 	}
 }
 
-type Origin = 'manual' | 'label_scan' | 'loseit' | 'curated' | 'variant';
+type Origin = 'manual' | 'label_scan' | 'loseit' | 'curated' | 'variant' | 'recipe';
 
 async function writeChildren(tx: Tx, foodId: string, input: FoodInput) {
 	const nutrients = deriveNutrients(input.nutrients);
@@ -40,7 +42,8 @@ const columns = (input: FoodInput) => ({
 	barcode: input.barcode
 });
 
-async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefined> {
+/** A food as the signed-in person sees it (module-internal; recipes use it too). */
+export async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefined> {
 	const [row] = await tx
 		.select({
 			food: foods,
@@ -139,6 +142,8 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 				const current = await load(tx, foodId);
 				if (!current) throw new CatalogError('not_found');
 				if (!current.editable) throw new CatalogError('forbidden');
+				// A recipe's values come from its ingredients; it is edited in the recipe editor.
+				if (current.origin === 'recipe') throw new CatalogError('forbidden');
 				// Only the creator may change who can see a food.
 				if (!current.mine && input.visibility !== current.visibility)
 					throw new CatalogError('forbidden');

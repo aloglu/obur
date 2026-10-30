@@ -179,7 +179,20 @@ equation off the card face; built with the breakdown behind a tap on Budget. Nex
 held-out voice set, and the cut-over day (owner undecided). A ring version of the card was previewed (two placements,
 breakdown behind Budget); the owner found neither satisfying and set it aside for later (not urgent).
 Typed-entry gap list: nothing open. Phase 2 work is complete pending the owner's phone checks 2–3 and the cut-over
-day. Next: Phase 3 (recipes, label capture); plan shown to the owner, waiting for the choice of which comes first. Next: batch 2 features (Profile details, editable macro targets, saved meal
+day.
+
+## Phase 3: recipes (owner chose recipes first, 2026-10-30; label photos to be gathered meanwhile)
+
+Plan: a recipe is a food (origin `recipe`, per serving) whose values are its ingredients' pinned snapshots summed
+and divided by servings; per-gram only with the cooked weight entered; ingredients visible to the owner only (shared
+recipes show as plain foods); no nesting yet. Steps: 1 database and service; 2 editor and logging; 3 export/import.
+
+Step 1 done: migrations 0026 (`recipes`, `recipe_ingredients`, owner columns cascading on account deletion) and 0027
+(RLS: owner only, same-owner checks); `catalog/recipes.ts` (`save` create/replace with version check, `refresh`,
+`get`); `shared/recipe.ts` (`recipeNutrients`: unknown unless every ingredient states it; derived or estimate);
+`snapshotOf` moved to `shared/diary-rules.ts`; the food form refuses recipes. Tests: 4 unit, 6 real-Postgres
+(values, pinning/refresh, edits/conflicts/nesting, privacy for members and admins, account deletion). Next: step 2,
+the API and recipe editor (reuse the saved meal editor's patterns and AddFoodSheet). Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

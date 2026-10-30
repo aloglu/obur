@@ -6,8 +6,22 @@ import type {
 	FoodSnapshot,
 	SnapshotUnit
 } from './diary-types.ts';
+import type { FoodDetail } from './food-types.ts';
 import { NUTRIENT_CODES, type NutrientValue } from './nutrients.ts';
 import { basisFactor, scaleNutrients, type Unit } from './quantity.ts';
+
+/** What a diary entry, saved meal item or recipe ingredient keeps of a food: enough to show and re-scale it. */
+export function snapshotOf(food: FoodDetail): FoodSnapshot {
+	return {
+		name: food.name,
+		brand: food.brand,
+		basis: food.basis,
+		servingLabel: food.servingLabel,
+		servingSize: food.servingSize ?? null,
+		servings: food.servings.map(({ id, name, amount, unit }) => ({ id, name, amount, unit })),
+		basisNutrients: food.nutrients
+	};
+}
 
 /** Converts a stored unit back to a conversion unit. */
 export function toUnit(unit: SnapshotUnit): Unit {
