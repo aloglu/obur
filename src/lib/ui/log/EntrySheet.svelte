@@ -28,10 +28,19 @@
 		today: string;
 		/** The meal to use when the sentence names none. */
 		meal: Meal;
+		/** The text came from speech: label it "I heard". */
+		heard?: boolean;
 		onlogged: (logged: LoggedEntry) => void;
 		onclose: () => void;
 	}
-	let { entry: initial, today, meal: presetMeal, onlogged, onclose }: Props = $props();
+	let {
+		entry: initial,
+		today,
+		meal: presetMeal,
+		heard = false,
+		onlogged,
+		onclose
+	}: Props = $props();
 
 	type Card =
 		| {
@@ -256,7 +265,9 @@
 <Sheet title={m.entry_title()} {onclose}>
 	<form class="flex flex-col gap-2" onsubmit={(e) => (e.preventDefault(), readAgain())}>
 		<label class="flex flex-col gap-1.5">
-			<span class="text-[13px] font-[650] text-muted">{m.entry_typed()}</span>
+			<span class="text-[13px] font-[650] text-muted"
+				>{heard ? m.entry_heard() : m.entry_typed()}</span
+			>
 			<textarea
 				bind:value={text}
 				maxlength={300}

@@ -28,6 +28,17 @@ export const variables = defineEnvVars({
 		description: 'Name shown by passkey prompts.',
 		schema: (value) => value || 'obur'
 	},
+	SPEECH_URL: {
+		description:
+			'Base URL of the speech service on the internal network, e.g. http://speech:8000. Unset: Speak is off.',
+		schema: (value) => {
+			if (!value) return null;
+			const url = new URL(value);
+			if (url.protocol !== 'http:' && url.protocol !== 'https:')
+				throw new Error('SPEECH_URL must be http(s)');
+			return url.origin;
+		}
+	},
 	OBUR_STATUS_DIR: {
 		description:
 			'Folder with the backup status file written by the database container (read-only here).',

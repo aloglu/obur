@@ -24,6 +24,7 @@
 	import { showLoggedMeal } from '#lib/client/saved-meal-toast.ts';
 	import { showLoggedEntry } from '#lib/client/entry-toast.ts';
 	import EntrySheet from '#lib/ui/log/EntrySheet.svelte';
+	import SpeakSheet from '#lib/ui/log/SpeakSheet.svelte';
 	import type { LoggedEntry, ParsedEntry } from '#lib/shared/entry-types.ts';
 	import BudgetCard from '#lib/ui/today/BudgetCard.svelte';
 	import DayHeader from '#lib/ui/today/DayHeader.svelte';
@@ -42,6 +43,8 @@
 	let savingMeal = $state<Meal | null>(null);
 	let openSaved = $state<string | null>(null);
 	let typedEntry = $state<ParsedEntry | null>(null);
+	let speaking = $state(false);
+	let heard = $state(false);
 	const pendingFor = (meal: Meal) =>
 		offline.items.filter(
 			(i) =>
@@ -263,7 +266,8 @@
 					onquick={() => (quick = true)}
 					onclearpreset={() => (preset = null)}
 					onpickmeal={(id) => (openSaved = id)}
-					onentry={(e) => (typedEntry = e)}
+					onentry={(e) => ((heard = false), (typedEntry = e))}
+					onspeak={data.speech ? () => (speaking = true) : undefined}
 					presetRequest={panelFocus}
 				/>
 			{/key}
@@ -310,8 +314,21 @@
 		onclose={() => (savingMeal = null)}
 	/>
 {/if}
+{#if speaking}
+	<SpeakSheet
+		date={data.date}
+		onheard={(e) => {
+			speaking = false;
+			heard = true;
+			typedEntry = e;
+		}}
+		ontype={() => (speaking = false)}
+		onclose={() => (speaking = false)}
+	/>
+{/if}
 {#if typedEntry}
 	<EntrySheet
+		{heard}
 		entry={typedEntry}
 		today={data.today}
 		meal={sheetMeal}

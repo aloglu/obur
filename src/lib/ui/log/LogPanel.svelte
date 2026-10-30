@@ -25,6 +25,8 @@
 		onpick: (foodId: string) => void;
 		onquick: () => void;
 		onclearpreset: () => void;
+		/** Opens Speak; the tile is enabled only when given (a speech service is configured). */
+		onspeak?: () => void;
 		/** Opens the confirmation for a typed sentence; offered only when given. */
 		onentry?: (entry: ParsedEntry) => void;
 		/** Opens a saved meal; saved meals are listed only when given. */
@@ -41,6 +43,7 @@
 		onclearpreset,
 		onpickmeal,
 		onentry,
+		onspeak,
 		presetRequest = 0
 	}: Props = $props();
 
@@ -307,22 +310,39 @@
 		</section>
 	{:else}
 		<div class="grid grid-cols-2 gap-3">
-			{#each [{ label: m.log_speak(), icon: Mic, tile: 'bg-voice-bg text-voice' }, { label: m.log_scan(), icon: ScanLine, tile: 'bg-scan-bg text-scan' }] as t (t.label)}
-				<button
-					type="button"
-					disabled
-					aria-describedby="coming-soon"
-					class="flex min-h-32 flex-col items-center justify-center gap-2 rounded-tile bg-surface2 p-3 opacity-70"
+			<button
+				type="button"
+				disabled={!onspeak}
+				aria-describedby={onspeak ? undefined : 'coming-soon'}
+				onclick={() => onspeak?.()}
+				class={[
+					'flex min-h-32 flex-col items-center justify-center gap-2 rounded-tile bg-surface2 p-3',
+					!onspeak && 'opacity-70'
+				]}
+			>
+				<span class="grid size-14 place-items-center rounded-button bg-voice-bg text-voice"
+					><Mic size={28} aria-hidden="true" /></span
 				>
-					<span class="grid size-14 place-items-center rounded-button {t.tile}"
-						><t.icon size={28} aria-hidden="true" /></span
-					>
-					<span class="text-[15px] font-semibold">{t.label}</span>
-					<span class="rounded-full bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
+				<span class="text-[15px] font-semibold">{m.log_speak()}</span>
+				{#if !onspeak}<span
+						class="rounded-full bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
 						>{m.log_coming_soon()}</span
-					>
-				</button>
-			{/each}
+					>{/if}
+			</button>
+			<button
+				type="button"
+				disabled
+				aria-describedby="coming-soon"
+				class="flex min-h-32 flex-col items-center justify-center gap-2 rounded-tile bg-surface2 p-3 opacity-70"
+			>
+				<span class="grid size-14 place-items-center rounded-button bg-scan-bg text-scan"
+					><ScanLine size={28} aria-hidden="true" /></span
+				>
+				<span class="text-[15px] font-semibold">{m.log_scan()}</span>
+				<span class="rounded-full bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
+					>{m.log_coming_soon()}</span
+				>
+			</button>
 		</div>
 		<span id="coming-soon" class="sr-only">{m.log_coming_soon()}</span>
 		<button
