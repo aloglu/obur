@@ -201,8 +201,25 @@ sees totals only.
 
 Step 3 done: `data/recipes.json` (optional file in format version 1), ingredient foods in the dependency closure,
 recipes attached on import only with the food the import creates. The round trip compares recipes field by field.
-Recipes (Phase 3 part 1) complete and deployed. Next: the owner's review of the recipe screens; label scanning
-waits for the owner's ~10 label photos. Next: batch 2 features (Profile details, editable macro targets, saved meal
+Recipes (Phase 3 part 1) complete and deployed. The owner approved the recipe screens (2026-10-30).
+
+## Phase 3: label scanning (started 2026-10-30)
+
+Data: the 10 Phase 0 labels (`~/obur-private/labels-prepared`, hand-read values) are the development set. The owner
+added 12 new photos (`~/obur-private/labels/IMG_3675`–`IMG_3687`, 2026-10-30), some possibly repeating products: the
+held-out set. Do not view, OCR or tune on them until the parser is frozen; then convert them (orientation-corrected,
+metadata stripped), read their values by hand, and score once.
+
+Plan: 1 pure `label-parser` (done, below); 2 an internal OCR service like speech (RapidOCR + ONNX Runtime,
+PP-OCRv6 small at 1280 px, pinned and checksummed models, no network, telemetry off, the photo held in memory only);
+3 `POST /api/v1/scan` and the Scan screen (downscale on the phone, the photo beside the proposal in the food form);
+4 held-out evaluation, recorded in docs/feasibility.md.
+
+Step 1 done: `label-parser` (table and running-text layouts; header columns per 100 g/ml, serving with its size,
+%RI; drift-following row assignment; impossible values dropped; no fallback from a table to text). Development set,
+PP-OCRv6 small at 1280 px (Phase 0 OCR output): 85 % of values right (72/85), 0 wrong, 13 missing (values the OCR
+never read), basis right 10/10, 8/10 labels fully right. Noisier OCR (2000 px; tiny model) gives 2–13 wrong values,
+mostly the tiny model's `%`→`9`: the warnings remain needed. `node scripts/label-eval.ts <ocr.jsonl> <truth.tsv>`. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)
