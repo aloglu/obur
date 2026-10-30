@@ -116,10 +116,11 @@ portions (147 of 152 custom-food rows are grams or millilitres, 3 name a portion
 
 **Owner decisions:**
 1. Done: a setting, default keep the deficit.
-2. Macro defaults: protein 1.2 g per kg (goal weight when lower), fat 30 % of the budget, carbohydrate the rest.
+2. Done: macro defaults kept as Balanced (protein 1.2 g per kg, goal weight when lower; fat 30 %; carbohydrate the rest),
+   plus own percentages on Profile.
 3. Done: a setting for whether burned calories count (all activity); plus watch totals. Imported LoseIt rows stay uncounted history.
 4. Done: voice accepted as is; the owner notes failing sentences during use.
-5. In progress: provisional screen review on an Artifact (private to the owner; the artifact link is in the session, not
+5. Done: provisional screen review on an Artifact (private to the owner; the artifact link is in the session, not
    recorded here): phone screenshots in light and dark from `tests/e2e/review-screens.e2e.ts` (runs only with a
    `.review-shots` marker file), questions per screen, and per-screen verdict and notes saved in the artifact's
    `notes` collection for Claude to read back. Outcomes go into `docs/ui.md`.
@@ -175,7 +176,10 @@ isolation; e2e for edit and create journeys. Budget circle alternatives publishe
 "number and bar", B "the sum" (equation tiles), C "half gauge", each at phone size with morning/evening/over states,
 a pick and notes. The owner picked A (2026-10-30) and asked to keep the
 equation off the card face; built with the breakdown behind a tap on Budget. Next: the typed-entry gap list, a fresh
-held-out voice set, and the cut-over day (owner undecided); ask the owner what to prioritise. Next: batch 2 features (Profile details, editable macro targets, saved meal
+held-out voice set, and the cut-over day (owner undecided). A ring version of the card was previewed (two placements,
+breakdown behind Budget); the owner found neither satisfying and set it aside for later (not urgent).
+Typed-entry gap list: nothing open. Phase 2 work is complete pending the owner's phone checks 2–3 and the cut-over
+day. Next: Phase 3 (recipes, label capture); plan shown to the owner, waiting for the choice of which comes first. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)
