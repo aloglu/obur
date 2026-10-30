@@ -39,3 +39,6 @@ project.inlang/cache/
 # OS
 .DS_Store
 Thumbs.db
+
+# Personal Claude Code settings
+.claude/settings.local.json

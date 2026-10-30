@@ -43,3 +43,9 @@ holds the backup encryption passphrase and storage keys. If your appdata folder 
 users back up appdata to a cloud drive), either exclude `.env` from that copy or move it, for example to
 `/boot/config/obur/.env`, and change `OBUR_ENV_FILE` to match. Otherwise the copy holds the encrypted backups and the
 key that opens them side by side.
+
+## Deploying from the development machine
+
+`./deploy/pilot.sh` deploys the committed HEAD: it refuses uncommitted changes, uploads the source with `git archive`
+(only committed files), then runs `build` and `deploy` (which backs up first). The SSH aliases default to `obur-lab`
+(upload) and `obur-host` (forced command) and can be overridden with `OBUR_UPLOAD_HOST` and `OBUR_CTL_HOST`.
