@@ -2,13 +2,18 @@
 // ingredient list only its owner sees. Ingredients keep snapshots like diary entries; the recipe's values are
 // recomputed from them on every save, and catalog edits reach them only through an explicit refresh.
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { snapshotNutrients, snapshotOf } from '../../../shared/diary-rules.ts';
 import type { SnapshotUnit } from '../../../shared/diary-types.ts';
 import type { FoodDetail } from '../../../shared/food-types.ts';
 import { deriveNutrients } from '../../../shared/nutrients.ts';
-import { RECIPE_SERVING_LABEL, recipeNutrients, type Recipe } from '../../../shared/recipe.ts';
+import {
+	RECIPE_SERVING_LABEL,
+	recipeNutrients,
+	type Recipe,
+	type RecipeSummary
+} from '../../../shared/recipe.ts';
 import { foodSearchKey } from '../../../shared/search-text.ts';
 import { foodNutrients, foods, recipeIngredients, recipes } from './schema.ts';
 import { CatalogError, load } from './service.ts';
@@ -97,6 +102,28 @@ const servingSize = (servings: number, cookedYieldG: number | null) =>
 
 export function createRecipes(db: Database, now: () => Date = () => new Date()) {
 	return {
+		/** The person's recipes, most recently changed first, with energy per serving when known. */
+		async list(userId: string): Promise<RecipeSummary[]> {
+			return withUser(db, userId, async (tx) => {
+				const rows = await tx
+					.select({
+						id: foods.id,
+						name: foods.name,
+						servings: recipes.servings,
+						archived: foods.archivedAt,
+						kcal: foodNutrients.value
+					})
+					.from(recipes)
+					.innerJoin(foods, eq(foods.id, recipes.foodId))
+					.leftJoin(
+						foodNutrients,
+						and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
+					)
+					.orderBy(desc(foods.updatedAt));
+				return rows.map((r) => ({ ...r, archived: r.archived !== null }));
+			});
+		},
+
 		/** The recipe with its ingredients, for its owner only. */
 		async get(userId: string, id: string): Promise<Recipe> {
 			return withUser(db, userId, (tx) => loadRecipe(tx, id));

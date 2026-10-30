@@ -104,13 +104,24 @@
 			{m.food_from_variant()}
 		</p>{/if}
 
-	{#if food.editable}
+	{#if food.origin === 'recipe' && food.mine}
+		<Card>
+			<p class="text-[14px] text-muted">{m.recipe_yours()}</p>
+			<a
+				href={resolve('/(app)/recipes/[id]', { id: food.id })}
+				class="inline-flex min-h-11 items-center self-start rounded-button bg-accent px-4 font-[750] text-on-accent"
+				>{m.recipe_edit()}</a
+			>
+		</Card>
+	{:else if food.editable && food.origin !== 'recipe'}
 		<Card title={m.food_edit_title()}>
 			{#key food.version}<FoodForm initial={food} {busy} onsave={save} />{/key}
 		</Card>
 	{:else}
 		<Card>
-			<p class="text-[14px] text-muted">{m.food_read_only()}</p>
+			<p class="text-[14px] text-muted">
+				{food.origin === 'recipe' ? m.recipe_from_others() : m.food_read_only()}
+			</p>
 			<dl class="flex flex-col divide-y divide-line">
 				{#each food.nutrients as n (n.code)}
 					<div class="flex min-h-11 items-center justify-between gap-3">
@@ -133,7 +144,7 @@
 	<Card>
 		<p class="text-[13px] text-muted">{m.food_variant_hint()}</p>
 		<Button variant="ghost" disabled={busy} onclick={variant}>{m.food_variant()}</Button>
-		{#if food.editable}
+		{#if food.editable && food.origin !== 'recipe'}
 			<Button variant="danger" disabled={busy} onclick={() => setArchived(!food.archived)}>
 				{food.archived ? m.food_restore() : m.food_archive()}
 			</Button>

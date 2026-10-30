@@ -28,6 +28,15 @@ export interface Recipe {
 	ingredients: RecipeIngredient[];
 }
 
+export interface RecipeSummary {
+	id: string;
+	name: string;
+	servings: number;
+	/** Energy per serving; null when an ingredient doesn't state it. */
+	kcal: number | null;
+	archived: boolean;
+}
+
 /** The label of a recipe's one serving (its basis). */
 export const RECIPE_SERVING_LABEL = 'serving';
 

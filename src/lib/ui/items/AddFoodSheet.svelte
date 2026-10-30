@@ -1,6 +1,6 @@
 <script lang="ts">
-	// Adds a food to a saved meal in the editor: search, then the amount and unit with the live preview. Nothing is
-	// saved here; the editor's Save sends the whole meal.
+	// Adds a food in the saved meal and recipe editors: search, then the amount and unit with the live preview.
+	// Nothing is saved here; the editor's Save sends everything.
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
@@ -11,16 +11,19 @@
 	import { basisFactor, scaleNutrients } from '#lib/shared/quantity.ts';
 	import { unitOptions, type MeasureOption, type UnitOption } from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
+	import Notice from '../Notice.svelte';
 	import Chips from '../Chips.svelte';
 	import Sheet from '../Sheet.svelte';
 	import TextField from '../TextField.svelte';
 	import MacroPreview from '../log/MacroPreview.svelte';
 
 	interface Props {
+		/** False in a recipe: recipes can't be ingredients (yet). */
+		allowRecipes?: boolean;
 		onadd: (food: FoodDetail, amount: number, option: UnitOption) => void;
 		onclose: () => void;
 	}
-	let { onadd, onclose }: Props = $props();
+	let { allowRecipes = true, onadd, onclose }: Props = $props();
 
 	let query = $state('');
 	let results = $state<FoodSearchResult[]>([]);
@@ -56,6 +59,7 @@
 	const options = $derived<UnitOption[]>(food ? unitOptions(food, measures) : []);
 	const option = $derived(options.find((o) => o.key === optionKey));
 	const amount = $derived(parseDecimal(amountText));
+	const nested = $derived(!allowRecipes && food?.origin === 'recipe');
 	const preview = $derived.by(() => {
 		if (!food || !option || amount === undefined) return undefined;
 		const i = option.input;
@@ -137,9 +141,10 @@
 				options={options.map((o) => ({ value: o.key, label: o.label }))}
 			/>
 			<MacroPreview nutrients={preview} />
+			{#if nested}<Notice>{m.recipe_no_nesting()}</Notice>{/if}
 			<div class="grid grid-cols-2 gap-2">
 				<Button variant="ghost" onclick={() => (food = undefined)}>{m.meal_editor_back()}</Button>
-				<Button type="submit" disabled={amount === undefined || !preview}
+				<Button type="submit" disabled={amount === undefined || !preview || nested}
 					>{m.meal_editor_add_confirm()}</Button
 				>
 			</div>

@@ -191,8 +191,13 @@ Step 1 done: migrations 0026 (`recipes`, `recipe_ingredients`, owner columns cas
 (RLS: owner only, same-owner checks); `catalog/recipes.ts` (`save` create/replace with version check, `refresh`,
 `get`); `shared/recipe.ts` (`recipeNutrients`: unknown unless every ingredient states it; derived or estimate);
 `snapshotOf` moved to `shared/diary-rules.ts`; the food form refuses recipes. Tests: 4 unit, 6 real-Postgres
-(values, pinning/refresh, edits/conflicts/nesting, privacy for members and admins, account deletion). Next: step 2,
-the API and recipe editor (reuse the saved meal editor's patterns and AddFoodSheet). Next: batch 2 features (Profile details, editable macro targets, saved meal
+(values, pinning/refresh, edits/conflicts/nesting, privacy for members and admins, account deletion). 
+
+Step 2 done: `/api/v1/recipes/[id]` (GET owner only, PUT create/replace) and `/refresh`; `recipes.list`; Recipes
+page, editor (`ui/recipes/RecipeEditor.svelte`) and More entry; the saved meal editor's item list extracted to
+`ui/items/` (drafts.ts, ItemsCard, AddFoodSheet) and shared by both editors; the food page sends owners to the recipe
+editor and tells others it's a recipe. e2e: create, log by grams, edit without changing the diary, another member
+sees totals only. Next: step 3, recipes in the archive export/import (ingredients in the dependency closure). Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)
