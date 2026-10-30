@@ -179,7 +179,25 @@ test('day totals replace each other, and the budget settings apply from today', 
 		'aria-checked',
 		'true'
 	);
+	// Own macro percentages: they start from the balanced split, must add up to 100 %, and apply from today.
+	await page.getByRole('radio', { name: 'My own %' }).click();
+	const protein = page.getByLabel('Protein', { exact: true });
+	await expect(protein).not.toHaveValue('');
+	await protein.fill('30');
+	await page.getByLabel('Carbs', { exact: true }).fill('20');
+	await page.getByLabel('Fat', { exact: true }).fill('60');
+	await expect(page.getByText('Adds up to 110 %. Make it 100 %.')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Save macro targets' })).toBeDisabled();
+	await page.getByLabel('Carbs', { exact: true }).fill('10');
+	await page.getByRole('button', { name: 'Save macro targets' }).click();
+	await expect(page.getByRole('button', { name: 'Saved' })).toBeVisible();
+
 	await page.goto('/');
 	await expect(budget).toContainText('2136 base + 0 activity − 550 goal');
 	await expect(budget).toContainText('750 kcal burned, not added (your budget setting).');
+	// 1,586 kcal: protein 30 % / 4 = 119 g, carbs 10 % / 4 = 40 g, fat 60 % / 9 = 106 g.
+	const nutrients = page.getByRole('region', { name: 'Nutrients' });
+	await expect(nutrients).toContainText('/ 119 g');
+	await expect(nutrients).toContainText('/ 40 g');
+	await expect(nutrients).toContainText('/ 106 g');
 });

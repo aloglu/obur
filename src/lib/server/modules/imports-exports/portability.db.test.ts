@@ -126,7 +126,12 @@ async function buildHistory() {
 	);
 	await goals.setTarget(
 		MEHMET,
-		{ mode: 'manual', effectiveFrom: '2026-10-02', budgetKcal: 2100 },
+		{
+			mode: 'manual',
+			effectiveFrom: '2026-10-02',
+			budgetKcal: 2100,
+			macros: { mode: 'percent', proteinPct: 30, carbPct: 40, fatPct: 30 }
+		},
 		null
 	);
 	await diary.setDayComplete(MEHMET, '2026-10-01', true);
@@ -245,6 +250,11 @@ describe('export', () => {
 		expect(data.diary.map((e) => e.description)).not.toContain('Zeynep');
 		expect(data.diary.filter((e) => e.deletedAt)).toHaveLength(1);
 		expect(data.weight.filter((w) => w.deletedAt)).toHaveLength(1);
+		expect(data.targets.find((t) => t.macroMode === 'percent')).toMatchObject({
+			proteinShare: 0.3,
+			carbShare: 0.4,
+			fatShare: 0.3
+		});
 		expect(data.activity.map((a) => a.countsTowardBudget).sort()).toEqual([false, true]);
 		expect(data.targets).toHaveLength(2);
 		// The saved meal and the food only it refers to (dependency closure).

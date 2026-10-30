@@ -32,14 +32,36 @@ export interface TargetVersion {
 	countActivity: boolean;
 	/** At the goal weight: keep the deficit, or switch to maintenance (calculated targets). */
 	atGoal: 'keep' | 'maintain';
+	/** balanced: protein from body weight, fatShare of the budget, carbohydrate the rest; percent: own shares. */
+	macroMode: 'balanced' | 'percent';
+	proteinShare: number | null;
+	carbShare: number | null;
 	createdAt: string;
 }
 
+/** Macro targets: the balanced default, or whole-percent shares of the day's budget that add up to 100. */
+export type MacroChoice =
+	{ mode: 'balanced' } | { mode: 'percent'; proteinPct: number; carbPct: number; fatPct: number };
+
+const Pct = v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100));
+export const MacroChoiceInput = v.variant('mode', [
+	v.object({ mode: v.literal('balanced') }),
+	v.pipe(
+		v.object({ mode: v.literal('percent'), proteinPct: Pct, carbPct: Pct, fatPct: Pct }),
+		v.check((c) => c.proteinPct + c.carbPct + c.fatPct === 100, 'The shares must add up to 100 %')
+	)
+]);
+
 export const BudgetSettingsInput = v.object({
 	countActivity: v.optional(v.boolean()),
-	atGoal: v.optional(v.picklist(['keep', 'maintain']))
+	atGoal: v.optional(v.picklist(['keep', 'maintain'])),
+	macros: v.optional(MacroChoiceInput)
 });
-export type BudgetSettings = { countActivity: boolean; atGoal: 'keep' | 'maintain' };
+export type BudgetSettings = {
+	countActivity: boolean;
+	atGoal: 'keep' | 'maintain';
+	macros: MacroChoice;
+};
 
 const optionalNumber = (min: number, max: number) =>
 	v.optional(v.nullable(v.pipe(v.number(), v.finite(), v.minValue(min), v.maxValue(max))), null);

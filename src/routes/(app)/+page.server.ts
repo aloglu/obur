@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import { body } from '#lib/server/body.ts';
 import { diary } from '#lib/server/diary.ts';
 import { goals } from '#lib/server/goals.ts';
-import { budgetForDay, macroTargets } from '#lib/shared/goals.ts';
+import { budgetForDay, macroTargetsFor } from '#lib/shared/goals.ts';
 import { dayTotals, isIsoDate } from '#lib/shared/diary-rules.ts';
 import type { PageServerLoad } from './$types';
 
@@ -21,19 +21,7 @@ export const load: PageServerLoad = async ({ url, locals, parent }) => {
 		diary.completedDays(userId, date, date)
 	]);
 	const budget = budgetForDay(target, activity.countedKcal);
-	// Macro targets come only from calculated targets (protein from body weight, fat share, carbohydrate the rest).
-	const macros =
-		budget &&
-		target?.mode === 'calculated' &&
-		target.proteinGPerKg &&
-		target.proteinBasisKg &&
-		target.fatShare
-			? macroTargets(budget.budget, {
-					proteinGPerKg: target.proteinGPerKg,
-					proteinBasisKg: target.proteinBasisKg,
-					fatShare: target.fatShare
-				})
-			: null;
+	const macros = budget && target ? macroTargetsFor(budget.budget, target) : null;
 	return {
 		date,
 		entries,

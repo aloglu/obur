@@ -236,6 +236,9 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 				calculationVersion: t.calculationVersion,
 				countActivity: t.countActivity,
 				atGoal: t.atGoal,
+				macroMode: t.macroMode,
+				proteinShare: t.proteinShare,
+				carbShare: t.carbShare,
 				createdAt: t.createdAt.toISOString()
 			})
 		),

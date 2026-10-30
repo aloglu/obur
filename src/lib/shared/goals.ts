@@ -115,6 +115,38 @@ export interface MacroTargets {
 	carbohydrateG: number;
 }
 
+/**
+ * The day's macro targets for the target in force: the person's own percentages of the budget, or the balanced
+ * default (calculated targets only, since it needs body weight). Null when the target sets none.
+ */
+export function macroTargetsFor(
+	budgetKcal: number,
+	t: {
+		mode: 'calculated' | 'manual' | 'none';
+		macroMode: 'balanced' | 'percent';
+		proteinShare: number | null;
+		carbShare: number | null;
+		fatShare: number | null;
+		proteinGPerKg: number | null;
+		proteinBasisKg: number | null;
+	}
+): MacroTargets | null {
+	if (t.macroMode === 'percent') {
+		if (t.proteinShare === null || t.carbShare === null || t.fatShare === null) return null;
+		return {
+			proteinG: Math.round((budgetKcal * t.proteinShare) / 4),
+			fatG: Math.round((budgetKcal * t.fatShare) / 9),
+			carbohydrateG: Math.round((budgetKcal * t.carbShare) / 4)
+		};
+	}
+	if (t.mode !== 'calculated' || !t.proteinGPerKg || !t.proteinBasisKg || !t.fatShare) return null;
+	return macroTargets(budgetKcal, {
+		proteinGPerKg: t.proteinGPerKg,
+		proteinBasisKg: t.proteinBasisKg,
+		fatShare: t.fatShare
+	});
+}
+
 /** Protein from body weight; fat as a share of calories; carbohydrate the rest (never negative). */
 export function macroTargets(
 	budgetKcal: number,

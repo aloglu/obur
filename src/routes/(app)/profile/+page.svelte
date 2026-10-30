@@ -11,6 +11,7 @@
 	import { budgetForDay } from '#lib/shared/goals.ts';
 	import Card from '#lib/ui/Card.svelte';
 	import DetailsCard from '#lib/ui/profile/DetailsCard.svelte';
+	import MacroSettings from '#lib/ui/profile/MacroSettings.svelte';
 
 	let { data } = $props();
 	const t = $derived(data.target);
@@ -109,6 +110,14 @@
 						{ value: 'keep', label: m.profile_settings_goal_keep() },
 						{ value: 'maintain', label: m.profile_settings_goal_maintain() }
 					]}
+				/>
+			{/if}
+			{#if day}
+				<MacroSettings
+					target={t}
+					budgetKcal={day.budget}
+					{busy}
+					onsave={(macros) => change({ macros })}
 				/>
 			{/if}
 			{#if problem}<Notice>{problem}</Notice>{/if}

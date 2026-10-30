@@ -164,7 +164,10 @@ amount** below turning into a field with an ml / l suffix.
 Batch 2, step 1 done (2026-10-30): Profile **Your details** card (rows; Edit in place; a new weight becomes today's
 weigh-in; `goals.updateDetails` saves details and recalculates a calculated budget from today in one transaction,
 `PATCH /api/v1/profile/details`). DB tests cover recalculation, no-op, minors, manual budgets, validation and
-isolation; e2e covers the Profile flow. Next: editable macro targets (step 2), then the saved meal editor (step 3). Next: batch 2 features (Profile details, editable macro targets, saved meal
+isolation; e2e covers the Profile flow. Batch 2, step 2 done (2026-10-30): macro targets on Profile: **Balanced** (default) or
+**My own %** (whole percents adding to 100, any budget), a budget setting versioned from today (migration 0025:
+`macro_mode`, `protein_share`, `carb_share`, with a sum check); exported and imported with the archive. Next: the
+saved meal editor (step 3), then the budget circle alternatives Artifact. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

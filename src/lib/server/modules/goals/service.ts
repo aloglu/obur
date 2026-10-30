@@ -20,6 +20,7 @@ import {
 	ProfileInput,
 	type BudgetSettings,
 	type DetailsOutcome,
+	type MacroChoice,
 	type Profile,
 	type TargetVersion
 } from '../../../shared/goal-types.ts';
@@ -78,8 +79,49 @@ const toVersion = (r: VersionRow): TargetVersion => ({
 	inputs: r.inputs as Record<string, unknown>,
 	countActivity: r.countActivity,
 	atGoal: r.atGoal,
+	macroMode: r.macroMode,
+	proteinShare: r.proteinShare,
+	carbShare: r.carbShare,
 	createdAt: r.createdAt.toISOString()
 });
+
+/** The macro choice a version records (percent shares back as whole percents). */
+function macroChoice(r: VersionRow): MacroChoice {
+	if (r.macroMode !== 'percent') return { mode: 'balanced' };
+	const pct = (share: number | null) => Math.round((share ?? 0) * 100);
+	return {
+		mode: 'percent',
+		proteinPct: pct(r.proteinShare),
+		carbPct: pct(r.carbShare),
+		fatPct: pct(r.fatShare)
+	};
+}
+
+/** The macro columns for a choice; `balancedFatShare` is the fat share the balanced default uses (null: none). */
+function macroColumns(choice: MacroChoice, balancedFatShare: number | null) {
+	return choice.mode === 'percent'
+		? {
+				macroMode: 'percent' as const,
+				proteinShare: choice.proteinPct / 100,
+				carbShare: choice.carbPct / 100,
+				fatShare: choice.fatPct / 100
+			}
+		: {
+				macroMode: 'balanced' as const,
+				proteinShare: null,
+				carbShare: null,
+				fatShare: balancedFatShare
+			};
+}
+
+/** The settings in force: what the newest version up to a day records, with the defaults before any. */
+function settingsOf(r: VersionRow | undefined): BudgetSettings {
+	return {
+		countActivity: r?.countActivity ?? true,
+		atGoal: r?.atGoal ?? 'keep',
+		macros: r ? macroChoice(r) : { mode: 'balanced' }
+	};
+}
 
 type CalculatedRequest = Extract<TargetRequest, { mode: 'calculated' }>;
 
@@ -127,9 +169,9 @@ async function calculatedValues(
 		rateKgPerWeek: rate,
 		proteinGPerKg: request.proteinGPerKg ?? DEFAULT_PROTEIN_G_PER_KG,
 		proteinBasisKg: goal !== null && goal < currentWeightKg ? goal : currentWeightKg,
-		fatShare: request.fatShare ?? DEFAULT_FAT_SHARE,
 		countActivity: request.countActivity ?? true,
 		atGoal,
+		...macroColumns(request.macros ?? { mode: 'balanced' }, request.fatShare ?? DEFAULT_FAT_SHARE),
 		inputs: {
 			weightKg: currentWeightKg,
 			heightCm: p.heightCm,
@@ -157,9 +199,9 @@ function repeatRequest(v: VersionRow, effectiveFrom: string): CalculatedRequest 
 		fixedBaseBurnKcal: inputs.formula === 'fixed' ? v.baseBurnKcal : null,
 		floorKcal: v.floorKcal,
 		proteinGPerKg: v.proteinGPerKg,
-		fatShare: v.fatShare,
-		countActivity: v.countActivity,
-		atGoal: v.atGoal
+		// A percent version's fat share is the person's own; the balanced default comes back if they switch.
+		fatShare: v.macroMode === 'balanced' ? v.fatShare : null,
+		...settingsOf(v)
 	};
 }
 
@@ -228,36 +270,43 @@ export function createGoals(db: Database) {
 			return withUser(db, userId, async (tx) => {
 				// A new target keeps the person's settings unless the request changes them.
 				const [inForce] = await tx
-					.select({ countActivity: goalVersions.countActivity, atGoal: goalVersions.atGoal })
+					.select()
 					.from(goalVersions)
 					.where(lte(goalVersions.effectiveFrom, request.effectiveFrom))
 					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
 					.limit(1);
+				const kept = settingsOf(inForce);
+				const asked: Partial<BudgetSettings> = request.mode !== 'none' ? request : {};
 				const settings: BudgetSettings = {
-					countActivity:
-						(request.mode !== 'none' ? request.countActivity : undefined) ??
-						inForce?.countActivity ??
-						true,
-					atGoal:
-						(request.mode === 'calculated' ? request.atGoal : undefined) ??
-						inForce?.atGoal ??
-						'keep'
+					countActivity: asked.countActivity ?? kept.countActivity,
+					atGoal: asked.atGoal ?? kept.atGoal,
+					macros: asked.macros ?? kept.macros
 				};
 				const base = {
 					userId,
 					effectiveFrom: request.effectiveFrom,
 					calculationVersion: CALCULATION_VERSION,
-					...settings
+					countActivity: settings.countActivity,
+					atGoal: settings.atGoal
 				};
 				let values: typeof goalVersions.$inferInsert;
 				if (request.mode === 'none') {
-					values = { ...base, mode: 'none', baseBurnKcal: null, inputs: {} };
+					// No budget, so no macro targets; the choice is kept for the next budget.
+					values = {
+						...base,
+						mode: 'none',
+						baseBurnKcal: null,
+						inputs: {},
+						...macroColumns(settings.macros, null)
+					};
 				} else if (request.mode === 'manual') {
 					values = {
 						...base,
 						mode: 'manual',
 						baseBurnKcal: Math.round(request.budgetKcal),
-						inputs: { source: 'manual' }
+						inputs: { source: 'manual' },
+						// The balanced default needs body weight, so a hand-set budget only has own percentages.
+						...macroColumns(settings.macros, null)
 					};
 				} else {
 					values = await calculatedValues(tx, userId, { ...request, ...settings }, currentWeightKg);
@@ -285,9 +334,11 @@ export function createGoals(db: Database) {
 					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
 					.limit(1);
 				if (!current || current.mode === 'none') throw new GoalError('no_target');
+				const kept = settingsOf(current);
 				const settings: BudgetSettings = {
-					countActivity: change.countActivity ?? current.countActivity,
-					atGoal: change.atGoal ?? current.atGoal
+					countActivity: change.countActivity ?? kept.countActivity,
+					atGoal: change.atGoal ?? kept.atGoal,
+					macros: change.macros ?? kept.macros
 				};
 				const values: typeof goalVersions.$inferInsert =
 					current.mode === 'calculated'
@@ -306,7 +357,9 @@ export function createGoals(db: Database) {
 								floorKcal: current.floorKcal,
 								inputs: current.inputs,
 								calculationVersion: current.calculationVersion,
-								...settings
+								countActivity: settings.countActivity,
+								atGoal: settings.atGoal,
+								...macroColumns(settings.macros, null)
 							};
 				values.inputs = { ...(values.inputs as Record<string, unknown>), source: 'settings' };
 				const [row] = await tx.insert(goalVersions).values(values).returning();

@@ -10,6 +10,7 @@ import {
 	dailyBudget,
 	dailyDeficit,
 	macroTargets,
+	macroTargetsFor,
 	maxRate,
 	targetsAllowed,
 	whoAdultCategory
@@ -96,6 +97,35 @@ describe('who may get calculated targets', () => {
 });
 
 describe('macro targets', () => {
+	const t = {
+		mode: 'calculated' as const,
+		macroMode: 'balanced' as const,
+		proteinShare: null,
+		carbShare: null,
+		fatShare: 0.3,
+		proteinGPerKg: 1.2,
+		proteinBasisKg: 75
+	};
+
+	it('takes own percentages of the budget for any budget, and the balanced default only when calculated', () => {
+		// 30 / 10 / 60 of 2,000 kcal: 600 / 4, 200 / 4, 1,200 / 9.
+		const own = {
+			...t,
+			macroMode: 'percent' as const,
+			proteinShare: 0.3,
+			carbShare: 0.1,
+			fatShare: 0.6
+		};
+		expect(macroTargetsFor(2000, own)).toEqual({ proteinG: 150, carbohydrateG: 50, fatG: 133 });
+		expect(macroTargetsFor(2000, { ...own, mode: 'manual' })).toEqual(macroTargetsFor(2000, own));
+		expect(macroTargetsFor(2000, t)).toEqual(
+			macroTargets(2000, { proteinGPerKg: 1.2, proteinBasisKg: 75, fatShare: 0.3 })
+		);
+		expect(
+			macroTargetsFor(2000, { ...t, mode: 'manual', proteinGPerKg: null, fatShare: null })
+		).toBeNull();
+	});
+
 	it('derives protein from body weight, fat from calories, carbohydrate from the rest', () => {
 		expect(macroTargets(2000, { proteinGPerKg: 1.2, proteinBasisKg: 75, fatShare: 0.3 })).toEqual({
 			proteinG: 90,

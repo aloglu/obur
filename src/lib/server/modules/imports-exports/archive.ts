@@ -205,25 +205,41 @@ export const ActivityRecord = v.pipe(
 	v.check((a) => a.source !== 'manual' || a.countsTowardBudget, 'Manual activity always counts')
 );
 
-export const TargetRecord = v.object({
-	id: Uuid,
-	effectiveFrom: DateString,
-	mode: v.picklist(['calculated', 'manual', 'none']),
-	baseBurnKcal: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(500), v.maxValue(10_000))),
-	deficitKcal: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1100)),
-	floorKcal: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(5000)),
-	goalWeightKg: v.nullable(v.pipe(v.number(), v.minValue(20), v.maxValue(700))),
-	rateKgPerWeek: v.nullable(v.pipe(v.number(), v.minValue(0), v.maxValue(1))),
-	proteinGPerKg: v.nullable(v.pipe(v.number(), v.minValue(0), v.maxValue(3))),
-	proteinBasisKg: v.nullable(v.pipe(v.number(), v.gtValue(0), v.maxValue(700))),
-	fatShare: v.nullable(v.pipe(v.number(), v.minValue(0.1), v.maxValue(0.7))),
-	inputs: v.record(v.string(), v.unknown()),
-	calculationVersion: Text(40),
-	// Added 2026-10-30; older archives read with the defaults then in force.
-	countActivity: v.optional(v.boolean(), true),
-	atGoal: v.optional(v.picklist(['keep', 'maintain']), 'keep'),
-	createdAt: Timestamp
-});
+export const TargetRecord = v.pipe(
+	v.object({
+		id: Uuid,
+		effectiveFrom: DateString,
+		mode: v.picklist(['calculated', 'manual', 'none']),
+		baseBurnKcal: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(500), v.maxValue(10_000))),
+		deficitKcal: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1100)),
+		floorKcal: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(5000)),
+		goalWeightKg: v.nullable(v.pipe(v.number(), v.minValue(20), v.maxValue(700))),
+		rateKgPerWeek: v.nullable(v.pipe(v.number(), v.minValue(0), v.maxValue(1))),
+		proteinGPerKg: v.nullable(v.pipe(v.number(), v.minValue(0), v.maxValue(3))),
+		proteinBasisKg: v.nullable(v.pipe(v.number(), v.gtValue(0), v.maxValue(700))),
+		fatShare: v.nullable(v.pipe(v.number(), v.minValue(0), v.maxValue(1))),
+		inputs: v.record(v.string(), v.unknown()),
+		calculationVersion: Text(40),
+		// Added 2026-10-30; older archives read with the defaults then in force.
+		countActivity: v.optional(v.boolean(), true),
+		atGoal: v.optional(v.picklist(['keep', 'maintain']), 'keep'),
+		// Added 2026-10-30 (own macro percentages); older archives are balanced. The database checks the shares.
+		macroMode: v.optional(v.picklist(['balanced', 'percent']), 'balanced'),
+		proteinShare: v.optional(v.nullable(v.pipe(v.number(), v.minValue(0), v.maxValue(1))), null),
+		carbShare: v.optional(v.nullable(v.pipe(v.number(), v.minValue(0), v.maxValue(1))), null),
+		createdAt: Timestamp
+	}),
+	v.check(
+		(t) =>
+			t.macroMode === 'percent'
+				? t.proteinShare !== null &&
+					t.carbShare !== null &&
+					t.fatShare !== null &&
+					Math.round((t.proteinShare + t.carbShare + t.fatShare) * 100) === 100
+				: t.proteinShare === null && t.carbShare === null,
+		'Own macro shares add up to 100 %'
+	)
+);
 
 export const ProfileRecord = v.object({
 	heightCm: v.nullable(v.pipe(v.number(), v.minValue(50), v.maxValue(260))),

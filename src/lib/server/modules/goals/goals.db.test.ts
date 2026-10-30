@@ -378,6 +378,63 @@ describe('budget settings', () => {
 		expect((await goals.followWeight(MEHMET, '2026-06-20', 79))?.target.deficitKcal).toBe(550);
 	});
 
+	it('records own macro percentages from today; recalculations keep them; balanced comes back with its fat share', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		const first = await goals.setTarget(MEHMET, { ...calc, fatShare: 0.25 }, 80);
+		const own = await goals.changeSettings(MEHMET, '2026-06-10', 80, {
+			macros: { mode: 'percent', proteinPct: 30, carbPct: 10, fatPct: 60 }
+		});
+		expect(own).toMatchObject({
+			macroMode: 'percent',
+			proteinShare: 0.3,
+			carbShare: 0.1,
+			fatShare: 0.6
+		});
+		expect((await goals.targetFor(MEHMET, '2026-06-09'))?.id).toBe(first.id);
+		// A new weight, new details and a new budget all keep the choice.
+		const weighed = await goals.followWeight(MEHMET, '2026-06-12', 78);
+		expect(weighed!.target).toMatchObject({ macroMode: 'percent', fatShare: 0.6 });
+		const again = await goals.setTarget(MEHMET, { ...calc, effectiveFrom: '2026-06-13' }, 78);
+		expect(again).toMatchObject({ macroMode: 'percent', carbShare: 0.1 });
+		const manual = await goals.setTarget(
+			MEHMET,
+			{ mode: 'manual', effectiveFrom: '2026-06-14', budgetKcal: 1800 },
+			78
+		);
+		expect(manual).toMatchObject({ macroMode: 'percent', proteinShare: 0.3 });
+		// Back to balanced: the default fat share, not the 60 % of the own choice.
+		await goals.setTarget(MEHMET, { ...calc, effectiveFrom: '2026-06-15' }, 78);
+		const balanced = await goals.changeSettings(MEHMET, '2026-06-16', 78, {
+			macros: { mode: 'balanced' }
+		});
+		expect(balanced).toMatchObject({ macroMode: 'balanced', proteinShare: null, fatShare: 0.3 });
+	});
+
+	it('refuses shares that do not add up to 100 %, in the service and in the database', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		await goals.setTarget(MEHMET, calc, 80);
+		await expect(
+			goals.changeSettings(MEHMET, '2026-06-10', 80, {
+				macros: { mode: 'percent', proteinPct: 30, carbPct: 30, fatPct: 30 }
+			})
+		).rejects.toThrow();
+		const insert = (protein: number | null, carbs: number | null, fat: number | null) =>
+			errorCode(
+				asUser(
+					MEHMET,
+					(
+						tx
+					) => tx`insert into goal_versions (user_id, effective_from, mode, base_burn_kcal, inputs,
+						calculation_version, macro_mode, protein_share, carb_share, fat_share)
+						values (${MEHMET}, '2026-06-20', 'manual', 1800, '{}', 'test', 'percent',
+							${protein}, ${carbs}, ${fat})`
+				)
+			);
+		expect(await insert(0.3, 0.3, 0.3)).toBe('23514');
+		expect(await insert(0.3, null, 0.7)).toBe('23514');
+		expect(await insert(0.3, 0.1, 0.6)).toBeUndefined();
+	});
+
 	it('works for a hand-set budget and refuses without one', async () => {
 		expect(
 			await errorCode(goals.changeSettings(MEHMET, '2026-06-10', null, { countActivity: false }))

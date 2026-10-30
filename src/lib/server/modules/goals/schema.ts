@@ -76,6 +76,13 @@ export const goalVersions = pgTable(
 		proteinGPerKg: numeric('protein_g_per_kg', { precision: 4, scale: 2, mode: 'number' }),
 		proteinBasisKg: numeric('protein_basis_kg', { precision: 6, scale: 2, mode: 'number' }),
 		fatShare: numeric('fat_share', { precision: 3, scale: 2, mode: 'number' }),
+		// Macro targets: balanced (protein from body weight, fat_share of the budget, carbohydrate the rest; calculated
+		// targets only) or percent (the person's own shares of the day's budget; any budget). Percent shares add up to 1.
+		macroMode: text('macro_mode', { enum: ['balanced', 'percent'] })
+			.notNull()
+			.default('balanced'),
+		proteinShare: numeric('protein_share', { precision: 3, scale: 2, mode: 'number' }),
+		carbShare: numeric('carb_share', { precision: 3, scale: 2, mode: 'number' }),
 		// The inputs and formula used, for audit (weight, height, age, sex, body fat, formula, factor).
 		inputs: jsonb('inputs').notNull(),
 		// Settings that travel with the target: whether counted activity adds to the budget, and what a calculated
@@ -111,7 +118,16 @@ export const goalVersions = pgTable(
 		),
 		check(
 			'goal_versions_fat_share_range',
-			sql`${t.fatShare} is null or ${t.fatShare} between 0.1 and 0.7`
+			sql`${t.fatShare} is null or (${t.fatShare} between 0 and 1
+				and (${t.macroMode} = 'percent' or ${t.fatShare} between 0.1 and 0.7))`
+		),
+		check('goal_versions_macro_mode_valid', sql`${t.macroMode} in ('balanced', 'percent')`),
+		check(
+			'goal_versions_macro_shares',
+			sql`case when ${t.macroMode} = 'percent'
+				then coalesce(${t.proteinShare} between 0 and 1 and ${t.carbShare} between 0 and 1
+					and ${t.proteinShare} + ${t.carbShare} + ${t.fatShare} = 1, false)
+				else ${t.proteinShare} is null and ${t.carbShare} is null end`
 		),
 		index('goal_versions_user_effective_idx').on(t.userId, t.effectiveFrom, t.createdAt)
 	]
