@@ -240,8 +240,9 @@ Improvement round done (2026-10-30, docs/feasibility.md): new photos 61% → 77%
 misreads; all on labels that show a warning), basis 12/12; Phase 0 set 84%, 1 wrong (OCR "7,8" → "8"). 15 parser
 unit tests; energy check counts "less than" at its bound; Scan says when the basis is unknown. The owner has no 10
 new products for a fresh held-out set: offered (a) counting how many proposed values are changed before saving (counts
-only, needs the owner's OK), (b) a friend's kitchen, (c) new purchases over time. Pending: the owner's choice, and
-copying compose.yaml and obur-ctl on the server to switch Scan on. Next: batch 2 features (Profile details, editable macro targets, saved meal
+only, needs the owner's OK), (b) a friend's kitchen, (c) new purchases over time. The owner copied compose.yaml and obur-ctl
+(2026-10-30); deployed with the OCR service (healthy), so Scan is on for testing. Pending: the owner's choice of the
+final accuracy check (waiting on replies from a couple of people; do not build edit counting until they decide). Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)
