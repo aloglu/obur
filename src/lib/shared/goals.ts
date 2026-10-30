@@ -130,6 +130,8 @@ export interface DayBudget {
 	budget: number;
 	baseKcal: number;
 	activityKcal: number;
+	/** Counted activity left out because the budget setting does not add activity. */
+	activityNotAddedKcal: number;
 	deficitKcal: number;
 	floorApplied: boolean;
 }
@@ -144,16 +146,21 @@ export function budgetForDay(
 		baseBurnKcal: number | null;
 		deficitKcal: number;
 		floorKcal: number;
+		/** Absent (older data) means activity is added. */
+		countActivity?: boolean;
 	} | null,
-	activityKcal: number
+	counted: number
 ): DayBudget | null {
 	if (!target || target.mode === 'none' || target.baseBurnKcal === null) return null;
+	const adds = target.countActivity !== false;
+	const activityKcal = adds ? counted : 0;
 	const raw = Math.round(target.baseBurnKcal + activityKcal - target.deficitKcal);
 	const budget = Math.max(target.floorKcal, raw);
 	return {
 		budget,
 		baseKcal: target.baseBurnKcal,
 		activityKcal,
+		activityNotAddedKcal: adds ? 0 : counted,
 		deficitKcal: target.deficitKcal,
 		floorApplied: budget > raw
 	};

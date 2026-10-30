@@ -1,22 +1,30 @@
 <script lang="ts">
-	// Manual activity (docs/design.md): calories burned above an inactive day, with an optional note. The sheet states
-	// that meaning plainly.
+	// Manual activity (docs/design.md): calories burned above an inactive day, with an optional note. Either a
+	// workout, which adds, or the watch's active-calorie total for the day so far, which replaces the day's earlier
+	// total. The sheet states both meanings plainly.
+	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import type { ActivityEntry } from '#lib/shared/body-types.ts';
+	import { kcal } from '#lib/shared/format.ts';
 	import { parseDecimal } from '#lib/shared/numbers.ts';
 	import Button from '../Button.svelte';
+	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 	import TextField from '../TextField.svelte';
 
 	interface Props {
 		date: string;
+		/** The day's newest watch total, if any. */
+		watchTotal: number | null;
 		onsaved: (entry: ActivityEntry) => void;
 		onclose: () => void;
 	}
-	let { date, onsaved, onclose }: Props = $props();
+	let { date, watchTotal, onsaved, onclose }: Props = $props();
+	// Someone who already entered a watch total today most likely updates it.
+	let kind = $state<ActivityEntry['kind']>(untrack(() => (watchTotal ? 'day_total' : 'extra')));
 	let kcalText = $state('');
 	let note = $state('');
 	let busy = $state(false);
@@ -36,7 +44,8 @@
 					date,
 					zone: deviceZone(),
 					value: Math.round(value!),
-					note: note || null
+					note: note || null,
+					kind
 				})
 			);
 		} catch {
@@ -48,8 +57,23 @@
 </script>
 
 <Sheet title={m.activity_title()} {onclose}>
-	<p class="text-[14px] text-muted">{m.activity_meaning()}</p>
 	<form class="flex flex-col gap-4" onsubmit={save}>
+		<Chips
+			label={m.activity_kind()}
+			bind:value={kind}
+			options={[
+				{ value: 'extra', label: m.activity_kind_extra() },
+				{ value: 'day_total', label: m.activity_kind_total() }
+			]}
+		/>
+		<p class="text-[14px] text-muted">
+			{kind === 'extra' ? m.activity_meaning() : m.activity_total_meaning()}
+		</p>
+		{#if kind === 'day_total' && watchTotal}
+			<p class="text-[14px] font-semibold tabular-nums">
+				{m.activity_total_current({ kcal: kcal(watchTotal) })}
+			</p>
+		{/if}
 		<TextField
 			label={m.activity_kcal()}
 			bind:value={kcalText}
@@ -57,15 +81,21 @@
 			autocomplete="off"
 			aria-invalid={kcalText.trim() !== '' && !valid}
 		/>
-		<TextField
-			label={m.activity_note()}
-			placeholder={m.activity_note_placeholder()}
-			bind:value={note}
-			maxlength={120}
-		/>
+		{#if kind === 'extra'}
+			<TextField
+				label={m.activity_note()}
+				placeholder={m.activity_note_placeholder()}
+				bind:value={note}
+				maxlength={120}
+			/>
+		{/if}
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<Button type="submit" wide disabled={busy || !valid}
-			>{busy ? m.common_working() : m.activity_save()}</Button
+			>{busy
+				? m.common_working()
+				: kind === 'extra'
+					? m.activity_save()
+					: m.activity_total_save()}</Button
 		>
 	</form>
 </Sheet>

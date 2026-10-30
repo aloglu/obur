@@ -28,8 +28,18 @@ export interface TargetVersion {
 	proteinBasisKg: number | null;
 	fatShare: number | null;
 	inputs: Record<string, unknown>;
+	/** Counted activity adds to the budget. */
+	countActivity: boolean;
+	/** At the goal weight: keep the deficit, or switch to maintenance (calculated targets). */
+	atGoal: 'keep' | 'maintain';
 	createdAt: string;
 }
+
+export const BudgetSettingsInput = v.object({
+	countActivity: v.optional(v.boolean()),
+	atGoal: v.optional(v.picklist(['keep', 'maintain']))
+});
+export type BudgetSettings = { countActivity: boolean; atGoal: 'keep' | 'maintain' };
 
 const optionalNumber = (min: number, max: number) =>
 	v.optional(v.nullable(v.pipe(v.number(), v.finite(), v.minValue(min), v.maxValue(max))), null);

@@ -255,6 +255,61 @@ describe('following the latest weight', () => {
 	});
 });
 
+describe('budget settings', () => {
+	const calc = {
+		mode: 'calculated' as const,
+		effectiveFrom: '2026-06-01',
+		rateKgPerWeek: 0.5,
+		goalWeightKg: 78
+	};
+
+	it('changes settings from today on, keeping earlier days and every other choice', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		const first = await goals.setTarget(MEHMET, calc, 80);
+		expect(first).toMatchObject({ countActivity: true, atGoal: 'keep' });
+		const changed = await goals.changeSettings(MEHMET, '2026-06-10', 80, { countActivity: false });
+		expect(changed).toMatchObject({
+			effectiveFrom: '2026-06-10',
+			countActivity: false,
+			atGoal: 'keep',
+			baseBurnKcal: first.baseBurnKcal,
+			deficitKcal: first.deficitKcal,
+			goalWeightKg: 78
+		});
+		expect((await goals.targetFor(MEHMET, '2026-06-09'))?.countActivity).toBe(true);
+		// A recalculation keeps the setting.
+		const again = await goals.setTarget(MEHMET, { ...calc, effectiveFrom: '2026-06-11' }, 80);
+		expect(again.countActivity).toBe(false);
+	});
+
+	it('switches to maintenance at the goal weight only when chosen, and back above it', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		await goals.setTarget(MEHMET, calc, 80);
+		// Default: the deficit continues at the goal weight.
+		expect((await goals.followWeight(MEHMET, '2026-06-05', 77.5))?.target.deficitKcal).toBe(550);
+		const maintain = await goals.changeSettings(MEHMET, '2026-06-06', 77.5, { atGoal: 'maintain' });
+		expect(maintain).toMatchObject({ atGoal: 'maintain', deficitKcal: 0 });
+		expect(maintain.inputs).toMatchObject({ goalReached: true, requestedRateKgPerWeek: 0.5 });
+		// Back above the goal: the requested deficit returns.
+		expect((await goals.followWeight(MEHMET, '2026-06-20', 79))?.target.deficitKcal).toBe(550);
+	});
+
+	it('works for a hand-set budget and refuses without one', async () => {
+		expect(
+			await errorCode(goals.changeSettings(MEHMET, '2026-06-10', null, { countActivity: false }))
+		).toBe('no_target');
+		await goals.setTarget(
+			MEHMET,
+			{ mode: 'manual', effectiveFrom: '2026-06-01', budgetKcal: 2000 },
+			null
+		);
+		const changed = await goals.changeSettings(MEHMET, '2026-06-10', null, {
+			countActivity: false
+		});
+		expect(changed).toMatchObject({ mode: 'manual', baseBurnKcal: 2000, countActivity: false });
+	});
+});
+
 describe('privacy', () => {
 	it('keeps profiles and targets private, even from the admin', async () => {
 		await goals.saveProfile(MEHMET, adult);

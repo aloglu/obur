@@ -15,17 +15,24 @@ import {
 	targetsAllowed
 } from '../../../shared/goals.ts';
 import * as v from 'valibot';
-import { ProfileInput, type Profile, type TargetVersion } from '../../../shared/goal-types.ts';
+import {
+	ProfileInput,
+	type BudgetSettings,
+	type Profile,
+	type TargetVersion
+} from '../../../shared/goal-types.ts';
 import { goalVersions, profiles } from './schema.ts';
 
 export class GoalError extends Error {
-	constructor(readonly code: 'profile_incomplete' | 'targets_not_allowed' | 'weight_required') {
+	constructor(
+		readonly code: 'profile_incomplete' | 'targets_not_allowed' | 'weight_required' | 'no_target'
+	) {
 		super(code);
 	}
 }
 
 export type TargetRequest =
-	| {
+	| ({
 			mode: 'calculated';
 			effectiveFrom: string;
 			rateKgPerWeek: number;
@@ -35,8 +42,8 @@ export type TargetRequest =
 			floorKcal?: number | null;
 			proteinGPerKg?: number | null;
 			fatShare?: number | null;
-	  }
-	| { mode: 'manual'; effectiveFrom: string; budgetKcal: number }
+	  } & Partial<BudgetSettings>)
+	| ({ mode: 'manual'; effectiveFrom: string; budgetKcal: number } & Partial<BudgetSettings>)
 	| { mode: 'none'; effectiveFrom: string };
 
 type ProfileRow = typeof profiles.$inferSelect;
@@ -67,6 +74,8 @@ const toVersion = (r: VersionRow): TargetVersion => ({
 	proteinBasisKg: r.proteinBasisKg,
 	fatShare: r.fatShare,
 	inputs: r.inputs as Record<string, unknown>,
+	countActivity: r.countActivity,
+	atGoal: r.atGoal,
 	createdAt: r.createdAt.toISOString()
 });
 
@@ -99,8 +108,11 @@ async function calculatedValues(
 	};
 	const burn = baseBurn(facts, request.effectiveFrom);
 	const fixed = request.fixedBaseBurnKcal ? Math.round(request.fixedBaseBurnKcal) : null;
-	const rate = Math.min(Math.max(request.rateKgPerWeek, 0), maxRate(currentWeightKg));
 	const goal = request.goalWeightKg ?? null;
+	// "Switch to maintenance" once the goal weight is reached; the requested rate comes back if weight rises above it.
+	const atGoal = request.atGoal ?? 'keep';
+	const reached = atGoal === 'maintain' && goal !== null && currentWeightKg <= goal;
+	const rate = reached ? 0 : Math.min(Math.max(request.rateKgPerWeek, 0), maxRate(currentWeightKg));
 	return {
 		userId,
 		effectiveFrom: request.effectiveFrom,
@@ -114,6 +126,8 @@ async function calculatedValues(
 		proteinGPerKg: request.proteinGPerKg ?? DEFAULT_PROTEIN_G_PER_KG,
 		proteinBasisKg: goal !== null && goal < currentWeightKg ? goal : currentWeightKg,
 		fatShare: request.fatShare ?? DEFAULT_FAT_SHARE,
+		countActivity: request.countActivity ?? true,
+		atGoal,
 		inputs: {
 			weightKg: currentWeightKg,
 			heightCm: p.heightCm,
@@ -123,7 +137,8 @@ async function calculatedValues(
 			formula: fixed ? 'fixed' : burn.formula,
 			bmr: fixed ? null : Math.round(burn.bmr),
 			sedentaryFactor: SEDENTARY_FACTOR,
-			requestedRateKgPerWeek: request.rateKgPerWeek
+			requestedRateKgPerWeek: request.rateKgPerWeek,
+			...(reached ? { goalReached: true } : {})
 		}
 	};
 }
@@ -140,7 +155,9 @@ function repeatRequest(v: VersionRow, effectiveFrom: string): CalculatedRequest 
 		fixedBaseBurnKcal: inputs.formula === 'fixed' ? v.baseBurnKcal : null,
 		floorKcal: v.floorKcal,
 		proteinGPerKg: v.proteinGPerKg,
-		fatShare: v.fatShare
+		fatShare: v.fatShare,
+		countActivity: v.countActivity,
+		atGoal: v.atGoal
 	};
 }
 
@@ -207,10 +224,28 @@ export function createGoals(db: Database) {
 			currentWeightKg: number | null
 		): Promise<TargetVersion> {
 			return withUser(db, userId, async (tx) => {
+				// A new target keeps the person's settings unless the request changes them.
+				const [inForce] = await tx
+					.select({ countActivity: goalVersions.countActivity, atGoal: goalVersions.atGoal })
+					.from(goalVersions)
+					.where(lte(goalVersions.effectiveFrom, request.effectiveFrom))
+					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
+					.limit(1);
+				const settings: BudgetSettings = {
+					countActivity:
+						(request.mode !== 'none' ? request.countActivity : undefined) ??
+						inForce?.countActivity ??
+						true,
+					atGoal:
+						(request.mode === 'calculated' ? request.atGoal : undefined) ??
+						inForce?.atGoal ??
+						'keep'
+				};
 				const base = {
 					userId,
 					effectiveFrom: request.effectiveFrom,
-					calculationVersion: CALCULATION_VERSION
+					calculationVersion: CALCULATION_VERSION,
+					...settings
 				};
 				let values: typeof goalVersions.$inferInsert;
 				if (request.mode === 'none') {
@@ -223,8 +258,55 @@ export function createGoals(db: Database) {
 						inputs: { source: 'manual' }
 					};
 				} else {
-					values = await calculatedValues(tx, userId, request, currentWeightKg);
+					values = await calculatedValues(tx, userId, { ...request, ...settings }, currentWeightKg);
 				}
+				const [row] = await tx.insert(goalVersions).values(values).returning();
+				return toVersion(row);
+			});
+		},
+
+		/**
+		 * Changes the budget settings from `today` on: a new version with the same choices and the new settings, so
+		 * earlier days keep their budgets. Nothing to change without a budget.
+		 */
+		async changeSettings(
+			userId: string,
+			today: string,
+			latestWeightKg: number | null,
+			change: Partial<BudgetSettings>
+		): Promise<TargetVersion> {
+			return withUser(db, userId, async (tx) => {
+				const [current] = await tx
+					.select()
+					.from(goalVersions)
+					.where(lte(goalVersions.effectiveFrom, today))
+					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
+					.limit(1);
+				if (!current || current.mode === 'none') throw new GoalError('no_target');
+				const settings: BudgetSettings = {
+					countActivity: change.countActivity ?? current.countActivity,
+					atGoal: change.atGoal ?? current.atGoal
+				};
+				const values: typeof goalVersions.$inferInsert =
+					current.mode === 'calculated'
+						? await calculatedValues(
+								tx,
+								userId,
+								{ ...repeatRequest(current, today), ...settings },
+								latestWeightKg ?? ((current.inputs as Record<string, unknown>).weightKg as number)
+							)
+						: {
+								userId,
+								effectiveFrom: today,
+								mode: current.mode,
+								baseBurnKcal: current.baseBurnKcal,
+								deficitKcal: current.deficitKcal,
+								floorKcal: current.floorKcal,
+								inputs: current.inputs,
+								calculationVersion: current.calculationVersion,
+								...settings
+							};
+				values.inputs = { ...(values.inputs as Record<string, unknown>), source: 'settings' };
 				const [row] = await tx.insert(goalVersions).values(values).returning();
 				return toVersion(row);
 			});

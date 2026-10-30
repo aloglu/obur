@@ -216,7 +216,8 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 			...lifecycle(a),
 			kcal: a.kcal,
 			note: a.note,
-			countsTowardBudget: a.countsTowardBudget
+			countsTowardBudget: a.countsTowardBudget,
+			kind: a.kind
 		})),
 		targets: (await tx.select().from(goalVersions).where(eq(goalVersions.userId, userId))).map(
 			(t) => ({
@@ -233,6 +234,8 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 				fatShare: t.fatShare,
 				inputs: t.inputs as Record<string, unknown>,
 				calculationVersion: t.calculationVersion,
+				countActivity: t.countActivity,
+				atGoal: t.atGoal,
 				createdAt: t.createdAt.toISOString()
 			})
 		),
@@ -771,7 +774,8 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 				...readingBase('activity', r),
 				kcal: r.kcal,
 				note: r.note,
-				countsTowardBudget: r.countsTowardBudget
+				countsTowardBudget: r.countsTowardBudget,
+				kind: r.kind
 			}))
 		)
 	);

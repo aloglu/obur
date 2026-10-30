@@ -67,14 +67,19 @@ export const waterEntries = pgTable(
 );
 
 // Calories burned through activity, as extra above an inactive day (docs/design.md). Only rows that count toward
-// the budget are added to it; imported values with an unclear meaning are recorded but not counted.
+// the budget are added to it; imported values with an unclear meaning are recorded but not counted. `extra` rows add
+// up (a workout); a `day_total` row is a watch's active calories for the day so far, and the newest one replaces the
+// earlier ones that day.
 export const activityEntries = pgTable(
 	'activity_entries',
 	{
 		...common(),
 		kcal: integer('kcal').notNull(),
 		note: text('note'),
-		countsTowardBudget: boolean('counts_toward_budget').notNull()
+		countsTowardBudget: boolean('counts_toward_budget').notNull(),
+		kind: text('kind', { enum: ['extra', 'day_total'] })
+			.notNull()
+			.default('extra')
 	},
 	(t) => [
 		check('activity_entries_kcal_range', sql`${t.kcal} > 0 and ${t.kcal} <= 10000`),
@@ -84,6 +89,7 @@ export const activityEntries = pgTable(
 		),
 		check('activity_entries_zone_format', sql`${t.zone} ~ '^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$'`),
 		check('activity_entries_source_valid', sql`${t.source} in ('manual', 'loseit')`),
+		check('activity_entries_kind_valid', sql`${t.kind} in ('extra', 'day_total')`),
 		check(
 			'activity_entries_manual_counts',
 			sql`${t.source} <> 'manual' or ${t.countsTowardBudget}`

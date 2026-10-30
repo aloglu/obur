@@ -84,6 +84,9 @@
 									deficit: kcal(budget.deficitKcal)
 								})}
 					</dd>
+					{#if budget.activityNotAddedKcal}<dd class="text-[12.5px] text-muted">
+							{m.budget_activity_not_added({ kcal: kcal(budget.activityNotAddedKcal) })}
+						</dd>{/if}
 					{#if budget.floorApplied}<dd class="text-[12.5px] text-muted">
 							{m.budget_floor({ floor: kcal(floor) })}
 						</dd>{/if}

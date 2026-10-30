@@ -53,7 +53,8 @@ export const POST: RequestHandler = ({ params, request, locals }) =>
 					note: v.pipe(
 						v.optional(v.nullable(v.string()), null),
 						v.transform((s) => (s ? s.normalize('NFC').trim().slice(0, 120) || null : null))
-					)
+					),
+					kind: v.optional(v.picklist(['extra', 'day_total']), 'extra')
 				})
 			);
 			return json(
@@ -61,7 +62,8 @@ export const POST: RequestHandler = ({ params, request, locals }) =>
 					userId,
 					{ id: r.id, localDate: r.date, zone: r.zone },
 					r.value,
-					r.note
+					r.note,
+					r.kind
 				),
 				{ status: 201 }
 			);

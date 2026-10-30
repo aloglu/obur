@@ -4,7 +4,11 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { purgedRecords } from '../diary/index.ts';
-import type { ActivityEntry, BodyReading } from '../../../shared/body-types.ts';
+import {
+	countedActivity,
+	type ActivityEntry,
+	type BodyReading
+} from '../../../shared/body-types.ts';
 import { activityEntries, waterEntries, weightEntries } from './schema.ts';
 
 export class BodyError extends Error {
@@ -42,6 +46,7 @@ const toActivity = (r: typeof activityEntries.$inferSelect): ActivityEntry => ({
 	note: r.note,
 	source: r.source,
 	countsTowardBudget: r.countsTowardBudget,
+	kind: r.kind,
 	createdAt: r.createdAt.toISOString()
 });
 
@@ -151,12 +156,16 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 		removeWater: (userId: string, id: string) => setDeleted(userId, waterEntries, id, true),
 		restoreWater: (userId: string, id: string) => setDeleted(userId, waterEntries, id, false),
 
-		/** Manual activity: calories burned above an inactive day. Counts toward the budget. */
+		/**
+		 * Manual activity: calories burned above an inactive day. Counts toward the budget: an `extra` entry adds,
+		 * a `day_total` (a watch's active calories so far today) replaces the day's earlier totals.
+		 */
 		async logActivity(
 			userId: string,
 			ctx: ReadingContext,
 			kcal: number,
-			note: string | null
+			note: string | null,
+			kind: ActivityEntry['kind'] = 'extra'
 		): Promise<ActivityEntry> {
 			const id = ctx.id ?? randomUUID();
 			return withUser(db, userId, async (tx) => {
@@ -168,7 +177,8 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 					const same =
 						existing.localDate === ctx.localDate &&
 						existing.kcal === kcal &&
-						existing.note === note;
+						existing.note === note &&
+						existing.kind === kind;
 					if (!same) throw new BodyError('conflict');
 					return toActivity(existing);
 				}
@@ -183,7 +193,8 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 							zone: ctx.zone,
 							kcal,
 							note,
-							countsTowardBudget: true
+							countsTowardBudget: true,
+							kind
 						})
 						.returning();
 					return toActivity(row);
@@ -207,15 +218,10 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 					.orderBy(asc(activityEntries.createdAt))
 			);
 			const entries = rows.map(toActivity);
-			return {
-				countedKcal: entries
-					.filter((e) => e.countsTowardBudget)
-					.reduce((sum, e) => sum + e.kcal, 0),
-				entries
-			};
+			return { countedKcal: countedActivity(entries), entries };
 		},
 
-		/** Counted activity per day in a range. */
+		/** Counted activity per day in a range, by the same rule as `countedActivity`. */
 		async activityByDay(
 			userId: string,
 			from: string,
@@ -225,7 +231,9 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 				tx
 					.select({
 						localDate: activityEntries.localDate,
-						kcal: sql<string>`sum(${activityEntries.kcal})`
+						kcal: sql<string>`coalesce(sum(${activityEntries.kcal}) filter (where ${activityEntries.kind} = 'extra'), 0)
+							+ coalesce((array_agg(${activityEntries.kcal} order by ${activityEntries.createdAt} desc)
+								filter (where ${activityEntries.kind} = 'day_total'))[1], 0)`
 					})
 					.from(activityEntries)
 					.where(

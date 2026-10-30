@@ -97,6 +97,29 @@ describe('weight pages', () => {
 	});
 });
 
+describe('activity', () => {
+	it('adds workouts and takes only the newest watch total, per day and in the range totals', async () => {
+		await body.logActivity(AYSE, at('2026-10-24'), 300, null, 'day_total');
+		await body.logActivity(AYSE, at('2026-10-24'), 200, 'Yüzme');
+		await new Promise((r) => setTimeout(r, 5));
+		await body.logActivity(AYSE, at('2026-10-24'), 650, null, 'day_total');
+		await body.logActivity(AYSE, at('2026-10-25'), 100, null);
+		expect((await body.activityDay(AYSE, '2026-10-24')).countedKcal).toBe(850);
+		expect(await body.activityByDay(AYSE, '2026-10-20', '2026-10-31')).toEqual(
+			expect.arrayContaining([
+				{ localDate: '2026-10-24', kcal: 850 },
+				{ localDate: '2026-10-25', kcal: 100 }
+			])
+		);
+		// A retry of the same total is the same entry; the kind is part of the request.
+		const id = randomUUID();
+		await body.logActivity(AYSE, at('2026-10-26', id), 400, null, 'day_total');
+		expect(await errorCode(body.logActivity(AYSE, at('2026-10-26', id), 400, null, 'extra'))).toBe(
+			'conflict'
+		);
+	});
+});
+
 describe('editing', () => {
 	it('changes a value with the current revision and refuses a stale one', async () => {
 		const r = await body.logWeight(AYSE, at('2026-10-24'), 82.4);

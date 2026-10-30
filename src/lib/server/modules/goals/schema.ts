@@ -78,6 +78,12 @@ export const goalVersions = pgTable(
 		fatShare: numeric('fat_share', { precision: 3, scale: 2, mode: 'number' }),
 		// The inputs and formula used, for audit (weight, height, age, sex, body fat, formula, factor).
 		inputs: jsonb('inputs').notNull(),
+		// Settings that travel with the target: whether counted activity adds to the budget, and what a calculated
+		// target does once the goal weight is reached (keep the deficit, or switch to maintenance).
+		countActivity: boolean('count_activity').notNull().default(true),
+		atGoal: text('at_goal', { enum: ['keep', 'maintain'] })
+			.notNull()
+			.default('keep'),
 		calculationVersion: text('calculation_version').notNull(),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
@@ -89,6 +95,7 @@ export const goalVersions = pgTable(
 				and (${t.baseBurnKcal} is null or ${t.baseBurnKcal} between 500 and 10000)`
 		),
 		check('goal_versions_deficit_range', sql`${t.deficitKcal} between 0 and 1100`),
+		check('goal_versions_at_goal_valid', sql`${t.atGoal} in ('keep', 'maintain')`),
 		check('goal_versions_floor_range', sql`${t.floorKcal} between 0 and 5000`),
 		check(
 			'goal_versions_rate_range',

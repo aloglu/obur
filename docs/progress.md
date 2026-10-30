@@ -115,10 +115,10 @@ portions (147 of 152 custom-food rows are grams or millilitres, 3 name a portion
 3. Desktop: is the meal "+" now noticeable?
 
 **Owner decisions:**
-1. Goal weight reached: switch the budget to maintenance, or keep the deficit (it continues today)?
+1. Done: a setting, default keep the deficit.
 2. Macro defaults: protein 1.2 g per kg (goal weight when lower), fat 30 % of the budget, carbohydrate the rest.
-3. LoseIt's imported exercise: keep it recorded but not counted (as now), or count it?
-4. Voice: is the current correction rate acceptable to ship as is (the design asks for this decision)?
+3. Done: a setting for whether burned calories count (all activity); plus watch totals. Imported LoseIt rows stay uncounted history.
+4. Done: voice accepted as is; the owner notes failing sentences during use.
 5. Provisional screens to review when convenient (in the Claude app if wanted): Profile, onboarding, Your data,
    Household, food create/edit, saved meals, typed entry and Speak, water and weight editing.
 6. Cut-over: the day to stop logging in LoseIt. On that day, a final LoseIt export imported into obur adds only the
@@ -128,6 +128,8 @@ portions (147 of 152 custom-food rows are grams or millilitres, 3 name a portion
 the owner's choice (checks run locally before each deploy).
 
 Owner feedback 2026-10-30, done: the amount preview is now a shared `MacroPreview` (kcal headline, coloured Protein/Carbs/Fat, carbs fall back to the imported unstated value with a note instead of "?"), used in the amount, Check and log and edit sheets; browser test added.
+
+Owner decisions 2026-10-30, done: budget settings on target versions (migration 0024: `count_activity`, `at_goal`; Profile card; `PATCH /api/v1/targets/settings`), maintenance at goal when chosen, watch totals (`activity_entries.kind`: `extra` adds, `day_total` newest replaces; `countedActivity` and the range SQL), export/import fields (optional for older archives). Tests: unit, 4 real-Postgres, 1 browser journey. Found while testing: the settings switch flipped back when the busy flag re-rendered it (fixed with local state). Owner's decision 2 (macro defaults) needs a plain explanation; decision 6 (cut-over day) is open.
 
 ## Typed entry gaps to close (owner, collected during use)
 

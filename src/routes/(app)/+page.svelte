@@ -141,7 +141,10 @@
 		addingActivity = false;
 		await invalidateAll();
 		showToast({
-			message: m.toast_activity({ kcal: kcal(entry.kcal) }),
+			message:
+				entry.kind === 'day_total'
+					? m.toast_activity_total({ kcal: kcal(entry.kcal) })
+					: m.toast_activity({ kcal: kcal(entry.kcal) }),
 			undo: async () => {
 				await api('POST', `/api/v1/body/activity/${entry.id}?action=delete`, {});
 				await invalidateAll();
@@ -353,6 +356,7 @@
 {#if addingActivity}
 	<ActivitySheet
 		date={data.date}
+		watchTotal={data.activity.entries.findLast((e) => e.kind === 'day_total')?.kcal ?? null}
 		onsaved={activityAdded}
 		onclose={() => (addingActivity = false)}
 	/>

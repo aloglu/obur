@@ -169,6 +169,13 @@
       "when": 1793346374630,
       "tag": "0023_curated_foods",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793364368935,
+      "tag": "0024_activity_kind_and_budget_settings",
+      "breakpoints": true
     }
   ]
 }

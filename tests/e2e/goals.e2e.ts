@@ -43,7 +43,7 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	// Activity is added to the budget.
 	await budget.getByRole('button', { name: 'Add activity' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Activity' });
-	await expect(sheet).toContainText("not a watch's total");
+	await expect(sheet).toContainText('above an ordinary inactive day');
 	await sheet.getByLabel('Calories burned (kcal)').fill('300');
 	await sheet.getByRole('button', { name: 'Add to budget' }).click();
 	await expect(budget).toContainText('1886 kcal');
@@ -108,4 +108,61 @@ test('under-18s get no calculated target but can enter a professional’s number
 	await page.reload();
 	await expect(budget).toContainText('500');
 	await expect(budget).toContainText('kcal over');
+});
+
+test('watch totals replace each other, and the budget settings apply from today', async ({
+	page
+}) => {
+	await signedInAs(page, 'Saat');
+	await page.goto('/');
+	const budget = page.getByRole('region', { name: 'Budget' });
+	await budget.getByRole('link', { name: 'Set up your budget' }).click();
+	await fillDetails(page, bornYearsAgo(30));
+	await page.getByRole('radio', { name: '0,5 kg/week' }).click();
+	await page.getByLabel(/Goal weight/).fill('75');
+	await page.getByRole('button', { name: 'Save my budget' }).click();
+	await expect(budget).toContainText('2136 base + 0 activity − 550 goal');
+
+	// A watch total, then a newer one: the newer replaces it; a workout adds on top.
+	const addActivity = async (kind: 'A workout' | 'Watch total today', value: string) => {
+		await budget.getByRole('button', { name: 'Add activity' }).click();
+		const sheet = page.getByRole('dialog', { name: 'Activity' });
+		await sheet.getByRole('radio', { name: kind }).click();
+		await sheet.getByLabel('Calories burned (kcal)').fill(value);
+		await sheet
+			.getByRole('button', { name: kind === 'A workout' ? 'Add to budget' : 'Save watch total' })
+			.click();
+		await expect(sheet).toBeHidden();
+	};
+	await addActivity('Watch total today', '300');
+	await expect(budget).toContainText('2136 base + 300 activity − 550 goal');
+	await addActivity('Watch total today', '650');
+	await expect(budget).toContainText('2136 base + 650 activity − 550 goal');
+	await addActivity('A workout', '100');
+	await expect(budget).toContainText('2136 base + 750 activity − 550 goal');
+	await budget.getByRole('button', { name: 'Add activity' }).click();
+	await expect(page.getByRole('dialog', { name: 'Activity' })).toContainText(
+		"Today's watch total so far: 650 kcal"
+	);
+	await page
+		.getByRole('dialog', { name: 'Activity' })
+		.getByRole('button', { name: 'Close' })
+		.click();
+
+	// Turning activity off: kept and shown, but not added.
+	await page.goto('/profile');
+	await page.getByLabel('Add calories I burn to my budget').uncheck();
+	await expect(page.getByRole('status')).toContainText('Budget settings saved');
+	await expect(page.getByRole('radio', { name: 'Keep my deficit' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await page.getByRole('radio', { name: 'Switch to maintenance' }).click();
+	await expect(page.getByRole('radio', { name: 'Switch to maintenance' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await page.goto('/');
+	await expect(budget).toContainText('2136 base + 0 activity − 550 goal');
+	await expect(budget).toContainText('750 kcal burned, not added (your budget setting).');
 });

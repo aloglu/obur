@@ -123,6 +123,7 @@ describe('budgetForDay', () => {
 			budget: 1886,
 			baseKcal: 2136,
 			activityKcal: 300,
+			activityNotAddedKcal: 0,
 			deficitKcal: 550,
 			floorApplied: false
 		});
@@ -137,5 +138,20 @@ describe('budgetForDay', () => {
 			budgetForDay({ mode: 'none', baseBurnKcal: null, deficitKcal: 0, floorKcal: 0 }, 200)
 		).toBeNull();
 		expect(budgetForDay(null, 0)).toBeNull();
+	});
+
+	it('leaves activity out when the setting says so, and reports how much', () => {
+		const target = {
+			mode: 'calculated' as const,
+			baseBurnKcal: 2136,
+			deficitKcal: 550,
+			floorKcal: 1500,
+			countActivity: false
+		};
+		expect(budgetForDay(target, 300)).toMatchObject({
+			budget: 1586,
+			activityKcal: 0,
+			activityNotAddedKcal: 300
+		});
 	});
 });

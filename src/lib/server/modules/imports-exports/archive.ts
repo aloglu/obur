@@ -198,7 +198,9 @@ export const ActivityRecord = v.pipe(
 		...Reading,
 		kcal: v.pipe(v.number(), v.integer(), v.gtValue(0), v.maxValue(10_000)),
 		note: v.nullable(Text(120)),
-		countsTowardBudget: v.boolean()
+		countsTowardBudget: v.boolean(),
+		// Added 2026-10-30; older archives have only workout-style entries.
+		kind: v.optional(v.picklist(['extra', 'day_total']), 'extra')
 	}),
 	v.check((a) => a.source !== 'manual' || a.countsTowardBudget, 'Manual activity always counts')
 );
@@ -217,6 +219,9 @@ export const TargetRecord = v.object({
 	fatShare: v.nullable(v.pipe(v.number(), v.minValue(0.1), v.maxValue(0.7))),
 	inputs: v.record(v.string(), v.unknown()),
 	calculationVersion: Text(40),
+	// Added 2026-10-30; older archives read with the defaults then in force.
+	countActivity: v.optional(v.boolean(), true),
+	atGoal: v.optional(v.picklist(['keep', 'maintain']), 'keep'),
 	createdAt: Timestamp
 });
 
