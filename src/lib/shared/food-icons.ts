@@ -509,9 +509,9 @@ function tokenMatches(token: string, word: string): boolean {
  * longest phrase ("ton balığı" over "balık").
  */
 export function suggestIcon(...texts: (string | null | undefined)[]): string | null {
-	let best: { hex: string; end: number; size: number } | null = null;
 	for (const text of texts) {
 		if (!text) continue;
+		let best: { hex: string; end: number; size: number } | null = null;
 		const tokens = foldForSearch(text).split(' ').filter(Boolean);
 		for (const e of ENTRIES) {
 			for (let i = 0; i + e.words.length <= tokens.length; i++) {
@@ -528,5 +528,5 @@ export function suggestIcon(...texts: (string | null | undefined)[]): string | n
 		// The name decides; the brand or other text is consulted only when the name says nothing.
 		if (best) return best.hex;
 	}
-	return best?.hex ?? null;
+	return null;
 }
