@@ -38,7 +38,9 @@
 	onMount(async () => (measures = await householdMeasures()));
 
 	const snapshot = start.food;
-	const options = $derived(snapshot ? unitOptions(snapshot, measures) : []);
+	const options = $derived(
+		snapshot ? unitOptions(snapshot, measures, start.unit?.kind === 'basis_serving') : []
+	);
 	const option = $derived(options.find((o) => o.key === optionKey));
 	const amount = $derived(parseDecimal(amountText));
 	const kcalValue = $derived(parseDecimal(kcalText));

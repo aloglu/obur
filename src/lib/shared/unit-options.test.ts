@@ -49,6 +49,32 @@ describe('unitOptions', () => {
 		expect(unknown.map((o) => o.label)).toEqual(['1 slice']);
 	});
 
+	it('leaves out a serving whose label only restates its size, unless an entry uses it', () => {
+		const food = {
+			basis: 'serving' as const,
+			servingLabel: '100 g',
+			servingSize: { amount: 100, unit: 'g' as const },
+			servings: []
+		};
+		expect(unitOptions(food, measures).map((o) => o.label)).toEqual(['g']);
+		expect(
+			unitOptions(
+				{ ...food, servingLabel: '12,5 G', servingSize: { amount: 12.5, unit: 'g' } },
+				measures
+			).map((o) => o.label)
+		).toEqual(['g']);
+		expect(
+			unitOptions(
+				{ ...food, servingLabel: '45 g', servingSize: { amount: 45, unit: 'g' } },
+				measures
+			)[0].defaultAmount
+		).toBe(45);
+		expect(unitOptions(food, measures, true).map((o) => o.label)).toEqual(['100 g', 'g']);
+		expect(
+			unitOptions({ ...food, servingLabel: '1 cup (100 g)' }, measures).map((o) => o.label)
+		).toEqual(['1 cup (100 g)', 'g']);
+	});
+
 	it('maps stored units back to option keys', () => {
 		expect(optionKeyFor({ kind: 'basis_serving' })).toBe('basis');
 		expect(optionKeyFor({ kind: 'mass', unit: 'g' })).toBe('g');

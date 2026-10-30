@@ -23,13 +23,29 @@ export interface MeasureOption {
 	ml: number;
 }
 
+/** True when a serving's label only restates its size ("100 g" for 100 g), which the g or ml option already covers. */
+function labelRestatesSize(food: QuantityModel & { servingLabel: string | null }): boolean {
+	if (!food.servingSize || food.servingLabel === null) return false;
+	const plain = (s: string) => s.toLowerCase().replace(/\s+/g, '').replace(',', '.');
+	return (
+		plain(food.servingLabel) ===
+		plain(`${Number(food.servingSize.amount.toFixed(4))}${food.servingSize.unit}`)
+	);
+}
+
+/** `keepBasis` keeps the basis serving even when redundant, so an entry logged in it can still be edited. */
 export function unitOptions(
 	food: QuantityModel & { servingLabel: string | null },
-	measures: MeasureOption[]
+	measures: MeasureOption[],
+	keepBasis = false
 ): UnitOption[] {
 	const dims = supportedDimensions(food);
 	const options: UnitOption[] = [];
-	if (food.basis === 'serving') {
+	// When the serving is hidden, its size becomes the default physical amount.
+	const hidden = food.basis === 'serving' && !keepBasis && labelRestatesSize(food);
+	const physicalDefault = (unit: 'g' | 'ml', fallback: number) =>
+		hidden && food.servingSize?.unit === unit ? food.servingSize.amount : fallback;
+	if (food.basis === 'serving' && !hidden) {
 		options.push({
 			key: 'basis',
 			label: food.servingLabel ?? '1',
@@ -48,13 +64,18 @@ export function unitOptions(
 		}
 	}
 	if (dims.mass)
-		options.push({ key: 'g', label: 'g', input: { kind: 'mass', unit: 'g' }, defaultAmount: 100 });
+		options.push({
+			key: 'g',
+			label: 'g',
+			input: { kind: 'mass', unit: 'g' },
+			defaultAmount: physicalDefault('g', 100)
+		});
 	if (dims.volume) {
 		options.push({
 			key: 'ml',
 			label: 'ml',
 			input: { kind: 'volume', unit: 'ml' },
-			defaultAmount: 200
+			defaultAmount: physicalDefault('ml', 200)
 		});
 		for (const m of measures) {
 			options.push({

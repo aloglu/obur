@@ -11,7 +11,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 1. **LoseIt reader** (pure parser, header-detected layout, redacted fixture with invented values for owner review).
 2. **LoseIt import** with dry run, file hash, fingerprint-and-multiplicity matching for overlapping exports, daily-total reconciliation against `daily-calorie-summary.csv`, atomic apply; foods private with an opt-in share; budgets as manual target versions from the dates they changed; activity recorded but not counted; completions; weight unit asked in the preview.
 3. **Owner's real import** through the app, with a reconciliation report.
-4. **Automatic budget recalculation** (proposed, owner to confirm): a new calculated target version when a new weight changes the budget; past days never change.
+4. **Automatic budget recalculation** (owner confirmed 2026-10-30, like LoseIt): a new calculated target version when a new weight changes the budget; past days never change.
 5. **Saved meals** (snapshots, explicit refresh, in export/import).
 6. **Curated generic foods and aliases** from USDA (public domain only), chosen from foods in the owner's history.
 7. **Typed quick entry** (pure `nl-parser`, proposals confirmed before saving).
@@ -86,15 +86,15 @@ Phase 0 measurements: `docs/feasibility.md`. Phase 1 step 10 (2026-10-29): `npm 
 
 ## Exact next step
 
-**At the start of the next session, remind the owner of the open question:** step 4, automatic budget recalculation (a new calculated target version when a new weight changes the budget; past days never change) or keep the manual recalculation nudge on Profile. Then continue Phase 2 with step 4 or step 5 (saved meals).
+Session order (2026-10-30, second session): issue 3 (done), Phase 2 step 4 (automatic recalculation, owner chose it 2026-10-30), issues 1–2 (water and weight edit/delete), issues 4–5 (desktop), then step 5 (saved meals). Next: step 4.
 
 ## Owner-reported issues to schedule (2026-10-30)
 
-Reported for later; the assistant decides when to fit them in. None is fixed yet.
+Reported for later; the assistant decides when to fit them in.
 
 1. **Water can't be edited or deleted** after the Undo toast is gone. Add edit/delete for a day's water (the body module already has trash and restore).
 2. **Weight likewise:** edit or delete a recorded weight for a date.
-3. **LoseIt-imported foods show a wrong extra unit:** in a food's amount sheet, under Unit, a per-100 g food (e.g. Lor Peyniri) shows both "g" and "100g", apparently because its basis amount is 100. Check the unit options for imported foods (basis serving shown as a unit).
+3. **Fixed 2026-10-30.** Unit choices now leave out a serving whose label only restates its size (`unitOptions`, with tests); it stays when editing an entry logged in it. Original report — **LoseIt-imported foods show a wrong extra unit:** in a food's amount sheet, under Unit, a per-100 g food (e.g. Lor Peyniri) shows both "g" and "100g", apparently because its basis amount is 100. Check the unit options for imported foods (basis serving shown as a unit).
 4. **Desktop "+" on a meal card** only adds a meal pill to the Log panel, which is easy to miss (the owner first thought nothing happened). Rethink adding to a meal on desktop; the phone behaviour (open Log) is acceptable but could adopt a better shared solution.
 5. **Desktop Today layout:** the Log panel should align vertically with the Budget card, not with the top of the Today column.
 
