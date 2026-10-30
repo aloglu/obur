@@ -16,7 +16,8 @@ const healthy: BackupStatusFile = {
 		failedCount: 2,
 		lastFailedAt: '2026-10-20T00:00:00Z'
 	},
-	lastRestoreCheck: { at: '2026-10-25T01:00:00Z', ok: true, detail: 'fine' }
+	lastRestoreCheck: { at: '2026-10-25T01:00:00Z', ok: true, detail: 'fine' },
+	lastOffsiteRestoreCheck: { at: '2026-10-25T01:05:00Z', ok: true, detail: 'fine' }
 };
 
 describe('assessBackups', () => {
@@ -55,6 +56,19 @@ describe('assessBackups', () => {
 		expect(assessBackups(failed, now, true).problems).toEqual(['restore_check_failed']);
 		const overdue = { ...healthy, lastRestoreCheck: undefined };
 		expect(assessBackups(overdue, now, true).problems).toEqual(['restore_check_stale']);
+	});
+
+	it('flags an off-site copy that has never been restored, or failed to restore', () => {
+		const never = { ...healthy, lastOffsiteRestoreCheck: undefined };
+		expect(assessBackups(never, now, true).problems).toEqual(['offsite_restore_stale']);
+		const failed = {
+			...healthy,
+			lastOffsiteRestoreCheck: { ...healthy.lastOffsiteRestoreCheck!, ok: false }
+		};
+		expect(assessBackups(failed, now, true).problems).toEqual(['offsite_restore_failed']);
+		// Without an off-site copy, only the plain warning about that.
+		const local = { ...never, offsiteConfigured: false };
+		expect(assessBackups(local, now, true).problems).toEqual(['no_offsite']);
 	});
 
 	it('distinguishes an installation without backups from a missing status file', () => {

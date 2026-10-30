@@ -96,6 +96,8 @@
 		archive_failing: m.backup_archive_failing,
 		restore_check_failed: m.backup_restore_check_failed,
 		restore_check_stale: m.backup_restore_check_stale,
+		offsite_restore_failed: m.backup_offsite_restore_failed,
+		offsite_restore_stale: m.backup_offsite_restore_stale,
 		no_offsite: m.backup_no_offsite
 	};
 	const when = (iso: string | null) =>

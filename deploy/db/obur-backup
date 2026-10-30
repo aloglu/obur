@@ -129,8 +129,9 @@ scheduled_type() {
 	if [[ $(date +%u) == "$FULL_DAY" ]]; then echo full; else echo diff; fi
 }
 
-restore_check() {
-	local dir port=5499 started detail ok=false target segment
+# Restores into a throwaway cluster from repository $1 (1 local, 2 off-site) and records the result under $2.
+restore_check_repo() {
+	local repo=$1 key=$2 dir port=5499 started detail ok=false target segment
 	started=$(now)
 	dir=$(mktemp -d /tmp/restore-check.XXXXXX)
 	trap 'pg_ctl -D "$dir" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$dir"' RETURN
@@ -144,11 +145,11 @@ restore_check() {
 		[[ ${archived:0:24} > "$segment" || ${archived:0:24} == "$segment" ]] && break
 		sleep 2
 	done
-	# Restore the latest backup plus all archived WAL from the local repository. Archiving is off in the copy, so
-	# it can never push WAL into the real repositories.
+	# Restore the latest backup plus all archived WAL from the repository. Archiving is off in the copy, so it can
+	# never push WAL into the real repositories.
 	if [[ ${archived:0:24} < "$segment" ]]; then
 		detail="WAL up to $target was not archived within two minutes"
-	elif ! pgbackrest --repo=1 restore --pg1-path="$dir" --archive-mode=off --delta >/dev/null; then
+	elif ! pgbackrest --repo="$repo" restore --pg1-path="$dir" --archive-mode=off --delta >/dev/null; then
 		detail="restore failed"
 	elif ! pg_ctl -D "$dir" -w -t 600 -l "$dir/restore.log" \
 		-o "-p $port -c listen_addresses='' -c unix_socket_directories=$dir -c archive_mode=off" start >/dev/null; then
@@ -183,8 +184,18 @@ restore_check() {
 		fi
 	fi
 	status --arg at "$started" --argjson ok "$ok" --arg detail "$detail" \
-		'.lastRestoreCheck = {at: $at, ok: $ok, detail: $detail}'
-	log "restore check: $detail"
+		".$key = {at: \$at, ok: \$ok, detail: \$detail}"
+	log "restore check (repository $repo): $detail"
+	$ok
+}
+
+# The local copy, then the off-site copy when one is configured: a backup nobody has restored is not yet a backup.
+restore_check() {
+	local ok=true
+	restore_check_repo 1 lastRestoreCheck || ok=false
+	if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then
+		restore_check_repo 2 lastOffsiteRestoreCheck || ok=false
+	fi
 	$ok
 }
 

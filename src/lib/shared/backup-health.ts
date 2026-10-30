@@ -6,6 +6,8 @@ export interface BackupStatusFile {
 	lastSuccessfulBackupAt?: string;
 	archive?: { lastArchivedAt: string | null; failedCount: number; lastFailedAt: string | null };
 	lastRestoreCheck?: { at: string; ok: boolean; detail: string };
+	/** The same check restoring from the off-site copy (when one is configured). */
+	lastOffsiteRestoreCheck?: { at: string; ok: boolean; detail: string };
 }
 
 export type BackupProblem =
@@ -18,6 +20,8 @@ export type BackupProblem =
 	| 'archive_failing'
 	| 'restore_check_failed'
 	| 'restore_check_stale'
+	| 'offsite_restore_failed'
+	| 'offsite_restore_stale'
 	| 'no_offsite';
 
 export interface BackupReport {
@@ -58,6 +62,10 @@ export function assessBackups(
 		else if (age(status.lastRestoreCheck?.at) > RESTORE_CHECK_MAX_AGE_MS)
 			problems.push('restore_check_stale');
 		if (!status.offsiteConfigured) problems.push('no_offsite');
+		else if (status.lastOffsiteRestoreCheck && !status.lastOffsiteRestoreCheck.ok)
+			problems.push('offsite_restore_failed');
+		else if (age(status.lastOffsiteRestoreCheck?.at) > RESTORE_CHECK_MAX_AGE_MS)
+			problems.push('offsite_restore_stale');
 	}
 	return {
 		problems,
