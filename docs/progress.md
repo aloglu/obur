@@ -156,8 +156,9 @@ rows; two-choice chips always side by side (shared `Chips`, food form groups; ba
 kinds **One activity** / **Day total**, device-neutral; Turkish Speak example; amount preview kcal in a fixed column
 with a divider; food form "<" explained and **More nutrients (optional)** for the nine existing extra codes (vitamins
 and magnesium would need new nutrient codes: not added); Household row buttons one width. Rules recorded in
-docs/ui.md. Open: the weight card "Save aligned with Edit" note — the right edges already line up in the screenshots,
-so the owner was asked what they meant. Next: batch 2 features (Profile details, editable macro targets, saved meal
+docs/ui.md. The weight card note was a misreading (the owner confirmed they align). Follow-up: every
+clickable control shows a pointer cursor and disabled ones the arrow (one base rule in layout.css; Tailwind 4 had reset
+buttons to the default cursor). Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

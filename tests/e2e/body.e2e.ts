@@ -23,6 +23,14 @@ test('water: quick additions add up and can be undone', async ({ page }) => {
 	await water.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(water).toContainText('3750 ml');
 	await expect(amount).toBeHidden();
+
+	// Buttons show a pointer; a disabled one the plain arrow (Tailwind 4 resets both to the default).
+	const cursor = (l: import('@playwright/test').Locator) =>
+		l.evaluate((el) => getComputedStyle(el).cursor);
+	expect(await cursor(water.getByRole('button', { name: 'Edit or delete water' }))).toBe('pointer');
+	const save = page.getByRole('region', { name: 'Weight' }).getByRole('button', { name: 'Save' });
+	await expect(save).toBeDisabled();
+	expect(await cursor(save)).toBe('default');
 });
 
 test('weight: decimal comma input, validation, and readings stay private', async ({

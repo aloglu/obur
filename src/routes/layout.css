@@ -20,6 +20,23 @@
 		font-family: var(--font-display);
 	}
 
+	/* Tailwind 4 gives buttons the default cursor; everything clickable shows a pointer, anything disabled the plain
+	   arrow (owner review 2026-10-30). Zero specificity, so a utility can still override. */
+	:where(
+		button:not(:disabled),
+		[role='button']:not([aria-disabled='true']),
+		summary,
+		select:not(:disabled),
+		input:is([type='checkbox'], [type='radio'], [type='file']):not(:disabled),
+		label:has(> input:is([type='checkbox'], [type='radio']):not(:disabled))
+	) {
+		cursor: pointer;
+	}
+
+	:where(button:disabled, select:disabled, input:disabled, [aria-disabled='true']) {
+		cursor: default;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		*,
 		*::before,
