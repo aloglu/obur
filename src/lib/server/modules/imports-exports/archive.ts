@@ -145,6 +145,38 @@ export const DiaryRecord = v.pipe(
 	)
 );
 
+// Saved meals: items keep their own snapshot, like diary entries (item IDs are not portable).
+const SavedMealItemRecord = v.pipe(
+	v.object({
+		kind: v.picklist(['food', 'quick']),
+		foodId: v.nullable(Uuid),
+		food: v.nullable(FoodSnapshot),
+		amount: v.nullable(Positive),
+		unit: v.nullable(SnapshotUnit),
+		description: v.nullable(Text(200)),
+		nutrients: EntryNutrients
+	}),
+	v.check(
+		(e) =>
+			e.kind === 'food'
+				? e.food !== null && e.amount !== null && e.unit !== null
+				: e.food === null &&
+					e.amount === null &&
+					e.unit === null &&
+					e.foodId === null &&
+					e.nutrients.energy_kcal !== undefined,
+		'Item shape does not match its kind'
+	)
+);
+export const SavedMealRecord = v.object({
+	id: Uuid,
+	name: Text(120),
+	revision: v.pipe(v.number(), v.integer(), v.minValue(1)),
+	createdAt: Timestamp,
+	updatedAt: Timestamp,
+	items: v.pipe(v.array(SavedMealItemRecord), v.minLength(1), v.maxLength(100))
+});
+
 const Reading = {
 	id: Uuid,
 	localDate: DateString,
@@ -221,8 +253,11 @@ const DATA_FILES = {
 	'data/weight.json': v.array(WeightRecord),
 	'data/water.json': v.array(WaterRecord),
 	'data/activity.json': v.array(ActivityRecord),
-	'data/targets.json': v.array(TargetRecord)
+	'data/targets.json': v.array(TargetRecord),
+	'data/saved-meals.json': v.array(SavedMealRecord)
 } as const;
+/** Added to format version 1 later (2026-10-30): absent in older archives, read as empty. */
+const OPTIONAL_FILES = new Set<string>(['data/saved-meals.json']);
 const CSV_FILES = ['csv/diary.csv', 'csv/weight.csv', 'csv/water.csv', 'csv/activity.csv'] as const;
 
 export interface PortableData {
@@ -234,6 +269,7 @@ export interface PortableData {
 	water: v.InferOutput<typeof WaterRecord>[];
 	activity: v.InferOutput<typeof ActivityRecord>[];
 	targets: v.InferOutput<typeof TargetRecord>[];
+	savedMeals: v.InferOutput<typeof SavedMealRecord>[];
 }
 
 const KEYS: Record<keyof typeof DATA_FILES, keyof PortableData> = {
@@ -244,7 +280,8 @@ const KEYS: Record<keyof typeof DATA_FILES, keyof PortableData> = {
 	'data/weight.json': 'weight',
 	'data/water.json': 'water',
 	'data/activity.json': 'activity',
-	'data/targets.json': 'targets'
+	'data/targets.json': 'targets',
+	'data/saved-meals.json': 'savedMeals'
 };
 
 const Manifest = v.object({
@@ -444,7 +481,11 @@ export function readArchive(bytes: Uint8Array): { manifest: Manifest; data: Port
 
 	const data = {} as Record<keyof PortableData, unknown>;
 	for (const [path, schema] of Object.entries(DATA_FILES)) {
-		if (!listed.has(path)) throw new ArchiveError('missing_file', path);
+		if (!listed.has(path)) {
+			if (!OPTIONAL_FILES.has(path)) throw new ArchiveError('missing_file', path);
+			data[KEYS[path as keyof typeof DATA_FILES]] = [];
+			continue;
+		}
 		const raw = parse(path);
 		if (Array.isArray(raw) && raw.length > LIMITS.rowsPerFile) throw new ArchiveError('too_large');
 		const result = v.safeParse(schema, raw);

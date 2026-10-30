@@ -453,6 +453,7 @@
 	"data_kind_water": "Water",
 	"data_kind_activity": "Activity",
 	"data_kind_target": "Targets",
+	"data_kind_saved_meal": "Saved meals",
 	"data_kind_dayCompletion": "Completed days",
 	"data_kind_profile": "Profile",
 	"data_warn_already_imported": "This file has already been imported.",

@@ -15,7 +15,7 @@ import { foodSearchKey } from '../../../shared/search-text.ts';
 import { users } from '../auth/index.ts';
 import { activityEntries, waterEntries, weightEntries } from '../body/index.ts';
 import { foodNutrients, foods, foodServings } from '../catalog/index.ts';
-import { dayCompletions, diaryEntries } from '../diary/index.ts';
+import { dayCompletions, diaryEntries, savedMealItems, savedMeals } from '../diary/index.ts';
 import { goalVersions, profiles } from '../goals/index.ts';
 import { readArchive, sha256, writeArchive, type PortableData } from './archive.ts';
 import { readLoseItArchive } from './loseit.ts';
@@ -33,7 +33,7 @@ export class PortabilityError extends Error {
 	}
 }
 
-type IdKind = 'food' | 'diary' | 'weight' | 'water' | 'activity' | 'target';
+type IdKind = 'food' | 'diary' | 'weight' | 'water' | 'activity' | 'target' | 'saved_meal';
 type CountKind = IdKind | 'dayCompletion' | 'profile';
 export interface Counts {
 	new: number;
@@ -74,13 +74,20 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 	const [me] = await tx.select().from(users).where(eq(users.id, userId));
 	const [profile] = await tx.select().from(profiles).where(eq(profiles.userId, userId));
 	const diary = await tx.select().from(diaryEntries).where(eq(diaryEntries.userId, userId));
+	const meals = await tx.select().from(savedMeals).where(eq(savedMeals.userId, userId));
+	const mealItems = await tx
+		.select()
+		.from(savedMealItems)
+		.where(eq(savedMealItems.userId, userId))
+		.orderBy(savedMealItems.position);
 
-	// The person's own foods, plus every food their diary refers to and the foods those were derived from, as far
+	// The person's own foods, plus every food their diary and saved meals refer to and the foods those were derived from, as far
 	// as they can see them (RLS): enough to interpret and reuse their data.
 	const wanted = new Set<string>();
 	const owned = await tx.select({ id: foods.id }).from(foods).where(eq(foods.ownerId, userId));
 	owned.forEach((f) => wanted.add(f.id));
 	diary.forEach((e) => e.foodId && wanted.add(e.foodId));
+	mealItems.forEach((i) => i.foodId && wanted.add(i.foodId));
 	let foodRows: (typeof foods.$inferSelect)[] = [];
 	let pending = [...wanted];
 	while (pending.length) {
@@ -228,7 +235,25 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 				calculationVersion: t.calculationVersion,
 				createdAt: t.createdAt.toISOString()
 			})
-		)
+		),
+		savedMeals: meals.map((sm) => ({
+			id: sm.id,
+			name: sm.name,
+			revision: sm.revision,
+			createdAt: sm.createdAt.toISOString(),
+			updatedAt: sm.updatedAt.toISOString(),
+			items: mealItems
+				.filter((i) => i.savedMealId === sm.id)
+				.map((i) => ({
+					kind: i.kind,
+					foodId: i.foodId,
+					food: i.food,
+					amount: i.amount,
+					unit: i.unit,
+					description: i.description,
+					nutrients: i.nutrients as never
+				}))
+		}))
 	};
 }
 
@@ -267,6 +292,7 @@ async function plan(
 				'water',
 				'activity',
 				'target',
+				'saved_meal',
 				'dayCompletion',
 				'profile'
 			] as const
@@ -407,7 +433,11 @@ async function plan(
 		);
 	}
 	for (const f of data.foods) foodMap.set(f.id, decisions.get(key('food', f.id))!.localId);
-	if (data.diary.some((e) => e.foodId && !foodMap.has(e.foodId)))
+	if (
+		[...data.diary, ...data.savedMeals.flatMap((sm) => sm.items)].some(
+			(e) => e.foodId && !foodMap.has(e.foodId)
+		)
+	)
 		warnings.add('food_links_dropped');
 
 	const deleted = (d: Date | null | string) => d !== null;
@@ -473,6 +503,38 @@ async function plan(
 			s.kcal === l.kcal &&
 			s.note === l.note &&
 			deleted(s.deletedAt) === deleted(l.deletedAt)
+	);
+
+	// Saved meals match on their name and items' content (item IDs are not portable).
+	const mealContent = (
+		name: string,
+		items: { kind: string; amount: number | null; description: string | null; nutrients: unknown }[]
+	) => canonical([name, items.map((i) => [i.kind, i.amount, i.description, i.nutrients])]);
+	await decide(
+		'saved_meal',
+		data.savedMeals,
+		{
+			load: async (ids) => {
+				const rows = await tx
+					.select()
+					.from(savedMeals)
+					.where(and(eq(savedMeals.userId, userId), inArray(savedMeals.id, ids)));
+				const items = rows.length
+					? await tx
+							.select()
+							.from(savedMealItems)
+							.where(
+								inArray(
+									savedMealItems.savedMealId,
+									rows.map((r) => r.id)
+								)
+							)
+							.orderBy(savedMealItems.position)
+					: [];
+				return rows.map((r) => ({ ...r, items: items.filter((i) => i.savedMealId === r.id) }));
+			}
+		},
+		(s, l) => mealContent(s.name, s.items) === mealContent(l.name, l.items)
 	);
 
 	// Targets are append-only: an imported version matches or is new. New ones are added only when the account
@@ -737,6 +799,38 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 			.set({ deletedAt: new Date(t.at) })
 			.where(eq(table.id, t.id));
 	}
+
+	const newMeals = data.savedMeals.filter((sm) => isNew('saved_meal', sm.id));
+	await chunked(newMeals, (chunk) =>
+		tx.insert(savedMeals).values(
+			chunk.map((sm) => ({
+				id: localId('saved_meal', sm.id),
+				userId,
+				name: sm.name,
+				createdAt: new Date(sm.createdAt),
+				updatedAt: new Date(sm.updatedAt)
+			}))
+		)
+	);
+	await chunked(
+		newMeals.flatMap((sm) =>
+			sm.items.map((i, position) => ({
+				id: randomUUID(),
+				savedMealId: localId('saved_meal', sm.id),
+				userId,
+				position,
+				kind: i.kind,
+				foodId: i.foodId ? (p.foodMap.get(i.foodId) ?? null) : null,
+				food: i.food,
+				amount: i.amount,
+				unit: i.unit,
+				description: i.description,
+				nutrients: i.nutrients
+			}))
+		),
+		(chunk) => tx.insert(savedMealItems).values(chunk)
+	);
+	newMeals.forEach((sm) => remember('saved_meal', sm.id));
 
 	if (p.importTargets) {
 		const newTargets = data.targets.filter((t) => isNew('target', t.id));

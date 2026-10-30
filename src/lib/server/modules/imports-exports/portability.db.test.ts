@@ -8,7 +8,7 @@ import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
 import { FoodInput } from '../../../shared/food-input.ts';
 import { createBody } from '../body/index.ts';
 import { createCatalog } from '../catalog/index.ts';
-import { createDiary } from '../diary/index.ts';
+import { createDiary, createSavedMeals } from '../diary/index.ts';
 import { createGoals } from '../goals/index.ts';
 import { ArchiveError, readArchive, sha256, type PortableData } from './archive.ts';
 import { createPortability, PortabilityError } from './service.ts';
@@ -22,6 +22,7 @@ const catalog = createCatalog(db);
 const diary = createDiary(db);
 const body = createBody(db);
 const goals = createGoals(db);
+const savedMeals = createSavedMeals(db);
 const portability = createPortability(db);
 
 const AYSE = randomUUID(); // admin
@@ -45,7 +46,8 @@ afterAll(async () => {
 /**
  * A complex history for Mehmet: a shared food someone else made, his own private serving-only food with an
  * unknown nutrient and a "less than" value, an archived food, a variant, two identical quick adds, trash, weight,
- * water, counted and uncounted activity, targets, a profile and a completed day.
+ * water, counted and uncounted activity, targets, a profile, a completed day, and a saved meal whose shared food
+ * (Ayran) no diary entry refers to any more, as after its entry was purged from the trash.
  */
 async function buildHistory() {
 	const ekmek = await catalog.createFood(
@@ -128,7 +130,31 @@ async function buildHistory() {
 		null
 	);
 	await diary.setDayComplete(MEHMET, '2026-10-01', true);
-	return { ekmek, borek, old, variant };
+
+	const ayran = await catalog.createFood(
+		AYSE,
+		food({
+			name: 'Ayran',
+			visibility: 'shared',
+			basis: '100ml',
+			nutrients: [{ code: 'energy_kcal', value: 38, qualifier: 'reported' }],
+			servings: []
+		})
+	);
+	const [bread, tea] = await diary.day(MEHMET, '2026-10-02');
+	const drink = await diary.logFood(
+		MEHMET,
+		day('2026-10-02'),
+		await catalog.getFood(MEHMET, ayran),
+		200,
+		{ kind: 'volume', unit: 'ml' }
+	);
+	await savedMeals.createFromEntries(MEHMET, {
+		name: 'Kahvaltı',
+		entryIds: [bread.id, tea.id, drink.id]
+	});
+	await admin`delete from diary_entries where id = ${drink.id}`;
+	return { ekmek, borek, old, variant, ayran };
 }
 
 /** The meaning of an export without IDs, ownership, revisions or update times. */
@@ -185,12 +211,19 @@ function semantic(data: PortableData) {
 			}))
 		),
 		targets: byText(data.targets.map((t) => ({ ...t, id: undefined }))),
+		savedMeals: byText(
+			data.savedMeals.map((sm) => ({
+				name: sm.name,
+				createdAt: sm.createdAt,
+				items: sm.items.map((i) => ({ ...i, foodId: i.foodId ? foodName.get(i.foodId) : null }))
+			}))
+		),
 		completions: byText(data.dayCompletions)
 	};
 }
 
 /** Rewrites an archive as if it came from another installation (manifest only; checksums still hold). */
-function fromElsewhere(bytes: Uint8Array, install = randomUUID()): Uint8Array {
+function fromElsewhere(bytes: Uint8Array, install: string = randomUUID()): Uint8Array {
 	const files = unzipSync(bytes);
 	const manifest = JSON.parse(strFromU8(files['manifest.json']));
 	files['manifest.json'] = strToU8(JSON.stringify({ ...manifest, sourceInstallation: install }));
@@ -214,6 +247,10 @@ describe('export', () => {
 		expect(data.weight.filter((w) => w.deletedAt)).toHaveLength(1);
 		expect(data.activity.map((a) => a.countsTowardBudget).sort()).toEqual([false, true]);
 		expect(data.targets).toHaveLength(2);
+		// The saved meal and the food only it refers to (dependency closure).
+		expect(data.savedMeals).toHaveLength(1);
+		expect(data.savedMeals[0].items.map((i) => i.kind)).toEqual(['food', 'quick', 'food']);
+		expect(data.foods.find((f) => f.name === 'Ayran')?.id).toBe(data.savedMeals[0].items[2].foodId);
 		expect(data.account).toMatchObject({ displayName: 'Mehmet', profile: { heightCm: 180 } });
 
 		const names = Object.fromEntries(
@@ -221,6 +258,7 @@ describe('export', () => {
 		);
 		expect(Object.keys(names).sort()).toEqual([
 			'Annemin böreği',
+			'Ayran (shared)',
 			'Eski yoğurt',
 			'Premium Light Ekmek',
 			'Premium Light Ekmek (shared)'
@@ -287,6 +325,47 @@ describe('import', () => {
 		expect(after.diary.some((e) => ids.has(e.id))).toBe(false);
 		// Two identical quick adds stay two entries.
 		expect(after.diary.filter((e) => e.description === 'Çay ve simit')).toHaveLength(2);
+		// The saved meal arrives private, linked to Zeynep's own copies, and can be logged.
+		expect(preview.counts.saved_meal).toEqual({ new: 1, unchanged: 0, changed: 0, skipped: 0 });
+		const [meal] = await savedMeals.list(ZEYNEP);
+		const full = await savedMeals.get(ZEYNEP, meal.id);
+		const zeynepsFoods = new Set(after.foods.map((f) => f.id));
+		expect(full.items.every((i) => !i.foodId || zeynepsFoods.has(i.foodId))).toBe(true);
+		await savedMeals.log(
+			ZEYNEP,
+			meal.id,
+			{ localDate: '2026-10-20', meal: 'breakfast', ...ist },
+			full.items.map((i) => ({ itemId: i.id, entryId: randomUUID() }))
+		);
+		expect(await diary.day(ZEYNEP, '2026-10-20')).toHaveLength(3);
+
+		// Importing the same content again (a new export of it) adds no second copy of the meal.
+		const again = fromElsewhere(
+			await portability.exportArchive(MEHMET),
+			readArchive(archive).manifest.sourceInstallation
+		);
+		expect((await portability.previewImport(ZEYNEP, again)).counts.saved_meal).toEqual({
+			new: 0,
+			unchanged: 1,
+			changed: 0,
+			skipped: 0
+		});
+	});
+
+	it('reads an archive made before saved meals were exported', async () => {
+		await buildHistory();
+		const files = unzipSync(fromElsewhere(await portability.exportArchive(MEHMET)));
+		delete files['data/saved-meals.json'];
+		const manifest = JSON.parse(strFromU8(files['manifest.json']));
+		manifest.files = manifest.files.filter(
+			(f: { path: string }) => f.path !== 'data/saved-meals.json'
+		);
+		files['manifest.json'] = strToU8(JSON.stringify(manifest));
+		const older = zipSync(files);
+		expect(readArchive(older).data.savedMeals).toEqual([]);
+		await portability.applyImport(ZEYNEP, older);
+		expect(await savedMeals.list(ZEYNEP)).toEqual([]);
+		expect(await count('diary_entries', ZEYNEP)).toBe(6);
 	});
 
 	it('refuses the same file twice and adds only what is new from an overlapping later export', async () => {
@@ -321,13 +400,17 @@ describe('import', () => {
 		const same = await portability.previewImport(MEHMET, archive);
 		expect(same.sameInstallation).toBe(true);
 		expect(same.counts.diary).toEqual({ new: 0, unchanged: 6, changed: 0, skipped: 0 });
-		expect(same.counts.food).toMatchObject({ new: 0, unchanged: 4 });
+		expect(same.counts.food).toMatchObject({ new: 0, unchanged: 5 });
+		expect(same.counts.saved_meal).toEqual({ new: 0, unchanged: 1, changed: 0, skipped: 0 });
 
 		const [entry] = await diary.day(MEHMET, '2026-10-01');
 		await diary.update(MEHMET, entry.id, entry.revision, { meal: 'lunch' });
 		await goals.saveProfile(MEHMET, { heightCm: 181, birthDate: '1990-05-01', sex: 'male' });
 		await catalog.setArchived(MEHMET, borek, true);
+		const [meal] = await savedMeals.list(MEHMET);
+		await savedMeals.rename(MEHMET, meal.id, meal.revision, 'Pazar');
 		const changed = await portability.previewImport(MEHMET, archive);
+		expect(changed.counts.saved_meal).toMatchObject({ changed: 1 });
 		expect(changed.counts.diary).toMatchObject({ unchanged: 5, changed: 1 });
 		expect(changed.counts.profile).toMatchObject({ skipped: 1 });
 		expect(changed.warnings).toEqual(expect.arrayContaining(['changed_kept', 'profile_kept']));
@@ -335,6 +418,7 @@ describe('import', () => {
 		expect((await diary.get(MEHMET, entry.id)).meal).toBe('lunch');
 		expect((await goals.profile(MEHMET))?.heightCm).toBe(181);
 		expect(await count('diary_entries', MEHMET)).toBe(6);
+		expect((await savedMeals.list(MEHMET)).map((m) => m.name)).toEqual(['Pazar']);
 
 		// Someone with targets of their own keeps them; imported history never changes their budgets.
 		await goals.setTarget(
@@ -354,7 +438,7 @@ describe('import', () => {
 		const archive = await portability.exportArchive(MEHMET);
 		const preview = await portability.previewImport(ZEYNEP, archive);
 		// Mehmet's own foods are invisible to Zeynep and become her private copies; Ayşe's shared bread is reused.
-		expect(preview.counts.food).toEqual({ new: 3, unchanged: 1, changed: 0, skipped: 0 });
+		expect(preview.counts.food).toEqual({ new: 3, unchanged: 2, changed: 0, skipped: 0 });
 		await portability.applyImport(ZEYNEP, archive);
 		const linked = await admin`select food_id from diary_entries
 			where user_id = ${ZEYNEP} and local_date = '2026-10-01' and meal = 'breakfast'`;

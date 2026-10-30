@@ -43,6 +43,7 @@
 		'water',
 		'activity',
 		'target',
+		'saved_meal',
 		'dayCompletion',
 		'profile'
 	];
@@ -53,6 +54,7 @@
 		water: m.data_kind_water,
 		activity: m.data_kind_activity,
 		target: m.data_kind_target,
+		saved_meal: m.data_kind_saved_meal,
 		dayCompletion: m.data_kind_dayCompletion,
 		profile: m.data_kind_profile
 	};

@@ -52,7 +52,7 @@ export const importIdentities = pgTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		sourceInstall: uuid('source_install').notNull(),
 		kind: text('kind', {
-			enum: ['food', 'diary', 'weight', 'water', 'activity', 'target']
+			enum: ['food', 'diary', 'weight', 'water', 'activity', 'target', 'saved_meal']
 		}).notNull(),
 		sourceId: text('source_id').notNull(),
 		localId: uuid('local_id').notNull()
@@ -61,7 +61,7 @@ export const importIdentities = pgTable(
 		primaryKey({ columns: [t.userId, t.sourceInstall, t.kind, t.sourceId] }),
 		check(
 			'import_identities_kind_valid',
-			sql`${t.kind} in ('food', 'diary', 'weight', 'water', 'activity', 'target')`
+			sql`${t.kind} in ('food', 'diary', 'weight', 'water', 'activity', 'target', 'saved_meal')`
 		),
 		check('import_identities_source_id_length', sql`char_length(${t.sourceId}) between 1 and 100`)
 	]

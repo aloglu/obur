@@ -1,0 +1,2 @@
+ALTER TABLE "import_identities" DROP CONSTRAINT "import_identities_kind_valid";--> statement-breakpoint
+ALTER TABLE "import_identities" ADD CONSTRAINT "import_identities_kind_valid" CHECK ("import_identities"."kind" in ('food', 'diary', 'weight', 'water', 'activity', 'target', 'saved_meal'));
