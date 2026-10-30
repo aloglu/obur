@@ -153,3 +153,43 @@ Tested on 2026-10-25 by the owner with the throwaway probe in `spikes/phone-prob
 - A held-out voice set, ideally including another household member with consent, before trusting the 77% figure. All 48 Phase 0 clips were development data from one speaker.
 - A full check of the hand-read label values (owner spot-checked 5–6 labels, no errors), and more labels toward 30.
 - Cause of the failed offline launch.
+
+## Voice, held-out evaluation (Phase 2 step 8, 2026-10-30)
+
+**Data.** 46 new clips recorded after the voice feature was finished and scored once with `scripts/voice-eval.ts` (clips
+and per-clip results stay in `~/obur-private/`): the owner, 31 clips (24 Turkish, 4 mixed, 3 English; 19 in harder
+conditions) and a second speaker, 15 clips (all Turkish, nearly all quiet). Same speech image and settings as
+production (faster-whisper small, int8, Turkish-or-English detection, beam 5, temperature 0), on the desktop limited to
+4 cores. Owner's clips used a prompt rebuilt from his 30 most recently logged foods, as the server builds it; the second
+speaker had no prompt (a new user). With 15–31 clips per group, each percentage is uncertain by roughly ±9–13 points.
+
+| Speaker | Parse of the transcript = parse of the typed sentence | Numbers right | Transcript exact | p50 / max transcription |
+| --- | --- | --- | --- | --- |
+| Owner (31) | 11 (35%) | 26 (84%) | 5 (16%) | 1.0 s / 1.3 s |
+| Second speaker (15) | 3 (20%) | 11 (73%) | 2 (13%) | 0.9 s / 1.0 s |
+
+"Same parse" is strict: any difference in a food's words counts, including misspelt brands the catalog search might
+still find. Read with the parser results below: voice is only as good as the parser on the typed sentence.
+
+**Parser on the typed sentences (its first held-out test).** About 20 of 46 parse completely right; about 10 more have
+the right day, meal and amounts but leftover words in a food name ("bu", "arasında", "tükettim"); about 16 are wrong.
+The development and Phase 0 sentences (55/55, 47/48) overstated it: real phrasing is freer. Gaps found:
+
+- a quantity after the verb ("…yedim, 200 gram", "…içtim, bir kutu"); separators "artı", "üzerine"; "yanımda";
+- day and meal phrases: "bu akşam/öğlen", "öğle arasında", "az önce", "iki akşam önce", "gece", "son öğün",
+  "yatmadan önce";
+- "çeyrek" (a quarter); "porsiyon", "tabak", "avuç" as count words; "tükettim" as a verb; "kilo geldim";
+- descriptive sentences ("…salata yaptım", "yediğim yemekte … vardı") and counts that are not amounts
+  ("iki şekerli bir bardak çay", "Torku No 1").
+
+**Errors added by speech.** Brand and product names (Coke Zero, Untad, SEK, San Pellegrino, Heinz, Wasa, Eker, Torku);
+"ara öğün" heard as "arayın" (4 of the second speaker's clips, which loses the meal); "yarım" heard as "yarın" (a wrong
+amount); "kutu kola" run together; "250 kalorilik" garbled. No wrong number was invented without a visible change on
+the confirmation screen, but "yarın"/"yarım" and lost trailing amounts are the serious kind.
+
+**Latency.** Transcription about 1 s per clip on 4 desktop cores; the owner's phone check on the server: about 2–3 s
+from Done to the confirmation screen for a long two-item sentence.
+
+**Next.** These 46 clips are now development data. Improvements to the parser gaps above and a fixed bilingual
+vocabulary in the prompt (meal and unit words) can be measured on them; a later, smaller fresh set is needed for the
+next held-out number.
