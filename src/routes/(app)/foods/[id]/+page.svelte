@@ -71,7 +71,15 @@
 		fibre: m.nutrient_fibre,
 		protein: m.nutrient_protein,
 		salt: m.nutrient_salt,
-		sodium: m.nutrient_sodium
+		sodium: m.nutrient_sodium,
+		starch: m.nutrient_starch,
+		polyols: m.nutrient_polyols,
+		monounsaturated_fat: m.nutrient_monounsaturated_fat,
+		polyunsaturated_fat: m.nutrient_polyunsaturated_fat,
+		trans_fat: m.nutrient_trans_fat,
+		calcium: m.nutrient_calcium,
+		potassium: m.nutrient_potassium,
+		iron: m.nutrient_iron
 	};
 </script>
 
@@ -87,6 +95,11 @@
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if info}<Notice tone="info">{info}</Notice>{/if}
 	{#if food.archived}<Notice tone="info">{m.food_archived()}</Notice>{/if}
+	{#if food.curatedDataset}<p class="text-[14px] text-muted">
+			{m.food_source_usda({
+				dataset: food.curatedDataset === 'sr_legacy' ? 'SR Legacy' : 'Foundation Foods'
+			})}
+		</p>{/if}
 	{#if food.derivedFrom && food.mine}<p class="text-[14px] text-muted">
 			{m.food_from_variant()}
 		</p>{/if}

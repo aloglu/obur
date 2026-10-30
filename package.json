@@ -30,6 +30,8 @@
 		"admin:setup-link": "node --env-file=.env scripts/admin-setup-link.ts",
 		"admin:recovery-link": "node --env-file=.env scripts/admin-recovery-link.ts",
 		"jobs:setup": "node --env-file=.env scripts/jobs-setup.ts",
+		"curated:build": "node scripts/curated-build.ts",
+		"curated:load": "node --env-file=.env scripts/curated-load.ts",
 		"worker": "node --env-file=.env scripts/worker.ts"
 	},
 	"devDependencies": {

@@ -6,7 +6,7 @@ import { foodWarnings } from '../../../shared/food-checks.ts';
 import type { FoodInput } from '../../../shared/food-input.ts';
 import { deriveNutrients, type NutrientValue } from '../../../shared/nutrients.ts';
 import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';
-import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
+import { foldForSearch, foodSearchKey, searchKeyWithAliases } from '../../../shared/search-text.ts';
 import { foodNutrients, foods, foodServings, householdMeasures } from './schema.ts';
 
 export class CatalogError extends Error {
@@ -64,7 +64,8 @@ async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefined> {
 			id: foodServings.id,
 			name: foodServings.name,
 			amount: foodServings.amount,
-			unit: foodServings.unit
+			unit: foodServings.unit,
+			source: foodServings.source
 		})
 		.from(foodServings)
 		.where(eq(foodServings.foodId, foodId))
@@ -84,6 +85,10 @@ async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefined> {
 				: null,
 		barcode: f.barcode,
 		origin: f.origin,
+		curatedDataset:
+			f.origin === 'curated'
+				? ((f.sourceMeta as { dataset?: 'sr_legacy' | 'foundation' } | null)?.dataset ?? null)
+				: null,
 		archived: f.archivedAt !== null,
 		version: f.version,
 		mine: Boolean(row.mine),
@@ -137,9 +142,19 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 				// Only the creator may change who can see a food.
 				if (!current.mine && input.visibility !== current.visibility)
 					throw new CatalogError('forbidden');
+				// An edit keeps a curated food's aliases searchable.
+				const [{ meta }] = await tx
+					.select({ meta: foods.sourceMeta })
+					.from(foods)
+					.where(eq(foods.id, foodId));
 				const updated = await tx
 					.update(foods)
-					.set({ ...columns(input), version: expectedVersion + 1, updatedAt: now() })
+					.set({
+						...columns(input),
+						searchKey: searchKeyWithAliases(input.name, input.brand, meta),
+						version: expectedVersion + 1,
+						updatedAt: now()
+					})
 					.where(and(eq(foods.id, foodId), eq(foods.version, expectedVersion)))
 					.returning({ version: foods.version });
 				if (updated.length === 0) throw new CatalogError('conflict');
@@ -197,7 +212,8 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 							name: s.name,
 							amount: s.amount,
 							unit: s.unit,
-							source: 'user' as const,
+							// A variant's portions say where they came from, like the original's.
+							source: s.source,
 							foodId: row.id
 						}))
 					);

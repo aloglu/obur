@@ -162,6 +162,13 @@
       "when": 1793344497054,
       "tag": "0022_import_identity_saved_meal",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793346374630,
+      "tag": "0023_curated_foods",
+      "breakpoints": true
     }
   ]
 }

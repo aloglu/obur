@@ -3,6 +3,7 @@ import path from 'node:path';
 import postgres from 'postgres';
 import { bootstrapDatabase, passwordFromUrl } from '../src/lib/server/db/bootstrap.ts';
 import { loadMigrations, migrate } from '../src/lib/server/db/migrator.ts';
+import { loadCuratedFoods, readCuratedFile } from '../src/lib/server/modules/catalog/curated.ts';
 
 const env = (name: string) => {
 	const value = process.env[name];
@@ -28,5 +29,7 @@ await admin.end();
 
 const migrator = postgres(at(env('DATABASE_MIGRATOR_URL')), quiet);
 await migrate(migrator, await loadMigrations(path.resolve(import.meta.dirname, '../drizzle')));
+// As in production, where `obur migrate` loads them.
+await loadCuratedFoods(migrator, readCuratedFile());
 await migrator.end();
 console.log(`Prepared ${database}`);

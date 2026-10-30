@@ -98,6 +98,7 @@ Verified on 2026-10-25 (Node 24+, npm, Docker). Add commands here only after run
 - End-to-end tests (phone WebKit and desktop Chromium in the official Playwright image, with host networking; needs `npm run db:start`; recreates the `obur_e2e` database each run): `npm run test:e2e`. Passkey journeys run in Chromium only (virtual authenticator). Screenshot baselines live next to the tests; after an intended visual change, regenerate them with `npm run test:e2e -- --update-snapshots` and review the new images before committing. `npm run test:e2e:local` runs desktop Chromium on the host only.
 - Production build: `npm run build`.
 - First admin's one-time setup link (24 h): `npm run admin:setup-link`. Recovery link for someone who lost every passkey and code (1 h): `npm run admin:recovery-link -- "<display name or user ID>"`. Both need `PUBLIC_ORIGIN` and `DATABASE_MIGRATOR_URL`.
+- Curated USDA foods: `npm run curated:build -- <sr_legacy .zip> <foundation .zip>` regenerates `src/lib/server/modules/catalog/curated/usda-foods.json` from the downloaded datasets (checksums pinned in the script); `npm run curated:load` loads it (idempotent; `obur migrate` runs it in production).
 - Messages: edit `messages/en.json`; `npm run i18n` compiles them.
 - Background jobs: `npm run jobs:setup` (schema owner; creates or upgrades the pg-boss schema and schedules, `TZ` sets the schedule zone), then `npm run worker` (worker role).
 

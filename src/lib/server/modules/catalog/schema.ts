@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
 	check,
 	index,
+	uniqueIndex,
 	integer,
 	jsonb,
 	numeric,
@@ -67,6 +68,10 @@ export const foods = pgTable(
 		check('foods_version_positive', sql`${t.version} >= 1`),
 		index('foods_owner_id_idx').on(t.ownerId),
 		index('foods_barcode_idx').on(t.barcode),
+		// A curated food is loaded once per reference record (dataset and ID), so reloading never duplicates it.
+		uniqueIndex('foods_curated_source_idx')
+			.on(sql`(${t.sourceMeta} ->> 'dataset')`, sql`(${t.sourceMeta} ->> 'fdcId')`)
+			.where(sql`${t.origin} = 'curated'`),
 		index('foods_search_key_trgm_idx').using('gin', sql`${t.searchKey} gin_trgm_ops`)
 	]
 );
@@ -99,14 +104,18 @@ export const foodServings = pgTable(
 		name: text('name').notNull(),
 		amount: amount('amount').notNull(),
 		unit: text('unit', { enum: ['g', 'ml'] }).notNull(),
-		// 'label' when printed on the package, 'user' when entered, 'estimate' when explicitly estimated.
-		source: text('source', { enum: ['label', 'user', 'estimate'] }).notNull()
+		// 'label' when printed on the package, 'user' when entered, 'estimate' when explicitly estimated,
+		// 'reference' when a reference dataset states it (USDA household portions with gram weights).
+		source: text('source', { enum: ['label', 'user', 'estimate', 'reference'] }).notNull()
 	},
 	(t) => [
 		check('food_servings_name_length', sql`char_length(${t.name}) between 1 and 60`),
 		check('food_servings_amount_positive', sql`${t.amount} > 0`),
 		check('food_servings_unit_valid', sql`${t.unit} in ('g', 'ml')`),
-		check('food_servings_source_valid', sql`${t.source} in ('label', 'user', 'estimate')`),
+		check(
+			'food_servings_source_valid',
+			sql`${t.source} in ('label', 'user', 'estimate', 'reference')`
+		),
 		index('food_servings_food_id_idx').on(t.foodId)
 	]
 );

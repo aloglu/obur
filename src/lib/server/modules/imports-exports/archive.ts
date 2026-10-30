@@ -68,7 +68,7 @@ export const FoodRecord = v.object({
 	updatedAt: Timestamp,
 	nutrients: v.array(NutrientValue),
 	servings: v.array(
-		v.object({ ...Serving.entries, source: v.picklist(['label', 'user', 'estimate']) })
+		v.object({ ...Serving.entries, source: v.picklist(['label', 'user', 'estimate', 'reference']) })
 	)
 });
 

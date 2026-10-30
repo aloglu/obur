@@ -27,7 +27,7 @@ export const ServingInput = v.object({
 	name: text(1, 60),
 	amount: positive,
 	unit: v.picklist(['g', 'ml']),
-	source: v.optional(v.picklist(['label', 'user', 'estimate']), 'user')
+	source: v.optional(v.picklist(['label', 'user', 'estimate', 'reference']), 'user')
 });
 
 export const FoodInput = v.pipe(

@@ -18,3 +18,10 @@ export function foldForSearch(text: string): string {
 export function foodSearchKey(name: string, brand?: string | null): string {
 	return foldForSearch(brand ? `${brand} ${name}` : name);
 }
+
+/** A food's search key plus any reviewed aliases (curated foods keep theirs in source_meta.aliases). */
+export function searchKeyWithAliases(name: string, brand: string | null, meta: unknown): string {
+	const aliases = (meta as { aliases?: unknown } | null)?.aliases;
+	const extra = Array.isArray(aliases) ? aliases.filter((a) => typeof a === 'string') : [];
+	return [foodSearchKey(name, brand), ...extra.map((a) => foldForSearch(a))].join(' ');
+}

@@ -6,6 +6,7 @@
 	import { foodWarnings, type FoodWarning } from '#lib/shared/food-checks.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
+	import { portionSource, preservedNutrients } from '#lib/shared/food-edit.ts';
 	import { deriveNutrients, type NutrientCode, type NutrientValue } from '#lib/shared/nutrients.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import type { Basis } from '#lib/shared/quantity.ts';
@@ -155,13 +156,12 @@
 			servingLabel: basis === 'serving' ? servingLabel : null,
 			servingSize: size ? { amount: size, unit: servingSizeUnit } : null,
 			barcode: start?.barcode ?? null,
-			nutrients: values,
-			servings: portions.map((p) => ({
-				name: p.name,
-				amount: parseDecimal(p.text)!,
-				unit: p.unit,
-				source: 'user' as const
-			}))
+			// Values the form does not show are kept while the basis stays the same (food-edit.ts).
+			nutrients: [...values, ...preservedNutrients(start?.nutrients ?? [], basis === start?.basis)],
+			servings: portions.map((p) => {
+				const portion = { name: p.name, amount: parseDecimal(p.text)!, unit: p.unit };
+				return { ...portion, source: portionSource(start?.servings ?? [], portion) };
+			})
 		});
 	}
 

@@ -11,6 +11,8 @@ export interface FoodDetail extends QuantityModel {
 	servingLabel: string | null;
 	barcode: string | null;
 	origin: string;
+	/** Curated foods: the reference dataset the values come from. */
+	curatedDataset: 'sr_legacy' | 'foundation' | null;
 	archived: boolean;
 	version: number;
 	/** Created by the signed-in person. */
@@ -19,7 +21,8 @@ export interface FoodDetail extends QuantityModel {
 	editable: boolean;
 	derivedFrom: string | null;
 	nutrients: NutrientValue[];
-	servings: FoodServing[];
+	/** With where each portion's size comes from (not part of diary snapshots). */
+	servings: (FoodServing & { source: 'label' | 'user' | 'estimate' | 'reference' })[];
 	warnings: FoodWarning[];
 }
 

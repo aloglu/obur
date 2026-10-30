@@ -1,0 +1,3 @@
+ALTER TABLE "food_servings" DROP CONSTRAINT "food_servings_source_valid";--> statement-breakpoint
+CREATE UNIQUE INDEX "foods_curated_source_idx" ON "foods" USING btree (("source_meta" ->> 'dataset'),("source_meta" ->> 'fdcId')) WHERE "foods"."origin" = 'curated';--> statement-breakpoint
+ALTER TABLE "food_servings" ADD CONSTRAINT "food_servings_source_valid" CHECK ("food_servings"."source" in ('label', 'user', 'estimate', 'reference'));
