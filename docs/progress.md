@@ -226,8 +226,15 @@ exactly; runs with no network; 0.3–0.6 s per label on the desktop); `OCR_URL`,
 minutes, writes nothing), the Scan page and tile, `?food=` on Log to open the amount sheet; foods record
 `label_scan`. Compose `ocr` service and `obur-ctl` (`obur-ocr` image, logs/restart ocr): the owner must copy both
 files on the server (deploy/unraid/README.md) before Scan appears; until then it stays "Coming soon". Browser tests
-use the stand-in service (answers keyed by photo width so the two browsers don't race). Next: freeze the parser and
-run the held-out evaluation on the 12 new photos. Next: batch 2 features (Profile details, editable macro targets, saved meal
+use the stand-in service (answers keyed by photo width so the two browsers don't race). 
+
+Step 4 done: held-out evaluation (parser 7884d6f, 12 photos, truth read by hand first, scored once):
+61% right, 14 wrong, 27 missing, basis 8/12 (docs/feasibility.md, "Label scanning, held-out evaluation"). Not
+shippable; the owner has not yet copied the OCR server files, so Scan is still off on the server (keep it so until
+the wrong values are fixed). Truth: `~/obur-private/labels-prepared-heldout/ground_truth.tsv`; OCR output:
+`~/obur-private/results/ocr/heldout-B-1280-service.jsonl`. Next: an improvement round (explicit energy units;
+value lines belonging to no row; two-line names; basis from the title; the Scan screen must not assume a basis),
+treating these 12 as development data; then a fresh held-out set from the owner. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Typed entry gaps to close (owner, collected during use)

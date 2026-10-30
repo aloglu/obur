@@ -209,3 +209,39 @@ words (ekmek, tavuk, kola, kraker) with some clips.
 The serious "yarım" → "yarın" error and "ara öğün" → "arayın" no longer occur on these clips. Remaining: brand names
 (Untad, San Pellegrino, Heinz, Eker), descriptive sentences, and days the recogniser drops ("Bugün" heard as "Ben").
 A fresh set of 10–15 clips is needed for the next held-out number.
+
+## Label scanning, held-out evaluation (Phase 3, 2026-10-30)
+
+**Setup.** Parser frozen at commit `7884d6f` (developed only on the 10 Phase 0 labels). Twelve new photos from the
+owner (2026-10-30), prepared like Phase 0 (orientation-corrected, metadata removed) and sent as the phone sends them
+(1600 px JPEG, quality 88) through the production OCR service (PP-OCRv6 small at 1280 px, the `ocr/` image). Values
+were read by hand from the photos (zooming where the print was small) before the OCR or parser was run on them, and
+scored once. One photo is a second picture of a development product (the fruit mix, L10); it is counted but noted.
+Private data stays in `~/obur-private`.
+
+| | Development (10 labels) | Held-out (12 labels) |
+| --- | --- | --- |
+| Values right (per 100 g/ml column) | 85% (72/85) | **61% (63/104)** |
+| Wrong values (serious) | 0 | **14** (13%) |
+| Missing (left unknown) | 13 | 27 |
+| Basis right | 10/10 | 8/12 (4 left unset) |
+| Labels fully right | 8/10 | 2/12 (one the repeat) |
+| OCR time per label (desktop) | 0.3–0.6 s | similar |
+
+**Failure categories (held-out).**
+- *Rows shifted by one (8 of the 14 wrong values):* energy printed on two lines ("1358 kJ" / "338 kcal") and German
+  two-line rows ("Fett / davon gesättigte Fettsäuren") add a value line the drift-following assignment pairs with the
+  next row. This is the most serious failure: confident values under the wrong nutrient.
+- *Energy written kcal first with units ("92,2 kcal/389,6 kj"):* kJ and kcal swapped (2). The units were in the text
+  but the parser used the column label's order. The kJ/kcal check flagged it.
+- *Row names over two lines* (a six-language table): a row read the next row's number (2).
+- *Bare %RA numbers* ("19", "16" without %): one taken as saturated fat (flagged: saturates above fat).
+- *Missing:* very small or dim print the OCR did not read (one label nothing at all), German names not in the list
+  ("davon Zucker", "Eiweiß" with ß), a two-line energy row.
+- *Basis:* when the basis is only in the title ("Enerji ve Besin Öğeleri (100g'da)") or in a single header cell, the
+  parser left it unset; the Scan screen then defaulted to per 100 g, which it should not do silently.
+
+**Conclusion.** Not good enough to ship: the serious-error gate (`docs/design.md`, evaluation) requires the known
+unflagged wrong values to be fixed first. The fixes are specific (explicit energy units, value lines that belong to
+no row, two-line names, basis from the title, no silent basis). After an improvement round these 12 photos become
+development data, so a fresh set of about 10 is needed for the next honest held-out number.
