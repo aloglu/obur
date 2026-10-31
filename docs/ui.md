@@ -81,7 +81,19 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
   - Tapping a day opens that day's Today view. Arrows move between months.
   - Each cell's accessible name reads like "Thursday, 15 October: 1,840 of 2,000 kcal, 160 under".
   - Below the grid: a key and a month summary ("17 days under, 4 over, 3 not logged"). Today isn't counted. "Under" counts complete days only; incomplete days need their own wording in the summary and key.
-- Below the calendar: weight chart, averages and achievements. Not designed yet.
+- **History below the calendar** (owner chose layout B with changes, 2026-10-31; demos in the session's Artifact):
+  - Phone: a tab bar **Weight / Calories / Nutrients** with a compact range dropdown (1W, 1M, 3M, 1Y, All; 3M by
+    default) beside it; one topic at a time, each with a headline number, a chart and a few stat rows.
+  - Desktop: no tabs; every card on one page, side by side (as in demo A), with the range dropdown above them.
+  - Weight: trend line plus every weigh-in as a point, goal as a dashed line when it is within the chart (otherwise a
+    note of the distance); headline is the current trend and its change over the range.
+  - Calories: bars against a budget step line; over budget striped red, under green, days not marked complete as
+    outlines, unlogged days as a dash; weekly averages from 3 months up.
+  - Nutrients: average protein, carbohydrate and fat against the targets, with a coverage note when some days are
+    unknown.
+  - Tapping or dragging on a chart shows that day's (or week's) values in a readout line below it; each chart has a
+    text summary for screen readers.
+  - Achievements: a later item; they will sit at the top of the Weight tab.
 
 **Profile, Settings and the More rows:** placeholders only.
 
@@ -222,7 +234,7 @@ The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps.
 
 ## 4. Deliberately left open
 
-- **Progress below the calendar:** weight chart, averages, per-kilo achievements, and the "joy" moment when an achievement lands.
+- **Progress below the calendar:** history decided (§2, Progress); per-kilo achievements and the "joy" moment when an achievement lands remain open.
 - **Unfinished screens:** Profile and goals, Units and formats, Your data, Household and admin, and onboarding (including BMI). Provisional versions of Profile, onboarding, Your data and Household exist (Phase 1 steps 7 and 10) and need the owner's review.
 - **Barcode:** with no outside product lookups, a barcode only finds products someone in the household already scanned. The proposal is to add it later as a shortcut inside Scan, not as its own tile. Not building (owner, 2026-10-31) unless real use shows packaged products are slow to find.
 - **Voice quick adds:** voice could also handle "500 calories, dinner". If it does, the Quick add button could move to the no-results state only.
