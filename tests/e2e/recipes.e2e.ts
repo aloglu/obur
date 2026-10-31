@@ -37,6 +37,13 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await page.getByLabel('Name').fill(`Mercimek çorbası ${tag}`);
 	await page.getByLabel('Servings it makes').fill('4');
 	await page.getByLabel('Cooked weight (g, optional)').fill('1200');
+	// The icon: suggested from the name (çorba → soup), then a casserole chosen in the picker.
+	await expect(page.getByText('Suggested from the name')).toBeVisible();
+	await page.getByRole('button', { name: 'Change icon' }).click();
+	const picker = page.getByRole('dialog', { name: 'Choose an icon' });
+	await picker.getByLabel('Search icons').fill('güveç');
+	await picker.getByRole('button', { name: 'casserole' }).click();
+	await expect(page.getByText('Chosen by you')).toBeVisible();
 	const addIngredient = async (name: string, grams: string) => {
 		await page.getByRole('button', { name: 'Add food' }).click();
 		const add = page.getByRole('dialog', { name: 'Add a food' });
@@ -59,10 +66,9 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	// Logged from Log like any food: by the serving, or in grams thanks to the cooked weight.
 	await page.goto(isPhone(page) ? '/log' : '/');
 	await page.getByRole('searchbox').fill(`mercimek corbasi ${tag}`);
-	await page
-		.getByRole('button', { name: new RegExp(`Mercimek çorbası ${tag}`) })
-		.first()
-		.click();
+	const result = page.getByRole('button', { name: new RegExp(`Mercimek çorbası ${tag}`) }).first();
+	await expect(result.locator('img[src="/icons/food/1F958.svg"]')).toBeVisible();
+	await result.click();
 	const sheet = page.getByRole('dialog', { name: `Mercimek çorbası ${tag}` });
 	await expect(sheet.getByRole('radio', { name: 'serving' })).toBeVisible();
 	await sheet.getByRole('radio', { name: 'g', exact: true }).click();

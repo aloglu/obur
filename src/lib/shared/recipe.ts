@@ -3,6 +3,7 @@
 // only when the finished dish's weight is given; it is never inferred from the raw ingredients.
 import * as v from 'valibot';
 import { UnitInput } from './diary-input.ts';
+import { isFoodIcon } from './food-icons.ts';
 import type { EntryNutrients, FoodSnapshot, SnapshotUnit } from './diary-types.ts';
 import { NUTRIENT_CODES, type NutrientValue, type Qualifier } from './nutrients.ts';
 
@@ -21,6 +22,8 @@ export interface Recipe {
 	id: string;
 	name: string;
 	visibility: 'private' | 'shared';
+	/** The chosen icon; null shows the name's suggestion. */
+	icon: string | null;
 	version: number;
 	servings: number;
 	cookedYieldG: number | null;
@@ -56,6 +59,8 @@ export const SaveRecipe = v.object({
 		v.maxLength(200)
 	),
 	visibility: v.picklist(['private', 'shared']),
+	// Absent or null: no chosen icon (the name's suggestion shows).
+	icon: v.optional(v.nullable(v.pipe(v.string(), v.check(isFoodIcon, 'Unknown icon'))), null),
 	servings: v.pipe(v.number(), v.finite(), v.gtValue(0), v.maxValue(1000)),
 	cookedYieldG: v.nullable(v.pipe(v.number(), v.finite(), v.gtValue(0), v.maxValue(100_000))),
 	ingredients: v.pipe(

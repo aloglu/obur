@@ -188,7 +188,7 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
   and the saved meal and recipe editors. The tile follows the theme (`--icon-tile`); in dark the icons use a variant
   with OpenMoji's black outlines redrawn light (`static/icons/food/dark/`, from `node scripts/food-icons-dark.ts`;
   owner found the bright tiles out of place in dark mode, 2026-10-30). Decorative: the name always sits beside it.
-- The food form's **Icon** row shows the current icon and whether it is suggested or chosen; **Change icon** opens a
+- The food form's and recipe editor's **Icon** row shows the current icon and whether it is suggested or chosen; **Change icon** opens a
   picker (search in English or Turkish, a grid of tiles, "Use the suggestion from the name" when one is chosen).
 
 ### Icons

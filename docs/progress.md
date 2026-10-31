@@ -293,8 +293,9 @@ Owner's approach (2026-10-30): note phrasings that fail during real use and clos
   grant), FoodInput/FoodDetail/search and recent results, diary snapshots (`icon`, display only), archive (optional
   field). Step 3 done: `FoodIcon` (light tile in both themes, `--icon-tile`), in meal
   cards, Log results, Foods list, saved meal and recipe item lists; `IconPicker` in the food form; OpenMoji credit at
-  the foot of More. e2e: suggestion, picking in Turkish, chosen icon carried to the meal card. Not yet: a picker in the
-  recipe editor (recipes show their name's suggestion). Food icons done. Earlier note: an icon per food, suggested from the name, shown in rows. The owner rejected Fluent
+  the foot of More. e2e: suggestion, picking in Turkish, chosen icon carried to the meal card. Recipe editor picker done
+  (2026-10-31; `icon` in the recipe save; DB, portability and recipe e2e tests). Food icons done and deployed
+  (2026-10-30, 53330c0). Earlier note: an icon per food, suggested from the name, shown in rows. The owner rejected Fluent
   Emoji, Twemoji and Noto as ugly and likes OpenMoji's style. Comparison Artifact of OpenMoji-like sets (OpenMoji 35/35
   foods; Emoji One 31; Firefox OS 23; IconPark 22; with icons Sticker/Pastel 21; Streamline Emojis 20; Streamline
   Ultimate 11; licences noted) published for the owner's pick; the link is in the session. Icons are bundled into the

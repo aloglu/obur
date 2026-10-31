@@ -30,6 +30,7 @@ export interface RecipeSave {
 	version: number | null;
 	name: string;
 	visibility: 'private' | 'shared';
+	icon: string | null;
 	servings: number;
 	cookedYieldG: number | null;
 	ingredients: IngredientEdit[];
@@ -53,6 +54,7 @@ async function loadRecipe(tx: Tx, id: string): Promise<Recipe> {
 		id,
 		name: row.food.name,
 		visibility: row.food.visibility,
+		icon: row.food.icon,
 		version: row.food.version,
 		servings: row.recipe.servings,
 		cookedYieldG: row.recipe.cookedYieldG,
@@ -195,6 +197,7 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 					name: input.name,
 					searchKey: foodSearchKey(input.name, null),
 					visibility: input.visibility,
+					icon: input.icon,
 					...servingSize(input.servings, input.cookedYieldG)
 				};
 				if (existing) {

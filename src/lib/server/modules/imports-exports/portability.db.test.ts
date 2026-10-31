@@ -167,6 +167,7 @@ async function buildHistory() {
 		version: null,
 		name: 'Ayranlı tost',
 		visibility: 'private',
+		icon: '1F96A',
 		servings: 2,
 		cookedYieldG: 240,
 		ingredients: [

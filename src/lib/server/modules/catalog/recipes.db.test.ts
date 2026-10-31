@@ -64,6 +64,7 @@ async function soup(overrides: Partial<RecipeSave> = {}) {
 		version: null,
 		name: 'Mercimek çorbası',
 		visibility: 'shared',
+		icon: null,
 		servings: 4,
 		cookedYieldG: 1200,
 		ingredients: [
@@ -135,11 +136,13 @@ describe('pinning and editing', () => {
 			version: 1,
 			name: 'Mercimek çorbası (büyük)',
 			visibility: 'private',
+			icon: '1F372',
 			servings: 5,
 			cookedYieldG: null,
 			ingredients: [{ ingredientId: lentils.id, amount: 300 }]
 		});
-		expect(edited).toMatchObject({ version: 2, servings: 5, visibility: 'private' });
+		expect(edited).toMatchObject({ version: 2, servings: 5, visibility: 'private', icon: '1F372' });
+		expect((await catalog.getFood(MEHMET, recipe.id)).icon).toBe('1F372');
 		expect(edited.ingredients).toHaveLength(1);
 		expect((await catalog.getFood(MEHMET, recipe.id)).nutrients[0]).toMatchObject({
 			code: 'energy_kcal',
@@ -174,6 +177,7 @@ describe('pinning and editing', () => {
 			version: null,
 			name: 'Mercimek çorbası',
 			visibility: 'shared',
+			icon: null,
 			servings: 4,
 			cookedYieldG: 1200,
 			ingredients: [{ food: await catalog.getFood(MEHMET, onionId), ...grams(1) }]

@@ -1,6 +1,6 @@
 <script lang="ts">
 	// The recipe editor (docs/ui.md, "Recipes"): name, who can use it, servings, the optional cooked weight, the
-	// ingredients (shared with the saved meal editor) and the values per serving. One Save sends the whole recipe;
+	// ingredients (shared with the saved meal editor) and the values per serving, and its icon as in the food form. One Save sends the whole recipe;
 	// kept ingredients re-scale their own snapshot, and only Update to current food values reads the catalog.
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -9,15 +9,18 @@
 	import { api, ApiError } from '#lib/client/api.ts';
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
+	import { suggestIcon } from '#lib/shared/food-icons.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import { recipeNutrients, type Recipe } from '#lib/shared/recipe.ts';
 	import type { MeasureOption } from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
 	import Chips from '../Chips.svelte';
+	import FoodIcon from '../FoodIcon.svelte';
 	import Notice from '../Notice.svelte';
 	import TextField from '../TextField.svelte';
 	import ItemsCard from '../items/ItemsCard.svelte';
 	import { changed, keptDraft, nutrientsOf, payloadOf, type Draft } from '../items/drafts.ts';
+	import IconPicker from '../food/IconPicker.svelte';
 	import MacroPreview from '../log/MacroPreview.svelte';
 
 	interface Props {
@@ -31,6 +34,9 @@
 
 	let name = $state(start?.name ?? '');
 	let visibility = $state<'private' | 'shared'>(start?.visibility ?? 'shared');
+	// The chosen icon; null shows the one the name suggests.
+	let icon = $state<string | null>(start?.icon ?? null);
+	let choosingIcon = $state(false);
 	let servingsText = $state(start ? formatDecimal(start.servings, ',', 2) : '');
 	let yieldText = $state(start?.cookedYieldG ? formatDecimal(start.cookedYieldG, ',', 2) : '');
 	let items = $state<Draft[]>((start?.ingredients ?? []).map((i) => keptDraft(i)));
@@ -72,6 +78,7 @@
 		!start ||
 			name !== start.name ||
 			visibility !== start.visibility ||
+			icon !== start.icon ||
 			servings !== start.servings ||
 			cookedYieldG !== start.cookedYieldG ||
 			items.length !== start.ingredients.length ||
@@ -104,6 +111,7 @@
 				version: start?.version ?? null,
 				name,
 				visibility,
+				icon,
 				servings,
 				cookedYieldG,
 				ingredients: items.map((d) => payloadOf(d, measures, 'ingredientId'))
@@ -144,6 +152,19 @@
 			maxlength={200}
 			aria-invalid={showErrors && !name.trim()}
 		/>
+		<div class="flex items-center gap-3">
+			<FoodIcon {icon} name={name || '-'} />
+			<span class="flex min-w-0 flex-1 flex-col">
+				<span class="text-[13px] font-[650] text-muted">{m.icon_label()}</span>
+				<span class="text-[14px]">{icon ? m.icon_chosen() : m.icon_suggested()}</span>
+			</span>
+			<button
+				type="button"
+				onclick={() => (choosingIcon = true)}
+				class="min-h-11 rounded-input px-3 text-[15px] font-semibold text-accent"
+				>{m.icon_change()}</button
+			>
+		</div>
 		<Chips
 			label={m.food_visibility()}
 			bind:value={visibility}
@@ -239,3 +260,15 @@
 		</section>
 	{/if}
 </form>
+
+{#if choosingIcon}
+	<IconPicker
+		suggested={suggestIcon(name)}
+		chosen={icon}
+		onchoose={(hex) => {
+			icon = hex;
+			choosingIcon = false;
+		}}
+		onclose={() => (choosingIcon = false)}
+	/>
+{/if}
