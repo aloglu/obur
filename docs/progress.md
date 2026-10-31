@@ -272,7 +272,7 @@ browser suite then passed three runs in a row. Trend settings also checked on si
 
 Bulk diary actions (Phase 4, next): demos published for the owner as a private Artifact (2026-10-31; link in the
 session): A meal "…" menu (select, move/copy/delete meal), B long-press to select (Select in the edit sheet as the
-alternative), C a day-level Select with Select all per meal; shared Move to / Copy to sheet (day and meal) and Delete
+alternative), C a day-level Select with Select all per meal, E drag on the phone (a grip on each entry lifts it at once, the rest of the row scrolls; added at the owner's request); shared Move to / Copy to sheet (day and meal) and Delete
 with Undo; desktop drag between meal cards. Picks, notes and three questions (copy yesterday's meal, stay or go after
 moving to another day, drag copy/move) are saved in its `notes` collection. Next: read them, record in docs/ui.md, build.
 
