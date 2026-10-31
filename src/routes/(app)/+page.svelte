@@ -9,8 +9,11 @@
 	import { addDays, carbohydrateDay, defaultMeal } from '#lib/shared/diary-rules.ts';
 	import type { ActivityEntry } from '#lib/shared/body-types.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
-	import { kcal, mealName } from '#lib/shared/format.ts';
+	import { dayTitle, entryName, kcal, mealName } from '#lib/shared/format.ts';
+	import { onMount, untrack } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import X from '@lucide/svelte/icons/x';
 	import { discard, offline } from '#lib/client/offline/sync.svelte.ts';
 	import type { QueuedOp } from '#lib/client/offline/store.ts';
 	import ActivitySheet from '#lib/ui/log/ActivitySheet.svelte';
@@ -27,6 +30,8 @@
 	import SpeakSheet from '#lib/ui/log/SpeakSheet.svelte';
 	import type { LoggedEntry, ParsedEntry } from '#lib/shared/entry-types.ts';
 	import BudgetCard from '#lib/ui/today/BudgetCard.svelte';
+	import BulkSheet from '#lib/ui/today/BulkSheet.svelte';
+	import SelectionBar from '#lib/ui/today/SelectionBar.svelte';
 	import DayHeader from '#lib/ui/today/DayHeader.svelte';
 	import MealCard from '#lib/ui/today/MealCard.svelte';
 	import NutrientsCard from '#lib/ui/today/NutrientsCard.svelte';
@@ -172,6 +177,171 @@
 		showLoggedEntry(logged, invalidateAll);
 	}
 
+	// Bulk actions (docs/ui.md, "Bulk actions"): hold an entry to select it or drag it; the meal … menu; the bar's
+	// Move to… / Copy to… / Delete. Each is one request for all the entries, with one Undo.
+	let selecting = $state(false);
+	const selected = new SvelteSet<string>();
+	const lifted = new SvelteSet<string>();
+	let bulkSheet = $state<{ mode: 'move' | 'copy'; ids: string[] } | null>(null);
+	let bulkBusy = $state(false);
+	const entryById = $derived(new Map(data.entries.map((e) => [e.id, e])));
+	const entriesOf = (ids: Iterable<string>) =>
+		[...ids].flatMap((id) => (entryById.get(id) ? [entryById.get(id)!] : []));
+	const dayName = (date: string) => dayTitle(date, data.today);
+
+	function endSelect() {
+		selecting = false;
+		selected.clear();
+	}
+	function toggle(entry: DiaryEntry) {
+		// A hold released without moving ends here too: nothing is being dragged any more.
+		lifted.clear();
+		selecting = true;
+		if (selected.has(entry.id)) selected.delete(entry.id);
+		else selected.add(entry.id);
+	}
+	function lift(entry: DiaryEntry) {
+		const ids = selected.has(entry.id) ? [...selected] : [entry.id];
+		lifted.clear();
+		ids.forEach((id) => lifted.add(id));
+		return { label: entryName(entry), count: ids.length };
+	}
+	async function bulk<T>(body: unknown): Promise<T> {
+		return (await api<{ entries: T }>('POST', '/api/v1/diary/entries/bulk', body)).entries;
+	}
+	async function run(action: () => Promise<void>) {
+		bulkBusy = true;
+		try {
+			await action();
+		} catch {
+			// Changed meanwhile, deleted elsewhere, or no connection: show the day as it is now.
+			showToast({ message: m.toast_conflict() });
+			await invalidateAll();
+		} finally {
+			bulkBusy = false;
+		}
+	}
+	const countMessage = (
+		count: number,
+		one: () => string,
+		many: (a: { count: string }) => string
+	) => (count === 1 ? one() : many({ count: String(count) }));
+
+	/** Moves entries to a day and meal; Undo puts each back where it was. */
+	const place = (entries: DiaryEntry[], date: string, meal: Meal) =>
+		run(async () => {
+			const before = new Map(entries.map((e) => [e.id, { date: e.localDate, meal: e.meal }]));
+			const placed = await bulk<DiaryEntry[]>({
+				action: 'place',
+				entries: entries.map((e) => ({ id: e.id, revision: e.revision, date, meal }))
+			});
+			bulkSheet = null;
+			endSelect();
+			await invalidateAll();
+			showToast({
+				message: countMessage(placed.length, m.toast_moved_one, m.toast_moved_many),
+				detail: m.toast_to({ meal: mealName(meal), day: dayName(date) }),
+				undo: async () => {
+					await bulk({
+						action: 'place',
+						entries: placed.map((e) => ({ id: e.id, revision: e.revision, ...before.get(e.id)! }))
+					});
+					await invalidateAll();
+				}
+			});
+		});
+
+	/** Copies entries (their own snapshots) to a day and meal; Undo deletes the copies. */
+	const copy = (entries: DiaryEntry[], date: string, meal: Meal) =>
+		run(async () => {
+			const copies = await bulk<DiaryEntry[]>({
+				action: 'copy',
+				entries: entries.map((e) => ({ id: e.id, copyId: crypto.randomUUID() })),
+				date,
+				meal,
+				zone: deviceZone()
+			});
+			bulkSheet = null;
+			endSelect();
+			await invalidateAll();
+			showToast({
+				message: countMessage(copies.length, m.toast_copied_one, m.toast_copied_many),
+				detail: m.toast_to({ meal: mealName(meal), day: dayName(date) }),
+				undo: async () => {
+					await bulk({ action: 'delete', ids: copies.map((e) => e.id) });
+					await invalidateAll();
+				}
+			});
+		});
+
+	/** Deletes entries at once (to the trash); Undo restores them. No "are you sure", as for one entry. */
+	const remove = (entries: DiaryEntry[]) =>
+		run(async () => {
+			const ids = entries.map((e) => e.id);
+			await bulk({ action: 'delete', ids });
+			endSelect();
+			await invalidateAll();
+			showToast({
+				message: countMessage(ids.length, m.toast_deleted, m.toast_deleted_many),
+				detail: m.toast_from_day({ day: dayName(data.date) }),
+				undo: async () => {
+					await bulk({ action: 'restore', ids });
+					await invalidateAll();
+				}
+			});
+		});
+
+	/** A drag ended: on another meal, move what was lifted there (only entries not already in it). */
+	function dropped(meal: string | null) {
+		const entries = entriesOf(lifted);
+		lifted.clear();
+		if (!meal || !(MEALS as readonly string[]).includes(meal)) return;
+		const moving = entries.filter((e) => e.meal !== meal);
+		if (moving.length) place(moving, data.date, meal as Meal);
+	}
+
+	function mealAction(meal: Meal, action: 'select' | 'move' | 'copy' | 'delete') {
+		const ids = byMeal[meal].map((e) => e.id);
+		if (action === 'select') {
+			selecting = true;
+			ids.forEach((id) => selected.add(id));
+		} else if (action === 'delete') remove(byMeal[meal]);
+		else bulkSheet = { mode: action, ids };
+	}
+
+	// Escape ends selecting; leaving the day does too.
+	$effect(() => {
+		if (!selecting) return;
+		const key = (e: KeyboardEvent) => e.key === 'Escape' && !bulkSheet && endSelect();
+		addEventListener('keydown', key);
+		return () => removeEventListener('keydown', key);
+	});
+	let selectionDay = untrack(() => data.date);
+	$effect(() => {
+		if (data.date === selectionDay) return;
+		selectionDay = data.date;
+		endSelect();
+	});
+
+	// A one-time tip about holding entries, remembered on this device (storage may be unavailable: then it shows).
+	const HINT_KEY = 'obur:hold-hint-seen';
+	let hintSeen = $state(true);
+	onMount(() => {
+		try {
+			hintSeen = localStorage.getItem(HINT_KEY) === 'yes';
+		} catch {
+			hintSeen = false;
+		}
+	});
+	function closeHint() {
+		hintSeen = true;
+		try {
+			localStorage.setItem(HINT_KEY, 'yes');
+		} catch {
+			// Not remembered; it shows again next time.
+		}
+	}
+
 	async function toggleComplete() {
 		await api('PUT', `/api/v1/diary/days/${data.date}`, { complete: !data.complete });
 		await invalidateAll();
@@ -221,6 +391,21 @@
 					onchange={invalidateAll}
 				/>
 			</div>
+			{#if !hintSeen && data.entries.length > 0}
+				<p
+					class="flex items-center gap-2 rounded-input bg-soft py-1 pr-1 pl-3.5 text-[14px] text-text"
+					role="note"
+				>
+					<span class="flex-1">{m.hold_hint()}</span>
+					<button
+						type="button"
+						onclick={closeHint}
+						aria-label={m.hold_hint_close()}
+						class="grid size-11 shrink-0 place-items-center text-muted"
+						><X size={18} aria-hidden="true" /></button
+					>
+				</p>
+			{/if}
 			{#each MEALS as meal (meal)}
 				<MealCard
 					{meal}
@@ -231,6 +416,15 @@
 					onopen={(e) => (editing = e)}
 					pending={pendingFor(meal)}
 					onpending={(op) => (pendingOpen = op)}
+					bulk={{
+						selecting,
+						selected,
+						lifted,
+						ontoggle: toggle,
+						onlift: lift,
+						ondrop: dropped,
+						onmeal: (action) => mealAction(meal, action)
+					}}
 				/>
 			{/each}
 			<!-- A full-width switch like the cards above (owner review 2026-10-30). -->
@@ -294,6 +488,29 @@
 	</aside>
 </div>
 
+{#if selecting}
+	<SelectionBar
+		count={selected.size}
+		busy={bulkBusy}
+		oncancel={endSelect}
+		onmove={() => (bulkSheet = { mode: 'move', ids: [...selected] })}
+		oncopy={() => (bulkSheet = { mode: 'copy', ids: [...selected] })}
+		ondelete={() => remove(entriesOf(selected))}
+	/>
+{/if}
+{#if bulkSheet}
+	{@const sheet = bulkSheet}
+	<BulkSheet
+		mode={sheet.mode}
+		places={entriesOf(sheet.ids).map((e) => ({ date: e.localDate, meal: e.meal }))}
+		today={data.today}
+		viewed={data.date}
+		busy={bulkBusy}
+		onconfirm={(date, meal) =>
+			(sheet.mode === 'move' ? place : copy)(entriesOf(sheet.ids), date, meal)}
+		onclose={() => (bulkSheet = null)}
+	/>
+{/if}
 {#if picking}
 	<AmountSheet
 		foodId={picking}

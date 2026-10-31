@@ -59,3 +59,54 @@
 		}
 	}
 }
+
+/* Hold to select or drag diary entries (client/hold-drag.ts; docs/ui.md, "Bulk actions"). */
+@layer components {
+	[data-hold-row] {
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		user-select: none;
+	}
+	[data-hold-row][data-pressing] {
+		background: var(--surface2);
+		transition: background 450ms;
+	}
+	[data-meal-drop][data-drop-target] {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+		background: var(--soft);
+	}
+	.hold-drag-ghost {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 60;
+		pointer-events: none;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-height: 52px;
+		padding: 8px 14px;
+		border-radius: 14px;
+		background: var(--surface);
+		color: var(--text);
+		box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+		font-size: 15px;
+		font-weight: 650;
+	}
+	.hold-drag-name {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.hold-drag-count {
+		border-radius: 999px;
+		background: var(--accent);
+		color: var(--on-accent);
+		padding: 2px 9px;
+		font-size: 13px;
+		font-weight: 750;
+	}
+}

@@ -63,6 +63,25 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - **Quick add calories:** kcal, an optional description, day and meal. The note says the other nutrients stay unknown. It is the fallback for food known only by its calories (a bakery simit, a meal at a friend's).
 - **Barcode:** deliberately not in the UI yet (see open items).
 
+**Bulk actions** (owner's picks 2026-10-31 from the demos: F on the phone, the same on desktop with a tint on hover)
+- **Hold an entry** about half a second until it lifts. Let go: it is selected and selecting starts. Keep moving: a card
+  follows the finger (or mouse), the meal under it is outlined, the page scrolls near the top and bottom edges, and
+  dropping on another meal moves it there (within the viewed day). Moving before the hold completes cancels it, so a
+  swipe still scrolls. Holding a selected entry drags the whole selection. A one-time tip explains it (remembered
+  on the device). No grip: rows keep their full width.
+- **Selecting:** a round check on every entry, a tap toggles; the meal headers' buttons step aside; a bar over the tab
+  bar (bottom right on desktop) shows the count, Cancel, and **Move to…**, **Copy to…**, **Delete**. Escape or leaving
+  the day ends it. Desktop: Ctrl/⌘-click also selects.
+- **The meal … menu** (on meals with entries): Select entries, Move meal to…, Copy meal to…, Delete meal. It does
+  everything a hold or drag does, without the gestures.
+- **Move to… / Copy to…** sheet: day chips (Today, Yesterday, Another day with a date, never a future day) and meal
+  chips; the button names the meal ("Move to Dinner"). Copies keep each entry's own nutrition; a move that leaves
+  everything in place says so instead.
+- Each action is one request, with one toast and one **Undo**; moving or copying to another day stays on this day
+  and the toast says where ("To Snacks · Yesterday"). Delete has no confirmation, as for one entry. No "copy
+  yesterday's meal" shortcut (owner). Needs a connection.
+- Selected rows: `bg-soft` with room around the icon and text, 2 px between rows.
+
 **Edit entry**
 - A sheet with the amount and unit (or kcal for quick adds), then Save changes.
 - "Move to…" expands an inline list of meals with the current one disabled.
