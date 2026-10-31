@@ -211,6 +211,20 @@
       "when": 1793390763805,
       "tag": "0029_food_icon_grant",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793449268250,
+      "tag": "0030_label_scan_edits",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793449271142,
+      "tag": "0031_label_scan_edits_rls",
+      "breakpoints": true
     }
   ]
 }

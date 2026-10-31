@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+	boolean,
 	check,
 	index,
 	uniqueIndex,
@@ -7,6 +8,7 @@ import {
 	jsonb,
 	numeric,
 	pgTable,
+	smallint,
 	text,
 	timestamp,
 	unique,
@@ -192,5 +194,36 @@ export const recipeIngredients = pgTable(
 		check('recipe_ingredients_amount_positive', sql`${t.amount} > 0`),
 		index('recipe_ingredients_owner_id_idx').on(t.ownerId),
 		index('recipe_ingredients_food_id_idx').on(t.foodId)
+	]
+);
+
+/**
+ * How much a person changed a label scan's proposal before saving the food (shared/scan-edits.ts): counts only, never
+ * values or photos. Private to the person; admins see household totals through `app_label_scan_totals()`.
+ */
+export const labelScanEdits = pgTable(
+	'label_scan_edits',
+	{
+		foodId: uuid('food_id')
+			.primaryKey()
+			.references(() => foods.id, { onDelete: 'cascade' }),
+		ownerId: uuid('owner_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		proposed: smallint('proposed').notNull(),
+		changed: smallint('changed').notNull(),
+		removed: smallint('removed').notNull(),
+		added: smallint('added').notNull(),
+		basisKnown: boolean('basis_known').notNull(),
+		basisChanged: boolean('basis_changed').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		check(
+			'label_scan_edits_counts',
+			sql`${t.proposed} between 0 and 100 and ${t.changed} >= 0 and ${t.removed} >= 0
+				and ${t.changed} + ${t.removed} <= ${t.proposed} and ${t.added} between 0 and 100`
+		),
+		index('label_scan_edits_owner_id_idx').on(t.ownerId)
 	]
 );

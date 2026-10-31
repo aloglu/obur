@@ -7,7 +7,20 @@ import type { FoodInput } from '../../../shared/food-input.ts';
 import { deriveNutrients, type NutrientValue } from '../../../shared/nutrients.ts';
 import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';
 import { foldForSearch, foodSearchKey, searchKeyWithAliases } from '../../../shared/search-text.ts';
-import { foodNutrients, foods, foodServings, householdMeasures } from './schema.ts';
+import type { ScanEdits } from '../../../shared/scan-edits.ts';
+import { foodNutrients, foods, foodServings, householdMeasures, labelScanEdits } from './schema.ts';
+
+/** Household totals of label scans saved with edit counts (counts only). */
+export interface LabelScanTotals {
+	scans: number;
+	withoutEdits: number;
+	proposed: number;
+	changed: number;
+	removed: number;
+	added: number;
+	basisUnknown: number;
+	basisChanged: number;
+}
 
 export class CatalogError extends Error {
 	constructor(
@@ -110,9 +123,9 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		async createFood(
 			userId: string,
 			input: FoodInput,
-			options: { origin?: Origin; requireEnergy?: boolean } = {}
+			options: { origin?: Origin; requireEnergy?: boolean; scanEdits?: ScanEdits } = {}
 		): Promise<string> {
-			const { origin = 'manual', requireEnergy = true } = options;
+			const { origin = 'manual', requireEnergy = true, scanEdits } = options;
 			if (
 				requireEnergy &&
 				!input.nutrients.some((n) => n.code === 'energy_kcal' || n.code === 'energy_kj')
@@ -125,8 +138,29 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					.values({ ...columns(input), ownerId: userId, origin })
 					.returning({ id: foods.id });
 				await writeChildren(tx, row.id, input);
+				// Saved with the food it describes, or not at all.
+				if (scanEdits && origin === 'label_scan')
+					await tx.insert(labelScanEdits).values({ ...scanEdits, foodId: row.id, ownerId: userId });
 				return row.id;
 			});
+		},
+
+		/** Household totals of label scan edits, for admins (counts only; app_label_scan_totals()). */
+		async labelScanTotals(userId: string): Promise<LabelScanTotals> {
+			const rows = await withUser(db, userId, (tx) =>
+				tx.execute<Record<string, string>>(sql`select * from app_label_scan_totals()`)
+			);
+			const r = rows[0];
+			return {
+				scans: Number(r.scans),
+				withoutEdits: Number(r.without_edits),
+				proposed: Number(r.proposed),
+				changed: Number(r.changed),
+				removed: Number(r.removed),
+				added: Number(r.added),
+				basisUnknown: Number(r.basis_unknown),
+				basisChanged: Number(r.basis_changed)
+			};
 		},
 
 		async getFood(userId: string, foodId: string): Promise<FoodDetail> {

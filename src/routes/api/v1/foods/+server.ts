@@ -4,6 +4,7 @@ import { catalog, respondCatalog } from '#lib/server/catalog.ts';
 import { diary } from '#lib/server/diary.ts';
 import { readJson } from '#lib/server/http.ts';
 import { FoodInput } from '#lib/shared/food-input.ts';
+import { ScanEditsInput } from '#lib/shared/scan-edits.ts';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ url, locals }) =>
@@ -16,15 +17,21 @@ export const GET: RequestHandler = ({ url, locals }) =>
 
 export const POST: RequestHandler = ({ request, locals }) =>
 	respondCatalog(async () => {
-		// A food confirmed from a label scan records that it came from one; anything else is hand-made.
+		// A food confirmed from a label scan records that it came from one, and how much the proposal was edited
+		// (counts only); anything else is hand-made.
 		const body = await readJson(
 			request,
-			v.object({ food: FoodInput, source: v.optional(v.picklist(['manual', 'label_scan'])) })
+			v.object({
+				food: FoodInput,
+				source: v.optional(v.picklist(['manual', 'label_scan'])),
+				scanEdits: v.optional(ScanEditsInput)
+			})
 		);
 		return json(
 			{
 				id: await catalog.createFood(locals.session!.userId, body.food, {
-					origin: body.source ?? 'manual'
+					origin: body.source ?? 'manual',
+					scanEdits: body.scanEdits
 				})
 			},
 			{ status: 201 }

@@ -365,3 +365,93 @@ it('provides the seeded household measures', async () => {
 		['Çay kaşığı', 5]
 	]);
 });
+
+describe('label scan edit counts', () => {
+	const edits = {
+		proposed: 7,
+		changed: 1,
+		removed: 0,
+		added: 2,
+		basisKnown: true,
+		basisChanged: false
+	};
+
+	it('are saved with a scanned food only, private to its owner', async () => {
+		const scanned = await catalog.createFood(MEHMET, food(), {
+			origin: 'label_scan',
+			scanEdits: edits
+		});
+		// A hand-made food never records counts, even if some are sent.
+		await catalog.createFood(MEHMET, food({ name: 'Elle' }), {
+			origin: 'manual',
+			scanEdits: edits
+		});
+		const own = await asUser(
+			MEHMET,
+			(tx) => tx`select food_id, changed, added from label_scan_edits`
+		);
+		expect(own).toEqual([{ food_id: scanned, changed: 1, added: 2 }]);
+		// Not even an admin reads someone's rows; the food itself is shared, its edit counts are not.
+		expect(await asUser(ZEYNEP, (tx) => tx`select 1 from label_scan_edits`)).toHaveLength(0);
+		expect(await asUser(ADMIN, (tx) => tx`select 1 from label_scan_edits`)).toHaveLength(0);
+	});
+
+	it("can't be written for someone else, for someone else's food, or changed", async () => {
+		const zeynepsScan = await catalog.createFood(ZEYNEP, food(), { origin: 'label_scan' });
+		const insert = (owner: string, foodId: string) =>
+			asUser(
+				MEHMET,
+				(tx) => tx`insert into label_scan_edits
+				(food_id, owner_id, proposed, changed, removed, added, basis_known, basis_changed)
+				values (${foodId}, ${owner}, 1, 0, 0, 0, true, false)`
+			);
+		expect(await errorCode(insert(ZEYNEP, zeynepsScan))).toBe('42501');
+		expect(await errorCode(insert(MEHMET, zeynepsScan))).toBe('42501');
+		const mine = await catalog.createFood(MEHMET, food(), {
+			origin: 'label_scan',
+			scanEdits: edits
+		});
+		expect(
+			await errorCode(
+				asUser(MEHMET, (tx) => tx`update label_scan_edits set changed = 0 where food_id = ${mine}`)
+			)
+		).toBe('42501');
+	});
+
+	it('refuse impossible counts, and go with the food', async () => {
+		expect(
+			await errorCode(
+				catalog.createFood(MEHMET, food(), {
+					origin: 'label_scan',
+					scanEdits: { ...edits, proposed: 1, changed: 1, removed: 1 }
+				})
+			)
+		).toBe('23514');
+		// The failed save left no food behind.
+		expect(
+			await asUser(MEHMET, (tx) => tx`select 1 from foods where owner_id = ${MEHMET}`)
+		).toHaveLength(0);
+		const id = await catalog.createFood(MEHMET, food(), { origin: 'label_scan', scanEdits: edits });
+		await admin`delete from foods where id = ${id}`;
+		expect(await admin`select 1 from label_scan_edits`).toHaveLength(0);
+	});
+
+	it('are totalled for admins across the household, and only for admins', async () => {
+		await catalog.createFood(MEHMET, food(), { origin: 'label_scan', scanEdits: edits });
+		await catalog.createFood(ZEYNEP, food(), {
+			origin: 'label_scan',
+			scanEdits: { ...edits, changed: 0, added: 0, basisKnown: false }
+		});
+		expect(await catalog.labelScanTotals(ADMIN)).toEqual({
+			scans: 2,
+			withoutEdits: 1,
+			proposed: 14,
+			changed: 1,
+			removed: 0,
+			added: 2,
+			basisUnknown: 1,
+			basisChanged: 0
+		});
+		expect(await errorCode(catalog.labelScanTotals(MEHMET))).toBe('42501');
+	});
+});
