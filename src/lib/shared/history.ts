@@ -7,7 +7,8 @@ import { budgetForDay, type MacroTargets } from './goals.ts';
 
 export const HISTORY_RANGES = ['1W', '1M', '3M', '1Y', 'All'] as const;
 export type HistoryRange = (typeof HISTORY_RANGES)[number];
-export const DEFAULT_RANGE: HistoryRange = '3M';
+/** All time by default (owner, 2026-10-31). */
+export const DEFAULT_RANGE: HistoryRange = 'All';
 /** How far back each range reaches, in calendar months (the week is 7 days). */
 const RANGE_MONTHS: Record<Exclude<HistoryRange, 'All' | '1W'>, number> = {
 	'1M': 1,

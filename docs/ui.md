@@ -82,8 +82,8 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
   - Each cell's accessible name reads like "Thursday, 15 October: 1,840 of 2,000 kcal, 160 under".
   - Below the grid: a key and a month summary ("17 days under, 4 over, 3 not logged"). Today isn't counted. "Under" counts complete days only; incomplete days need their own wording in the summary and key.
 - **History below the calendar** (owner chose layout B with changes, 2026-10-31; demos in the session's Artifact):
-  - Phone: a tab bar **Weight / Calories / Nutrients** with a compact range dropdown (1W, 1M, 3M, 1Y, All; 3M by
-    default) beside it, styled like the tabs (tray and raised pill, owner 2026-10-31) in its own tray; one topic at a time, each with a headline number, a chart and a few stat rows.
+  - Phone: a tab bar **Weight / Calories / Nutrients** with a compact range dropdown (1W, 1M, 3M, 1Y, All; all time by
+    default) beside it, one tone like the tabs' tray (no raised pill, no focus ring on tap; owner 2026-10-31) in its own tray; one topic at a time, each with a headline number, a chart and a few stat rows.
   - Desktop: no tabs; two columns, the calendar beside Weight, then Calories beside Nutrients, with the range
     dropdown beside the page title.
   - Weight: trend line plus every weigh-in as a point, goal as a dashed line when it is within the chart (otherwise a
