@@ -78,7 +78,7 @@
 	const trendChange = $derived(
 		first && last ? last.trend - (history.weight.trendBefore ?? first.trend) : null
 	);
-	const shownWeight = $derived(last ? (view === 'trend' ? last.trend : last.weight) : null);
+	const VIEWS: WeightView[] = ['readings', 'trend'];
 	const a = $derived(history.averages);
 	const daysUnder = $derived(a.againstBudget.days - a.overBudgetDays);
 
@@ -126,6 +126,65 @@
 	const row = 'flex justify-between gap-3 py-2.5';
 </script>
 
+{#snippet headline(v: WeightView)}
+	{@const value = v === 'trend' ? last!.trend : last!.weight}
+	<div class="flex flex-wrap items-end justify-between gap-2.5">
+		<div>
+			<p class="m-0 text-[12px] font-bold tracking-[0.06em] text-muted uppercase">
+				{v === 'trend' ? m.history_smoothed() : m.history_latest()}
+			</p>
+			<p
+				class="m-0 font-display text-[34px] leading-none font-extrabold tracking-[-0.02em] tabular-nums"
+			>
+				{kg(value)}<small
+					class="ml-1 font-sans text-[15px] font-semibold tracking-normal text-muted">kg</small
+				>
+			</p>
+		</div>
+		<p class="m-0 text-right text-[14px]">
+			{#if v === 'trend'}
+				<b class="tabular-nums">{m.history_pace({ pace: signed(last!.pacePerWeek, kg) })}</b><br
+				/><span class="text-muted">{m.history_a_week()}</span>
+			{:else if readingChange !== null && points.length > 1}
+				<b class="tabular-nums">{signed(readingChange, kg)} kg</b><br /><span class="text-muted"
+					>{m.history_since({ date: shortDate(first!.date) })}</span
+				>
+			{/if}
+		</p>
+	</div>
+	{#if v === 'trend'}<p class="m-0 text-[13px] text-muted">{m.history_smoothed_note()}</p>{/if}
+{/snippet}
+
+{#snippet weightRows(v: WeightView)}
+	{@const value = v === 'trend' ? last!.trend : last!.weight}
+	{#if history.weight.goalKg !== null && value > history.weight.goalKg}
+		<div class={row}>
+			<span>{m.history_to_goal({ goal: kg(history.weight.goalKg) })}</span>
+			<b class="tabular-nums">{kg(value - history.weight.goalKg)} kg</b>
+		</div>
+	{/if}
+	{#if v === 'trend' && trendChange !== null}
+		<div class={row}>
+			<span>{m.history_change_in({ within })}</span>
+			<b class="tabular-nums">{signed(trendChange, kg)} kg</b>
+		</div>
+	{:else if v === 'readings' && readingChange !== null && readingDays >= 7}
+		<div class={row}>
+			<span>{m.history_per_week()}</span>
+			<b class="tabular-nums">{signed(readingChange / (readingDays / 7), kg)} kg</b>
+		</div>
+	{/if}
+	<div class={row}>
+		<span>{m.history_weighins()}</span><b class="tabular-nums">{a.weighIns}</b>
+	</div>
+	{#if v === 'readings'}
+		<div class={row}>
+			<span>{m.history_lowest()}</span>
+			<b class="tabular-nums">{kg(Math.min(...points.map((p) => p.weight)))} kg</b>
+		</div>
+	{/if}
+{/snippet}
+
 <div class="flex flex-col gap-3 desk:contents">
 	<div class="flex items-center gap-2 desk:hidden">
 		<div
@@ -152,7 +211,12 @@
 	</div>
 
 	{#if shown('weight')}
-		<div id="{uid}-panel-weight" role="tabpanel" aria-labelledby="{uid}-tab-weight" class={card}>
+		<div
+			id="{uid}-panel-weight"
+			role="tabpanel"
+			aria-labelledby="{uid}-tab-weight"
+			class={[card, 'desk:self-stretch']}
+		>
 			<div class="flex items-center justify-between gap-3">
 				<h2 class={heading}>{m.history_tab_weight()}</h2>
 				<div
@@ -174,35 +238,19 @@
 					{/each}
 				</div>
 			</div>
-			{#if first && last && shownWeight !== null}
-				<div class="flex flex-wrap items-end justify-between gap-2.5">
-					<div>
-						<p class="m-0 text-[12px] font-bold tracking-[0.06em] text-muted uppercase">
-							{view === 'trend' ? m.history_smoothed() : m.history_latest()}
-						</p>
-						<p
-							class="m-0 font-display text-[34px] leading-none font-extrabold tracking-[-0.02em] tabular-nums"
+			{#if first && last}
+				<!-- Both views' headline and rows share one cell each, so switching never changes the card's height. -->
+				<div class="grid">
+					{#each VIEWS as v (v)}
+						<div
+							class={['flex flex-col gap-3 [grid-area:1/1]', v !== view && 'invisible']}
+							aria-hidden={v !== view}
+							inert={v !== view}
 						>
-							{kg(shownWeight)}<small
-								class="ml-1 font-sans text-[15px] font-semibold tracking-normal text-muted"
-								>kg</small
-							>
-						</p>
-					</div>
-					<p class="m-0 text-right text-[14px]">
-						{#if view === 'trend'}
-							<b class="tabular-nums">{m.history_pace({ pace: signed(last.pacePerWeek, kg) })}</b
-							><br /><span class="text-muted">{m.history_a_week()}</span>
-						{:else if readingChange !== null && points.length > 1}
-							<b class="tabular-nums">{signed(readingChange, kg)} kg</b><br /><span
-								class="text-muted">{m.history_since({ date: shortDate(first.date) })}</span
-							>
-						{/if}
-					</p>
+							{@render headline(v)}
+						</div>
+					{/each}
 				</div>
-				{#if view === 'trend'}<p class="m-0 text-[13px] text-muted">
-						{m.history_smoothed_note()}
-					</p>{/if}
 			{/if}
 			<WeightChart
 				{points}
@@ -211,34 +259,17 @@
 				to={history.to}
 				goalKg={history.weight.goalKg}
 			/>
-			{#if first && last && shownWeight !== null}
-				<div class={rows}>
-					{#if history.weight.goalKg !== null && shownWeight > history.weight.goalKg}
-						<div class={row}>
-							<span>{m.history_to_goal({ goal: kg(history.weight.goalKg) })}</span>
-							<b class="tabular-nums">{kg(shownWeight - history.weight.goalKg)} kg</b>
+			{#if first && last}
+				<div class="grid desk:mt-auto">
+					{#each VIEWS as v (v)}
+						<div
+							class={[rows, '[grid-area:1/1]', v !== view && 'invisible']}
+							aria-hidden={v !== view}
+							inert={v !== view}
+						>
+							{@render weightRows(v)}
 						</div>
-					{/if}
-					{#if view === 'trend' && trendChange !== null}
-						<div class={row}>
-							<span>{m.history_change_in({ within })}</span>
-							<b class="tabular-nums">{signed(trendChange, kg)} kg</b>
-						</div>
-					{:else if readingChange !== null && readingDays >= 7}
-						<div class={row}>
-							<span>{m.history_per_week()}</span>
-							<b class="tabular-nums">{signed(readingChange / (readingDays / 7), kg)} kg</b>
-						</div>
-					{/if}
-					<div class={row}>
-						<span>{m.history_weighins()}</span><b class="tabular-nums">{a.weighIns}</b>
-					</div>
-					{#if view === 'readings'}
-						<div class={row}>
-							<span>{m.history_lowest()}</span>
-							<b class="tabular-nums">{kg(Math.min(...points.map((p) => p.weight)))} kg</b>
-						</div>
-					{/if}
+					{/each}
 				</div>
 			{/if}
 		</div>

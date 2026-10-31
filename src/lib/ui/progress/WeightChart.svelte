@@ -33,18 +33,21 @@
 	// Weights always with one decimal ("83,0 kg"), as the person reads a scale.
 	const kg = (v: number) => v.toFixed(1).replace('.', ',');
 	const pace = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${kg(Math.abs(v))}`;
-	const readout = $derived.by(() => {
-		if (!current) return '';
+	// Both views' readouts, so the line can keep the taller one's height and the card doesn't jump on a switch.
+	const readouts = $derived.by(() => {
+		if (!current) return { readings: '', trend: '' };
 		const day = dayAndMonth(current.date);
-		return mode === 'trend'
-			? m.history_trend_readout({
-					day,
-					trend: kg(current.trend),
-					pace: pace(current.pacePerWeek),
-					weight: kg(current.weight)
-				})
-			: m.history_reading_readout({ day, weight: kg(current.weight) });
+		return {
+			readings: m.history_reading_readout({ day, weight: kg(current.weight) }),
+			trend: m.history_trend_readout({
+				day,
+				trend: kg(current.trend),
+				pace: pace(current.pacePerWeek),
+				weight: kg(current.weight)
+			})
+		};
 	});
+	const readout = $derived(readouts[mode]);
 	const summary = $derived.by(() => {
 		if (!data.length) return '';
 		const [first, last] = [data[0], data.at(-1)!];
@@ -117,11 +120,16 @@
 					></i>{m.history_legend_goal()}</span
 				>{/if}
 		</div>
-		<p
-			class="m-0 min-h-[2.6em] rounded-[10px] bg-surface2 px-2.5 py-2 text-[13px] tabular-nums"
-			aria-live="polite"
-		>
-			{readout}
-		</p>
+		<div class="grid min-h-[2.6em] rounded-[10px] bg-surface2 px-2.5 py-2 text-[13px] tabular-nums">
+			{#each ['readings', 'trend'] as const as view (view)}
+				<p
+					class={['m-0 [grid-area:1/1]', view !== mode && 'invisible']}
+					aria-live={view === mode ? 'polite' : undefined}
+					aria-hidden={view !== mode}
+				>
+					{readouts[view]}
+				</p>
+			{/each}
+		</div>
 	</figure>
 {/if}

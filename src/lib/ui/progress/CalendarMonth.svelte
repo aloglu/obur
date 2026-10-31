@@ -90,7 +90,7 @@
 {/snippet}
 
 <section
-	class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
+	class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card desk:self-stretch"
 	aria-labelledby="month-title"
 >
 	<div class="flex items-center justify-between gap-2">
@@ -155,7 +155,8 @@
 		</tbody>
 	</table>
 
-	<ul class="flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted" aria-label="Key">
+	<!-- On desktop the card matches the Weight card's height; spare room goes above the key. -->
+	<ul class="mt-auto flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted" aria-label="Key">
 		<li class="flex items-center gap-1.5">
 			<span class="size-3 rounded-full bg-good"></span>{m.progress_key_under()}
 		</li>

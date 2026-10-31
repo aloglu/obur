@@ -265,6 +265,13 @@ Weight card now has Readings (raw weigh-ins, default) and Trend (damped Holt, tu
 softening of ups and downs. Later idea from the owner: a help / FAQ section (in Settings or its own page) on using the
 app and how things are calculated, including the trend.
 
+Weight card height (owner, 2026-10-31): fixed across Readings/Trend; on desktop equal to the calendar's. Test flake
+found and fixed: a fresh browser's first load set the time-zone cookie and refreshed the page's data; a full
+navigation during that refresh made SvelteKit reload the old page and cancel it (affects only whole-page navigations
+in the first moment after app start, so real use is barely touched). `signedInAs` now sets the zone cookie; the full
+browser suite then passed three runs in a row. Open owner question: whether to check the trend settings on simulated
+histories (weekly weigh-ins, slow loss, maintenance, regain, long gaps) beyond the owner's own history.
+
 ## App icon (2026-10-31)
 
 The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark

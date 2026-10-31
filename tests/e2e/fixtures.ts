@@ -17,12 +17,21 @@ export async function signedInAs(
 	await sql`insert into users (id, display_name, role) values (${userId}, ${displayName}, ${role})`;
 	await sql`insert into sessions (user_id, token_hash, expires_at)
 		values (${userId}, ${createHash('sha256').update(token).digest('hex')}, now() + interval '1 day')`;
+	// The browser's time zone as the app would store it on first load. Without it, that first load refreshes the
+	// page's data, and a test that navigates at that moment sees the refresh's fallback reload cancel its navigation.
+	const zone = await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
 	await page.context().addCookies([
 		{
 			name: 'obur_session',
 			value: token,
 			url: e2eEnv.PUBLIC_ORIGIN,
 			httpOnly: true,
+			sameSite: 'Lax'
+		},
+		{
+			name: 'obur_zone',
+			value: encodeURIComponent(zone),
+			url: e2eEnv.PUBLIC_ORIGIN,
 			sameSite: 'Lax'
 		}
 	]);

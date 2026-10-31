@@ -74,6 +74,8 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	await signedInAs(page, `Geçmiş ${testInfo.project.name}`);
 	await page.goto('/progress');
 	await expect(page.getByText('No weigh-ins in this range.').first()).toBeAttached();
+	// Seed away from the app, so its periodic refresh can't race the navigation below.
+	await page.goto('about:blank');
 	await apiAs(page, 'POST', '/api/v1/targets', {
 		mode: 'manual',
 		effectiveFrom: daysAgo(40),
@@ -134,9 +136,11 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 		has: page.getByRole('radiogroup', { name: 'Show' })
 	});
 	// Readings: what was weighed.
-	await expect(weight).toContainText('Latest weigh-in');
+	await expect(weight.getByText('Latest weigh-in', { exact: true })).toBeVisible();
+	await expect(weight.getByText('Smoothed weight', { exact: true })).toBeHidden();
 	await expect(weight).toContainText('82,6kg');
 	await expect(weight).toContainText('−1,4 kg');
+	await expect(weight.getByText('Average change per week')).toBeVisible();
 	await expect(weight).toContainText(/Average change per week\s*−0,5 kg/);
 	await expect(weight).toContainText('Weigh-ins5');
 	const weightReadout = weight.locator('[aria-live="polite"]');
@@ -144,13 +148,21 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	await weight.getByRole('slider', { name: 'Weight' }).focus();
 	await page.keyboard.press('ArrowLeft');
 	await expect(weightReadout).toContainText(': 82,4 kg');
-	// Trend: the smoothed weight and pace, remembered on this device.
+	// Trend: the smoothed weight and pace, remembered on this device; the card keeps its height.
+	const before = (await weight.boundingBox())!.height;
 	await weight.getByRole('radio', { name: 'Trend' }).click();
-	await expect(weight).toContainText('Smoothed weight');
-	await expect(weight).toContainText('a week');
+	await expect(weight.getByText('Smoothed weight', { exact: true })).toBeVisible();
+	await expect(weight.getByText('Latest weigh-in', { exact: true })).toBeHidden();
+	await expect(weight.getByText('a week', { exact: true })).toBeVisible();
 	await expect(weightReadout).toContainText('smoothed');
 	// The selected weigh-in stays selected across the switch.
 	await expect(weightReadout).toContainText('weighed 82,4 kg');
+	expect((await weight.boundingBox())!.height).toBe(before);
+	if (!phone) {
+		// Desktop: the Weight card and the calendar beside it are the same height.
+		const calendar = page.getByRole('region', { name: /\w+ \d{4}/ }).first();
+		expect((await calendar.boundingBox())!.height).toBeCloseTo(before, 0);
+	}
 	await page.reload();
 	await expect(page.getByRole('radio', { name: 'Trend' })).toHaveAttribute('aria-checked', 'true');
 	await page.getByRole('radio', { name: 'Readings' }).click();
@@ -183,5 +195,5 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	await page.getByLabel('Range').filter({ visible: true }).selectOption('1W');
 	await expect(page).toHaveURL(/range=1W/);
 	if (phone) await tab('Weight').click();
-	await expect(page.getByText('Weigh-ins3')).toBeVisible();
+	await expect(page.getByText('Weigh-ins3').filter({ visible: true })).toHaveCount(1);
 });
