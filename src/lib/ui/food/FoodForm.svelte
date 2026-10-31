@@ -378,8 +378,11 @@
 		<h2 id="portions-heading" class="text-[17px] font-bold">{m.food_portions()}</h2>
 		<p class="text-[13px] text-muted">{m.food_portions_hint()}</p>
 		{#each portions as portion, i (i)}
-			<div class="flex items-end gap-2">
-				<div class="flex-1">
+			<!-- Phone: the name on its own line, amount, unit and × below; desktop: one row. -->
+			<div
+				class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-end gap-2 desk:grid-cols-[minmax(0,1fr)_6rem_auto_auto]"
+			>
+				<div class="col-span-3 min-w-0 desk:col-span-1">
 					<TextField
 						id="portion-name-{i}"
 						label={m.food_portion_name()}
@@ -387,7 +390,7 @@
 						maxlength={60}
 					/>
 				</div>
-				<div class="w-24">
+				<div class="min-w-0">
 					<TextField
 						id="portion-amount-{i}"
 						label={m.food_portion_amount()}

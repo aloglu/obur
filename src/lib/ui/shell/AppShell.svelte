@@ -74,10 +74,11 @@
 		</nav>
 	</div>
 
-	<!-- Room for the phone's status bar at the top (the page draws under it, viewport-fit=cover, and iOS blurs what
-	     scrolls beneath it) and for the tab bar and home indicator at the bottom. -->
+	<!-- Room for the phone's status bar at the top (the page draws under it, viewport-fit=cover; iOS blurs what scrolls
+	     beneath it, and the blur fades out a little below the bar, hence the extra 12 px) and for the tab bar and home
+	     indicator at the bottom. -->
 	<div
-		class="min-w-0 pt-[env(safe-area-inset-top)] pb-[calc(96px+env(safe-area-inset-bottom))] desk:pt-0 desk:pb-0"
+		class="min-w-0 pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(96px+env(safe-area-inset-bottom))] desk:pt-0 desk:pb-0"
 	>
 		{@render children()}
 	</div>
