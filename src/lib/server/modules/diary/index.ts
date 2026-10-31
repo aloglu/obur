@@ -18,6 +18,7 @@ export {
 	DiaryError,
 	resolveUnit,
 	snapshotOf,
+	type DailyHistoryRow,
 	type Diary,
 	type EntryContext,
 	type Measure,

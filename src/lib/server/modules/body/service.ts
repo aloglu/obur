@@ -249,6 +249,40 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 			return rows.map((r) => ({ localDate: r.localDate, kcal: Number(r.kcal) }));
 		},
 
+		/** Water per day in a range (ml), for days with water recorded. */
+		async waterByDay(
+			userId: string,
+			from: string,
+			to: string
+		): Promise<{ localDate: string; ml: number }[]> {
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select({ localDate: waterEntries.localDate, ml: sql<string>`sum(${waterEntries.ml})` })
+					.from(waterEntries)
+					.where(
+						and(
+							gte(waterEntries.localDate, from),
+							lte(waterEntries.localDate, to),
+							isNull(waterEntries.deletedAt)
+						)
+					)
+					.groupBy(waterEntries.localDate)
+					.orderBy(asc(waterEntries.localDate))
+			);
+			return rows.map((r) => ({ localDate: r.localDate, ml: Number(r.ml) }));
+		},
+
+		/** The first day with a live weigh-in, or null. */
+		async firstWeightDay(userId: string): Promise<string | null> {
+			const [row] = await withUser(db, userId, (tx) =>
+				tx
+					.select({ first: sql<string | null>`min(${weightEntries.localDate})` })
+					.from(weightEntries)
+					.where(isNull(weightEntries.deletedAt))
+			);
+			return row?.first ?? null;
+		},
+
 		async waterDay(userId: string, localDate: string) {
 			const rows = await withUser(db, userId, (tx) =>
 				tx

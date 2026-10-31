@@ -295,3 +295,28 @@ it('sums energy per logged day, skipping deleted entries and unlogged days', asy
 		{ localDate: '2026-10-01', kcal: 750 }
 	]);
 });
+
+it('totals history days with each macro and the entries that leave it out, for the person only', async () => {
+	const b = await catalog.getFood(MEHMET, breadId);
+	await diary.logFood(MEHMET, ctx({ localDate: '2026-10-01' }), b, 200, grams);
+	await diary.logFood(MEHMET, ctx({ localDate: '2026-10-01' }), b, 100, grams);
+	// A calories-only quick add states no macros: the day's carbohydrate is then partial, not complete.
+	await diary.quickAdd(MEHMET, ctx({ localDate: '2026-10-02' }), 100, null);
+	await diary.logFood(MEHMET, ctx({ localDate: '2026-10-02' }), b, 100, grams);
+	const gone = await diary.logFood(MEHMET, ctx({ localDate: '2026-10-05' }), b, 100, grams);
+	await diary.remove(MEHMET, gone.id);
+	await diary.quickAdd(ZEYNEP, ctx({ localDate: '2026-09-20' }), 5000, null);
+	const rows = await diary.dailyHistory(MEHMET, '2026-10-01', '2026-10-31');
+	expect(rows).toHaveLength(2);
+	expect(rows[0]).toMatchObject({ localDate: '2026-10-01', kcal: 579 });
+	expect(rows[0].carbohydrate.value).toBeCloseTo(127.2, 5);
+	expect(rows[0].carbohydrate.missing).toBe(0);
+	// The bread states no protein or fat: unknown on every entry, never zero.
+	expect(rows[0].protein).toEqual({ value: 0, missing: 2 });
+	expect(rows[1]).toMatchObject({ localDate: '2026-10-02', kcal: 293 });
+	expect(rows[1].carbohydrate).toMatchObject({ missing: 1 });
+	expect(rows[1].fat).toEqual({ value: 0, missing: 2 });
+	expect(await diary.dailyHistory(ZEYNEP, '2026-10-01', '2026-10-31')).toEqual([]);
+	expect(await diary.firstDay(MEHMET)).toBe('2026-10-01');
+	expect(await diary.firstDay(ZEYNEP)).toBe('2026-09-20');
+});

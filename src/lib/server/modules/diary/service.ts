@@ -15,6 +15,15 @@ import type {
 import type { FoodDetail } from '../../../shared/food-types.ts';
 import { dayCompletions, diaryEntries, purgedRecords } from './schema.ts';
 
+/** One logged day's totals for the history (see `dailyHistory`). */
+export interface DailyHistoryRow {
+	localDate: string;
+	kcal: number;
+	protein: { value: number; missing: number };
+	carbohydrate: { value: number; missing: number };
+	fat: { value: number; missing: number };
+}
+
 export class DiaryError extends Error {
 	/** gone: a late retry of an entry that was deleted and purged from the trash. */
 	constructor(readonly code: 'not_found' | 'conflict' | 'conversion_unknown' | 'gone') {
@@ -329,6 +338,65 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 					.orderBy(asc(diaryEntries.localDate))
 			);
 			return rows.map((r) => ({ localDate: r.localDate, kcal: Math.round(Number(r.kcal)) }));
+		},
+
+		/**
+		 * Per logged day in a range: energy, and protein, carbohydrate (excluding fibre) and fat with the number of
+		 * entries that don't state each one, so a partial day is never read as a full one (docs/design.md, History).
+		 */
+		async dailyHistory(userId: string, from: string, to: string): Promise<DailyHistoryRow[]> {
+			// Fixed nutrient codes, written into the SQL as literals.
+			const part = (code: 'protein' | 'carbohydrate_excl_fibre' | 'fat') => {
+				const key = sql.raw(`'${code}'`);
+				return {
+					sum: sql<string>`coalesce(sum((${diaryEntries.nutrients} -> ${key} ->> 'value')::numeric), 0)`,
+					missing: sql<number>`(count(*) filter (where ${diaryEntries.nutrients} -> ${key} is null))::int`
+				};
+			};
+			const [protein, carbohydrate, fat] = (
+				['protein', 'carbohydrate_excl_fibre', 'fat'] as const
+			).map(part);
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select({
+						localDate: diaryEntries.localDate,
+						kcal: sql<string>`coalesce(sum(${diaryEntries.energyKcal}), 0)`,
+						protein: protein.sum,
+						proteinMissing: protein.missing,
+						carbohydrate: carbohydrate.sum,
+						carbohydrateMissing: carbohydrate.missing,
+						fat: fat.sum,
+						fatMissing: fat.missing
+					})
+					.from(diaryEntries)
+					.where(
+						and(
+							gte(diaryEntries.localDate, from),
+							lte(diaryEntries.localDate, to),
+							isNull(diaryEntries.deletedAt)
+						)
+					)
+					.groupBy(diaryEntries.localDate)
+					.orderBy(asc(diaryEntries.localDate))
+			);
+			return rows.map((r) => ({
+				localDate: r.localDate,
+				kcal: Math.round(Number(r.kcal)),
+				protein: { value: Number(r.protein), missing: r.proteinMissing },
+				carbohydrate: { value: Number(r.carbohydrate), missing: r.carbohydrateMissing },
+				fat: { value: Number(r.fat), missing: r.fatMissing }
+			}));
+		},
+
+		/** The first day with a live diary entry, or null. */
+		async firstDay(userId: string): Promise<string | null> {
+			const [row] = await withUser(db, userId, (tx) =>
+				tx
+					.select({ first: sql<string | null>`min(${diaryEntries.localDate})` })
+					.from(diaryEntries)
+					.where(isNull(diaryEntries.deletedAt))
+			);
+			return row?.first ?? null;
 		},
 
 		/** Marks a day complete (or not). Only complete days count as "under budget" in the calendar. */

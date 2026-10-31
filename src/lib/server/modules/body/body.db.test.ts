@@ -52,6 +52,16 @@ describe('weight', () => {
 		expect(await body.latestWeight(AYSE, '2026-10-19')).toBeNull();
 	});
 
+	it('finds the first weigh-in day, ignoring deleted readings and other people', async () => {
+		expect(await body.firstWeightDay(AYSE)).toBeNull();
+		const early = await body.logWeight(AYSE, at('2026-09-01'), 85);
+		await body.logWeight(AYSE, at('2026-09-03'), 84.6);
+		await body.logWeight(MEHMET, at('2026-01-01'), 70);
+		expect(await body.firstWeightDay(AYSE)).toBe('2026-09-01');
+		await body.removeWeight(AYSE, early.id);
+		expect(await body.firstWeightDay(AYSE)).toBe('2026-09-03');
+	});
+
 	it('treats a retry with the same ID as the same reading, and rejects changed content', async () => {
 		const id = randomUUID();
 		const first = await body.logWeight(AYSE, at('2026-10-24', id), 82.4);
@@ -159,6 +169,19 @@ describe('water', () => {
 		expect((await body.waterDay(AYSE, '2026-10-25')).totalMl).toBe(500);
 		await body.restoreWater(AYSE, a.id);
 		expect((await body.waterDay(AYSE, '2026-10-25')).totalMl).toBe(750);
+	});
+
+	it('totals water per day over a range, for the person only', async () => {
+		await body.logWater(AYSE, at('2026-10-20'), 250);
+		await body.logWater(AYSE, at('2026-10-20'), 500);
+		const gone = await body.logWater(AYSE, at('2026-10-21'), 300);
+		await body.removeWater(AYSE, gone.id);
+		await body.logWater(AYSE, at('2026-10-23'), 1000);
+		await body.logWater(MEHMET, at('2026-10-22'), 2000);
+		expect(await body.waterByDay(AYSE, '2026-10-20', '2026-10-31')).toEqual([
+			{ localDate: '2026-10-20', ml: 750 },
+			{ localDate: '2026-10-23', ml: 1000 }
+		]);
 	});
 });
 
