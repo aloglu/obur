@@ -295,6 +295,12 @@ FAQ page, a Progress timeline (built only if the owner likes it). Then Units and
 (security, accessibility, long Turkish names, restore), and the cut-over import. Mock-ups published (one private Artifact, three tabs; link in the session; answers in its `notes` collection, docs `ach`, `help`, `tl`): achievements (moments A toast / B card glow / C banner; collections 1 strip / 2 road to goal / 3 badge page; which kinds), Help (search, topics, real answers; optional "?" links), timeline (A day cards / B running line / not now). Kept in mind, not scheduled: Phase 5
 (entry-point profiles, Unraid template, catalog exchange), full offline editing, counting imported activity.
 
+Design settled (owner, 2026-10-31, five rounds): achievements (every 2 kg to 120 with comparisons, toast then
+full-screen celebration, flat circles with tint deepening every 10 kg, only the next weight and streak mark shown),
+a Journal tab (calendar plus that month's highlights), and a Help page with no inline links. Recorded in docs/ui.md
+("Achievements, Journal and Help") and docs/achievement-comparisons.md. **Next step:** a build plan for the owner
+(Journal first, then achievements, then Help), then build.
+
 ## App icon (2026-10-31)
 
 The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark

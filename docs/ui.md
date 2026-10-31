@@ -133,7 +133,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
     unknown.
   - Tapping or dragging on a chart shows that day's (or week's) values in a readout line below it; each chart has a
     text summary for screen readers.
-  - Achievements: a later item; they will sit at the top of the Weight tab.
+  - Achievements: see "Achievements, Journal and Help" below.
 
 **Profile, Settings and the More rows:** placeholders only.
 
@@ -241,6 +241,30 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
   (`AppLogo`; the tab icon follows the browser's scheme). The logo sits left of the wordmark on the sign-in screens
   (36 px) and the desktop sidebar (32 px).
 
+### Achievements, Journal and Help (owner, 2026-10-31; not built yet)
+
+Settled over five rounds of mock-ups (a private Artifact; picks and notes in its `notes` collection).
+
+- **Achievements.** One every 2 kg lost up to 120 kg, each with a comparison (docs/achievement-comparisons.md); goal
+  reached; streaks of complete days; firsts. No percentages. When one is earned, a short toast (never blocking);
+  tapping it opens a full-screen celebration with the comparison. Reduced motion: the same screen, still. Off for
+  maintenance goals, minors, pregnancy and breastfeeding.
+- **Badge page:** flat circles, no shine or gradients. Weight badges carry only the number and unit, with the date
+  earned below; the comparison never appears on a badge. All weight badges are one colour (accent), with a tint that
+  strengthens every 10 kg (owner's pick C). Streaks warm with length (amber, orange, rose, violet); each first has
+  its own colour (scan blue, voice violet, recipe green); the goal teal. Only the **next** weight mark and the
+  **next** streak show, as a dashed outline whose text matches earned badges exactly (same type, size and weight);
+  goal and firsts appear only once earned. No extra ring on the newest badge (it crowded the date). The section
+  title follows the unit: "Kilos lost" or "Pounds lost". Colours keep AA contrast in light and dark.
+- **Journal:** a fifth tab between Log and Progress: the month calendar (moved from Progress) with its key in the
+  calendar's own coloured circles, then "<Month>'s highlights": each week of the month, newest first and cut at the
+  month's edges ("This week" for the current one), as one summary line (calories a day, under or over in all,
+  weight change) with only that week's highlights below: achievements (as small versions of their badges), a new
+  lowest weight, streak milestones, budget changes, firsts, the import. Changing the month changes the highlights.
+  No switch and no setting. Progress keeps the charts.
+- **Help:** its own page (search that ignores accents and Turkish letters, topic chips, short real answers), opened
+  from More. No inline "?" or "How?" links (owner tried both and chose the page only).
+
 ### Food form portions
 
 - Each portion: **Portion name** (its own line on a phone), then **Amount** and **Unit** (labelled like the other
@@ -287,7 +311,7 @@ The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps.
 
 ## 4. Deliberately left open
 
-- **Progress below the calendar:** history decided (§2, Progress); per-kilo achievements and the "joy" moment when an achievement lands remain open.
+- **Where the achievements page is opened from:** proposed a row on Progress ("Achievements" with the count) and from an achievement in Journal; not yet confirmed.
 - **Unfinished screens:** Profile and goals, Units and formats, Your data, Household and admin, and onboarding (including BMI). Provisional versions of Profile, onboarding, Your data and Household exist (Phase 1 steps 7 and 10) and need the owner's review.
 - **Barcode:** with no outside product lookups, a barcode only finds products someone in the household already scanned. The proposal is to add it later as a shortcut inside Scan, not as its own tile. Not building (owner, 2026-10-31) unless real use shows packaged products are slow to find.
 - **Voice quick adds:** voice could also handle "500 calories, dinner". If it does, the Quick add button could move to the no-results state only.
