@@ -81,6 +81,11 @@ export function monthTitle(month: string): string {
 	return `${MONTHS[mo - 1]} ${y}`;
 }
 
+/** "October". */
+export function monthName(month: string): string {
+	return MONTHS[Number(month.slice(5, 7)) - 1];
+}
+
 /** "Tuesday 20 October 2026". */
 export function longDate(date: string): string {
 	const { y, mo, d, weekday } = parts(date);

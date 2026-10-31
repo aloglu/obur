@@ -103,18 +103,19 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - It has a check icon that pops in, a bold message and a muted detail ("Logged to Lunch · 240 kcal"), plus Undo where relevant.
 - It lives for 5 s and uses `role="status"`.
 
-**Progress**
-- **Month calendar** at the top:
+**Journal** (built 2026-10-31; see "Achievements, Journal and Help" below)
+- **Month calendar** at the top (on Progress until 2026-10-31; an old `/progress?month=` link opens the Journal):
   - Weeks start on Monday, and each day has a small ring with its date inside (40 px on phone, 54 px on desktop).
   - The ring fills by eaten ÷ budget: **green** (`good`) when the day is marked complete and at or under budget, a full **red** (`bad`) ring when over. A logged day that is not marked complete fills in a neutral colour (`muted`), so incomplete logging is never shown as success (owner decision, 2026-10-25).
   - Today has an accent outline. Days with no logs show only the track, and future days have no ring and are disabled.
   - Tapping a day opens that day's Today view. Arrows move between months.
   - Each cell's accessible name reads like "Thursday, 15 October: 1,840 of 2,000 kcal, 160 under".
   - Below the grid: a key and a month summary ("17 days under, 4 over, 3 not logged"). Today isn't counted. "Under" counts complete days only; incomplete days need their own wording in the summary and key.
-- **History below the calendar** (owner chose layout B with changes, 2026-10-31; demos in the session's Artifact):
+**Progress**
+- **History** (owner chose layout B with changes, 2026-10-31; demos in the session's Artifact):
   - Phone: a tab bar **Weight / Calories / Nutrients** with a compact range dropdown (1W, 1M, 3M, 1Y, All; all time by
     default) beside it, one tone like the tabs' tray (no raised pill, no focus ring on tap; owner 2026-10-31) in its own tray; one topic at a time, each with a headline number, a chart and a few stat rows.
-  - Desktop: no tabs; two columns, the calendar beside Weight, then Calories beside Nutrients, with the range
+  - Desktop: no tabs; two columns, Weight beside Calories, then Nutrients, with the range
     dropdown beside the page title.
   - Weight: the label above the weight is the switch (owner's pick T2, 2026-10-31, after two demo rounds):
     "LATEST WEIGH-IN | SMOOTHED", the view shown dark, the other faint; a tap on the faint one switches. Each name has a
@@ -124,9 +125,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
     weight as the line with the weigh-ins faint behind it; with the pace per week and the
     line "Evens out day-to-day swings from water and food."; rows to goal, change in the range, weigh-ins. Both: goal
     as a dashed line when it is within the chart (otherwise a note of the distance), dashed across gaps over a week. The
-    card keeps one height in both views (each view's headline, rows and readout share a cell; owner, 2026-10-31), and
-    on desktop the calendar and the Weight card are the same height, spare room above the calendar's key and the
-    weight rows.
+    card keeps one height in both views (each view's headline, rows and readout share a cell; owner, 2026-10-31).
   - Calories: bars against a budget step line; over budget striped red, under green, days not marked complete as
     outlines, unlogged days as a dash when bars are wide enough; weekly averages from 3 months up.
   - Nutrients: average protein, carbohydrate and fat against the targets, with a coverage note when some days are
@@ -258,10 +257,15 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   title follows the unit: "Kilos lost" or "Pounds lost". Colours keep AA contrast in light and dark.
 - **Journal:** a fifth tab between Log and Progress: the month calendar (moved from Progress) with its key in the
   calendar's own coloured circles, then "<Month>'s highlights": each week of the month, newest first and cut at the
-  month's edges ("This week" for the current one), as one summary line (calories a day, under or over in all,
-  weight change) with only that week's highlights below: achievements (as small versions of their badges), a new
-  lowest weight, streak milestones, budget changes, firsts, the import. Changing the month changes the highlights.
-  No switch and no setting. Progress keeps the charts.
+  month's edges ("This week" for the current one), as one summary line (average calories a day and average under or over budget, both
+  over the week's complete days only, or "No days marked complete"; the change from the last weigh-in before the week
+  to the week's last) with only that week's highlights below. Built so far: a new lowest weight (the week's lowest
+  weigh-in when below every earlier one, so at most once a week; never the very first weigh-in), a budget change
+  (the inactive-day budget at the week's end against just before it, once a week), the first day logged. Still to
+  come: achievements (as small versions of their badges), streak milestones, firsts, the import. Weeks with nothing
+  recorded are left out; an empty month says so. Changing the month changes the highlights. No switch and no
+  setting. Progress keeps the charts. Phone: calendar, then highlights; desktop: side by side, the calendar sticky.
+  Highlights that aren't achievements sit in neutral circles with a line icon.
 - **Help:** its own page (search that ignores accents and Turkish letters, topic chips, short real answers), opened
   from More. No inline "?" or "How?" links (owner tried both and chose the page only).
 

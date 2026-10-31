@@ -9,63 +9,11 @@ const daysAgo = (n: number) => {
 	return d.toLocaleDateString('en-CA');
 };
 
-async function seedSeptember(page: Page) {
-	await apiAs(page, 'POST', '/api/v1/targets', {
-		mode: 'manual',
-		effectiveFrom: '2026-09-01',
-		budgetKcal: 2000
-	});
-	const quick = (date: string, kcal: number) =>
-		apiAs(page, 'POST', '/api/v1/diary/entries', {
-			kind: 'quick',
-			date,
-			meal: 'lunch',
-			zone,
-			kcal,
-			description: null
-		});
-	await quick('2026-09-01', 1800);
-	await apiAs(page, 'PUT', '/api/v1/diary/days/2026-09-01', { complete: true });
-	await quick('2026-09-02', 2400);
-	await quick('2026-09-03', 1500);
-}
-
-test('the month calendar colours days by budget and completion', async ({ page }) => {
-	await signedInAs(page, 'Ayşe');
-	await seedSeptember(page);
-	await page.goto('/progress?month=2026-09');
-	const calendar = page.getByRole('region', { name: 'September 2026' });
-	await expect(
-		calendar.getByRole('link', { name: 'Tuesday 1 September: 1800 of 2000 kcal, 200 under' })
-	).toBeVisible();
-	await expect(
-		calendar.getByRole('link', { name: 'Wednesday 2 September: 2400 of 2000 kcal, 400 over' })
-	).toBeVisible();
-	await expect(
-		calendar.getByRole('link', {
-			name: 'Thursday 3 September: 1500 of 2000 kcal, not marked complete'
-		})
-	).toBeVisible();
-	await expect(
-		calendar.getByRole('link', { name: 'Friday 4 September: nothing logged' })
-	).toBeVisible();
-	await expect(calendar).toContainText('Under 1 · Over 1 · Not complete 1 · Not logged 27');
-	await expect(calendar).toHaveScreenshot('calendar-september.png', { animations: 'disabled' });
-
-	// A day opens in Today.
-	await calendar.getByRole('link', { name: /^Wednesday 2 September/ }).click();
-	await expect(page.getByRole('heading', { level: 1, name: 'Wed 2 Sep' })).toBeVisible();
-});
-
-test('month navigation stops at the current month', async ({ page }) => {
+test('an old Progress link with a month opens the Journal', async ({ page }) => {
 	await signedInAs(page, 'Mehmet');
-	await page.goto('/progress');
-	await expect(page.getByRole('button', { name: 'Next month' })).toBeDisabled();
-	await page.getByRole('button', { name: 'Previous month' }).click();
-	await expect(page).toHaveURL(/month=/);
-	await expect(page.getByRole('button', { name: 'Next month' })).toBeEnabled();
-	await page.goto('/progress?month=2999-01');
-	await expect(page.getByRole('button', { name: 'Next month' })).toBeDisabled();
+	await page.goto('/progress?month=2026-09');
+	await expect(page).toHaveURL(/\/journal\?month=2026-09/);
+	await expect(page.getByRole('region', { name: 'September 2026' })).toBeVisible();
 });
 
 test('history: weigh-ins and their trend, calories against budget, averages over complete days only', async ({
@@ -165,11 +113,6 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	// The selected weigh-in stays selected across the switch.
 	await expect(weightReadout).toContainText('weighed 82,4 kg');
 	expect((await weight.boundingBox())!.height).toBe(before);
-	if (!phone) {
-		// Desktop: the Weight card and the calendar beside it are the same height.
-		const calendar = page.getByRole('region', { name: /\w+ \d{4}/ }).first();
-		expect((await calendar.boundingBox())!.height).toBeCloseTo(before, 0);
-	}
 	await page.reload();
 	await expect(page.getByRole('radio', { name: 'Smoothed' })).toHaveAttribute(
 		'aria-checked',

@@ -3,6 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import BookOpen from '@lucide/svelte/icons/book-open';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import CirclePlus from '@lucide/svelte/icons/circle-plus';
 	import Ellipsis from '@lucide/svelte/icons/ellipsis';
@@ -53,6 +54,12 @@
 				><CirclePlus size={22} aria-hidden="true" />{m.nav_log()}</a
 			>
 			<a
+				href={resolve('/(app)/journal')}
+				class={sideItem(is('/journal'))}
+				aria-current={is('/journal') ? 'page' : undefined}
+				><BookOpen size={22} aria-hidden="true" />{m.nav_journal()}</a
+			>
+			<a
 				href={resolve('/(app)/progress')}
 				class={sideItem(is('/progress'))}
 				aria-current={is('/progress') ? 'page' : undefined}
@@ -96,6 +103,12 @@
 		class={tabItem(is('/log'))}
 		aria-current={is('/log') ? 'page' : undefined}
 		><CirclePlus size={22} aria-hidden="true" />{m.nav_log()}</a
+	>
+	<a
+		href={resolve('/(app)/journal')}
+		class={tabItem(is('/journal'))}
+		aria-current={is('/journal') ? 'page' : undefined}
+		><BookOpen size={22} aria-hidden="true" />{m.nav_journal()}</a
 	>
 	<a
 		href={resolve('/(app)/progress')}

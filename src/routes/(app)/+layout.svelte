@@ -23,6 +23,7 @@
 			const tabs = [
 				resolve('/(app)'),
 				resolve('/(app)/log'),
+				resolve('/(app)/journal'),
 				resolve('/(app)/progress'),
 				resolve('/(app)/more'),
 				resolve('/(app)/settings'),

@@ -186,6 +186,7 @@
 	"nav_today": "Today",
 	"nav_log": "Log",
 	"nav_progress": "Progress",
+	"nav_journal": "Journal",
 	"nav_more": "More",
 	"nav_profile": "Profile",
 	"nav_settings": "Settings",
@@ -856,5 +857,19 @@
 	"reminders_saved": "Saved",
 	"reminders_save_failed": "Couldn't save. Check your connection and try again.",
 	"history_smoothed_short": "Smoothed",
-	"food_portion_remove_short": "Remove"
+	"food_portion_remove_short": "Remove",
+	"journal_title": "Journal",
+	"journal_highlights": "{month}'s highlights",
+	"journal_this_week": "This week",
+	"journal_kcal_a_day": "kcal a day",
+	"journal_under": "under",
+	"journal_over": "over",
+	"journal_no_complete": "No days marked complete",
+	"journal_lowest": "New lowest weight: {kg} kg",
+	"journal_budget_changed": "Budget changed to {kcal} kcal",
+	"journal_budget_set": "Budget set to {kcal} kcal",
+	"journal_budget_off": "Budget turned off",
+	"journal_budget_from": "{day} · was {kcal} kcal",
+	"journal_first_day": "First day logged",
+	"journal_empty": "Nothing recorded this month."
 }

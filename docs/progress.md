@@ -298,8 +298,15 @@ FAQ page, a Progress timeline (built only if the owner likes it). Then Units and
 Design settled (owner, 2026-10-31, five rounds): achievements (every 2 kg to 120 with comparisons, toast then
 full-screen celebration, flat circles with tint deepening every 10 kg, only the next weight and streak mark shown),
 a Journal tab (calendar plus that month's highlights), and a Help page with no inline links. Recorded in docs/ui.md
-("Achievements, Journal and Help") and docs/achievement-comparisons.md. **Next step:** a build plan for the owner
-(Journal first, then achievements, then Help), then build.
+("Achievements, Journal and Help") and docs/achievement-comparisons.md. Owner approved the build plan (Journal,
+then achievements, then Help) and three defaults: start weight is the earliest weigh-in on record (imported history
+included); past milestones are awarded quietly with their real dates; the badge page opens from an "Achievements"
+row on Progress and from an achievement in the Journal.
+
+Step 1, Journal (2026-10-31): `/journal`, a fifth tab between Log and Progress; the calendar moved from Progress
+(old month links redirect); `shared/journal.ts` builds the month's weeks and highlights (new lowest weight, budget
+change, first day logged). Today's screenshot baselines regenerated for the five-tab bar and reviewed.
+**Next step:** achievements: awarding rules and storage first.
 
 ## App icon (2026-10-31)
 
