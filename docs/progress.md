@@ -247,6 +247,14 @@ score once. (a) count how many proposed values are changed before saving (counts
 production release so real use produces data. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
+## Phase 4 (owner approved the order 2026-10-31)
+
+Order: history (charts and averages on Progress) first, then bulk actions and drag-and-drop, reminders,
+achievements; imported-activity credit last (likely low value). History needs a visual direction: brief
+`spikes/ui/HISTORY-BRIEF.md` handed to the owner for the Claude app (2026-10-31). Next: wait for the owner's chosen
+layout, record it in `docs/ui.md`, then build (LayerChart, `progress` module queries over diary snapshots and target
+versions). Independent work meanwhile: the label-scan edit counting (approved, above).
+
 ## App icon (2026-10-31)
 
 The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark
