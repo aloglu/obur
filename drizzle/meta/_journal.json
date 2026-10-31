@@ -239,6 +239,20 @@
       "when": 1793459212235,
       "tag": "0033_reminders_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793477394200,
+      "tag": "0034_achievements",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793477397438,
+      "tag": "0035_achievements_rls",
+      "breakpoints": true
     }
   ]
 }
