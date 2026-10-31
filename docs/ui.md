@@ -82,6 +82,15 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
   yesterday's meal" shortcut (owner). Needs a connection.
 - Selected rows: `bg-soft` with room around the icon and text, 2 px between rows.
 
+**Reminders** (Settings → Reminders, only when the server has push keys; built 2026-10-31)
+- **This device:** Turn on notifications (asks permission on the tap), or, when on, Show a sample and Stop on this
+  device. Blocked: how to allow them. iPhone Safari: how to add obur to the Home Screen first.
+- **Remind me:** a switch per reminder (Breakfast, Lunch, Dinner, Weigh-in, Mark the day complete); on, the system's
+  own time picker appears beside it (starting at 10:00, 14:00, 20:30, 09:00 and 21:30). The hint says a reminder comes
+  only when that thing is still missing.
+- **Quiet hours:** From and Until, the system's time pickers.
+- Every change saves itself, with the device's time zone; "Saved" below. A tap on a notification opens Today.
+
 **Edit entry**
 - A sheet with the amount and unit (or kcal for quick adds), then Save changes.
 - "Move to…" expands an inline list of meals with the current one disabled.

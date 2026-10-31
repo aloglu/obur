@@ -7,5 +7,7 @@ export const load: LayoutServerLoad = ({ locals }) => ({
 	today: localDate(new Date(), locals.zone),
 	/** Speak is offered only when a speech service is configured. */
 	speech: config.speechUrl !== null,
-	scan: config.ocrUrl !== null
+	scan: config.ocrUrl !== null,
+	/** Reminders are offered only with Web Push keys; the public key lets this device subscribe. */
+	pushKey: config.pushKey
 });

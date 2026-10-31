@@ -23,7 +23,10 @@ export const e2eEnv = {
 	PUBLIC_ORIGIN: `http://localhost:${PORT}`,
 	SPEECH_URL: SPEECH_STUB,
 	OCR_URL: SPEECH_STUB,
-	WEBAUTHN_RP_ID: 'localhost'
+	WEBAUTHN_RP_ID: 'localhost',
+	// A throwaway Web Push public key so the Reminders page is offered; no worker sends anything in tests.
+	VAPID_PUBLIC_KEY:
+		'BNEjlPiBGAifsDg7V17978UFsToCwYizckYHDAeSaN4VHKUPEcEUJrZeAkyW4A8u1dGgdwOHZxnE-iiBSp-0VXE'
 };
 
 export default defineConfig({

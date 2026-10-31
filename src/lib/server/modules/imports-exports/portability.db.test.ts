@@ -10,6 +10,7 @@ import { createBody } from '../body/index.ts';
 import { createCatalog, createRecipes } from '../catalog/index.ts';
 import { createDiary, createSavedMeals } from '../diary/index.ts';
 import { createGoals } from '../goals/index.ts';
+import { createReminders } from '../reminders/index.ts';
 import { ArchiveError, readArchive, sha256, type PortableData } from './archive.ts';
 import { createPortability, PortabilityError } from './service.ts';
 
@@ -25,6 +26,7 @@ const goals = createGoals(db);
 const savedMeals = createSavedMeals(db);
 const recipes = createRecipes(db);
 const portability = createPortability(db);
+const reminders = createReminders(db);
 
 const AYSE = randomUUID(); // admin
 const MEHMET = randomUUID();
@@ -51,6 +53,17 @@ afterAll(async () => {
  * (Ayran) no diary entry refers to any more, as after its entry was purged from the trash.
  */
 async function buildHistory() {
+	// Reminder settings travel with the account; this device's push subscription never does.
+	await reminders.saveSettings(MEHMET, {
+		zone: 'Europe/Istanbul',
+		times: { breakfast: null, lunch: '14:00', dinner: null, weigh_in: '08:30', day_complete: null },
+		quietStart: '23:00',
+		quietEnd: '07:00'
+	});
+	await reminders.subscribe(MEHMET, {
+		endpoint: 'https://push.example/mehmet-phone',
+		keys: { p256dh: 'secret-key', auth: 'secret-auth' }
+	});
 	const ekmek = await catalog.createFood(
 		AYSE,
 		food({
@@ -192,6 +205,7 @@ function semantic(data: PortableData) {
 	const byText = <T>(rows: T[]) => rows.map((r) => JSON.stringify(r)).sort();
 	return {
 		profile: data.account.profile,
+		reminders: data.account.reminders,
 		foods: byText(
 			data.foods.map((f) => ({
 				name: f.name,
@@ -298,6 +312,8 @@ describe('export', () => {
 		expect(data.savedMeals[0].items.map((i) => i.kind)).toEqual(['food', 'quick', 'food']);
 		expect(data.foods.find((f) => f.name === 'Ayran')?.id).toBe(data.savedMeals[0].items[2].foodId);
 		expect(data.account).toMatchObject({ displayName: 'Mehmet', profile: { heightCm: 180 } });
+		expect(data.account.reminders).toMatchObject({ times: { lunch: '14:00', weigh_in: '08:30' } });
+		expect(JSON.stringify(data)).not.toContain('push.example');
 
 		const names = Object.fromEntries(
 			data.foods.map((f) => [f.name + (f.mine ? '' : ' (shared)'), f])
@@ -569,7 +585,9 @@ describe('account deletion', () => {
 			'profiles',
 			'day_completions',
 			'credentials',
-			'sessions'
+			'sessions',
+			'reminder_settings',
+			'push_subscriptions'
 		])
 			expect(await count(table, MEHMET)).toBe(0);
 		expect(await admin`select 1 from users where id = ${MEHMET}`).toHaveLength(0);

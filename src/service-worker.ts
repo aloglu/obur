@@ -182,3 +182,38 @@ sw.addEventListener('fetch', (event) => {
 		event.respondWith(networkFirst(event));
 	}
 });
+
+// Reminders (docs/ui.md, "Reminders"): show what the server sent; a tap opens the app, reusing an open window.
+sw.addEventListener('push', (event) => {
+	let data: { title?: string; body?: string; tag?: string; url?: string } = {};
+	try {
+		data = event.data?.json() ?? {};
+	} catch {
+		// Not JSON: show the generic title only.
+	}
+	event.waitUntil(
+		sw.registration.showNotification(data.title ?? 'obur', {
+			body: data.body ?? '',
+			tag: data.tag,
+			icon: '/icon-192.png',
+			badge: '/brand/favicon-brown.png',
+			data: { url: data.url ?? '/' }
+		})
+	);
+});
+
+sw.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	const url = new URL((event.notification.data as { url?: string })?.url ?? '/', sw.location.origin)
+		.href;
+	event.waitUntil(
+		(async () => {
+			const windows = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
+			const open = windows.find((w) => new URL(w.url).origin === sw.location.origin);
+			if (open) {
+				await open.focus();
+				await open.navigate(url).catch(() => undefined);
+			} else await sw.clients.openWindow(url);
+		})()
+	);
+});

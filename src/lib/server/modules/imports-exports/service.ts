@@ -23,6 +23,7 @@ import {
 } from '../catalog/index.ts';
 import { dayCompletions, diaryEntries, savedMealItems, savedMeals } from '../diary/index.ts';
 import { goalVersions, profiles } from '../goals/index.ts';
+import { reminderSettings } from '../reminders/index.ts';
 import { readArchive, sha256, writeArchive, type PortableData } from './archive.ts';
 import { readLoseItArchive } from './loseit.ts';
 import {
@@ -79,9 +80,16 @@ async function installationId(tx: Tx): Promise<string> {
 
 // Export ----------------------------------------------------------------------------------------------------------
 
+/** A database time ("14:00:00") as the archive's "HH:MM". */
+const hhmm = (t: string | null) => (t ? t.slice(0, 5) : null);
+
 async function collect(tx: Tx, userId: string): Promise<PortableData> {
 	const [me] = await tx.select().from(users).where(eq(users.id, userId));
 	const [profile] = await tx.select().from(profiles).where(eq(profiles.userId, userId));
+	const [reminder] = await tx
+		.select()
+		.from(reminderSettings)
+		.where(eq(reminderSettings.userId, userId));
 	const diary = await tx.select().from(diaryEntries).where(eq(diaryEntries.userId, userId));
 	const meals = await tx.select().from(savedMeals).where(eq(savedMeals.userId, userId));
 	const mealItems = await tx
@@ -151,6 +159,20 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 						breastfeeding: profile.breastfeeding,
 						decimalMark: profile.decimalMark,
 						firstDayOfWeek: profile.firstDayOfWeek
+					}
+				: null,
+			reminders: reminder
+				? {
+						zone: reminder.zone,
+						times: {
+							breakfast: hhmm(reminder.breakfast),
+							lunch: hhmm(reminder.lunch),
+							dinner: hhmm(reminder.dinner),
+							weigh_in: hhmm(reminder.weighIn),
+							day_complete: hhmm(reminder.dayComplete)
+						},
+						quietStart: hhmm(reminder.quietStart)!,
+						quietEnd: hhmm(reminder.quietEnd)!
 					}
 				: null
 		},
@@ -307,6 +329,8 @@ interface Plan {
 	foodMap: Map<string, string>;
 	importTargets: boolean;
 	importProfile: boolean;
+	/** The archive's reminder settings, when this account has none yet (as for the profile). */
+	importReminders: boolean;
 	newCompletions: PortableData['dayCompletions'];
 }
 
@@ -606,6 +630,11 @@ async function plan(
 		warnings.add('targets_kept');
 	}
 
+	const [currentReminders] = await tx
+		.select({ userId: reminderSettings.userId })
+		.from(reminderSettings)
+		.where(eq(reminderSettings.userId, userId));
+	const importReminders = !!data.account.reminders && !currentReminders;
 	const [currentProfile] = await tx.select().from(profiles).where(eq(profiles.userId, userId));
 	const incoming = data.account.profile;
 	let importProfile = false;
@@ -653,6 +682,7 @@ async function plan(
 		foodMap,
 		importTargets,
 		importProfile,
+		importReminders,
 		newCompletions
 	};
 }
@@ -921,6 +951,21 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 	}
 	if (p.importProfile && data.account.profile) {
 		await tx.insert(profiles).values({ userId, ...data.account.profile, updatedAt: now });
+	}
+	const r = data.account.reminders;
+	if (p.importReminders && r) {
+		await tx.insert(reminderSettings).values({
+			userId,
+			zone: r.zone,
+			breakfast: r.times.breakfast,
+			lunch: r.times.lunch,
+			dinner: r.times.dinner,
+			weighIn: r.times.weigh_in,
+			dayComplete: r.times.day_complete,
+			quietStart: r.quietStart,
+			quietEnd: r.quietEnd,
+			updatedAt: now
+		});
 	}
 	await chunked(p.newCompletions, (chunk) =>
 		tx.insert(dayCompletions).values(

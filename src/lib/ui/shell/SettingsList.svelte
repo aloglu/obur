@@ -1,5 +1,6 @@
 <script lang="ts">
 	// docs/ui.md "More": Appearance first, then rows. Shared by the phone More tab and desktop Settings.
+	import { stopReminders } from '#lib/client/push.ts';
 	import { untrack } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -16,8 +17,10 @@
 		isAdmin: boolean;
 		displayName: string;
 		initialTheme: ThemeChoice;
+		/** Reminders are configured on this server. */
+		reminders: boolean;
 	}
-	let { isAdmin, displayName, initialTheme }: Props = $props();
+	let { isAdmin, displayName, initialTheme, reminders }: Props = $props();
 
 	async function signOut() {
 		// Try to send anything waiting; never discard unsent entries without asking (docs/design.md, offline scope).
@@ -25,6 +28,8 @@
 		const unsent = offline.items.length;
 		if (unsent > 0 && !confirm(m.signout_pending({ count: String(unsent) }))) return;
 		if (offline.ownerId) await clearDeviceData(offline.ownerId);
+		// This device stops getting this person's reminders; whoever signs in next turns on their own.
+		if (reminders) await stopReminders();
 		await api('POST', '/api/v1/auth/logout', {});
 		await invalidateAll();
 		await goto(resolve('/login'));
@@ -55,6 +60,13 @@
 				>{m.more_profile()}<ChevronRight size={20} class="text-muted" aria-hidden="true" /></a
 			>
 		</li>
+		{#if reminders}
+			<li>
+				<a href={resolve('/(app)/settings/reminders')} class={row}
+					>{m.reminders_title()}<ChevronRight size={20} class="text-muted" aria-hidden="true" /></a
+				>
+			</li>
+		{/if}
 		<li>
 			<span class={[row, 'text-muted']}
 				>{m.more_units()}<span class="text-[13px] font-normal">{m.more_soon()}</span></span

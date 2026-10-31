@@ -9,6 +9,7 @@ import { DateString, Zone } from '../../../shared/diary-input.ts';
 import { MEALS } from '../../../shared/diary-types.ts';
 import { NUTRIENT_CODES, QUALIFIERS } from '../../../shared/nutrients.ts';
 import { MASS_UNITS, VOLUME_UNITS } from '../../../shared/quantity.ts';
+import { ReminderSettingsInput } from '../../../shared/reminders.ts';
 
 export const FORMAT = 'obur-export';
 export const FORMAT_VERSION = 1;
@@ -286,7 +287,9 @@ export const DayCompletionRecord = v.object({
 
 export const AccountRecord = v.object({
 	displayName: Text(80),
-	profile: v.nullable(ProfileRecord)
+	profile: v.nullable(ProfileRecord),
+	// Added to format version 1 later (2026-10-31): absent in older archives. Push subscriptions are never exported.
+	reminders: v.optional(v.nullable(ReminderSettingsInput), null)
 });
 
 // Files -----------------------------------------------------------------------------------------------------------

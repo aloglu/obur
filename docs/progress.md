@@ -276,6 +276,15 @@ alternative), C a day-level Select with Select all per meal, E drag on the phone
 with Undo; desktop drag between meal cards. Picks, notes and three questions (copy yesterday's meal, stay or go after
 moving to another day, drag copy/move) are saved in its `notes` collection. Owner's answers (2026-10-31): **F** on the phone ("instant pick"; the selected row's background needs room around its contents); no "copy yesterday's meal" shortcut; stay on the day after moving or copying elsewhere; desktop drag always moves (copy through the menu). Desktop note: consistent with F, **no grip on hover** (rows are narrow), maybe a hover effect on the row, to be demoed before building. Round 2 published on the same Artifact (top of the page): drag starts at once or after a hold like the phone; hover tint, lift or dashed outline; Ctrl/⌘-click selects; choice saved as `desktop-choice` in `notes`. Round 2 choice: hold first (as on the phone), tint on hover. Built 2026-10-31: `diary.bulk` (place/copy/delete/restore, 4 real-Postgres tests incl. isolation and atomicity), `POST /api/v1/diary/entries/bulk`, `client/hold-drag.ts`, MealCard … menu (`MealMenu`), `SelectionBar`, `BulkSheet`, one-time tip; browser journey `bulk.e2e.ts` on both projects (hold-select, move + undo, hold-drag, copy meal to yesterday, delete meal + undo, Ctrl-click). Needs the owner's iPhone check of the hold and drag (Safari's own press-and-hold behaviour).
 
+Reminders (Phase 4, 2026-10-31; owner: the three suggested kinds, only when missing, specific wording, native time
+pickers, build directly): `shared/reminders.ts` (due rule, 5 unit tests), `modules/reminders` (migrations 0032–0033,
+`app_reminder_candidates()`, 8 real-Postgres tests incl. isolation, dedupe, gone devices, disabled accounts, worker
+without identity), worker `send-reminders` every 5 minutes with web-push 3.6.7, `npm run push:keys`, service worker
+push and click handlers, Settings → Reminders page, export/import of settings, sign-out unsubscribes; browser test on
+both projects. Error classes no longer use parameter properties (Node type stripping in the worker), with a lint rule.
+**Owner action needed:** generate keys with `npm run push:keys` on the desktop and put the three lines in the server's
+`.env`, then redeploy; then turn notifications on from the installed app on the iPhone and check a reminder arrives.
+
 ## App icon (2026-10-31)
 
 The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark
