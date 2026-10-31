@@ -52,8 +52,9 @@ test('hold to select or drag; move, copy and delete several entries with one Und
 		page.getByRole('main').getByRole('button', { name: new RegExp(name) });
 	const bar = page.getByRole('toolbar', { name: 'Selected entries' });
 
-	// Hold and let go: selected; a tap adds another.
-	await hold(page, row('Simit'));
+	// Hold and let go: selected; a tap adds another. The hold starts on the food icon, which passes touches to the
+	// row (Safari would otherwise drag the image itself).
+	await hold(page, row('Simit').locator('img').first());
 	await expect(bar).toContainText('1 entry selected');
 	await row('Beyaz peynir').click();
 	await expect(bar).toContainText('2 entries selected');

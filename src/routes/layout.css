@@ -67,6 +67,12 @@
 		-webkit-user-select: none;
 		user-select: none;
 	}
+	/* Safari starts its own image drag when an image is held; the row's icon passes touches to the row instead. */
+	[data-hold-row] img {
+		pointer-events: none;
+		-webkit-user-drag: none;
+		-webkit-touch-callout: none;
+	}
 	[data-hold-row][data-pressing] {
 		background: var(--surface2);
 		transition: background 450ms;
