@@ -271,3 +271,28 @@ cannot see these, the person checks every value against the photo, and the warni
 values (21 on the new photos) are mostly very small or pale print the OCR did not read; they stay empty. An honest
 held-out number now needs new photos (the owner has few new products: options are counting edits in real use, a
 friend's kitchen, or new purchases over time).
+
+## Weight trend, development evaluation (Phase 4, 2026-10-31)
+
+Question: how far a smoothed weight is from what the scale says. Data: the owner's 150 LoseIt weigh-ins (266 days,
+median gap 1 day, longest 9 days, −48,6 kg overall; private, aggregates only). Each method estimates the next
+weigh-in from earlier ones only; the first 14 days are skipped while methods settle. "Bias" is the mean of reading
+minus estimate (negative: the estimate is heavier than the scale). "Rises" counts steps where the estimate went up by
+more than 0,05 kg (raw readings rose on 44 of 149 steps).
+
+| Method | Average miss | Bias | Rises | Last 60 days: miss / bias |
+| --- | --- | --- | --- | --- |
+| Exponential smoothing, 10 % a day (first build) | 2,15 kg | −2,13 | 1 | 2,04 / −1,82 |
+| Exponential smoothing, 20 % a day | 1,23 kg | −1,14 | 7 | 1,31 / −1,01 |
+| Average of the last 7 days | 1,02 kg | −0,91 | 5 | 1,13 / −0,80 |
+| Holt, 10 % / 5 % a day, undamped | 0,81 kg | −0,19 | 2 | 1,09 / +0,47 |
+| Line through the last 14 days | 0,74 kg | −0,02 | 16 | 1,16 / +0,14 |
+| **Holt, 15 % / 10 % a day, pace damped 2 % a day (chosen)** | **0,71 kg** | **−0,29** | **4** | **0,91 / −0,02** |
+
+Plain smoothing lags about (1 − α)/α days behind a steady loss, so at about 1,3 kg a week it read 2 kg heavy; the
+first build was replaced. Holt's method smooths a level and a pace; damping keeps it from assuming full-speed loss
+across long gaps. The chosen settings are round values near the best of a small grid (level 0.80–0.95, pace
+0.90–0.98, damping 0.95–1.00), not the single best fit. Most of the remaining miss is day-to-day water and food,
+which no method removes. Limits: one person, one fast-loss period, tuned on the same data; this is development
+evidence, not a held-out result. Recheck with other people's histories or a maintenance period before claiming it
+generally.
