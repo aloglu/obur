@@ -274,7 +274,7 @@ Bulk diary actions (Phase 4, next): demos published for the owner as a private A
 session): A meal "…" menu (select, move/copy/delete meal), B long-press to select (Select in the edit sheet as the
 alternative), C a day-level Select with Select all per meal, E drag on the phone (a grip on each entry lifts it at once, the rest of the row scrolls; added at the owner's request), F hold an entry, then let go to select or move to drag (no grip; owner's request); shared Move to / Copy to sheet (day and meal) and Delete
 with Undo; desktop drag between meal cards. Picks, notes and three questions (copy yesterday's meal, stay or go after
-moving to another day, drag copy/move) are saved in its `notes` collection. Next: read them, record in docs/ui.md, build.
+moving to another day, drag copy/move) are saved in its `notes` collection. Owner's answers (2026-10-31): **F** on the phone ("instant pick"; the selected row's background needs room around its contents); no "copy yesterday's meal" shortcut; stay on the day after moving or copying elsewhere; desktop drag always moves (copy through the menu). Desktop note: consistent with F, **no grip on hover** (rows are narrow), maybe a hover effect on the row, to be demoed before building. Round 2 published on the same Artifact (top of the page): drag starts at once or after a hold like the phone; hover tint, lift or dashed outline; Ctrl/⌘-click selects; choice saved as `desktop-choice` in `notes`. Next: read the round 2 choice, record everything in docs/ui.md, then build F and desktop drag.
 
 ## App icon (2026-10-31)
 
