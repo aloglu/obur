@@ -111,8 +111,7 @@ portions (147 of 152 custom-food rows are grams or millilitres, 3 name a portion
 
 **Owner checks on the iPhone (short):**
 1. Done 2026-10-30: offline logging and sending work on the iPhone. Found: after sending, the entries vanished until the next navigation (the refresh met the service worker's saved copy during its one-minute hold). Fixed: the page tells the worker the server is back and waits for it before refreshing; the browser test is now strict (it reproduced the bug before the fix).
-2. The core logging target: a familiar food logged in about 10 seconds; a correction in 3 taps or fewer.
-3. Desktop: is the meal "+" now noticeable?
+2–3. Dropped by the owner (2026-10-31): the 10-second logging check and the desktop "+" check are not needed.
 
 **Owner decisions:**
 1. Done: a setting, default keep the deficit.
@@ -124,7 +123,8 @@ portions (147 of 152 custom-food rows are grams or millilitres, 3 name a portion
    recorded here): phone screenshots in light and dark from `tests/e2e/review-screens.e2e.ts` (runs only with a
    `.review-shots` marker file), questions per screen, and per-screen verdict and notes saved in the artifact's
    `notes` collection for Claude to read back. Outcomes go into `docs/ui.md`.
-6. Cut-over: the day to stop logging in LoseIt. On that day, a final LoseIt export imported into obur adds only the
+6. Cut-over (owner, 2026-10-31): only when obur is ready for production release, which the owner judges still some
+   way off; do not ask for a date. The day to stop logging in LoseIt. On that day, a final LoseIt export imported into obur adds only the
    days since the first import (overlapping exports are matched).
 
 **Later, not blocking:** a fresh 10–15 clip voice held-out set; the typed-entry gap list below; hosted CI stays off by
@@ -178,8 +178,7 @@ a pick and notes. The owner picked A (2026-10-30) and asked to keep the
 equation off the card face; built with the breakdown behind a tap on Budget. Next: the typed-entry gap list, a fresh
 held-out voice set, and the cut-over day (owner undecided). A ring version of the card was previewed (two placements,
 breakdown behind Budget); the owner found neither satisfying and set it aside for later (not urgent).
-Typed-entry gap list: nothing open. Phase 2 work is complete pending the owner's phone checks 2–3 and the cut-over
-day.
+Typed-entry gap list: nothing open. Phase 2 work is complete (phone checks dropped 2026-10-31); cut-over waits for production release.
 
 ## Phase 3: recipes (owner chose recipes first, 2026-10-30; label photos to be gathered meanwhile)
 
@@ -284,7 +283,11 @@ Owner's approach (2026-10-30): note phrasings that fail during real use and clos
 
 - Barcodes (Phase 3): explained to the owner (barcode read on the phone with a bundled open-source reader, since iOS
   Safari has no BarcodeDetector; household products only, no outside lookups; unknown barcode leads into the label
-  scan and is attached on save). Not started; the owner asked first about it.
+  scan and is attached on save). **Not building (owner, 2026-10-31):** without an outside product database a barcode
+  only finds foods the household already saved, which search with recent foods already finds quickly; the reader,
+  camera work and iPhone testing cost more than that saves. Revisit only if real use shows packaged products are slow
+  to find. Workflow agreed if revived: live viewfinder in Scan; one match opens its amount sheet, several give a list;
+  unknown leads into the label scan and the barcode is attached on save; typed digits as a fallback.
 - Food icons: the owner chose OpenMoji (2026-10-30: "looks better than the rest"). Step 1 done: 134 OpenMoji 15.1.0
   food and drink icons in `static/icons/food/` (minified, 0.36 MB, licence file; CC BY-SA 4.0 for the icons only) and
   `shared/food-icons.ts` (English and Turkish words per icon; `suggestIcon` takes the match nearest the end of the
