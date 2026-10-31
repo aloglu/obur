@@ -16,6 +16,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 ## 2. Screens and behaviour (as decided in review)
 
 **Navigation**
+- **Phone status bar:** pages start below the status bar (`env(safe-area-inset-top)`); content scrolls under it, where iOS blurs it (owner, 2026-10-31: keep the blur, but nothing should sit in it at rest).
 - **Phone:** a floating pill tab bar inset 12 px from the screen edges, with Today, Log, Progress and More. The active tab gets a soft accent background and accent text.
 - **Desktop (≥ 760 px):** a 232 px side nav with Today, Log and Progress at the top, and Profile and Settings pinned at the bottom. The side nav is sticky at full viewport height, so the bottom links are always visible. There is no More on desktop.
 - **More (phone only):** Appearance first, then rows for Profile and goals, Units and formats, Your data and Household (admin).

@@ -92,8 +92,8 @@
 	}
 	async function sample() {
 		const registration = await navigator.serviceWorker.ready;
-		await registration.showNotification('obur', {
-			body: m.reminders_sample(),
+		// As a real reminder looks: the reminder itself is the title.
+		await registration.showNotification(m.reminders_sample(), {
 			icon: '/icon-192.png',
 			tag: 'sample'
 		});

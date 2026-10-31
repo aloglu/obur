@@ -44,12 +44,8 @@ if (vapid.publicKey && vapid.privateKey && vapid.subject) {
 	const db = drizzle(sql);
 	await boss.work(QUEUES.sendReminders, async () => {
 		const sent = await sendDueReminders(db, new Date(), async (to, kind) => {
-			const payload = JSON.stringify({
-				title: 'obur',
-				body: messages[`reminder_${kind}`],
-				url: '/',
-				tag: kind
-			});
+			// The reminder is the title; iOS adds "from obur" below it itself (owner's choice, 2026-10-31).
+			const payload = JSON.stringify({ title: messages[`reminder_${kind}`], url: '/', tag: kind });
 			try {
 				await webpush.sendNotification(
 					{ endpoint: to.endpoint, keys: { p256dh: to.p256dh, auth: to.auth } },

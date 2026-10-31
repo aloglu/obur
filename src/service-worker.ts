@@ -193,7 +193,7 @@ sw.addEventListener('push', (event) => {
 	}
 	event.waitUntil(
 		sw.registration.showNotification(data.title ?? 'obur', {
-			body: data.body ?? '',
+			body: data.body,
 			tag: data.tag,
 			icon: '/icon-192.png',
 			badge: '/brand/favicon-brown.png',
