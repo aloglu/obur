@@ -320,6 +320,28 @@ the icon credit now covers the achievement pictures. **Next step:** Units and fo
 "Pounds lost" step), then the pre-release pass (security, accessibility and 200 % text, long Turkish names, restore
 check) and the cut-over import when the owner chooses.
 
+Owner's notes (2026-10-31, evening, after trying the deployed build). **Do these first, next session.**
+
+1. Achievements on Progress: replace the "Achievements" row with a card of its own showing the most recent
+   achievements, grouped by category.
+2. Tapping an achievement on the badge page opens its full-screen celebration.
+3. Remove "Profile and goals" from the Settings/More list (Profile has its own entry).
+4. Reorder the Settings/More rows into a more sensible order (propose one).
+5. Help: remove the topic chips under the search.
+6. Back buttons on settings sub-pages go to Today instead of back. Owner's options: a back button styled like
+   Today's previous-day button that really goes back, or a redesign of Settings. If a redesign, show demos in an
+   Artifact first. Decide with the owner.
+7. Open sheets/modals must lock scrolling of the page behind, on desktop and phone (e.g. "Change icon" on the Edit
+   food page). Probably one shared fix in `Sheet.svelte`.
+
+Owner asked where the goal weight is set: it appears only with a calculated budget (budget setup in onboarding,
+and Profile → Details → Edit). A budget the person sets themselves has no goal weight field, so weight
+achievements stay off for it. Open question: offer a goal weight with a manual budget too (it would also feed
+achievements and the goal line on the weight chart)?
+
+Owner to check on the iPhone when convenient: the achievement toast and celebration (next 2 kg mark), the
+five-tab bar, the Journal.
+
 ## App icon (2026-10-31)
 
 The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark
