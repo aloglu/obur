@@ -306,7 +306,16 @@ row on Progress and from an achievement in the Journal.
 Step 1, Journal (2026-10-31): `/journal`, a fifth tab between Log and Progress; the calendar moved from Progress
 (old month links redirect); `shared/journal.ts` builds the month's weeks and highlights (new lowest weight, budget
 change, first day logged). Today's screenshot baselines regenerated for the five-tab bar and reviewed.
-**Next step:** achievements: awarding rules and storage first.
+Step 2, achievements (2026-10-31): rules in `shared/achievements.ts`; the `progress` module keeps the
+`achievements` table (migrations 0034–0035, forced RLS) in step with the records on every page change (the app
+layout's load) and on the badge page, Progress and Journal. Toast and full-screen celebration, badge page
+`/achievements`, Progress row, achievements in the Journal, first voice log noted when a heard entry is saved.
+Validation: 592 Vitest tests (rules, real-Postgres sync, privacy, tint contrast) and the e2e suite; one full e2e run
+had two phone-webkit failures (`achievements` and `goals` "day totals" tests) that did not recur in three further
+full runs or 45 targeted repeats; cause unknown, so watch for it.
+Known limits: weight achievements need a calculated target with a goal weight below the start (a manual budget has
+no goal weight, so they stay off and the page says so); pounds not handled until Units and formats exists.
+**Next step:** the Help page (step 3).
 
 ## App icon (2026-10-31)
 

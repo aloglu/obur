@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { KILO_TINT_STEPS, kiloTint } from '#lib/shared/achievement-display.ts';
 
 const css = readFileSync(new URL('./tokens.css', import.meta.url), 'utf8');
 
@@ -21,6 +22,19 @@ function luminance(hex: string): number {
 		return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 	};
 	return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+/** CSS `color-mix(in srgb, a p%, b)`. */
+function mix(a: string, b: string, percent: number): string {
+	const p = percent / 100;
+	const ch = (h: string, i: number) => parseInt(h.slice(i, i + 2), 16);
+	return `#${[1, 3, 5]
+		.map((i) =>
+			Math.round(ch(a, i) * p + ch(b, i) * (1 - p))
+				.toString(16)
+				.padStart(2, '0')
+		)
+		.join('')}`;
 }
 
 function contrast(a: string, b: string): number {
@@ -68,6 +82,14 @@ describe('Pazar tokens', () => {
 	for (const [name, vars] of Object.entries(themes)) {
 		it.each(TEXT_PAIRS)(`${name}: %s on %s meets WCAG AA (4.5:1)`, (fg, bg) => {
 			expect(contrast(vars[fg], vars[bg])).toBeGreaterThanOrEqual(4.5);
+		});
+
+		it(`${name}: every kilo badge's number keeps large-text contrast (3:1) as its tint deepens`, () => {
+			for (let step = 0; step < KILO_TINT_STEPS; step++) {
+				const { percent, ink } = kiloTint(step * 10 + 2);
+				const fill = mix(vars['badge-coral'], vars.surface, percent);
+				expect(contrast(vars[`kilo-ink-${ink}`], fill), `${percent} %`).toBeGreaterThanOrEqual(3);
+			}
 		});
 
 		it.each(['accent', 'good', 'bad', 'protein', 'carb', 'fat'])(

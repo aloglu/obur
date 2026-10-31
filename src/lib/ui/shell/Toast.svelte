@@ -4,6 +4,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { onMount } from 'svelte';
 	import { dismissToast, restoreToast, toast } from '#lib/client/toast.svelte.ts';
+	import AchievementToast from '../achievements/AchievementToast.svelte';
 
 	onMount(restoreToast);
 
@@ -17,8 +18,10 @@
 <div
 	role="status"
 	aria-live="polite"
-	class="pointer-events-none fixed inset-x-3 bottom-[calc(max(12px,env(safe-area-inset-bottom))+76px)] z-40 flex justify-center desk:inset-x-auto desk:bottom-6 desk:left-[calc(232px+28px)] desk:justify-start"
+	class="pointer-events-none fixed inset-x-3 bottom-[calc(max(12px,env(safe-area-inset-bottom))+76px)] z-40 flex flex-col items-center gap-2 desk:inset-x-auto desk:bottom-6 desk:left-[calc(232px+28px)] desk:items-start"
 >
+	<!-- An achievement sits above an ordinary toast when both show. -->
+	<AchievementToast />
 	{#if toast.current}
 		{#key toast.current.id}
 			<div

@@ -4,12 +4,16 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
+	import { offer } from '#lib/client/celebration.svelte.ts';
 	import { offline, recentlyUnreachable, startSync } from '#lib/client/offline/sync.svelte.ts';
 	import { syncZoneCookie } from '#lib/client/prefs.ts';
 	import AppShell from '#lib/ui/shell/AppShell.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 
 	let { children, data } = $props();
+
+	// Achievements the server found waiting: the toast offers the most notable (docs/ui.md).
+	$effect(() => offer(data.celebrate));
 
 	onMount(() => {
 		// The server decides which day "today" is from the device's time zone; refresh if it changed.

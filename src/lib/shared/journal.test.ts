@@ -161,3 +161,23 @@ describe('journal highlights', () => {
 		expect(journal(input({ month: '2026-08', today: '2026-10-31', versions: [] }))).toEqual([]);
 	});
 });
+
+describe('journal achievements', () => {
+	it('puts an achievement in its week, ahead of other highlights that day', () => {
+		const [week] = journal(
+			input({
+				today: '2026-10-07',
+				eaten: { '2026-10-06': 1800 },
+				readings: [
+					{ localDate: '2026-09-01', value: 90 },
+					{ localDate: '2026-10-06', value: 88 }
+				],
+				achievements: [
+					{ kind: 'weight', level: 2, date: '2026-10-06' },
+					{ kind: 'streak', level: 7, date: '2026-09-30' }
+				]
+			})
+		);
+		expect(week.events.map((e) => e.kind)).toEqual(['achievement', 'lowest']);
+	});
+});

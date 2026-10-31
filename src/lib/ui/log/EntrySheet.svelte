@@ -255,6 +255,15 @@
 			problem = m.entry_partial();
 			return;
 		}
+		// The first entry logged by voice is an achievement with no record behind it; noted once, and before the page
+		// refreshes so the celebration can follow. Offline it is simply not noted this time.
+		if (heard && undo.length) {
+			await fetch('/api/v1/achievements/firsts', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ first: 'voice' })
+			}).catch(() => {});
+		}
 		onlogged({ count: undo.length, date: day, undo, firstEntryId });
 	}
 </script>

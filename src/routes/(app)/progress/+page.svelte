@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { ResolvedPathname } from '$app/types';
@@ -26,4 +27,14 @@
 		</div>
 	</div>
 	<HistorySection history={data.history} onrange={setRange} />
+	<a
+		href={resolve('/(app)/achievements')}
+		class="flex min-h-14 items-center gap-3 rounded-card bg-surface px-[18px] py-3 shadow-card desk:col-span-2"
+	>
+		<span class="flex-1 text-[17px] font-bold">{m.achievements_row()}</span>
+		<span class="text-[14px] text-muted"
+			>{m.achievements_row_count({ count: String(data.achievements) })}</span
+		>
+		<ChevronRight size={20} aria-hidden="true" class="text-muted" />
+	</a>
 </main>

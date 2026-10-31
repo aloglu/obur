@@ -10,7 +10,12 @@ const urls = inject('db');
 const quiet = { onnotice: () => {} };
 const admin = postgres(urls.admin, { max: 1, ...quiet });
 const appSql = postgres(urls.app, { max: 2, ...quiet });
-const progress = createProgress(drizzle(appSql));
+const service = createProgress(drizzle(appSql));
+// The list only; whether weight applies is checked where it matters.
+const progress = {
+	...service,
+	sync: async (...args: Parameters<typeof service.sync>) => (await service.sync(...args)).list
+};
 
 const AYSE = randomUUID();
 const MEHMET = randomUUID();
@@ -80,7 +85,7 @@ describe('achievements', () => {
 		await adult(AYSE, 120);
 		await weigh(AYSE, '2026-06-01', 100);
 		await weigh(AYSE, '2026-09-01', 90);
-		expect(await progress.sync(AYSE, TODAY, ZONE)).toEqual([]);
+		expect(await service.sync(AYSE, TODAY, ZONE)).toEqual({ list: [], weightAllowed: false });
 		await admin`update goal_versions set goal_weight_kg = 80 where user_id = ${AYSE}`;
 		expect(await progress.sync(AYSE, TODAY, ZONE)).toHaveLength(5);
 		await admin`update profiles set pregnant = true where user_id = ${AYSE}`;

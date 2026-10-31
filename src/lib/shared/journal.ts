@@ -1,6 +1,7 @@
 // The Journal's month of highlights (docs/ui.md, "Achievements, Journal and Help"): the month's weeks, newest first
 // and cut at the month's edges, each with one summary and only the moments that mattered. Averages count only days
 // marked complete, as everywhere else in Progress; nothing unknown is shown as zero.
+import type { Achievement } from './achievements.ts';
 import { isoWeekday, targetOn, type CalendarDay, type TargetLike } from './calendar.ts';
 import { addDays } from './diary-rules.ts';
 import { budgetForDay } from './goals.ts';
@@ -11,7 +12,9 @@ export type JournalEvent =
 	/** The budget for an inactive day differs at the week's end from just before it (null: no budget). */
 	| { kind: 'budget'; date: string; from: number | null; to: number | null }
 	/** The first day anything was logged. */
-	| { kind: 'first_day'; date: string };
+	| { kind: 'first_day'; date: string }
+	/** An achievement reached that day. */
+	| { kind: 'achievement'; date: string; achievement: Achievement };
 
 export interface JournalWeek {
 	from: string;
@@ -43,6 +46,8 @@ export interface JournalInput {
 	versions: TargetLike[];
 	/** The first day anything was logged, if ever. */
 	firstDay: string | null;
+	/** Achievements reached, any order. */
+	achievements?: Achievement[];
 }
 
 const inactiveBudget = (versions: TargetLike[], date: string) =>
@@ -97,7 +102,13 @@ export function journal(input: JournalInput): JournalWeek[] {
 		if (input.firstDay && input.firstDay >= from && input.firstDay <= to) {
 			events.push({ kind: 'first_day', date: input.firstDay });
 		}
-		events.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+		for (const achievement of input.achievements ?? []) {
+			if (achievement.date >= from && achievement.date <= to)
+				events.push({ kind: 'achievement', date: achievement.date, achievement });
+		}
+		// Newest first; on the same day, achievements lead.
+		const rank = (e: JournalEvent) => (e.kind === 'achievement' ? 0 : 1);
+		events.sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : rank(a) - rank(b)));
 
 		const logged = week.some((d) => d.status !== 'unlogged');
 		if (!logged && !within.length && !events.length) continue;

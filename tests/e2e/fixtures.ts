@@ -70,3 +70,10 @@ export async function scanEditsFor(foodName: string) {
 		from label_scan_edits e join foods f on f.id = e.food_id where f.name = ${foodName}`;
 	return row;
 }
+
+/** An adult with a calculated target losing toward `goalKg`, so weight achievements apply (test setup only). */
+export async function losingToward(userId: string, goalKg: number) {
+	await sql`insert into profiles (user_id, birth_date, sex, height_cm) values (${userId}, '1990-01-01', 'female', 170)`;
+	await sql`insert into goal_versions (user_id, effective_from, mode, base_burn_kcal, deficit_kcal, goal_weight_kg,
+		inputs, calculation_version) values (${userId}, '2025-01-01', 'calculated', 2500, 700, ${goalKg}, '{}', 'e2e')`;
+}

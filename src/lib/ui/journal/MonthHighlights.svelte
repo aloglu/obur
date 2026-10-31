@@ -1,12 +1,16 @@
 <script lang="ts">
 	// docs/ui.md, "Achievements, Journal and Help": the month's weeks, newest first, each a summary line and only the
-	// moments that mattered. Highlights sit in neutral circles; achievements will join them as small badges.
+	// moments that mattered. Achievements show as small versions of their badges and open the badge page; other
+	// highlights sit in neutral circles.
 	import Flag from '@lucide/svelte/icons/flag';
 	import Target from '@lucide/svelte/icons/target';
 	import TrendingDown from '@lucide/svelte/icons/trending-down';
+	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { kcal, shortDate, shortWeekday } from '#lib/shared/format.ts';
 	import type { JournalEvent, JournalWeek } from '#lib/shared/journal.ts';
+	import Badge from '../achievements/Badge.svelte';
+	import { achievementTitle, comparison } from '../achievements/text.ts';
 
 	let { weeks, monthName }: { weeks: JournalWeek[]; monthName: string } = $props();
 
@@ -30,14 +34,27 @@
 					: m.journal_budget_changed({ kcal: kcal(e.to) });
 			case 'first_day':
 				return m.journal_first_day();
+			case 'achievement':
+				return achievementTitle(e.achievement);
 		}
 	}
 	function detail(e: JournalEvent): string {
 		if (e.kind === 'budget' && e.from !== null)
 			return m.journal_budget_from({ day: day(e.date), kcal: kcal(e.from) });
+		if (e.kind === 'achievement' && e.achievement.kind === 'weight') {
+			const what = comparison(e.achievement.level);
+			if (what) return `${day(e.date)} · ${what}`;
+		}
 		return day(e.date);
 	}
 </script>
+
+{#snippet words(e: JournalEvent)}
+	<span class="min-w-0">
+		<b class="block text-[15px] font-semibold">{title(e)}</b>
+		<span class="block text-[13px] text-muted">{detail(e)}</span>
+	</span>
+{/snippet}
 
 <section class="flex min-w-0 flex-col gap-3" aria-labelledby="highlights-title">
 	<h2 id="highlights-title" class="px-1 text-[19px] font-bold">
@@ -70,20 +87,26 @@
 			</p>
 			{#if w.events.length}
 				<ul class="flex flex-col gap-2.5">
-					{#each w.events as e (e.kind + e.date)}
-						<li class="flex items-center gap-3">
-							<span
-								class="grid size-10 shrink-0 place-items-center rounded-full bg-surface2 text-muted"
-								aria-hidden="true"
-							>
-								{#if e.kind === 'lowest'}<TrendingDown size={20} />
-								{:else if e.kind === 'budget'}<Target size={20} />
-								{:else}<Flag size={20} />{/if}
-							</span>
-							<span class="min-w-0">
-								<b class="block text-[15px] font-semibold">{title(e)}</b>
-								<span class="block text-[13px] text-muted">{detail(e)}</span>
-							</span>
+					{#each w.events as e (e.kind === 'achievement' ? `${e.achievement.kind}:${e.achievement.level}` : e.kind + e.date)}
+						<li>
+							{#if e.kind === 'achievement'}
+								<a href={resolve('/(app)/achievements')} class="flex items-center gap-3">
+									<Badge achievement={e.achievement} size="sm" />
+									{@render words(e)}
+								</a>
+							{:else}
+								<div class="flex items-center gap-3">
+									<span
+										class="grid size-10 shrink-0 place-items-center rounded-full bg-surface2 text-muted"
+										aria-hidden="true"
+									>
+										{#if e.kind === 'lowest'}<TrendingDown size={20} />
+										{:else if e.kind === 'budget'}<Target size={20} />
+										{:else}<Flag size={20} />{/if}
+									</span>
+									{@render words(e)}
+								</div>
+							{/if}
 						</li>
 					{/each}
 				</ul>

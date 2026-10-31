@@ -36,10 +36,14 @@ const parse = (row: typeof achievements.$inferSelect): StoredAchievement =>
 export function createProgress(db: Database) {
 	return {
 		/**
-		 * Brings the stored achievements in step with the records and returns them all, oldest first. `zone` turns the
-		 * moment a scan or recipe was saved into the person's day.
+		 * Brings the stored achievements in step with the records and returns them all, oldest first, and whether weight
+		 * achievements apply. `zone` turns the moment a scan or recipe was saved into the person's day.
 		 */
-		async sync(userId: string, today: string, zone: string): Promise<StoredAchievement[]> {
+		async sync(
+			userId: string,
+			today: string,
+			zone: string
+		): Promise<{ list: StoredAchievement[]; weightAllowed: boolean }> {
 			return withUser(db, userId, async (tx) => {
 				const [readings, completed, goals, [profile], [scan], [recipe], stored] = await Promise.all(
 					[
@@ -177,7 +181,7 @@ export function createProgress(db: Database) {
 					.from(achievements)
 					.where(eq(achievements.userId, userId))
 					.orderBy(asc(achievements.achievedOn));
-				return rows.map(parse);
+				return { list: rows.map(parse), weightAllowed };
 			});
 		},
 

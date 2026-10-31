@@ -12,6 +12,7 @@
 	import UserRound from '@lucide/svelte/icons/user-round';
 	import { m } from '#lib/paraglide/messages.js';
 	import AppLogo from '../AppLogo.svelte';
+	import Celebration from '../achievements/Celebration.svelte';
 	import Toast from './Toast.svelte';
 
 	let { children }: { children: Snippet } = $props();
@@ -125,3 +126,4 @@
 </nav>
 
 <Toast />
+<Celebration />

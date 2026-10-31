@@ -240,7 +240,7 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
   (`AppLogo`; the tab icon follows the browser's scheme). The logo sits left of the wordmark on the sign-in screens
   (36 px) and the desktop sidebar (32 px).
 
-### Achievements, Journal and Help (owner, 2026-10-31; not built yet)
+### Achievements, Journal and Help (owner, 2026-10-31; Journal and achievements built the same day, Help not yet)
 
 Settled over five rounds of mock-ups (a private Artifact; picks and notes in its `notes` collection).
 
@@ -255,6 +255,17 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   **next** streak show, as a dashed outline whose text matches earned badges exactly (same type, size and weight);
   goal and firsts appear only once earned. No extra ring on the newest badge (it crowded the date). The section
   title follows the unit: "Kilos lost" or "Pounds lost". Colours keep AA contrast in light and dark.
+- **As built:** the toast sits above an ordinary toast, shows the comparison's picture, title and "That's …", and
+  stays 8 s; tapping opens the celebration (count-up, the picture dropping in, the comparison and its line, confetti;
+  Done or Escape closes; "See all achievements"). Only the most notable new one gets the toast; others that arrive
+  with it are kept quietly. Celebrated means seen, once. Kilo circles hold only the number (owner: "just put the
+  number in circle"); the tint is 10 % of `--badge-coral` plus 8 points every further 10 kg, and the number's ink
+  moves from coral to the text colour (and in dark, to the dark accent ink) as the tint deepens, tested for 3:1 at
+  every step in both themes. Streaks: 7, 14, 30, 60, 100, 180 and 365 days, coloured amber, coral, rose, violet,
+  blue, teal, green in turn. The badge page opens from an "Achievements" row at the foot of Progress and from an
+  achievement in the Journal; it says why when weight achievements are off. Pictures: OpenMoji 15.1.0 in
+  `static/icons/achievements/` (dark variants from `node scripts/food-icons-dark.ts`). Pounds are not handled yet
+  (no unit setting exists).
 - **Journal:** a fifth tab between Log and Progress: the month calendar (moved from Progress) with its key in the
   calendar's own coloured circles, then "<Month>'s highlights": each week of the month, newest first and cut at the
   month's edges ("This week" for the current one), as one summary line (average calories a day and average under or over budget, both
