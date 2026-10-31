@@ -2,7 +2,7 @@
 // Nutrition is always computed on the server from a snapshot of the food; clients send only food, amount,
 // unit, day and meal.
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, gte, isNotNull, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { snapshotNutrients, snapshotOf } from '../../../shared/diary-rules.ts';
 import type {
@@ -12,6 +12,7 @@ import type {
 	Meal,
 	SnapshotUnit
 } from '../../../shared/diary-types.ts';
+import type { BulkEntries } from '../../../shared/diary-input.ts';
 import type { FoodDetail } from '../../../shared/food-types.ts';
 import { dayCompletions, diaryEntries, purgedRecords } from './schema.ts';
 
@@ -311,6 +312,105 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 					.where(eq(diaryEntries.id, id))
 					.returning();
 				return toEntry(updated);
+			});
+		},
+
+		/**
+		 * Several entries at once, all or none (shared/diary-input.ts, `BulkEntries`). Returns the affected entries as
+		 * they are afterwards: the placed, the copies, the deleted (in the trash) or the restored. Copies are new
+		 * entries made from the originals' own snapshots, never from the current catalog.
+		 */
+		async bulk(userId: string, op: BulkEntries): Promise<DiaryEntry[]> {
+			return withUser(db, userId, async (tx) => {
+				const ids =
+					op.action === 'place' || op.action === 'copy' ? op.entries.map((e) => e.id) : op.ids;
+				if (new Set(ids).size !== ids.length) throw new DiaryError('conflict');
+				const rows = new Map(
+					(await tx.select().from(diaryEntries).where(inArray(diaryEntries.id, ids))).map((r) => [
+						r.id,
+						r
+					])
+				);
+				// Every entry must be the person's (others' rows are invisible under RLS) and, except for a
+				// restore, live.
+				for (const id of ids) {
+					const row = rows.get(id);
+					if (!row || (op.action !== 'restore' && row.deletedAt)) throw new DiaryError('not_found');
+				}
+				const out: DiaryEntry[] = [];
+				switch (op.action) {
+					case 'place':
+						for (const e of op.entries) {
+							const row = rows.get(e.id)!;
+							if (row.revision !== e.revision) throw new DiaryError('conflict');
+							const [updated] = await tx
+								.update(diaryEntries)
+								.set({
+									localDate: e.date,
+									meal: e.meal,
+									revision: row.revision + 1,
+									updatedAt: now()
+								})
+								.where(and(eq(diaryEntries.id, e.id), eq(diaryEntries.revision, e.revision)))
+								.returning();
+							if (!updated) throw new DiaryError('conflict');
+							out.push(toEntry(updated));
+						}
+						break;
+					case 'copy':
+						for (const e of op.entries) {
+							const row = rows.get(e.id)!;
+							out.push(
+								await insertEntry(tx, {
+									id: e.copyId,
+									userId,
+									localDate: op.date,
+									meal: op.meal,
+									zone: op.zone,
+									eatenAt: null,
+									kind: row.kind,
+									foodId: row.foodId,
+									food: row.food,
+									amount: row.amount,
+									unit: row.unit,
+									description: row.description,
+									nutrients: row.nutrients,
+									revision: 1,
+									deletedAt: null
+								})
+							);
+						}
+						break;
+					case 'delete':
+						for (const id of op.ids) {
+							const row = rows.get(id)!;
+							const [updated] = await tx
+								.update(diaryEntries)
+								.set({ deletedAt: now(), revision: row.revision + 1, updatedAt: now() })
+								.where(eq(diaryEntries.id, id))
+								.returning();
+							out.push(toEntry(updated));
+						}
+						break;
+					case 'restore':
+						for (const id of op.ids) {
+							const row = rows.get(id)!;
+							if (!row.deletedAt) {
+								out.push(toEntry(row));
+								continue;
+							}
+							if (now().getTime() - row.deletedAt.getTime() > TRASH_DAYS * 24 * 3600 * 1000)
+								throw new DiaryError('not_found');
+							const [updated] = await tx
+								.update(diaryEntries)
+								.set({ deletedAt: null, revision: row.revision + 1, updatedAt: now() })
+								.where(eq(diaryEntries.id, id))
+								.returning();
+							out.push(toEntry(updated));
+						}
+						break;
+				}
+				return out;
 			});
 		},
 

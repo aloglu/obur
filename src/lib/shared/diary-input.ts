@@ -104,3 +104,39 @@ export const LogSavedMeal = v.object({
 		v.maxLength(100)
 	)
 });
+
+/** At most this many entries in one bulk action (a day's diary fits easily). */
+export const MAX_BULK = 100;
+const BulkIds = v.pipe(v.array(Uuid), v.minLength(1), v.maxLength(MAX_BULK));
+
+/**
+ * Several entries at once (docs/ui.md, "Bulk actions"), in one transaction. `place` puts each entry on a day and
+ * meal if it is unchanged since it was read (a move, or a move's undo); `copy` makes new entries from the originals'
+ * snapshots under IDs chosen by the client, so a retry never copies twice; `delete` and `restore` use the trash.
+ */
+export const BulkEntries = v.variant('action', [
+	v.object({
+		action: v.literal('place'),
+		entries: v.pipe(
+			v.array(
+				v.object({ id: Uuid, revision: Revision, date: DateString, meal: v.picklist(MEALS) })
+			),
+			v.minLength(1),
+			v.maxLength(MAX_BULK)
+		)
+	}),
+	v.object({
+		action: v.literal('copy'),
+		entries: v.pipe(
+			v.array(v.object({ id: Uuid, copyId: Uuid })),
+			v.minLength(1),
+			v.maxLength(MAX_BULK)
+		),
+		date: DateString,
+		meal: v.picklist(MEALS),
+		zone: Zone
+	}),
+	v.object({ action: v.literal('delete'), ids: BulkIds }),
+	v.object({ action: v.literal('restore'), ids: BulkIds })
+]);
+export type BulkEntries = v.InferOutput<typeof BulkEntries>;

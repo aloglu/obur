@@ -320,3 +320,106 @@ it('totals history days with each macro and the entries that leave it out, for t
 	expect(await diary.firstDay(MEHMET)).toBe('2026-10-01');
 	expect(await diary.firstDay(ZEYNEP)).toBe('2026-09-20');
 });
+
+describe('bulk actions', () => {
+	const at = (localDate: string, meal: 'breakfast' | 'lunch' | 'dinner' | 'snacks' = 'breakfast') =>
+		ctx({ localDate, meal });
+
+	it('moves several entries in one step, or none when one changed meanwhile', async () => {
+		const b = await catalog.getFood(MEHMET, breadId);
+		const a = await diary.logFood(MEHMET, at('2026-10-20'), b, 50, grams);
+		const q = await diary.quickAdd(MEHMET, at('2026-10-20'), 300, 'Simit');
+		const moved = await diary.bulk(MEHMET, {
+			action: 'place',
+			entries: [a, q].map((e) => ({
+				id: e.id,
+				revision: e.revision,
+				date: '2026-10-21',
+				meal: 'dinner'
+			}))
+		});
+		expect(moved.map((e) => [e.localDate, e.meal, e.revision])).toEqual([
+			['2026-10-21', 'dinner', 2],
+			['2026-10-21', 'dinner', 2]
+		]);
+		// One stale revision: nothing moves.
+		const stale = [
+			{ id: a.id, revision: 2, date: '2026-10-20', meal: 'lunch' as const },
+			{ id: q.id, revision: 1, date: '2026-10-20', meal: 'lunch' as const }
+		];
+		expect(await errorCode(diary.bulk(MEHMET, { action: 'place', entries: stale }))).toBe(
+			'conflict'
+		);
+		expect((await diary.get(MEHMET, a.id)).meal).toBe('dinner');
+		// Undo is a place back to where each was.
+		const back = await diary.bulk(MEHMET, {
+			action: 'place',
+			entries: [
+				{ id: a.id, revision: 2, date: '2026-10-20', meal: 'breakfast' },
+				{ id: q.id, revision: 2, date: '2026-10-20', meal: 'breakfast' }
+			]
+		});
+		expect(back.every((e) => e.localDate === '2026-10-20' && e.meal === 'breakfast')).toBe(true);
+	});
+
+	it("copies from the entries' own snapshots, once per copy ID, keeping legitimate repeats", async () => {
+		const b = await catalog.getFood(MEHMET, breadId);
+		const a = await diary.logFood(MEHMET, at('2026-10-20'), b, 100, grams);
+		// The food changes after logging; a copy keeps what was logged.
+		await catalog.updateFood(MEHMET, breadId, 1, {
+			...bread(),
+			nutrients: [{ code: 'energy_kcal', value: 999, qualifier: 'reported' }]
+		});
+		const copy = (copyId: string) =>
+			diary.bulk(MEHMET, {
+				action: 'copy',
+				entries: [{ id: a.id, copyId }],
+				date: '2026-10-21',
+				meal: 'lunch',
+				zone: 'Europe/Istanbul'
+			});
+		const first = randomUUID();
+		const [c] = await copy(first);
+		expect(c).toMatchObject({ id: first, localDate: '2026-10-21', meal: 'lunch', amount: 100 });
+		expect(c.nutrients.energy_kcal?.value).toBe(a.nutrients.energy_kcal?.value);
+		await copy(first); // a retry
+		await copy(randomUUID()); // a second, deliberate copy
+		expect(await diary.day(MEHMET, '2026-10-21')).toHaveLength(2);
+		expect(await diary.day(MEHMET, '2026-10-20')).toHaveLength(1);
+	});
+
+	it('deletes to the trash and restores, all at once', async () => {
+		const q1 = await diary.quickAdd(MEHMET, at('2026-10-20'), 100, null);
+		const q2 = await diary.quickAdd(MEHMET, at('2026-10-20'), 200, null);
+		await diary.bulk(MEHMET, { action: 'delete', ids: [q1.id, q2.id] });
+		expect(await diary.day(MEHMET, '2026-10-20')).toHaveLength(0);
+		await diary.bulk(MEHMET, { action: 'restore', ids: [q1.id, q2.id] });
+		expect(await diary.day(MEHMET, '2026-10-20')).toHaveLength(2);
+	});
+
+	it("refuses the whole action when any entry is someone else's, missing or repeated", async () => {
+		const mine = await diary.quickAdd(MEHMET, at('2026-10-20'), 100, null);
+		const theirs = await diary.quickAdd(ZEYNEP, at('2026-10-20'), 500, null);
+		expect(
+			await errorCode(diary.bulk(MEHMET, { action: 'delete', ids: [mine.id, theirs.id] }))
+		).toBe('not_found');
+		expect(
+			await errorCode(
+				diary.bulk(MEHMET, {
+					action: 'copy',
+					entries: [{ id: theirs.id, copyId: randomUUID() }],
+					date: '2026-10-21',
+					meal: 'lunch',
+					zone: 'Europe/Istanbul'
+				})
+			)
+		).toBe('not_found');
+		expect(await errorCode(diary.bulk(MEHMET, { action: 'delete', ids: [mine.id, mine.id] }))).toBe(
+			'conflict'
+		);
+		// Nothing changed for either person.
+		expect(await diary.day(MEHMET, '2026-10-20')).toHaveLength(1);
+		expect(await diary.day(ZEYNEP, '2026-10-20')).toHaveLength(1);
+		expect(await diary.day(MEHMET, '2026-10-21')).toHaveLength(0);
+	});
+});
