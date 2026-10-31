@@ -66,4 +66,4 @@ uploaded source is in `/mnt/user/appdata/obur-lab/deploy/source`; on the Unraid 
 
 The speech service (added 2026-10-30) is the first change made this way: it adds the `obur-speech` image to `obur-ctl`
 and the `speech` service and internal network to `compose.yaml`. The OCR service for Scan (added 2026-10-30) is the
-second: the `obur-ocr` image, and the `ocr` service and internal network. Until both files are copied, Scan stays off.
+second: the `obur-ocr` image, and the `ocr` service and internal network. Until both files are copied, Scan stays off. Reminders (added 2026-10-31) change only `compose.yaml`: it passes `VAPID_PUBLIC_KEY` to the web app and all three `VAPID_*` settings to the worker; until it is copied, keys in `.env` have no effect.
