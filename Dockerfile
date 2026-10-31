@@ -2,7 +2,8 @@
 FROM node:24.11.0-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+# The lockfile is written by npm 11.19; the npm bundled with this Node (11.6) misreads its optional peer entries.
+RUN npm install -g npm@11.19.0 --no-audit --no-fund && npm ci --no-audit --no-fund
 COPY . .
 # SvelteKit validates the settings while analysing the build. These placeholders exist only for this step; the
 # real values are read when the app starts and are never part of the image.

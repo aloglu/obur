@@ -257,7 +257,7 @@ Owner's answers read (2026-10-31): B on phone with the range as a dropdown besid
 `CalorieMarks`; `HistorySection` with phone tabs and desktop cards, panels built only when shown so charts measure
 their width; `RangeSelect`; the old raw weight list removed; the history browser journey on both projects; desktop
 calendar screenshot regenerated for the two-column page). LayerChart adds two low npm audit entries, both through the
-existing dev-only SvelteKit `deepmerge` chain (22 → 24 before/after). Next after recording: then build (LayerChart, `progress` module queries over diary snapshots and target
+existing dev-only SvelteKit `deepmerge` chain (22 → 24 before/after). The first deploy failed at `npm ci`: Node 24.11's bundled npm 11.6 misreads the lockfile written by npm 11.19 (optional peer entries via `runed`); the Dockerfile's build stage now installs npm 11.19.0 first (verified with a local image build). Next after recording: then build (LayerChart, `progress` module queries over diary snapshots and target
 versions). Independent work meanwhile: the label-scan edit counting (approved, above).
 
 ## App icon (2026-10-31)
