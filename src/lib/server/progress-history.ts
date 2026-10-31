@@ -2,14 +2,13 @@
 // from the diary, body and goals modules, shaped by the pure rules in shared/history.ts.
 import { targetOn } from '#lib/shared/calendar.ts';
 import { addDays } from '#lib/shared/diary-rules.ts';
-import { budgetForDay, macroTargetsFor, type MacroTargets } from '#lib/shared/goals.ts';
+import { budgetForDay, macroTargetsFor } from '#lib/shared/goals.ts';
 import {
 	history,
 	rangeStart,
 	weightTrend,
-	type History,
 	type HistoryRange,
-	type TrendPoint
+	type ProgressHistory
 } from '#lib/shared/history.ts';
 import { body } from './body.ts';
 import { diary } from './diary.ts';
@@ -17,20 +16,6 @@ import { goals } from './goals.ts';
 
 /** Weigh-ins this far before the range settle the trend by its first day. */
 const TREND_LEAD_DAYS = 60;
-
-export interface ProgressHistory extends History {
-	range: HistoryRange;
-	from: string;
-	to: string;
-	weight: {
-		points: TrendPoint[];
-		/** The trend at the last weigh-in before the range, so a change can be shown from the range's start. */
-		trendBefore: number | null;
-		goalKg: number | null;
-	};
-	/** Today's macro targets (without activity), for comparison with the averages. */
-	macros: MacroTargets | null;
-}
 
 export async function loadHistory(
 	userId: string,

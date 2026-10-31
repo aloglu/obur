@@ -52,6 +52,23 @@ export function dayAndMonth(date: string): string {
 	return `${WEEKDAYS[weekday]} ${d} ${MONTHS[mo - 1]}`;
 }
 
+/** "20 Oct". */
+export function shortDate(date: string): string {
+	const { mo, d } = parts(date);
+	return `${d} ${MONTHS[mo - 1].slice(0, 3)}`;
+}
+
+/** "Tue". */
+export function shortWeekday(date: string): string {
+	return WEEKDAYS[parts(date).weekday].slice(0, 3);
+}
+
+/** "Oct", or "Jan ’27" for January, so a long chart's axis shows where years change. */
+export function shortMonth(date: string): string {
+	const { y, mo } = parts(date);
+	return mo === 1 ? `Jan ’${String(y).slice(2)}` : MONTHS[mo - 1].slice(0, 3);
+}
+
 /** "12 April 1992". */
 export function dateWithYear(date: string): string {
 	const { y, mo, d } = parts(date);

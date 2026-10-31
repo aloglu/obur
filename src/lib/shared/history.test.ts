@@ -111,7 +111,12 @@ describe('calorie bars', () => {
 		expect(bars).toHaveLength(7);
 		expect(bars[0]).toMatchObject({ eatenKcal: 1800, budgetKcal: 2000, complete: true });
 		// Unlogged: no value, not zero.
-		expect(bars[1]).toMatchObject({ eatenKcal: null, loggedDays: 0, complete: false });
+		expect(bars[1]).toMatchObject({
+			eatenKcal: null,
+			budgetKcal: 2000,
+			loggedDays: 0,
+			complete: false
+		});
 		expect(bars[3]).toMatchObject({ eatenKcal: 1950, budgetKcal: 1900, complete: false });
 		// Counted activity raises that day's budget.
 		expect(bars[4]).toMatchObject({ eatenKcal: 2100, budgetKcal: 2200 });

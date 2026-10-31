@@ -84,11 +84,12 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - **History below the calendar** (owner chose layout B with changes, 2026-10-31; demos in the session's Artifact):
   - Phone: a tab bar **Weight / Calories / Nutrients** with a compact range dropdown (1W, 1M, 3M, 1Y, All; 3M by
     default) beside it; one topic at a time, each with a headline number, a chart and a few stat rows.
-  - Desktop: no tabs; every card on one page, side by side (as in demo A), with the range dropdown above them.
+  - Desktop: no tabs; two columns, the calendar beside Weight, then Calories beside Nutrients, with the range
+    dropdown beside the page title.
   - Weight: trend line plus every weigh-in as a point, goal as a dashed line when it is within the chart (otherwise a
     note of the distance); headline is the current trend and its change over the range.
   - Calories: bars against a budget step line; over budget striped red, under green, days not marked complete as
-    outlines, unlogged days as a dash; weekly averages from 3 months up.
+    outlines, unlogged days as a dash when bars are wide enough; weekly averages from 3 months up.
   - Nutrients: average protein, carbohydrate and fat against the targets, with a coverage note when some days are
     unknown.
   - Tapping or dragging on a chart shows that day's (or week's) values in a readout line below it; each chart has a

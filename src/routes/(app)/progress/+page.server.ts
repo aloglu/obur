@@ -4,7 +4,6 @@ import { diary } from '#lib/server/diary.ts';
 import { goals } from '#lib/server/goals.ts';
 import { loadHistory } from '#lib/server/progress-history.ts';
 import { calendarDays, monthDays, monthSummary } from '#lib/shared/calendar.ts';
-import { addDays } from '#lib/shared/diary-rules.ts';
 import { DEFAULT_RANGE, isHistoryRange } from '#lib/shared/history.ts';
 import type { PageServerLoad } from './$types';
 
@@ -21,12 +20,11 @@ export const load: PageServerLoad = async ({ url, locals, parent }) => {
 	const [from, to] = [days[0], days.at(-1)!];
 	const profile = await goals.profile(userId);
 	const firstDayOfWeek = profile?.firstDayOfWeek ?? 1;
-	const [eaten, activity, completed, versions, weights, history] = await Promise.all([
+	const [eaten, activity, completed, versions, history] = await Promise.all([
 		diary.dailyEnergy(userId, from, to),
 		body.activityByDay(userId, from, to),
 		diary.completedDays(userId, from, to),
 		goals.history(userId),
-		body.weights(userId, addDays(today, -89), today),
 		loadHistory(userId, range, today, firstDayOfWeek)
 	]);
 	const calendar = calendarDays(month, today, {
@@ -41,7 +39,6 @@ export const load: PageServerLoad = async ({ url, locals, parent }) => {
 		firstDayOfWeek,
 		calendar,
 		summary: monthSummary(calendar),
-		weights,
 		history
 	};
 };

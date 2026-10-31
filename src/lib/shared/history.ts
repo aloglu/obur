@@ -3,7 +3,7 @@
 // marked complete. Unlogged days and unknown nutrients stay missing; nothing unknown becomes zero.
 import { isoWeekday, targetOn, type TargetLike } from './calendar.ts';
 import { addDays } from './diary-rules.ts';
-import { budgetForDay } from './goals.ts';
+import { budgetForDay, type MacroTargets } from './goals.ts';
 
 export const HISTORY_RANGES = ['1W', '1M', '3M', '1Y', 'All'] as const;
 export type HistoryRange = (typeof HISTORY_RANGES)[number];
@@ -114,7 +114,8 @@ export interface CalorieBar {
 	to: string;
 	/** A day's total, or a week's average over its logged days; null when nothing was logged. */
 	eatenKcal: number | null;
-	/** The day's budget, or the week's average budget over its logged days; null without a budget. */
+	/** The day's budget, or the week's average budget over its logged days (all its days when none is logged);
+	 * null without a budget. */
 	budgetKcal: number | null;
 	/** Daily bars: marked complete. Weekly bars: every logged day marked complete. */
 	complete: boolean;
@@ -170,7 +171,8 @@ export function history(input: HistoryInput): History {
 	}
 	const bars = groups.map((dates): CalorieBar => {
 		const inBar = dates.flatMap((date) => (logged.has(date) ? [logged.get(date)!] : []));
-		const budgets = inBar.map((d) => budgetOn(d.date));
+		// A week's budget averages its logged days (like its calories); an unlogged day or week still has one.
+		const budgets = (inBar.length ? inBar.map((d) => d.date) : dates).map(budgetOn);
 		return {
 			from: dates[0],
 			to: dates.at(-1)!,
@@ -205,4 +207,19 @@ export function history(input: HistoryInput): History {
 			weighIns: input.weighIns
 		}
 	};
+}
+
+/** A range's history as the Progress page receives it. */
+export interface ProgressHistory extends History {
+	range: HistoryRange;
+	from: string;
+	to: string;
+	weight: {
+		points: TrendPoint[];
+		/** The trend at the last weigh-in before the range, so a change can be shown from the range's start. */
+		trendBefore: number | null;
+		goalKg: number | null;
+	};
+	/** Today's macro targets (without activity), for comparison with the averages. */
+	macros: MacroTargets | null;
 }

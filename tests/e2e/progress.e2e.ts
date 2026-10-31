@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, signedInAs } from './fixtures.ts';
+import { apiAs, createFood, signedInAs } from './fixtures.ts';
 
 const zone = 'Europe/Istanbul';
+const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 const daysAgo = (n: number) => {
 	const d = new Date();
 	d.setDate(d.getDate() - n);
@@ -67,16 +68,103 @@ test('month navigation stops at the current month', async ({ page }) => {
 	await expect(page.getByRole('button', { name: 'Next month' })).toBeDisabled();
 });
 
-test('weight history shows raw readings only', async ({ page }) => {
-	await signedInAs(page, 'Zeynep');
+test('history: weight trend, calories against budget, averages over complete days only', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Geçmiş ${testInfo.project.name}`);
 	await page.goto('/progress');
-	await expect(page.getByText('No weigh-ins in the last 90 days.')).toBeVisible();
-	await apiAs(page, 'POST', '/api/v1/body/weight', { date: daysAgo(10), zone, value: 83.1 });
-	await apiAs(page, 'POST', '/api/v1/body/weight', { date: daysAgo(3), zone, value: 82.4 });
-	await page.reload();
-	const weight = page.getByRole('region', { name: 'Weight' });
-	await expect(
-		weight.getByRole('img', { name: 'Weight over the last 90 days: from 83,1 kg to 82,4 kg' })
-	).toBeVisible();
-	await expect(weight.getByRole('listitem')).toHaveCount(2);
+	await expect(page.getByText('No weigh-ins in this range.').first()).toBeAttached();
+	await apiAs(page, 'POST', '/api/v1/targets', {
+		mode: 'manual',
+		effectiveFrom: daysAgo(40),
+		budgetKcal: 2000
+	});
+	for (const [n, kg] of [
+		[20, 84.0],
+		[12, 83.6],
+		[6, 83.1],
+		[3, 82.4],
+		[0, 82.6]
+	] as const)
+		await apiAs(page, 'POST', '/api/v1/body/weight', { date: daysAgo(n), zone, value: kg });
+	const quick = (n: number, kcal: number) =>
+		apiAs(page, 'POST', '/api/v1/diary/entries', {
+			kind: 'quick',
+			date: daysAgo(n),
+			meal: 'lunch',
+			zone,
+			kcal,
+			description: null
+		});
+	const complete = (n: number) =>
+		apiAs(page, 'PUT', `/api/v1/diary/days/${daysAgo(n)}`, { complete: true });
+	const foodId = await createFood(page, {
+		name: `Müsli geçmiş ${testInfo.project.name}`,
+		basis: '100g',
+		nutrients: [
+			{ code: 'energy_kcal', value: 1800, qualifier: 'reported' },
+			{ code: 'protein', value: 100, qualifier: 'reported' },
+			{ code: 'carbohydrate_excl_fibre', value: 200, qualifier: 'reported' },
+			{ code: 'fat', value: 60, qualifier: 'reported' }
+		]
+	});
+	// Two complete days: one from a food with macros (1800 kcal), one a quick add over budget (2300 kcal).
+	await apiAs(page, 'POST', '/api/v1/diary/entries', {
+		kind: 'food',
+		date: daysAgo(2),
+		meal: 'lunch',
+		zone,
+		foodId,
+		amount: 100,
+		unit: { kind: 'mass', unit: 'g' }
+	});
+	await complete(2);
+	await quick(1, 2300);
+	await complete(1);
+	// Not marked complete: shown, but left out of the averages however low.
+	await quick(4, 900);
+
+	await page.goto('/progress?range=1M');
+	const phone = isPhone(page);
+	const tab = (name: string) => page.getByRole('tab', { name });
+	if (phone) await expect(tab('Weight')).toHaveAttribute('aria-selected', 'true');
+	else await expect(page.getByRole('tablist')).toBeHidden();
+
+	const weight = page.locator('[role="tabpanel"]').filter({ has: page.getByText('Trend now') });
+	await expect(weight).toContainText('Weigh-ins5');
+	const weightReadout = weight.locator('[aria-live="polite"]');
+	await expect(weightReadout).toContainText('weighed 82,6 kg');
+	await weight.getByRole('slider', { name: 'Weight' }).focus();
+	await page.keyboard.press('ArrowLeft');
+	await expect(weightReadout).toContainText('weighed 82,4 kg');
+
+	if (phone) await tab('Calories').click();
+	const calories = page
+		.locator('[role="tabpanel"]')
+		.filter({ has: page.getByText('Days under budget') });
+	await expect(calories).toBeVisible();
+	await expect(calories).toContainText('2050kcal');
+	await expect(calories).toContainText('50 over');
+	await expect(calories).toContainText('Over 2 complete days.');
+	const caloriesReadout = calories.locator('[aria-live="polite"]');
+	await expect(caloriesReadout).toContainText('nothing logged');
+	await calories.getByRole('slider', { name: 'Calories' }).focus();
+	await page.keyboard.press('ArrowLeft');
+	await expect(caloriesReadout).toContainText('2300 of 2000 kcal, 300 over');
+	await page.keyboard.press('ArrowLeft');
+	await page.keyboard.press('ArrowLeft');
+	await page.keyboard.press('ArrowLeft');
+	await expect(caloriesReadout).toContainText('900 of 2000 kcal, 1100 under · not marked complete');
+
+	if (phone) await tab('Nutrients').click();
+	const nutrients = page.locator('[role="tabpanel"]').filter({ has: page.getByText('Protein') });
+	await expect(nutrients).toBeVisible();
+	await expect(nutrients).toContainText('100 g');
+	// The over-budget day was a calories-only quick add: its macros are unknown, never zero.
+	await expect(nutrients).toContainText('Protein, carbs, fat from 1 of 2 days');
+
+	await page.getByLabel('Range').filter({ visible: true }).selectOption('1W');
+	await expect(page).toHaveURL(/range=1W/);
+	if (phone) await tab('Weight').click();
+	await expect(page.getByText('in the last week')).toBeVisible();
 });
