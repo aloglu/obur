@@ -135,13 +135,13 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	const weight = page.locator('[role="tabpanel"]').filter({
 		has: page.getByRole('radiogroup', { name: 'Show' })
 	});
-	// Readings: what was weighed.
-	await expect(
-		weight.getByText('Latest weigh-in', { exact: true }).filter({ visible: true })
-	).toBeVisible();
-	await expect(
-		weight.getByText('Smoothed weight', { exact: true }).filter({ visible: true })
-	).toBeHidden();
+	// Readings: what was weighed. The label above the weight is the switch: both names, the one shown checked.
+	const show = weight.getByRole('radiogroup', { name: 'Show' });
+	await expect(show.getByRole('radio', { name: 'Latest weigh-in' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await expect(weight.getByText(/Evens out day-to-day/).filter({ visible: true })).toBeHidden();
 	await expect(weight).toContainText('82,6kg');
 	await expect(weight).toContainText('−1,4 kg');
 	await expect(weight.getByText('Average change per week')).toBeVisible();
@@ -154,13 +154,12 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	await expect(weightReadout).toContainText(': 82,4 kg');
 	// Trend: the smoothed weight and pace, remembered on this device; the card keeps its height.
 	const before = (await weight.boundingBox())!.height;
-	await weight.getByRole('radio', { name: 'Trend' }).click();
-	await expect(
-		weight.getByText('Smoothed weight', { exact: true }).filter({ visible: true })
-	).toBeVisible();
-	await expect(
-		weight.getByText('Latest weigh-in', { exact: true }).filter({ visible: true })
-	).toBeHidden();
+	await show.getByRole('radio', { name: 'Smoothed' }).click();
+	await expect(show.getByRole('radio', { name: 'Smoothed' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await expect(weight.getByText(/Evens out day-to-day/).filter({ visible: true })).toBeVisible();
 	await expect(weight.getByText('a week', { exact: true })).toBeVisible();
 	await expect(weightReadout).toContainText('smoothed');
 	// The selected weigh-in stays selected across the switch.
@@ -172,8 +171,11 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 		expect((await calendar.boundingBox())!.height).toBeCloseTo(before, 0);
 	}
 	await page.reload();
-	await expect(page.getByRole('radio', { name: 'Trend' })).toHaveAttribute('aria-checked', 'true');
-	await page.getByRole('radio', { name: 'Readings' }).click();
+	await expect(page.getByRole('radio', { name: 'Smoothed' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await page.getByRole('radio', { name: 'Latest weigh-in' }).click();
 
 	if (phone) await tab('Calories').click();
 	const calories = page

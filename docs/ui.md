@@ -116,11 +116,12 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
     default) beside it, one tone like the tabs' tray (no raised pill, no focus ring on tap; owner 2026-10-31) in its own tray; one topic at a time, each with a headline number, a chart and a few stat rows.
   - Desktop: no tabs; two columns, the calendar beside Weight, then Calories beside Nutrients, with the range
     dropdown beside the page title.
-  - Weight: a **Readings / Trend** switch in the card (Readings by default; the choice is remembered on the
-    device), at the top right: on a phone beside the headline's label ("Latest weigh-in" / "Smoothed weight"), on
-    desktop beside the Weight title (owner's choice A, 2026-10-31). Readings: the weigh-ins as points joined by a line; headline "Latest weigh-in" with the change since the
+  - Weight: the label above the weight is the switch (owner's pick T2, 2026-10-31, after two demo rounds):
+    "LATEST WEIGH-IN | SMOOTHED", the view shown dark, the other faint; a tap on the faint one switches. Each name has a
+    44 px tap area that adds no height, so the weight sits right under the label. Readings by default; the choice is
+    remembered on the device. Readings: the weigh-ins as points joined by a line; with the change since the
     first weigh-in in the range; rows to goal, average change per week, weigh-ins, lowest reading. Trend: the smoothed
-    weight as the line with the weigh-ins faint behind it; headline "Smoothed weight" with the pace per week and the
+    weight as the line with the weigh-ins faint behind it; with the pace per week and the
     line "Evens out day-to-day swings from water and food."; rows to goal, change in the range, weigh-ins. Both: goal
     as a dashed line when it is within the chart (otherwise a note of the distance), dashed across gaps over a week. The
     card keeps one height in both views (each view's headline, rows and readout share a cell; owner, 2026-10-31), and

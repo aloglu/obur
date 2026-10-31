@@ -130,10 +130,6 @@
 	{@const value = v === 'trend' ? last!.trend : last!.weight}
 	<div class="flex flex-wrap items-end justify-between gap-2.5">
 		<div>
-			<!-- Phone: this label sits in the top row beside the Readings/Trend switch (owner, 2026-10-31). -->
-			<p class="m-0 hidden text-[12px] font-bold tracking-[0.06em] text-muted uppercase desk:block">
-				{v === 'trend' ? m.history_smoothed() : m.history_latest()}
-			</p>
 			<p
 				class="m-0 font-display text-[34px] leading-none font-extrabold tracking-[-0.02em] tabular-nums"
 			>
@@ -218,40 +214,30 @@
 			aria-labelledby="{uid}-tab-weight"
 			class={[card, 'desk:self-stretch']}
 		>
-			<div class="flex items-center justify-between gap-3">
-				<h2 class={heading}>{m.history_tab_weight()}</h2>
-				<!-- Phone: the headline's label, for the view shown (both stacked, so the row never changes width). -->
-				<p class="m-0 grid min-w-0 desk:hidden">
-					{#each VIEWS as v (v)}
-						<span
-							class={[
-								'truncate text-[12px] font-bold tracking-[0.06em] text-muted uppercase [grid-area:1/1]',
-								v !== view && 'invisible'
-							]}
-							aria-hidden={v !== view}
-							>{v === 'trend' ? m.history_smoothed() : m.history_latest()}</span
-						>
-					{/each}
-				</p>
+			<h2 class={heading}>{m.history_tab_weight()}</h2>
+			{#if first && last}
+				<!-- The label above the weight is the switch (owner's pick T2, 2026-10-31): both names, the one shown dark, the
+			     other faint. Each keeps a 44 px tap area without adding height, so the weight sits right under it. -->
 				<div
 					role="radiogroup"
 					aria-label={m.history_view()}
-					class="ml-auto flex shrink-0 gap-1 rounded-[14px] bg-surface2 p-1"
+					class="-mb-1.5 flex items-center gap-2.5"
 				>
-					{#each [['readings', m.history_view_readings()], ['trend', m.history_view_trend()]] as const as [id, label] (id)}
+					{#each VIEWS as v, i (v)}
+						{#if i > 0}<span class="h-3 w-px bg-line" aria-hidden="true"></span>{/if}
 						<button
 							type="button"
 							role="radio"
-							aria-checked={view === id}
-							onclick={() => setView(id)}
+							aria-checked={view === v}
+							onclick={() => setView(v)}
 							class={[
-								'min-h-11 rounded-[10px] px-3 text-[14px] font-[650]',
-								view === id ? 'bg-surface text-text shadow-card' : 'text-muted'
-							]}>{label}</button
+								"relative text-[12px] leading-4 font-bold tracking-[0.06em] uppercase before:absolute before:-inset-x-1.5 before:-inset-y-3.5 before:content-['']",
+								view === v ? 'text-text' : 'text-muted opacity-60 hover:opacity-100'
+							]}>{v === 'trend' ? m.history_smoothed_short() : m.history_latest()}</button
 						>
 					{/each}
 				</div>
-			</div>
+			{/if}
 			{#if first && last}
 				<!-- Both views' headline and rows share one cell each, so switching never changes the card's height. -->
 				<div class="grid">

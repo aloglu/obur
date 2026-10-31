@@ -769,11 +769,8 @@
 	"history_tab_calories": "Calories",
 	"history_tab_nutrients": "Nutrients",
 	"history_view": "Show",
-	"history_view_readings": "Readings",
-	"history_view_trend": "Trend",
 	"history_latest": "Latest weigh-in",
 	"history_since": "since {date}",
-	"history_smoothed": "Smoothed weight",
 	"history_pace": "{pace} kg",
 	"history_a_week": "a week",
 	"history_smoothed_note": "Evens out day-to-day swings from water and food.",
@@ -857,5 +854,6 @@
 	"reminders_quiet_from": "From",
 	"reminders_quiet_until": "Until",
 	"reminders_saved": "Saved",
-	"reminders_save_failed": "Couldn't save. Check your connection and try again."
+	"reminders_save_failed": "Couldn't save. Check your connection and try again.",
+	"history_smoothed_short": "Smoothed"
 }
