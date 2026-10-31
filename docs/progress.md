@@ -269,8 +269,7 @@ Weight card height (owner, 2026-10-31): fixed across Readings/Trend; on desktop 
 found and fixed: a fresh browser's first load set the time-zone cookie and refreshed the page's data; a full
 navigation during that refresh made SvelteKit reload the old page and cancel it (affects only whole-page navigations
 in the first moment after app start, so real use is barely touched). `signedInAs` now sets the zone cookie; the full
-browser suite then passed three runs in a row. Open owner question: whether to check the trend settings on simulated
-histories (weekly weigh-ins, slow loss, maintenance, regain, long gaps) beyond the owner's own history.
+browser suite then passed three runs in a row. Trend settings also checked on simulated histories (owner agreed, 2026-10-31; docs/feasibility.md): they hold up, no change.
 
 ## App icon (2026-10-31)
 

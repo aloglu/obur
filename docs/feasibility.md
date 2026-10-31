@@ -296,3 +296,24 @@ across long gaps. The chosen settings are round values near the best of a small 
 which no method removes. Limits: one person, one fast-loss period, tuned on the same data; this is development
 evidence, not a held-out result. Recheck with other people's histories or a maintenance period before claiming it
 generally.
+
+**Simulated histories (2026-10-31).** To check the settings beyond one person, 300 random runs each of ten made-up
+histories with a known true weight; scale noise carries over from day to day (water: e = 0.5·e(previous day) +
+N(0, sd), sd 0,5 kg unless noted). Mean distance from the true weight at each weigh-in after the first three weeks:
+
+| Scenario | Trend (chosen) | Raw reading | 7-day average | First build | Trend at the latest weigh-in: mean / worst 5 % |
+| --- | --- | --- | --- | --- | --- |
+| Fast loss 1,3 kg/wk, daily | 0,30 | 0,46 | 0,58 | 1,66 | +0,17 / 0,74 |
+| Slow loss 0,3 kg/wk, daily | 0,26 | 0,46 | 0,29 | 0,39 | +0,02 / 0,63 |
+| Maintenance, daily | 0,25 | 0,46 | 0,27 | 0,17 | +0,01 / 0,70 |
+| Loss, then plateau | 0,27 | 0,46 | 0,32 | 0,56 | −0,03 / 0,67 |
+| Loss, then regain | 0,30 | 0,46 | 0,35 | 0,71 | −0,09 / 0,74 |
+| Weekly weigh-ins, 0,5 kg/wk | 0,35 | 0,46 | 0,46 | 0,49 | +0,06 / 0,90 |
+| Twice a week, 0,8 kg/wk | 0,31 | 0,47 | 0,38 | 0,86 | +0,09 / 0,73 |
+| Daily with a four-week gap | 0,28 | 0,46 | 0,37 | 0,82 | +0,10 / 0,68 |
+| Noisy scale (sd 1,2), 0,7 kg/wk | 0,63 | 1,11 | 0,70 | 0,92 | +0,15 / 1,56 |
+| Water spikes of +1,5 kg, 0,7 kg/wk | 0,39 | 0,58 | 0,52 | 1,06 | +0,26 / 1,08 |
+
+The chosen trend is closer to the true weight than a single reading in every case, and closer than a 7-day average
+in every case; plain smoothing is better only when weight is flat. No case showed a lasting lag or overshoot. These
+are simulations with assumed noise, not people; real histories from other people remain the better check.
