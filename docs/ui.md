@@ -241,6 +241,12 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
   (`AppLogo`; the tab icon follows the browser's scheme). The logo sits left of the wordmark on the sign-in screens
   (36 px) and the desktop sidebar (32 px).
 
+### Food form portions
+
+- Each portion: **Portion name** (its own line on a phone), then **Amount** and **Unit** (labelled like the other
+  fields); **Remove** is a small text button at the right of the name's label row, not an × beside the unit (owner,
+  2026-10-31). On a phone a thin divider separates portions; desktop keeps each on one row.
+
 ### Dropdowns
 
 - **Form dropdowns** (`ui/Select.svelte`): styled like the text fields beside them (border, fill, rounding, focus

@@ -855,5 +855,6 @@
 	"reminders_quiet_until": "Until",
 	"reminders_saved": "Saved",
 	"reminders_save_failed": "Couldn't save. Check your connection and try again.",
-	"history_smoothed_short": "Smoothed"
+	"history_smoothed_short": "Smoothed",
+	"food_portion_remove_short": "Remove"
 }

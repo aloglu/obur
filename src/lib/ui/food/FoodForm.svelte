@@ -381,17 +381,27 @@
 		<h2 id="portions-heading" class="text-[17px] font-bold">{m.food_portions()}</h2>
 		<p class="text-[13px] text-muted">{m.food_portions_hint()}</p>
 		{#each portions as portion, i (i)}
-			<!-- Phone: the name on its own line, amount, unit and × below; desktop: one row. -->
+			<!-- Phone: the name on its own line, amount and unit below; desktop: one row. Remove sits in the name's label
+			     row, at the right (owner, 2026-10-31), not beside the unit. -->
 			<div
-				class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-end gap-2 desk:grid-cols-[minmax(0,1fr)_6rem_auto_auto]"
+				class={[
+					'grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 desk:grid-cols-[minmax(0,1fr)_6rem_auto]',
+					i > 0 && 'mt-2 border-t border-line pt-4 desk:mt-0 desk:border-0 desk:pt-1'
+				]}
 			>
-				<div class="col-span-3 min-w-0 desk:col-span-1">
+				<div class="relative col-span-2 min-w-0 desk:col-span-1">
 					<TextField
 						id="portion-name-{i}"
 						label={m.food_portion_name()}
 						bind:value={portion.name}
 						maxlength={60}
 					/>
+					<button
+						type="button"
+						class="absolute -top-3 right-0 min-h-11 px-1 text-[13px] font-semibold text-bad"
+						aria-label={m.food_portion_remove()}
+						onclick={() => portions.splice(i, 1)}>{m.food_portion_remove_short()}</button
+					>
 				</div>
 				<div class="min-w-0">
 					<TextField
@@ -401,13 +411,7 @@
 						inputmode="decimal"
 					/>
 				</div>
-				<Select bind:value={portion.unit} aria-label={m.food_unit()} options={UNITS} />
-				<button
-					type="button"
-					class="min-h-12 min-w-11 rounded-input text-[20px] text-muted"
-					aria-label={m.food_portion_remove()}
-					onclick={() => portions.splice(i, 1)}>×</button
-				>
+				<Select bind:value={portion.unit} label={m.food_unit()} options={UNITS} />
 			</div>
 		{/each}
 		<Button
