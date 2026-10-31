@@ -240,6 +240,13 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
   (`AppLogo`; the tab icon follows the browser's scheme). The logo sits left of the wordmark on the sign-in screens
   (36 px) and the desktop sidebar (32 px).
 
+### Dropdowns
+
+- **Form dropdowns** (`ui/Select.svelte`): styled like the text fields beside them (border, fill, rounding, focus
+  ring) with our chevron instead of the browser's arrow; the native select keeps the phone's own picker. Used for
+  units in the food form and the food chooser in Check and log (owner, 2026-10-31: one convention everywhere).
+- **Toolbar dropdowns** (`progress/RangeSelect.svelte`): one-tone tray with the chevron, beside tab-like controls.
+
 ### Food icons (owner's choice 2026-10-30: OpenMoji)
 
 - OpenMoji 15.1.0 food and drink icons (CC BY-SA 4.0; credit at the foot of More), bundled in `static/icons/food/`.

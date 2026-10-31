@@ -2,8 +2,8 @@
 	// A typed (later spoken) entry to confirm (docs/ui.md, "Speak" and "Typed entry"): the text as editable, one card
 	// per item with its own amount, unit and kcal, shared day and meal chips, then "Log all". Nothing is saved before
 	// that. Each card has its own client ID, so a retry never logs twice; cards that saved leave the sheet.
+	import Select from '../Select.svelte';
 	import { onMount, untrack } from 'svelte';
-	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import X from '@lucide/svelte/icons/x';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
@@ -303,26 +303,15 @@
 					{:else}
 						<label class="flex flex-col gap-1.5">
 							<span class="text-[13px] font-[650] text-muted">{m.entry_food()}</span>
-							<span class="relative">
-								<select
-									value={card.food?.id}
-									onchange={(e) => choose(card, e.currentTarget.value)}
-									class="min-h-12 w-full appearance-none rounded-input border border-line bg-surface py-2 pr-10 pl-3.5 text-[16px] font-semibold text-text focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-accent"
-								>
-									{#each card.candidates as c (c.id)}
-										<option value={c.id}
-											>{c.brand ? `${c.brand} ` : ''}{c.name}{c.kcal === null
-												? ''
-												: ` · ${kcal(c.kcal)} kcal`}</option
-										>
-									{/each}
-								</select>
-								<ChevronDown
-									size={20}
-									class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted"
-									aria-hidden="true"
-								/>
-							</span>
+							<Select
+								value={card.food?.id ?? ''}
+								onchange={(e) => choose(card, e.currentTarget.value)}
+								wide
+								options={card.candidates.map((c) => ({
+									value: c.id,
+									label: `${c.brand ? `${c.brand} ` : ''}${c.name}${c.kcal === null ? '' : ` · ${kcal(c.kcal)} kcal`}`
+								}))}
+							/>
 						</label>
 						{#if card.food}
 							{@const options = unitOptions(card.food, measures)}

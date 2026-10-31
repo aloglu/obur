@@ -16,6 +16,7 @@
 	import FoodIcon from '../FoodIcon.svelte';
 	import IconPicker from './IconPicker.svelte';
 	import Notice from '../Notice.svelte';
+	import Select from '../Select.svelte';
 	import TextField from '../TextField.svelte';
 
 	interface Props {
@@ -24,6 +25,10 @@
 		onsave: (food: FoodInput) => void;
 	}
 
+	const UNITS: { value: 'g' | 'ml'; label: string }[] = [
+		{ value: 'g', label: 'g' },
+		{ value: 'ml', label: 'ml' }
+	];
 	let { initial, busy = false, onsave }: Props = $props();
 	const start = untrack(() => initial);
 
@@ -319,14 +324,12 @@
 					aria-invalid={invalid(servingSizeText)}
 				/>
 			</div>
-			<select
+			<Select
 				bind:value={servingSizeUnit}
 				aria-label={m.food_unit()}
-				class="mb-[26px] min-h-12 rounded-input border border-line bg-surface2 px-3 text-[16px] font-semibold"
-			>
-				<option value="g">g</option>
-				<option value="ml">ml</option>
-			</select>
+				options={UNITS}
+				class="mb-[26px]"
+			/>
 		</div>
 	{/if}
 
@@ -398,14 +401,7 @@
 						inputmode="decimal"
 					/>
 				</div>
-				<select
-					bind:value={portion.unit}
-					aria-label={m.food_unit()}
-					class="min-h-12 rounded-input border border-line bg-surface2 px-2 text-[16px] font-semibold"
-				>
-					<option value="g">g</option>
-					<option value="ml">ml</option>
-				</select>
+				<Select bind:value={portion.unit} aria-label={m.food_unit()} options={UNITS} />
 				<button
 					type="button"
 					class="min-h-12 min-w-11 rounded-input text-[20px] text-muted"
