@@ -292,7 +292,7 @@ Committed but not deployed yet: shared form `Select` (owner: one dropdown conven
 
 Remaining work (owner, 2026-10-31): design first, as separate mock-ups on one Artifact page: achievements, a Help /
 FAQ page, a Progress timeline (built only if the owner likes it). Then Units and formats, Help, a pre-release pass
-(security, accessibility, long Turkish names, restore), and the cut-over import. Kept in mind, not scheduled: Phase 5
+(security, accessibility, long Turkish names, restore), and the cut-over import. Mock-ups published (one private Artifact, three tabs; link in the session; answers in its `notes` collection, docs `ach`, `help`, `tl`): achievements (moments A toast / B card glow / C banner; collections 1 strip / 2 road to goal / 3 badge page; which kinds), Help (search, topics, real answers; optional "?" links), timeline (A day cards / B running line / not now). Kept in mind, not scheduled: Phase 5
 (entry-point profiles, Unraid template, catalog exchange), full offline editing, counting imported activity.
 
 ## App icon (2026-10-31)
