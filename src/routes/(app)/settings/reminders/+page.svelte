@@ -1,9 +1,11 @@
 <script lang="ts">
 	// Reminders (docs/ui.md, "Reminders"; owner's choices 2026-10-31): this device's notifications, a switch and the
 	// system's own time picker per reminder, and quiet hours. Each change saves itself, with this device's time zone.
+	import { beforeNavigate } from '$app/navigation';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
+	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { pushState, startReminders, stopReminders, type PushState } from '#lib/client/push.ts';
 	import {
@@ -20,7 +22,6 @@
 	let settings = $state<ReminderSettings>(untrack(() => structuredClone(data.settings)));
 	let device = $state<PushState | null>(null);
 	let busy = $state(false);
-	let status = $state('');
 
 	/** The time a reminder starts with when switched on. */
 	const START: Record<ReminderKind, string> = {
@@ -42,19 +43,31 @@
 		device = await pushState().catch(() => 'unsupported' as const);
 	});
 
+	// Changes made in quick succession are saved together; leaving the page saves at once, so nothing is lost.
 	let timer: ReturnType<typeof setTimeout> | undefined;
+	async function send() {
+		timer = undefined;
+		try {
+			await api('PUT', '/api/v1/reminders', { ...$state.snapshot(settings), zone: deviceZone() });
+			showToast({ message: m.reminders_saved() });
+		} catch {
+			showToast({ message: m.reminders_save_failed() });
+		}
+	}
 	function save() {
 		clearTimeout(timer);
-		status = '';
-		timer = setTimeout(async () => {
-			try {
-				await api('PUT', '/api/v1/reminders', { ...$state.snapshot(settings), zone: deviceZone() });
-				status = m.reminders_saved();
-			} catch {
-				status = m.reminders_save_failed();
-			}
-		}, 400);
+		timer = setTimeout(send, 400);
 	}
+	function flush() {
+		if (!timer) return;
+		clearTimeout(timer);
+		void send();
+	}
+	beforeNavigate(flush);
+	onMount(() => {
+		addEventListener('pagehide', flush);
+		return () => removeEventListener('pagehide', flush);
+	});
 	function toggle(kind: ReminderKind) {
 		settings.times[kind] = settings.times[kind] ? null : START[kind];
 		save();
@@ -192,5 +205,4 @@
 			</label>
 		</div>
 	</Card>
-	<p class="min-h-[1.4em] px-1 text-[13px] text-muted" role="status">{status}</p>
 </main>

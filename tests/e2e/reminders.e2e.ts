@@ -30,12 +30,20 @@ test('reminders: a switch and the system time picker per reminder, quiet hours, 
 	// The browser's own time input (the phone shows its native picker).
 	await expect(time).toHaveAttribute('type', 'time');
 	await expect(time).toHaveValue('14:00');
+	const saved = () =>
+		page.waitForResponse(
+			(r) => r.url().endsWith('/api/v1/reminders') && r.request().method() === 'PUT'
+		);
 	await time.fill('13:30');
+	let put = saved();
 	await time.dispatchEvent('change');
+	await put;
+	// Saving says so in the usual toast.
 	await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
 	await page.getByLabel('From').fill('23:00');
+	put = saved();
 	await page.getByLabel('From').dispatchEvent('change');
-	await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
+	await put;
 
 	await page.reload();
 	await expect(page.getByRole('switch', { name: 'Lunch' })).toHaveAttribute('aria-checked', 'true');
