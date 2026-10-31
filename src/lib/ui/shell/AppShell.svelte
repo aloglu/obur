@@ -10,6 +10,7 @@
 	import TrendingUp from '@lucide/svelte/icons/trending-up';
 	import UserRound from '@lucide/svelte/icons/user-round';
 	import { m } from '#lib/paraglide/messages.js';
+	import AppLogo from '../AppLogo.svelte';
 	import Toast from './Toast.svelte';
 
 	let { children }: { children: Snippet } = $props();
@@ -36,8 +37,8 @@
 		<nav aria-label={m.nav_main()} class="sticky top-0 flex h-dvh flex-col gap-1 p-3">
 			<a
 				href={resolve('/(app)')}
-				class="px-3 pt-2 pb-6 font-display text-[30px] font-extrabold tracking-[-0.02em] text-accent"
-				>{m.app_name()}</a
+				class="flex items-center gap-2.5 px-3 pt-2 pb-6 font-display text-[30px] font-extrabold tracking-[-0.02em] text-accent"
+				><AppLogo size={32} />{m.app_name()}</a
 			>
 			<a
 				href={resolve('/(app)')}

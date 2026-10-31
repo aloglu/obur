@@ -1,13 +1,24 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '#lib/assets/favicon.svg';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<!-- The tab icon follows the browser's light or dark scheme (artwork: scripts/brand-icons.sh). -->
+	<link
+		rel="icon"
+		type="image/png"
+		href="/brand/favicon-brown.png"
+		media="(prefers-color-scheme: light)"
+	/>
+	<link
+		rel="icon"
+		type="image/png"
+		href="/brand/favicon-cream.png"
+		media="(prefers-color-scheme: dark)"
+	/>
 </svelte:head>
 
 {@render children()}

@@ -3,8 +3,8 @@ import { SPEECH_STUB } from '../../playwright.config.ts';
 import { signedInAs } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
-// Small images: the stand-in OCR answers by the photo's width (3 or 5 px), so each test gets its own made-up table
-// even while both browsers run at once.
+// Small images: the stand-in OCR answers by the photo's width (3, 5, 7 or 9 px), so each test gets its own made-up
+// table even while both browsers run at once. A width's answer is never changed while the other browser may use it.
 const png = (b64: string) => Buffer.from(b64, 'base64');
 const WIDE3 = png(
 	'iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAADklEQVR4nGP4DwMMcBYAs2AR7za3GVIAAAAASUVORK5CYII='
@@ -14,6 +14,9 @@ const WIDE7 = png(
 );
 const WIDE5 = png(
 	'iVBORw0KGgoAAAANSUhEUgAAAAUAAAACCAIAAAAfCIEKAAAADklEQVR4nGP4jwoY0PgA3k8d47BbHWEAAAAASUVORK5CYII='
+);
+const WIDE9 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAAAkAAAACCAAAAACvPakPAAAAEElEQVQI12NsYIACJhiDAQAJvACEagAT+QAAAABJRU5ErkJggg=='
 );
 const line = (text: string, x: number, y: number, w = text.length * 8) => ({
 	text,
@@ -109,11 +112,11 @@ test('a label that cannot be read says so and leaves the form empty to fill in',
 	await expect(page.getByText('No nutrition table could be read.')).toBeVisible();
 	await expect(page.locator('#n-energy_kcal')).toHaveValue('');
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
-		data: { width: 5, status: 503, body: { error: 'busy' } }
+		data: { width: 9, status: 503, body: { error: 'busy' } }
 	});
 	await page
 		.getByLabel('Choose photo')
-		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE5 });
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE9 });
 	await expect(page.getByText('The server is reading other labels.')).toBeVisible();
 });
 

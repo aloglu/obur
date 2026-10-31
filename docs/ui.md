@@ -179,6 +179,16 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
 - **Voice mic pulse:** 700 ms.
 - **Reduced motion:** with `prefers-reduced-motion`, no movement or pulse; changes are instant.
 
+### App icon (the owner's artwork, 2026-10-31)
+
+- Source: `assets/brand/` (1024 px PNGs, used as the source because the SVGs have small outline flaws; MIT like
+  the rest of the repository, owner's choice). `./scripts/brand-icons.sh` (ImageMagick 7) makes the served files.
+- Home screen (iOS `icon-180.png`, manifest `icon-192.png` / `icon-512.png`): the version with its dark background.
+  Android's maskable icon (`icon-maskable-512.png`) is the same at 88 % so the O stays inside the crop circle.
+- Logo and browser tab icon (`static/brand/`, empty margin trimmed): the brown bowl in light, the cream bowl in dark
+  (`AppLogo`; the tab icon follows the browser's scheme). The logo sits left of the wordmark on the sign-in screens
+  (36 px) and the desktop sidebar (32 px).
+
 ### Food icons (owner's choice 2026-10-30: OpenMoji)
 
 - OpenMoji 15.1.0 food and drink icons (CC BY-SA 4.0; credit at the foot of More), bundled in `static/icons/food/`.

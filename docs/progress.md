@@ -240,9 +240,18 @@ misreads; all on labels that show a warning), basis 12/12; Phase 0 set 84%, 1 wr
 unit tests; energy check counts "less than" at its bound; Scan says when the basis is unknown. The owner has no 10
 new products for a fresh held-out set: offered (a) counting how many proposed values are changed before saving (counts
 only, needs the owner's OK), (b) a friend's kitchen, (c) new purchases over time. The owner copied compose.yaml and obur-ctl
-(2026-10-30); deployed with the OCR service (healthy), so Scan is on for testing. Pending: the owner's choice of the
-final accuracy check (waiting on replies from a couple of people; do not build edit counting until they decide). Next: batch 2 features (Profile details, editable macro targets, saved meal
+(2026-10-30); deployed with the OCR service (healthy), so Scan is on for testing. Final accuracy check (owner,
+2026-10-31): no outside people; both (a) and (c). (c) the owner photographs labels of newly bought products into
+`~/obur-private/labels-heldout-2/` (do not look until the owner says about 10 are there; likely after launch), then
+score once. (a) count how many proposed values are changed before saving (counts only), approved; build it before
+production release so real use produces data. Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
+
+## App icon (2026-10-31)
+
+The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark
+logo on sign-in and the desktop sidebar, tab icon (docs/ui.md, "App icon"). Desktop Today screenshots regenerated
+and reviewed. iPhones keep the old home-screen icon until the app is added to the home screen again.
 
 ## Typed entry gaps to close (owner, collected during use)
 
