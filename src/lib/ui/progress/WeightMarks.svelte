@@ -1,7 +1,8 @@
 <script lang="ts">
-	// The weight chart's marks inside LayerChart's frame: weigh-ins as points, the smoothed trend (dashed across
-	// gaps of more than a week), the goal line or a note when the goal is below the chart, date labels, and the
-	// selected weigh-in. Tap, drag or use the arrow keys to select.
+	// The weight chart's marks inside LayerChart's frame. Readings: the weigh-ins as points joined by a line.
+	// Trend: the smoothed weight as the line, with the weigh-ins faint behind it. Either line is dashed across gaps
+	// of more than a week; the goal is a line, or a note when it is below the chart. Tap, drag or use the arrow keys
+	// to select a weigh-in.
 	import { getChartContext } from 'layerchart';
 	import { m } from '#lib/paraglide/messages.js';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
@@ -15,31 +16,35 @@
 	}
 	interface Props {
 		points: Point[];
+		mode: 'readings' | 'trend';
 		labels: AxisLabel[];
 		goalKg: number | null;
 		selected: number;
 		onselect: (index: number) => void;
 		label: string;
+		valuetext: string;
 	}
-	let { points, labels, goalKg, selected, onselect, label }: Props = $props();
+	let { points, mode, labels, goalKg, selected, onselect, label, valuetext }: Props = $props();
 	const ctx = getChartContext();
 	const x = (n: number) => ctx.xScale(n) as number;
 	const y = (v: number) => ctx.yScale(v) as number;
 	const [low, high] = $derived(ctx.yScale.domain() as [number, number]);
+	const value = (p: Point) => (mode === 'trend' ? p.trend : p.weight);
 
 	const solid = $derived(
-		points.map((p, i) => `${i === 0 || p.gapBefore ? 'M' : 'L'}${x(p.n)},${y(p.trend)}`).join('')
+		points.map((p, i) => `${i === 0 || p.gapBefore ? 'M' : 'L'}${x(p.n)},${y(value(p))}`).join('')
 	);
 	const dashed = $derived(
 		points
 			.flatMap((p, i) =>
 				i > 0 && p.gapBefore
-					? [`M${x(points[i - 1].n)},${y(points[i - 1].trend)}L${x(p.n)},${y(p.trend)}`]
+					? [`M${x(points[i - 1].n)},${y(value(points[i - 1]))}L${x(p.n)},${y(value(p))}`]
 					: []
 			)
 			.join('')
 	);
 	const current = $derived(points[selected]);
+	const dot = $derived(points.length > 120 ? 1.8 : 3);
 
 	function pick(event: PointerEvent) {
 		if (event.type === 'pointermove' && event.pointerType !== 'mouse' && !event.buttons) return;
@@ -90,24 +95,20 @@
 	<text x={ctx.width - 2} y="10" text-anchor="end" class="fill-good text-[11px] font-semibold"
 		>{m.history_goal_below({
 			goal: formatDecimal(goalKg, ',', 1),
-			distance: formatDecimal(points.at(-1)!.trend - goalKg, ',', 1)
+			distance: (value(points.at(-1)!) - goalKg).toFixed(1).replace('.', ',')
 		})}</text
 	>
 {/if}
-{#each points as p (p.n)}
-	<circle
-		cx={x(p.n)}
-		cy={y(p.weight)}
-		r={points.length > 120 ? 1.8 : 3}
-		class="fill-muted"
-		opacity="0.55"
-	/>
-{/each}
+{#if mode === 'trend'}
+	{#each points as p (p.n)}
+		<circle cx={x(p.n)} cy={y(p.weight)} r={dot} class="fill-muted" opacity="0.45" />
+	{/each}
+{/if}
 <path
 	d={solid}
 	fill="none"
 	class="stroke-accent"
-	stroke-width="2.5"
+	stroke-width={mode === 'trend' ? 2.5 : 1.75}
 	stroke-linejoin="round"
 	stroke-linecap="round"
 />
@@ -115,9 +116,14 @@
 		d={dashed}
 		fill="none"
 		class="stroke-accent"
-		stroke-width="2"
+		stroke-width="1.75"
 		stroke-dasharray="3 4"
 	/>{/if}
+{#if mode === 'readings'}
+	{#each points as p (p.n)}
+		<circle cx={x(p.n)} cy={y(p.weight)} r={dot} class="fill-accent" />
+	{/each}
+{/if}
 {#if current}
 	<line
 		x1={x(current.n)}
@@ -129,7 +135,7 @@
 	/>
 	<circle
 		cx={x(current.n)}
-		cy={y(current.trend)}
+		cy={y(value(current))}
 		r="5"
 		class="fill-surface stroke-text"
 		stroke-width="2"
@@ -145,8 +151,8 @@
 	aria-valuemin={0}
 	aria-valuemax={Math.max(0, points.length - 1)}
 	aria-valuenow={selected}
-	aria-valuetext={current ? `${formatDecimal(current.weight, ',', 1)} kg` : ''}
-	class="cursor-crosshair touch-pan-y outline-none focus-visible:stroke-accent focus-visible:stroke-2"
+	aria-valuetext={valuetext}
+	class="cursor-crosshair touch-pan-y outline-none"
 	onpointerdown={pick}
 	onpointermove={pick}
 	onkeydown={key}

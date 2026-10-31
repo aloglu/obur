@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { TargetLike } from './calendar.ts';
+import { addDays } from './diary-rules.ts';
 import {
 	history,
 	isHistoryRange,
 	rangeStart,
-	weightTrend,
+	weightHistory,
 	type HistoryDay,
 	type HistoryInput
 } from './history.ts';
@@ -59,38 +60,48 @@ describe('ranges', () => {
 	});
 });
 
-describe('weight trend', () => {
-	it('moves 10 % toward a reading per day elapsed and invents no readings in gaps', () => {
-		const points = weightTrend([
-			{ localDate: '2026-10-01', value: 100 },
-			{ localDate: '2026-10-02', value: 99 },
-			// Ten days later: the reading counts for 1 − 0.9¹⁰ ≈ 65 % and the stretch before it is a gap.
-			{ localDate: '2026-10-12', value: 97 }
-		]);
-		expect(points.map((p) => p.date)).toEqual(['2026-10-01', '2026-10-02', '2026-10-12']);
-		expect(points[0]).toMatchObject({ trend: 100, gapBefore: false });
-		expect(points[1]).toMatchObject({ trend: 99.9, gapBefore: false });
-		expect(points[2].trend).toBeCloseTo(99.9 - 0.6513 * 2.9, 2);
-		expect(points[2].gapBefore).toBe(true);
-	});
+describe('weight history', () => {
+	const day = (n: number) => addDays('2026-08-01', n);
+	const steady = (days: number, perDay: number, start = 100) =>
+		Array.from({ length: days }, (_, n) => ({ localDate: day(n), value: start + perDay * n }));
 
-	it('uses the last reading of a day and accepts readings in any order', () => {
-		const points = weightTrend([
+	it('keeps every weigh-in day, the last reading of a day, in date order', () => {
+		const points = weightHistory([
 			{ localDate: '2026-10-02', value: 98 },
 			{ localDate: '2026-10-01', value: 100 },
 			{ localDate: '2026-10-02', value: 99 }
 		]);
-		expect(points).toHaveLength(2);
-		expect(points[1]).toMatchObject({ weight: 99, trend: 99.9 });
+		expect(points.map((p) => [p.date, p.weight])).toEqual([
+			['2026-10-01', 100],
+			['2026-10-02', 99]
+		]);
+		expect(points[0]).toMatchObject({ trend: 100, pacePerWeek: 0, gapBefore: false });
 	});
 
-	it('keeps a single high reading from moving the trend much', () => {
-		const steady = Array.from({ length: 10 }, (_, i) => ({
-			localDate: `2026-10-${String(i + 1).padStart(2, '0')}`,
-			value: 98
-		}));
-		const points = weightTrend([...steady, { localDate: '2026-10-11', value: 99.4 }]);
-		expect(points.at(-1)!.trend).toBeCloseTo(98.14, 2);
+	it('follows a steady loss without lagging behind it and learns its pace', () => {
+		// 0,2 kg a day (1,4 kg a week) for six weeks.
+		const last = weightHistory(steady(42, -0.2)).at(-1)!;
+		expect(Math.abs(last.trend - last.weight)).toBeLessThan(0.3);
+		expect(last.pacePerWeek).toBeCloseTo(-1.4, 0);
+	});
+
+	it('moves only a little for one heavy reading', () => {
+		const flat = steady(20, 0, 98);
+		const last = weightHistory([...flat, { localDate: day(20), value: 99.4 }]).at(-1)!;
+		expect(last.trend - 98).toBeGreaterThan(0);
+		expect(last.trend - 98).toBeLessThan(0.3);
+	});
+
+	it('marks gaps over a week and fades the pace across them', () => {
+		const before = steady(42, -0.2);
+		const lastBefore = before.at(-1)!;
+		// A month away, then the same weight as before: the trend must not assume a month of full-speed loss.
+		const after = weightHistory([...before, { localDate: day(72), value: lastBefore.value }]).at(
+			-1
+		)!;
+		expect(after.gapBefore).toBe(true);
+		expect(Math.abs(after.trend - lastBefore.value)).toBeLessThan(0.3);
+		expect(Math.abs(after.pacePerWeek)).toBeLessThan(0.3);
 	});
 });
 

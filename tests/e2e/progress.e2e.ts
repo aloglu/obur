@@ -68,7 +68,7 @@ test('month navigation stops at the current month', async ({ page }) => {
 	await expect(page.getByRole('button', { name: 'Next month' })).toBeDisabled();
 });
 
-test('history: weight trend, calories against budget, averages over complete days only', async ({
+test('history: weigh-ins and their trend, calories against budget, averages over complete days only', async ({
 	page
 }, testInfo) => {
 	await signedInAs(page, `Geçmiş ${testInfo.project.name}`);
@@ -130,13 +130,30 @@ test('history: weight trend, calories against budget, averages over complete day
 	if (phone) await expect(tab('Weight')).toHaveAttribute('aria-selected', 'true');
 	else await expect(page.getByRole('tablist')).toBeHidden();
 
-	const weight = page.locator('[role="tabpanel"]').filter({ has: page.getByText('Trend now') });
+	const weight = page.locator('[role="tabpanel"]').filter({
+		has: page.getByRole('radiogroup', { name: 'Show' })
+	});
+	// Readings: what was weighed.
+	await expect(weight).toContainText('Latest weigh-in');
+	await expect(weight).toContainText('82,6kg');
+	await expect(weight).toContainText('−1,4 kg');
+	await expect(weight).toContainText(/Average change per week\s*−0,5 kg/);
 	await expect(weight).toContainText('Weigh-ins5');
 	const weightReadout = weight.locator('[aria-live="polite"]');
-	await expect(weightReadout).toContainText('weighed 82,6 kg');
+	await expect(weightReadout).toContainText(': 82,6 kg');
 	await weight.getByRole('slider', { name: 'Weight' }).focus();
 	await page.keyboard.press('ArrowLeft');
+	await expect(weightReadout).toContainText(': 82,4 kg');
+	// Trend: the smoothed weight and pace, remembered on this device.
+	await weight.getByRole('radio', { name: 'Trend' }).click();
+	await expect(weight).toContainText('Smoothed weight');
+	await expect(weight).toContainText('a week');
+	await expect(weightReadout).toContainText('smoothed');
+	// The selected weigh-in stays selected across the switch.
 	await expect(weightReadout).toContainText('weighed 82,4 kg');
+	await page.reload();
+	await expect(page.getByRole('radio', { name: 'Trend' })).toHaveAttribute('aria-checked', 'true');
+	await page.getByRole('radio', { name: 'Readings' }).click();
 
 	if (phone) await tab('Calories').click();
 	const calories = page
@@ -166,5 +183,5 @@ test('history: weight trend, calories against budget, averages over complete day
 	await page.getByLabel('Range').filter({ visible: true }).selectOption('1W');
 	await expect(page).toHaveURL(/range=1W/);
 	if (phone) await tab('Weight').click();
-	await expect(page.getByText('in the last week')).toBeVisible();
+	await expect(page.getByText('Weigh-ins3')).toBeVisible();
 });

@@ -1,5 +1,5 @@
 // Progress history rules (docs/design.md, "Progress, graphs and optional encouragement", History; docs/ui.md,
-// "Progress"): ranges, the smoothed weight trend, calorie bars against each day's own budget, and averages over days
+// "Progress"): ranges, weigh-ins with their smoothed trend, calorie bars against each day's own budget, and averages over days
 // marked complete. Unlogged days and unknown nutrients stay missing; nothing unknown becomes zero.
 import { isoWeekday, targetOn, type TargetLike } from './calendar.ts';
 import { addDays } from './diary-rules.ts';
@@ -17,10 +17,14 @@ const RANGE_MONTHS: Record<Exclude<HistoryRange, 'All' | '1W'>, number> = {
 };
 /** Ranges up to this many days get a bar per day; longer ones a bar per week. */
 const DAILY_BARS_UP_TO = 31;
-/** A weigh-in this many days after the previous one starts a dashed stretch of the trend. */
-const TREND_GAP_DAYS = 7;
-/** Each day since the previous weigh-in moves the trend 10 % of the way toward the new reading. */
-const TREND_DAILY_KEEP = 0.9;
+/** A weigh-in this many days after the previous one starts a dashed stretch of the line. */
+const GAP_DAYS = 7;
+// The weight trend is Holt's method with a damped pace (docs/feasibility.md, "Weight trend"): each day since the
+// previous weigh-in moves the smoothed weight 15 % toward the reading and the pace 10 % toward the latest pace;
+// across a gap the pace fades by 2 % a day, so it isn't assumed to continue at full speed.
+const LEVEL_KEEP = 0.85;
+const PACE_KEEP = 0.9;
+const PACE_DAMP = 0.98;
 
 export const isHistoryRange = (value: string | null): value is HistoryRange =>
 	(HISTORY_RANGES as readonly string[]).includes(value ?? '');
@@ -44,37 +48,53 @@ export function rangeStart(range: HistoryRange, today: string, first: string | n
 const daysBetween = (from: string, to: string) =>
 	Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000);
 
-export interface TrendPoint {
+export interface WeightPoint {
 	date: string;
 	/** The day's last weigh-in. */
 	weight: number;
+	/** The smoothed weight after this weigh-in. */
 	trend: number;
-	/** More than a week since the previous weigh-in: the trend line is dashed up to this point. */
+	/** The smoothed pace after this weigh-in, in kg a week (negative while losing). */
+	pacePerWeek: number;
+	/** More than a week since the previous weigh-in: the line is dashed up to this point. */
 	gapBefore: boolean;
 }
 
+/** How many days of pace a gap carries once the pace fades by `PACE_DAMP` each day. */
+const dampedDays = (gap: number) => (PACE_DAMP * (1 - PACE_DAMP ** gap)) / (1 - PACE_DAMP);
+const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places;
+
 /**
- * The smoothed weight trend at each weigh-in day (a day with several readings uses its last). Feed readings from
- * before the range too, so the trend is settled by its first day; then keep the points inside the range.
+ * Each weigh-in day (a day with several readings uses its last) with the smoothed weight and pace after it. Feed
+ * weigh-ins from before the range too, so the trend has settled by the range's first day; then keep the points
+ * inside the range.
  */
-export function weightTrend(readings: { localDate: string; value: number }[]): TrendPoint[] {
+export function weightHistory(readings: { localDate: string; value: number }[]): WeightPoint[] {
 	const byDay = new Map<string, number>();
 	for (const r of [...readings].sort((a, b) => a.localDate.localeCompare(b.localDate)))
 		byDay.set(r.localDate, r.value);
-	const out: TrendPoint[] = [];
+	const out: WeightPoint[] = [];
+	let level = 0;
+	let pace = 0; // kg a day
 	for (const [date, weight] of byDay) {
 		const prev = out.at(-1);
 		if (!prev) {
-			out.push({ date, weight, trend: weight, gapBefore: false });
+			level = weight;
+			out.push({ date, weight, trend: weight, pacePerWeek: 0, gapBefore: false });
 			continue;
 		}
 		const gap = daysBetween(prev.date, date);
-		const trend = prev.trend + (1 - TREND_DAILY_KEEP ** gap) * (weight - prev.trend);
+		const expected = level + pace * dampedDays(gap);
+		const next = expected + (1 - LEVEL_KEEP ** gap) * (weight - expected);
+		const faded = PACE_DAMP ** gap * pace;
+		pace = faded + (1 - PACE_KEEP ** gap) * ((next - level) / gap - faded);
+		level = next;
 		out.push({
 			date,
 			weight,
-			trend: Math.round(trend * 100) / 100,
-			gapBefore: gap > TREND_GAP_DAYS
+			trend: round(level, 2),
+			pacePerWeek: round(pace * 7, 2),
+			gapBefore: gap > GAP_DAYS
 		});
 	}
 	return out;
@@ -216,7 +236,7 @@ export interface ProgressHistory extends History {
 	from: string;
 	to: string;
 	weight: {
-		points: TrendPoint[];
+		points: WeightPoint[];
 		/** The trend at the last weigh-in before the range, so a change can be shown from the range's start. */
 		trendBefore: number | null;
 		goalKg: number | null;

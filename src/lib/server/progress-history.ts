@@ -6,7 +6,7 @@ import { budgetForDay, macroTargetsFor } from '#lib/shared/goals.ts';
 import {
 	history,
 	rangeStart,
-	weightTrend,
+	weightHistory,
 	type HistoryRange,
 	type ProgressHistory
 } from '#lib/shared/history.ts';
@@ -57,7 +57,7 @@ export async function loadHistory(
 		weighIns: readings.filter((r) => r.localDate >= from).length,
 		firstDayOfWeek
 	});
-	const trend = weightTrend(readings);
+	const trend = weightHistory(readings);
 	const current = targetOn(versions, today);
 	const budget = budgetForDay(current, 0);
 	return {

@@ -3,9 +3,10 @@
 	// Nutrients tabs with the range dropdown beside them, one topic at a time. Desktop: no tabs; the three cards sit
 	// in the page grid beside the calendar (this wrapper is `display: contents` there) and the range is in the header.
 	import { m } from '#lib/paraglide/messages.js';
-	import { dateWithYear, kcal } from '#lib/shared/format.ts';
+	import { dateWithYear, kcal, shortDate } from '#lib/shared/format.ts';
 	import type { ProgressHistory } from '#lib/shared/history.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import CaloriesChart from './CaloriesChart.svelte';
 	import { dayNumber } from './history-axis.ts';
@@ -46,12 +47,38 @@
 				}[history.range]()
 	);
 
+	// Readings (what was weighed) or Trend (the smoothed weight and pace; docs/feasibility.md, "Weight trend").
+	// Remembered on this device; storage may be unavailable, and then Readings shows.
+	type WeightView = 'readings' | 'trend';
+	const VIEW_KEY = 'obur:history-weight-view';
+	let view = $state<WeightView>('readings');
+	onMount(() => {
+		try {
+			if (localStorage.getItem(VIEW_KEY) === 'trend') view = 'trend';
+		} catch {
+			// Storage blocked: keep Readings.
+		}
+	});
+	function setView(next: WeightView) {
+		view = next;
+		try {
+			localStorage.setItem(VIEW_KEY, next);
+		} catch {
+			// Not remembered on this device; the choice still applies now.
+		}
+	}
+
 	const points = $derived(history.weight.points);
+	const first = $derived(points[0]);
 	const last = $derived(points.at(-1));
-	const change = $derived(
-		last ? last.trend - (history.weight.trendBefore ?? points[0].trend) : null
+	/** Readings: from the first weigh-in in the range to the latest. */
+	const readingChange = $derived(first && last ? last.weight - first.weight : null);
+	const readingDays = $derived(first && last ? dayNumber(last.date) - dayNumber(first.date) : 0);
+	/** Trend: from the smoothed weight before the range (or at its first weigh-in) to now. */
+	const trendChange = $derived(
+		first && last ? last.trend - (history.weight.trendBefore ?? first.trend) : null
 	);
-	const weeks = $derived((dayNumber(history.to) - dayNumber(history.from) + 1) / 7);
+	const shownWeight = $derived(last ? (view === 'trend' ? last.trend : last.weight) : null);
 	const a = $derived(history.averages);
 	const daysUnder = $derived(a.againstBudget.days - a.overBudgetDays);
 
@@ -126,50 +153,92 @@
 
 	{#if shown('weight')}
 		<div id="{uid}-panel-weight" role="tabpanel" aria-labelledby="{uid}-tab-weight" class={card}>
-			<h2 class={heading}>{m.history_tab_weight()}</h2>
-			{#if last && change !== null}
+			<div class="flex items-center justify-between gap-3">
+				<h2 class={heading}>{m.history_tab_weight()}</h2>
+				<div
+					role="radiogroup"
+					aria-label={m.history_view()}
+					class="ml-auto flex gap-1 rounded-[14px] bg-surface2 p-1"
+				>
+					{#each [['readings', m.history_view_readings()], ['trend', m.history_view_trend()]] as const as [id, label] (id)}
+						<button
+							type="button"
+							role="radio"
+							aria-checked={view === id}
+							onclick={() => setView(id)}
+							class={[
+								'min-h-11 rounded-[10px] px-3.5 text-[14px] font-[650]',
+								view === id ? 'bg-surface text-text shadow-card' : 'text-muted'
+							]}>{label}</button
+						>
+					{/each}
+				</div>
+			</div>
+			{#if first && last && shownWeight !== null}
 				<div class="flex flex-wrap items-end justify-between gap-2.5">
 					<div>
 						<p class="m-0 text-[12px] font-bold tracking-[0.06em] text-muted uppercase">
-							{m.history_trend_now()}
+							{view === 'trend' ? m.history_smoothed() : m.history_latest()}
 						</p>
 						<p
 							class="m-0 font-display text-[34px] leading-none font-extrabold tracking-[-0.02em] tabular-nums"
 						>
-							{kg(last.trend)}<small
+							{kg(shownWeight)}<small
 								class="ml-1 font-sans text-[15px] font-semibold tracking-normal text-muted"
 								>kg</small
 							>
 						</p>
 					</div>
 					<p class="m-0 text-right text-[14px]">
-						<b class="tabular-nums">{signed(change, kg)} kg</b><br /><span class="text-muted"
-							>{within}</span
-						>
+						{#if view === 'trend'}
+							<b class="tabular-nums">{m.history_pace({ pace: signed(last.pacePerWeek, kg) })}</b
+							><br /><span class="text-muted">{m.history_a_week()}</span>
+						{:else if readingChange !== null && points.length > 1}
+							<b class="tabular-nums">{signed(readingChange, kg)} kg</b><br /><span
+								class="text-muted">{m.history_since({ date: shortDate(first.date) })}</span
+							>
+						{/if}
 					</p>
 				</div>
+				{#if view === 'trend'}<p class="m-0 text-[13px] text-muted">
+						{m.history_smoothed_note()}
+					</p>{/if}
 			{/if}
-			<WeightChart {points} from={history.from} to={history.to} goalKg={history.weight.goalKg} />
-			{#if last && change !== null}
+			<WeightChart
+				{points}
+				mode={view}
+				from={history.from}
+				to={history.to}
+				goalKg={history.weight.goalKg}
+			/>
+			{#if first && last && shownWeight !== null}
 				<div class={rows}>
-					{#if history.weight.goalKg !== null && last.trend > history.weight.goalKg}
+					{#if history.weight.goalKg !== null && shownWeight > history.weight.goalKg}
 						<div class={row}>
 							<span>{m.history_to_goal({ goal: kg(history.weight.goalKg) })}</span>
-							<b class="tabular-nums">{kg(last.trend - history.weight.goalKg)} kg</b>
+							<b class="tabular-nums">{kg(shownWeight - history.weight.goalKg)} kg</b>
+						</div>
+					{/if}
+					{#if view === 'trend' && trendChange !== null}
+						<div class={row}>
+							<span>{m.history_change_in({ within })}</span>
+							<b class="tabular-nums">{signed(trendChange, kg)} kg</b>
+						</div>
+					{:else if readingChange !== null && readingDays >= 7}
+						<div class={row}>
+							<span>{m.history_per_week()}</span>
+							<b class="tabular-nums">{signed(readingChange / (readingDays / 7), kg)} kg</b>
 						</div>
 					{/if}
 					<div class={row}>
-						<span>{m.history_per_week()}</span><b class="tabular-nums"
-							>{signed(change / weeks, kg)} kg</b
-						>
-					</div>
-					<div class={row}>
 						<span>{m.history_weighins()}</span><b class="tabular-nums">{a.weighIns}</b>
 					</div>
-					<div class={row}>
-						<span>{m.history_lowest()}</span>
-						<b class="tabular-nums">{kg(Math.min(...points.map((p) => p.weight)))} kg</b>
-					</div>
+					{#if view === 'readings'}
+						<div class={row}>
+							<span>{m.history_lowest()}</span>
+							<b class="tabular-nums">{kg(Math.min(...points.map((p) => p.weight)))} kg</b>
+						</div>
+					{/if}
 				</div>
 			{/if}
 		</div>

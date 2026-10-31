@@ -86,8 +86,12 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
     default) beside it, one tone like the tabs' tray (no raised pill, no focus ring on tap; owner 2026-10-31) in its own tray; one topic at a time, each with a headline number, a chart and a few stat rows.
   - Desktop: no tabs; two columns, the calendar beside Weight, then Calories beside Nutrients, with the range
     dropdown beside the page title.
-  - Weight: trend line plus every weigh-in as a point, goal as a dashed line when it is within the chart (otherwise a
-    note of the distance); headline is the current trend and its change over the range.
+  - Weight: a **Readings / Trend** switch in the card (Readings by default; the choice is remembered on the
+    device). Readings: the weigh-ins as points joined by a line; headline "Latest weigh-in" with the change since the
+    first weigh-in in the range; rows to goal, average change per week, weigh-ins, lowest reading. Trend: the smoothed
+    weight as the line with the weigh-ins faint behind it; headline "Smoothed weight" with the pace per week and the
+    line "Evens out day-to-day swings from water and food."; rows to goal, change in the range, weigh-ins. Both: goal
+    as a dashed line when it is within the chart (otherwise a note of the distance), dashed across gaps over a week.
   - Calories: bars against a budget step line; over budget striped red, under green, days not marked complete as
     outlines, unlogged days as a dash when bars are wide enough; weekly averages from 3 months up.
   - Nutrients: average protein, carbohydrate and fat against the targets, with a coverage note when some days are

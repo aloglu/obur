@@ -260,6 +260,11 @@ calendar screenshot regenerated for the two-column page). LayerChart adds two lo
 existing dev-only SvelteKit `deepmerge` chain (22 → 24 before/after). The first deploy failed at `npm ci`: Node 24.11's bundled npm 11.6 misreads the lockfile written by npm 11.19 (optional peer entries via `runed`); the Dockerfile's build stage now installs npm 11.19.0 first (verified with a local image build). Next after recording: then build (LayerChart, `progress` module queries over diary snapshots and target
 versions). Independent work meanwhile: the label-scan edit counting (approved, above).
 
+Weight views (owner, 2026-10-31): the first trend (plain smoothing) read 2 kg heavy on the owner's history, so the
+Weight card now has Readings (raw weigh-ins, default) and Trend (damped Holt, tuned in docs/feasibility.md); no
+softening of ups and downs. Later idea from the owner: a help / FAQ section (in Settings or its own page) on using the
+app and how things are calculated, including the trend.
+
 ## App icon (2026-10-31)
 
 The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark
