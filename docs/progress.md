@@ -290,6 +290,11 @@ on phones, Readings/Trend switch moved into the headline row (deployed c21b69e).
 seven placements published as a private Artifact (link in the session; picks and notes in its `notes` collection).
 Committed but not deployed yet: shared form `Select` (owner: one dropdown convention). Round two picked T2 (the label is the switch); built and deployed with the dropdown change.
 
+Remaining work (owner, 2026-10-31): design first, as separate mock-ups on one Artifact page: achievements, a Help /
+FAQ page, a Progress timeline (built only if the owner likes it). Then Units and formats, Help, a pre-release pass
+(security, accessibility, long Turkish names, restore), and the cut-over import. Kept in mind, not scheduled: Phase 5
+(entry-point profiles, Unraid template, catalog exchange), full offline editing, counting imported activity.
+
 ## App icon (2026-10-31)
 
 The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark
@@ -335,7 +340,7 @@ Owner's approach (2026-10-30): note phrasings that fail during real use and clos
 
 - Barcodes (Phase 3): explained to the owner (barcode read on the phone with a bundled open-source reader, since iOS
   Safari has no BarcodeDetector; household products only, no outside lookups; unknown barcode leads into the label
-  scan and is attached on save). **Not building (owner, 2026-10-31):** without an outside product database a barcode
+  scan and is attached on save). **Scratched (owner, 2026-10-31, second decision):** only worth it if obur is ever published on the app stores, where user scans could build a product database. Earlier note: **Not building (owner, 2026-10-31):** without an outside product database a barcode
   only finds foods the household already saved, which search with recent foods already finds quickly; the reader,
   camera work and iPhone testing cost more than that saves. Revisit only if real use shows packaged products are slow
   to find. Workflow agreed if revived: live viewfinder in Scan; one match opens its amount sheet, several give a list;
