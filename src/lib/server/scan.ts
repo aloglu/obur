@@ -16,8 +16,10 @@ const perPerson = new RateLimiter(30, 10 * 60_000);
 export type ScanError = 'off' | 'limited' | 'too_large' | 'decode_failed' | 'busy' | 'unavailable';
 
 export class ScanFailure extends Error {
-	constructor(readonly code: ScanError) {
+	readonly code: ScanError;
+	constructor(code: ScanError) {
 		super(code);
+		this.code = code;
 	}
 }
 

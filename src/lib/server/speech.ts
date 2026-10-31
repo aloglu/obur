@@ -25,8 +25,10 @@ export type SpeechError =
 	| 'nothing_heard';
 
 export class SpeechFailure extends Error {
-	constructor(readonly code: SpeechError) {
+	readonly code: SpeechError;
+	constructor(code: SpeechError) {
 		super(code);
+		this.code = code;
 	}
 }
 

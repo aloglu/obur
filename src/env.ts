@@ -28,6 +28,16 @@ export const variables = defineEnvVars({
 		description: 'Name shown by passkey prompts.',
 		schema: (value) => value || 'obur'
 	},
+	VAPID_PUBLIC_KEY: {
+		description:
+			'Web Push public key (npm run push:keys). Unset: reminders are off. The worker also needs VAPID_PRIVATE_KEY and VAPID_SUBJECT.',
+		schema: (value) => {
+			if (!value) return null;
+			if (!/^[A-Za-z0-9_-]{80,100}$/.test(value))
+				throw new Error('VAPID_PUBLIC_KEY must be a base64url key');
+			return value;
+		}
+	},
 	SPEECH_URL: {
 		description:
 			'Base URL of the speech service on the internal network, e.g. http://speech:8000. Unset: Speak is off.',

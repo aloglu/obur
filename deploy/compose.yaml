@@ -98,6 +98,8 @@ services:
       SPEECH_URL: ${SPEECH_URL-http://speech:8000}
       # Scan a label: the OCR service below. Set OCR_URL= (empty) in .env to switch scanning off.
       OCR_URL: ${OCR_URL-http://ocr:8000}
+      # Reminders: on when the Web Push keys are set in .env (npm run push:keys); the worker sends them.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY-}
     networks: [default, speech, ocr]
     volumes:
       - ${OBUR_DATA_DIR:-./data}/status:/app/status:ro
@@ -122,6 +124,10 @@ services:
       TZ: ${TZ:-UTC}
       DATABASE_WORKER_URL: postgres://obur_worker:${OBUR_WORKER_DB_PASSWORD:?Set OBUR_WORKER_DB_PASSWORD in .env}@db:5432/obur
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-1}
+      # Reminders go out through the browsers' push services (Apple, Google, Mozilla); payloads are encrypted.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT-}
 
   # Operator tools: `docker compose run --rm admin migrate|setup-link|recovery-link "<name>"`.
   admin:

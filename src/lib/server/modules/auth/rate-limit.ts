@@ -3,12 +3,17 @@
 export class RateLimiter {
 	readonly #windows = new Map<string, { count: number; resetAt: number }>();
 
-	constructor(
-		private readonly max: number,
-		private readonly windowMs: number,
-		private readonly maxKeys = 50_000,
-		private readonly now: () => number = Date.now
-	) {}
+	private readonly max: number;
+	private readonly windowMs: number;
+	private readonly maxKeys: number;
+	private readonly now: () => number;
+
+	constructor(max: number, windowMs: number, maxKeys = 50_000, now: () => number = Date.now) {
+		this.max = max;
+		this.windowMs = windowMs;
+		this.maxKeys = maxKeys;
+		this.now = now;
+	}
 
 	/** Records an attempt and returns whether it is allowed. */
 	attempt(key: string): boolean {

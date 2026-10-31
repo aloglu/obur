@@ -32,7 +32,8 @@
 		"jobs:setup": "node --env-file=.env scripts/jobs-setup.ts",
 		"curated:build": "node scripts/curated-build.ts",
 		"curated:load": "node --env-file=.env scripts/curated-load.ts",
-		"worker": "node --env-file=.env scripts/worker.ts"
+		"worker": "node --env-file=.env scripts/worker.ts",
+		"push:keys": "node scripts/push-keys.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -46,6 +47,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@tailwindcss/vite": "^4.3.0",
 		"@types/node": "^24",
+		"@types/web-push": "3.6.4",
 		"@vitest/browser-playwright": "^4.1.8",
 		"drizzle-kit": "^0.31.10",
 		"drizzle-orm": "^0.45.2",
@@ -82,6 +84,7 @@
 		"layerchart": "2.8.0",
 		"pg-boss": "12.38.0",
 		"postgres": "3.4.9",
-		"valibot": "^1.5.0"
+		"valibot": "^1.5.0",
+		"web-push": "3.6.7"
 	}
 }

@@ -38,5 +38,20 @@ export default defineConfig(
 		files: ['src/**/*.{js,ts,svelte}'],
 		plugins: { obur: { rules: { 'module-boundaries': moduleBoundaries } } },
 		rules: { 'obur/module-boundaries': 'error' }
+	},
+	{
+		// The worker and operator scripts run these files with Node's type stripping, which has no parameter
+		// properties (`constructor(readonly code)`); write the field out instead.
+		files: ['src/lib/server/**/*.ts', 'src/lib/shared/**/*.ts', 'scripts/**/*.ts'],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: 'TSParameterProperty',
+					message:
+						'Declare the field and assign it: Node type stripping has no parameter properties.'
+				}
+			]
+		}
 	}
 );

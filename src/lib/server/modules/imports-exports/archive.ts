@@ -460,19 +460,22 @@ export function writeArchive(
 	return zipSync(files, { level: 6, mtime: new Date(meta.exportedAt) });
 }
 
+type ArchiveErrorCode =
+	| 'too_large'
+	| 'not_an_archive'
+	| 'unexpected_file'
+	| 'missing_file'
+	| 'unsupported_version'
+	| 'checksum_mismatch'
+	| 'invalid_content';
+
 export class ArchiveError extends Error {
-	constructor(
-		readonly code:
-			| 'too_large'
-			| 'not_an_archive'
-			| 'unexpected_file'
-			| 'missing_file'
-			| 'unsupported_version'
-			| 'checksum_mismatch'
-			| 'invalid_content',
-		readonly detail?: string
-	) {
+	readonly code: ArchiveErrorCode;
+	readonly detail?: string;
+	constructor(code: ArchiveErrorCode, detail?: string) {
 		super(detail ? `${code}: ${detail}` : code);
+		this.code = code;
+		this.detail = detail;
 	}
 }
 

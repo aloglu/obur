@@ -5,9 +5,11 @@ import { PgBoss } from 'pg-boss';
 import type { Sql } from 'postgres';
 
 export const JOB_SCHEMA = 'pgboss';
-export const QUEUES = { purgeTrash: 'purge-trash' } as const;
+export const QUEUES = { purgeTrash: 'purge-trash', sendReminders: 'send-reminders' } as const;
 /** Daily, in the server's configured zone, outside typical logging hours. */
 export const PURGE_CRON = '30 3 * * *';
+/** Every five minutes; each person's reminders follow their own zone (shared/reminders.ts). */
+export const REMINDERS_CRON = '*/5 * * * *';
 
 /** Creates or upgrades the job schema, the queues and their schedules, then grants the worker its access. */
 export async function setupJobs(migratorUrl: string, owner: Sql, timeZone: string): Promise<void> {
@@ -25,6 +27,11 @@ export async function setupJobs(migratorUrl: string, owner: Sql, timeZone: strin
 			await boss.createQueue(QUEUES.purgeTrash, { retryLimit: 3, retryDelay: 600 });
 		}
 		await boss.schedule(QUEUES.purgeTrash, PURGE_CRON, null, { tz: timeZone });
+		// A missed run is not retried: the next one, five minutes later, covers it (reminders have a send window).
+		if (!(await boss.getQueue(QUEUES.sendReminders))) {
+			await boss.createQueue(QUEUES.sendReminders, { retryLimit: 0, expireInSeconds: 240 });
+		}
+		await boss.schedule(QUEUES.sendReminders, REMINDERS_CRON, null, { tz: 'UTC' });
 	} finally {
 		await boss.stop({ graceful: true });
 	}

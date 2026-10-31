@@ -25,6 +25,8 @@ COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/src/lib/server ./src/lib/server
 COPY --from=build /app/src/lib/shared ./src/lib/shared
+# Reminder wording for the worker comes from the message catalog.
+COPY --from=build /app/messages ./messages
 COPY deploy/app/obur.sh /usr/local/bin/obur
 USER node
 EXPOSE 3000

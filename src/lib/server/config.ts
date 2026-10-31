@@ -3,6 +3,7 @@ import {
 	OCR_URL,
 	PUBLIC_ORIGIN,
 	SPEECH_URL,
+	VAPID_PUBLIC_KEY,
 	WEBAUTHN_RP_ID,
 	WEBAUTHN_RP_NAME
 } from '$app/env/private';
@@ -16,6 +17,8 @@ export interface ServerConfig {
 	speechUrl: string | null;
 	/** The OCR service, or null when label scanning is switched off. */
 	ocrUrl: string | null;
+	/** The Web Push public key, or null when reminders are switched off. */
+	pushKey: string | null;
 }
 
 /** The passkey domain must be the origin's host or a parent domain of it. */
@@ -35,7 +38,8 @@ function load(): ServerConfig {
 		rpName: WEBAUTHN_RP_NAME ?? 'obur',
 		secureCookies: new URL(PUBLIC_ORIGIN).protocol === 'https:',
 		speechUrl: SPEECH_URL ?? null,
-		ocrUrl: OCR_URL ?? null
+		ocrUrl: OCR_URL ?? null,
+		pushKey: VAPID_PUBLIC_KEY ?? null
 	};
 }
 

@@ -34,8 +34,11 @@ import {
 import { accountDeletions, importFiles, importIdentities, installation } from './schema.ts';
 
 export class PortabilityError extends Error {
-	constructor(readonly code: 'already_imported' | 'last_admin' | 'not_found' | 'forbidden') {
+	readonly code: 'already_imported' | 'last_admin' | 'not_found' | 'forbidden';
+	// A plain field (not a parameter property): the worker runs this file with Node's type stripping.
+	constructor(code: 'already_imported' | 'last_admin' | 'not_found' | 'forbidden') {
 		super(code);
+		this.code = code;
 	}
 }
 

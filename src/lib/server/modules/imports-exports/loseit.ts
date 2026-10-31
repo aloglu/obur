@@ -8,11 +8,15 @@ import type { NutrientCode } from '../../../shared/nutrients.ts';
 export const LOSEIT_LIMITS = { archiveBytes: 20 * 1024 * 1024, unpackedBytes: 100 * 1024 * 1024 };
 
 export class LoseItError extends Error {
+	readonly code: 'not_loseit' | 'unsupported_layout' | 'too_large' | 'invalid_value';
+	readonly detail?: string;
 	constructor(
-		readonly code: 'not_loseit' | 'unsupported_layout' | 'too_large' | 'invalid_value',
-		readonly detail?: string
+		code: 'not_loseit' | 'unsupported_layout' | 'too_large' | 'invalid_value',
+		detail?: string
 	) {
 		super(detail ? `${code}: ${detail}` : code);
+		this.code = code;
+		this.detail = detail;
 	}
 }
 

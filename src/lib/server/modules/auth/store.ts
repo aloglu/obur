@@ -20,8 +20,11 @@ export type AuthErrorCode =
 	| 'not_found';
 
 export class AuthError extends Error {
-	constructor(readonly code: AuthErrorCode) {
+	readonly code: AuthErrorCode;
+	// A plain field (not a parameter property): the worker runs this file with Node's type stripping.
+	constructor(code: AuthErrorCode) {
 		super(code);
+		this.code = code;
 	}
 }
 

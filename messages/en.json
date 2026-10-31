@@ -827,5 +827,10 @@
 	"toast_copied_many": "Copied {count} entries",
 	"toast_deleted_many": "Deleted {count} entries",
 	"toast_to": "To {meal} · {day}",
-	"toast_from_day": "From {day}"
+	"toast_from_day": "From {day}",
+	"reminder_breakfast": "Breakfast isn't logged yet",
+	"reminder_lunch": "Lunch isn't logged yet",
+	"reminder_dinner": "Dinner isn't logged yet",
+	"reminder_weigh_in": "You haven't weighed in today",
+	"reminder_day_complete": "Mark today complete?"
 }

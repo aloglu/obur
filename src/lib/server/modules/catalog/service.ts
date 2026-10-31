@@ -23,10 +23,12 @@ export interface LabelScanTotals {
 }
 
 export class CatalogError extends Error {
+	readonly code: 'not_found' | 'forbidden' | 'conflict' | 'energy_required' | 'conversion_unknown';
 	constructor(
-		readonly code: 'not_found' | 'forbidden' | 'conflict' | 'energy_required' | 'conversion_unknown'
+		code: 'not_found' | 'forbidden' | 'conflict' | 'energy_required' | 'conversion_unknown'
 	) {
 		super(code);
+		this.code = code;
 	}
 }
 

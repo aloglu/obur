@@ -27,10 +27,12 @@ import {
 import { goalVersions, profiles } from './schema.ts';
 
 export class GoalError extends Error {
+	readonly code: 'profile_incomplete' | 'targets_not_allowed' | 'weight_required' | 'no_target';
 	constructor(
-		readonly code: 'profile_incomplete' | 'targets_not_allowed' | 'weight_required' | 'no_target'
+		code: 'profile_incomplete' | 'targets_not_allowed' | 'weight_required' | 'no_target'
 	) {
 		super(code);
+		this.code = code;
 	}
 }
 

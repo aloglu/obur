@@ -27,8 +27,11 @@ export interface DailyHistoryRow {
 
 export class DiaryError extends Error {
 	/** gone: a late retry of an entry that was deleted and purged from the trash. */
-	constructor(readonly code: 'not_found' | 'conflict' | 'conversion_unknown' | 'gone') {
+	readonly code: 'not_found' | 'conflict' | 'conversion_unknown' | 'gone';
+	// A plain field (not a parameter property): the worker runs this file with Node's type stripping.
+	constructor(code: 'not_found' | 'conflict' | 'conversion_unknown' | 'gone') {
 		super(code);
+		this.code = code;
 	}
 }
 

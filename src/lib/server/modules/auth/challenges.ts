@@ -24,10 +24,13 @@ interface Stored extends Challenge {
 export class ChallengeStore {
 	readonly #items = new Map<string, Stored>();
 
-	constructor(
-		private readonly maxItems = 10_000,
-		private readonly now: () => number = Date.now
-	) {}
+	private readonly maxItems: number;
+	private readonly now: () => number;
+
+	constructor(maxItems = 10_000, now: () => number = Date.now) {
+		this.maxItems = maxItems;
+		this.now = now;
+	}
 
 	put(challenge: Challenge): string {
 		this.#sweep();
