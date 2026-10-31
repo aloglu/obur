@@ -282,7 +282,7 @@ pickers, build directly): `shared/reminders.ts` (due rule, 5 unit tests), `modul
 without identity), worker `send-reminders` every 5 minutes with web-push 3.6.7, `npm run push:keys`, service worker
 push and click handlers, Settings → Reminders page, export/import of settings, sign-out unsubscribes; browser test on
 both projects. Error classes no longer use parameter properties (Node type stripping in the worker), with a lint rule.
-**Owner action needed:** generate keys with `npm run push:keys` on the desktop and put the three lines in the server's
+First server deploy: the worker crash-looped (`drizzle-orm` was a dev dependency, pruned from the image, and the worker now imports modules); moved to dependencies, verified by loading the worker inside a local image build. **Owner action needed:** generate keys with `npm run push:keys` on the desktop and put the three lines in the server's
 `.env`, then redeploy; then turn notifications on from the installed app on the iPhone and check a reminder arrives.
 
 ## App icon (2026-10-31)
