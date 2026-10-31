@@ -1,0 +1,4 @@
+Achievement pictures: OpenMoji, the open-source emoji and icon project (https://openmoji.org), version 15.1.0.
+License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/).
+Changes: none to these files; the copies in dark/ have the black outlines redrawn in a light tone.
+These icon files are licensed under CC BY-SA 4.0; the rest of obur is MIT-licensed.

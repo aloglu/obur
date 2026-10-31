@@ -240,7 +240,7 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
   (`AppLogo`; the tab icon follows the browser's scheme). The logo sits left of the wordmark on the sign-in screens
   (36 px) and the desktop sidebar (32 px).
 
-### Achievements, Journal and Help (owner, 2026-10-31; Journal and achievements built the same day, Help not yet)
+### Achievements, Journal and Help (owner, 2026-10-31; all three built the same day)
 
 Settled over five rounds of mock-ups (a private Artifact; picks and notes in its `notes` collection).
 
@@ -278,7 +278,12 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   setting. Progress keeps the charts. Phone: calendar, then highlights; desktop: side by side, the calendar sticky.
   Highlights that aren't achievements sit in neutral circles with a line icon.
 - **Help:** its own page (search that ignores accents and Turkish letters, topic chips, short real answers), opened
-  from More. No inline "?" or "How?" links (owner tried both and chose the page only).
+  from More. No inline "?" or "How?" links (owner tried both and chose the page only). Built as `/help`, the "Help" row in More (and
+  desktop Settings) after Security: a search box, topic chips (All, Logging, Budget, Weight, Progress, Reminders,
+  Privacy) and the questions as disclosures grouped by topic; a search with a single match opens it. Words live in
+  the message catalog (`help_<id>_q`, `_a1…`, `_k` for extra English and Turkish search words), the list in
+  `shared/help.ts`; answers were checked against the code (activity counts by default; the smoothing accuracy is the
+  simulated figure from docs/feasibility.md). Update an answer in the same change as the behaviour it describes.
 
 ### Food form portions
 

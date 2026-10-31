@@ -315,7 +315,10 @@ had two phone-webkit failures (`achievements` and `goals` "day totals" tests) th
 full runs or 45 targeted repeats; cause unknown, so watch for it.
 Known limits: weight achievements need a calculated target with a goal weight below the start (a manual budget has
 no goal weight, so they stay off and the page says so); pounds not handled until Units and formats exists.
-**Next step:** the Help page (step 3).
+Step 3, Help (2026-10-31): `/help` from More, 14 answers in six topics, accent- and Turkish-insensitive search;
+the icon credit now covers the achievement pictures. **Next step:** Units and formats (pounds would also settle the
+"Pounds lost" step), then the pre-release pass (security, accessibility and 200 % text, long Turkish names, restore
+check) and the cut-over import when the owner chooses.
 
 ## App icon (2026-10-31)
 

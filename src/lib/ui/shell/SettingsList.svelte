@@ -97,6 +97,11 @@
 				>{m.more_security()}<ChevronRight size={20} class="text-muted" aria-hidden="true" /></a
 			>
 		</li>
+		<li>
+			<a href={resolve('/(app)/help')} class={row}
+				>{m.more_help()}<ChevronRight size={20} class="text-muted" aria-hidden="true" /></a
+			>
+		</li>
 		{#if isAdmin}
 			<li>
 				<a href={resolve('/(app)/household')} class={row}
@@ -112,7 +117,7 @@
 	<Button variant="ghost" onclick={signOut}>{m.home_sign_out()}</Button>
 </Card>
 
-<!-- Credit the food icons' licence requires (static/icons/food/LICENSE.txt). -->
+<!-- Credit the icons' licence requires (static/icons/food/LICENSE.txt, static/icons/achievements/LICENSE.txt). -->
 <p class="px-1 text-[12.5px] text-muted">
 	<a
 		href="https://openmoji.org"
