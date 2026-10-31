@@ -285,6 +285,12 @@ both projects. Error classes no longer use parameter properties (Node type strip
 First server deploy: the worker crash-looped (`drizzle-orm` was a dev dependency, pruned from the image, and the worker now imports modules); moved to dependencies, verified by loading the worker inside a local image build. Keys set in the server's `.env` by the owner (2026-10-31); the server's hand-copied `compose.yaml` still lacks the `VAPID_*` lines, so the owner copies it (deploy/unraid/README.md), then redeploy. **Owner action needed:** generate keys with `npm run push:keys` on the desktop and put the three lines in the server's
 `.env`, then redeploy; then turn notifications on from the installed app on the iPhone and check a reminder arrives.
 
+UI round (2026-10-31, owner's iPhone): top of phone pages clear of iOS's status-bar blur (+12 px), portion row fits
+on phones, Readings/Trend switch moved into the headline row (deployed c21b69e). Owner still finds the switch off:
+seven placements published as a private Artifact (link in the session; picks and notes in its `notes` collection).
+Committed but not deployed yet: shared form `Select` (owner: one dropdown convention). Next: read the pick, build
+it, deploy both.
+
 ## App icon (2026-10-31)
 
 The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark
