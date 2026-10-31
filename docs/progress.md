@@ -270,6 +270,12 @@ navigation during that refresh made SvelteKit reload the old page and cancel it 
 in the first moment after app start, so real use is barely touched). `signedInAs` now sets the zone cookie; the full
 browser suite then passed three runs in a row. Trend settings also checked on simulated histories (owner agreed, 2026-10-31; docs/feasibility.md): they hold up, no change.
 
+Bulk diary actions (Phase 4, next): demos published for the owner as a private Artifact (2026-10-31; link in the
+session): A meal "…" menu (select, move/copy/delete meal), B long-press to select (Select in the edit sheet as the
+alternative), C a day-level Select with Select all per meal; shared Move to / Copy to sheet (day and meal) and Delete
+with Undo; desktop drag between meal cards. Picks, notes and three questions (copy yesterday's meal, stay or go after
+moving to another day, drag copy/move) are saved in its `notes` collection. Next: read them, record in docs/ui.md, build.
+
 ## App icon (2026-10-31)
 
 The owner's artwork in `assets/brand/` (MIT, owner's choice); home-screen icons, Android maskable icon, light/dark
