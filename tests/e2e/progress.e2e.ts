@@ -136,8 +136,12 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 		has: page.getByRole('radiogroup', { name: 'Show' })
 	});
 	// Readings: what was weighed.
-	await expect(weight.getByText('Latest weigh-in', { exact: true })).toBeVisible();
-	await expect(weight.getByText('Smoothed weight', { exact: true })).toBeHidden();
+	await expect(
+		weight.getByText('Latest weigh-in', { exact: true }).filter({ visible: true })
+	).toBeVisible();
+	await expect(
+		weight.getByText('Smoothed weight', { exact: true }).filter({ visible: true })
+	).toBeHidden();
 	await expect(weight).toContainText('82,6kg');
 	await expect(weight).toContainText('−1,4 kg');
 	await expect(weight.getByText('Average change per week')).toBeVisible();
@@ -151,8 +155,12 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	// Trend: the smoothed weight and pace, remembered on this device; the card keeps its height.
 	const before = (await weight.boundingBox())!.height;
 	await weight.getByRole('radio', { name: 'Trend' }).click();
-	await expect(weight.getByText('Smoothed weight', { exact: true })).toBeVisible();
-	await expect(weight.getByText('Latest weigh-in', { exact: true })).toBeHidden();
+	await expect(
+		weight.getByText('Smoothed weight', { exact: true }).filter({ visible: true })
+	).toBeVisible();
+	await expect(
+		weight.getByText('Latest weigh-in', { exact: true }).filter({ visible: true })
+	).toBeHidden();
 	await expect(weight.getByText('a week', { exact: true })).toBeVisible();
 	await expect(weightReadout).toContainText('smoothed');
 	// The selected weigh-in stays selected across the switch.

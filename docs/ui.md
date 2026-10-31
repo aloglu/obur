@@ -16,7 +16,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 ## 2. Screens and behaviour (as decided in review)
 
 **Navigation**
-- **Phone status bar:** pages start below the status bar (`env(safe-area-inset-top)`); content scrolls under it, where iOS blurs it (owner, 2026-10-31: keep the blur, but nothing should sit in it at rest).
+- **Phone status bar:** pages start 12 px below the status bar (`env(safe-area-inset-top)`, plus room for iOS's blur fading out below it); content scrolls under it, where iOS blurs it (owner, 2026-10-31: keep the blur, but nothing should sit in it at rest).
 - **Phone:** a floating pill tab bar inset 12 px from the screen edges, with Today, Log, Progress and More. The active tab gets a soft accent background and accent text.
 - **Desktop (≥ 760 px):** a 232 px side nav with Today, Log and Progress at the top, and Profile and Settings pinned at the bottom. The side nav is sticky at full viewport height, so the bottom links are always visible. There is no More on desktop.
 - **More (phone only):** Appearance first, then rows for Profile and goals, Units and formats, Your data and Household (admin).
@@ -117,7 +117,8 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
   - Desktop: no tabs; two columns, the calendar beside Weight, then Calories beside Nutrients, with the range
     dropdown beside the page title.
   - Weight: a **Readings / Trend** switch in the card (Readings by default; the choice is remembered on the
-    device). Readings: the weigh-ins as points joined by a line; headline "Latest weigh-in" with the change since the
+    device), at the top right: on a phone beside the headline's label ("Latest weigh-in" / "Smoothed weight"), on
+    desktop beside the Weight title (owner's choice A, 2026-10-31). Readings: the weigh-ins as points joined by a line; headline "Latest weigh-in" with the change since the
     first weigh-in in the range; rows to goal, average change per week, weigh-ins, lowest reading. Trend: the smoothed
     weight as the line with the weigh-ins faint behind it; headline "Smoothed weight" with the pace per week and the
     line "Evens out day-to-day swings from water and food."; rows to goal, change in the range, weigh-ins. Both: goal

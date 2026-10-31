@@ -130,7 +130,8 @@
 	{@const value = v === 'trend' ? last!.trend : last!.weight}
 	<div class="flex flex-wrap items-end justify-between gap-2.5">
 		<div>
-			<p class="m-0 text-[12px] font-bold tracking-[0.06em] text-muted uppercase">
+			<!-- Phone: this label sits in the top row beside the Readings/Trend switch (owner, 2026-10-31). -->
+			<p class="m-0 hidden text-[12px] font-bold tracking-[0.06em] text-muted uppercase desk:block">
 				{v === 'trend' ? m.history_smoothed() : m.history_latest()}
 			</p>
 			<p
@@ -219,10 +220,23 @@
 		>
 			<div class="flex items-center justify-between gap-3">
 				<h2 class={heading}>{m.history_tab_weight()}</h2>
+				<!-- Phone: the headline's label, for the view shown (both stacked, so the row never changes width). -->
+				<p class="m-0 grid min-w-0 desk:hidden">
+					{#each VIEWS as v (v)}
+						<span
+							class={[
+								'truncate text-[12px] font-bold tracking-[0.06em] text-muted uppercase [grid-area:1/1]',
+								v !== view && 'invisible'
+							]}
+							aria-hidden={v !== view}
+							>{v === 'trend' ? m.history_smoothed() : m.history_latest()}</span
+						>
+					{/each}
+				</p>
 				<div
 					role="radiogroup"
 					aria-label={m.history_view()}
-					class="ml-auto flex gap-1 rounded-[14px] bg-surface2 p-1"
+					class="ml-auto flex shrink-0 gap-1 rounded-[14px] bg-surface2 p-1"
 				>
 					{#each [['readings', m.history_view_readings()], ['trend', m.history_view_trend()]] as const as [id, label] (id)}
 						<button
@@ -231,7 +245,7 @@
 							aria-checked={view === id}
 							onclick={() => setView(id)}
 							class={[
-								'min-h-11 rounded-[10px] px-3.5 text-[14px] font-[650]',
+								'min-h-11 rounded-[10px] px-3 text-[14px] font-[650]',
 								view === id ? 'bg-surface text-text shadow-card' : 'text-muted'
 							]}>{label}</button
 						>
