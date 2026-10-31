@@ -253,7 +253,7 @@ Order: history (charts and averages on Progress) first, then bulk actions and dr
 achievements; imported-activity credit last (likely low value). History needs a visual direction: three layouts
 (A summary first, B tabs per topic, C chart first with difference bars) published as a private Artifact
 (2026-10-31; link in the session) with a pick, notes per option and four questions saved in its `notes` collection.
-Owner's answers read (2026-10-31): B on phone with the range as a dropdown beside the tabs; desktop all cards side by side like A; trend plus points; bars against the budget line; averages over complete days only. Recorded in `docs/ui.md` and `docs/design.md`. Steps: 1 docs (done); 2 pure rules in `shared/history.ts`; 3 range data and loader with real-Postgres tests; 4 screen with LayerChart 2.8.0, browser tests, deploy. Next after recording: then build (LayerChart, `progress` module queries over diary snapshots and target
+Owner's answers read (2026-10-31): B on phone with the range as a dropdown beside the tabs; desktop all cards side by side like A; trend plus points; bars against the budget line; averages over complete days only. Recorded in `docs/ui.md` and `docs/design.md`. Steps: 1 docs (done); 2 pure rules in `shared/history.ts` (done: ranges by calendar month, trend, bars, averages; 11 unit tests); 3 range data and loader with real-Postgres tests; 4 screen with LayerChart 2.8.0, browser tests, deploy. Next after recording: then build (LayerChart, `progress` module queries over diary snapshots and target
 versions). Independent work meanwhile: the label-scan edit counting (approved, above).
 
 ## App icon (2026-10-31)
