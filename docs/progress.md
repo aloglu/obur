@@ -243,8 +243,7 @@ only, needs the owner's OK), (b) a friend's kitchen, (c) new purchases over time
 (2026-10-30); deployed with the OCR service (healthy), so Scan is on for testing. Final accuracy check (owner,
 2026-10-31): no outside people; both (a) and (c). (c) the owner photographs labels of newly bought products into
 `~/obur-private/labels-heldout-2/` (do not look until the owner says about 10 are there; likely after launch), then
-score once. (a) count how many proposed values are changed before saving (counts only), approved; build it before
-production release so real use produces data. Next: batch 2 features (Profile details, editable macro targets, saved meal
+score once. (a) count how many proposed values are changed before saving (counts only): built 2026-10-31 (migrations 0030–0031, `shared/scan-edits.ts`, Household "Label scans" totals for admins; 4 unit, 4 real-Postgres and 2 browser checks incl. an untouched save recording zero edits). Next: batch 2 features (Profile details, editable macro targets, saved meal
 editor), then the budget circle alternatives Artifact.
 
 ## Phase 4 (owner approved the order 2026-10-31)

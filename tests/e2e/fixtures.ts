@@ -62,3 +62,11 @@ export async function createFood(page: Page, food: Record<string, unknown>): Pro
 	});
 	return id;
 }
+
+/** The label scan edit counts saved with the person's food of this name (test inspection only). */
+export async function scanEditsFor(foodName: string) {
+	const [row] =
+		await sql`select e.proposed, e.changed, e.removed, e.added, e.basis_known, e.basis_changed
+		from label_scan_edits e join foods f on f.id = e.food_id where f.name = ${foodName}`;
+	return row;
+}

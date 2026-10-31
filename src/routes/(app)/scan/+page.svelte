@@ -15,6 +15,7 @@
 	import type { NutrientValue } from '#lib/shared/nutrients.ts';
 	import Card from '#lib/ui/Card.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
+	import { scanEdits } from '#lib/shared/scan-edits.ts';
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
 
 	let { data } = $props();
@@ -156,9 +157,15 @@
 		busy = true;
 		saveProblem = '';
 		try {
+			// How much the proposal was corrected: counts only (shared/scan-edits.ts).
+			const scanEditCounts =
+				initial && proposal
+					? scanEdits({ ...initial, basisKnown: proposal.basis !== null }, food)
+					: undefined;
 			const { id } = await api<{ id: string }>('POST', '/api/v1/foods', {
 				food,
-				source: 'label_scan'
+				source: 'label_scan',
+				scanEdits: scanEditCounts
 			});
 			showToast({ message: m.scan_saved({ name: food.name }) });
 			if (logAfter) {

@@ -780,5 +780,16 @@
 	"history_reading_readout": "{day}: {weight} kg",
 	"history_trend_readout": "{day}: smoothed {trend} kg, pace {pace} kg a week · weighed {weight} kg",
 	"history_change_in": "Change {within}",
-	"history_trend_summary": "Smoothed weight from {first} kg on {firstDay} to {last} kg on {lastDay}; pace {pace} kg a week."
+	"history_trend_summary": "Smoothed weight from {first} kg on {firstDay} to {last} kg on {lastDay}; pace {pace} kg a week.",
+	"household_scans": "Label scans",
+	"household_scans_body": "How much scanned labels were corrected before saving, across the household. Counts only: no values or photos are kept.",
+	"household_scans_none": "No scanned labels saved yet.",
+	"household_scans_saved": "Labels saved",
+	"household_scans_without_edits": "Saved without edits",
+	"household_scans_values": "Values the scanner read",
+	"household_scans_changed": "Changed",
+	"household_scans_removed": "Removed",
+	"household_scans_added": "Filled in by hand",
+	"household_scans_basis_unknown": "Basis not found",
+	"household_scans_basis_changed": "Basis or serving size changed"
 }

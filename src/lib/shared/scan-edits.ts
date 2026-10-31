@@ -33,7 +33,7 @@ export const ScanEditsInput = v.object({
 
 interface Basis {
 	basis: string;
-	servingSize: { amount: number; unit: string } | null;
+	servingSize?: { amount: number; unit: string } | null;
 }
 
 const same = (a: NutrientValue, b: NutrientValue) =>

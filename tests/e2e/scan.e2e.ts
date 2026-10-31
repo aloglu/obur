@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { SPEECH_STUB } from '../../playwright.config.ts';
-import { signedInAs } from './fixtures.ts';
+import { scanEditsFor, signedInAs } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 // Small images: the stand-in OCR answers by the photo's width (3, 5, 7 or 9 px), so each test gets its own made-up
@@ -94,6 +94,15 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	await sheet.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(page.getByRole('main')).toContainText(`Fındıklı gofret ${testInfo.project.name}`);
+	// Saved as proposed: the form added and changed nothing on its own.
+	expect(await scanEditsFor(`Fındıklı gofret ${testInfo.project.name}`)).toMatchObject({
+		proposed: 8,
+		changed: 0,
+		removed: 0,
+		added: 0,
+		basis_known: true,
+		basis_changed: false
+	});
 });
 
 test('a label that cannot be read says so and leaves the form empty to fill in', async ({
@@ -124,7 +133,7 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 	page,
 	request
 }, testInfo) => {
-	await signedInAs(page, `Toplu ${testInfo.project.name}`);
+	await signedInAs(page, `Toplu ${testInfo.project.name}`, 'admin');
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
 		data: { width: 7, status: 200, body: { lines: TABLE, ocrMs: 1 } }
 	});
@@ -147,4 +156,16 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 	await page.getByRole('link', { name: 'Scan a label' }).click();
 	await choose();
 	await expect(page.getByLabel('Log it after saving')).not.toBeChecked();
+	// One value corrected before saving is counted as one change; admins see household totals.
+	await page.locator('#n-energy_kcal').fill('410');
+	await page.getByLabel('Product name').fill(`Gofret 2 ${testInfo.project.name}`);
+	await page.getByRole('button', { name: 'Save food' }).click();
+	await expect(page.getByText(`Saved “Gofret 2 ${testInfo.project.name}”`)).toBeVisible();
+	expect(await scanEditsFor(`Gofret 2 ${testInfo.project.name}`)).toMatchObject({
+		changed: 1,
+		removed: 0,
+		added: 0
+	});
+	await page.goto('/household');
+	await expect(page.getByTestId('scan-totals')).toContainText('Labels saved');
 });

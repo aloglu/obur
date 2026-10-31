@@ -236,6 +236,24 @@
 			</ul>
 		{/if}
 	</Card>
+	<Card title={m.household_scans()}>
+		<p class="text-[14px] text-muted">{m.household_scans_body()}</p>
+		{#if data.scanTotals.scans === 0}
+			<p class="text-[14px] text-muted">{m.household_scans_none()}</p>
+		{:else}
+			{@const t = data.scanTotals}
+			{@const share = (part: number, whole: number) =>
+				whole ? ` (${Math.round((part / whole) * 100)} %)` : ''}
+			<dl class="flex flex-col divide-y divide-line text-[14px]" data-testid="scan-totals">
+				{#each [[m.household_scans_saved(), `${t.scans}`], [m.household_scans_without_edits(), `${t.withoutEdits}${share(t.withoutEdits, t.scans)}`], [m.household_scans_values(), `${t.proposed}`], [m.household_scans_changed(), `${t.changed}${share(t.changed, t.proposed)}`], [m.household_scans_removed(), `${t.removed}${share(t.removed, t.proposed)}`], [m.household_scans_added(), `${t.added}`], [m.household_scans_basis_unknown(), `${t.basisUnknown}`], [m.household_scans_basis_changed(), `${t.basisChanged}`]] as [label, value] (label)}
+					<div class="flex justify-between gap-3 py-2.5">
+						<dt>{label}</dt>
+						<dd class="m-0 font-semibold tabular-nums">{value}</dd>
+					</div>
+				{/each}
+			</dl>
+		{/if}
+	</Card>
 </main>
 
 {#if deleting}
