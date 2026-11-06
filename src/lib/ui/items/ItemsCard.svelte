@@ -1,6 +1,7 @@
 <script lang="ts">
 	// The food list of the saved meal and recipe editors: each item a row (name, quantity, kcal) that expands to its
 	// amount, unit chips, the macro preview and Remove; Add food below. Nothing is saved here.
+	import AmountField from '../AmountField.svelte';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Plus from '@lucide/svelte/icons/plus';
 	import { m } from '#lib/paraglide/messages.js';
@@ -9,7 +10,6 @@
 	import type { MeasureOption, UnitOption } from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
 	import FoodIcon from '../FoodIcon.svelte';
-	import Chips from '../Chips.svelte';
 	import MacroPreview from '../log/MacroPreview.svelte';
 	import AddFoodSheet from './AddFoodSheet.svelte';
 	import { asValues, newDraft, nutrientsOf, optionsFor, quantityOf, type Draft } from './drafts.ts';
@@ -105,22 +105,11 @@
 				{#if open === d.key}
 					<div class="flex flex-col gap-3 px-2 pt-1 pb-3">
 						{#if d.kind === 'food' && d.snapshot}
-							<div class="flex flex-col gap-1.5">
-								<label for="amount-{d.key}" class="text-[13px] font-[650] text-muted"
-									>{m.amount_amount()}</label
-								>
-								<input
-									id="amount-{d.key}"
-									bind:value={d.amountText}
-									inputmode="decimal"
-									autocomplete="off"
-									class="min-h-12 rounded-input border border-line bg-surface2 px-3.5 text-[18px] font-bold tabular-nums"
-								/>
-							</div>
-							<Chips
-								label={m.amount_unit()}
-								bind:value={d.optionKey}
-								options={optionsFor(d, measures).map((o) => ({ value: o.key, label: o.label }))}
+							<AmountField
+								id="amount-{d.key}"
+								bind:amount={d.amountText}
+								bind:unit={d.optionKey}
+								units={optionsFor(d, measures).map((o) => ({ value: o.key, label: o.label }))}
 							/>
 							<MacroPreview nutrients={asValues(n)} />
 						{/if}

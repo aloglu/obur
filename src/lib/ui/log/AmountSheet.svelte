@@ -1,5 +1,7 @@
 <script lang="ts">
 	// docs/ui.md "Picking a food": basis line, amount with unit chips, day chips, meal chips, live preview, Save.
+	import AmountField from '../AmountField.svelte';
+	import DayMealFields from '../DayMealFields.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
@@ -15,7 +17,6 @@
 	import { basisFactor, scaleNutrients, type Unit } from '#lib/shared/quantity.ts';
 	import { unitOptions, type MeasureOption, type UnitOption } from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
-	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 	import MacroPreview from './MacroPreview.svelte';
@@ -135,36 +136,25 @@
 		<p class="text-[14px] text-muted">{basisLine}</p>
 		<form class="flex flex-col gap-4" onsubmit={save}>
 			<div class="flex flex-col gap-1.5">
-				<label for="amount" class="text-[13px] font-[650] text-muted">{m.amount_amount()}</label>
-				<input
+				<AmountField
 					id="amount"
-					bind:value={amountText}
-					inputmode="decimal"
-					autocomplete="off"
-					aria-invalid={amount === undefined}
-					class="min-h-12 rounded-input border border-line bg-surface2 px-3.5 text-[20px] font-bold tabular-nums"
+					bind:amount={amountText}
+					bind:unit={optionKey}
+					units={options.map((o) => ({ value: o.key, label: o.label }))}
+					invalid={amount === undefined}
+					onunit={(key) =>
+						(amountText = formatDecimal(options.find((o) => o.key === key)!.defaultAmount, ',', 2))}
 				/>
 				{#if amountText.trim() && amount === undefined}<p class="text-[13px] text-bad">
 						{m.amount_invalid()}
 					</p>{/if}
 			</div>
-			<Chips
-				label={m.amount_unit()}
-				bind:value={optionKey}
-				onchange={(key) =>
-					(amountText = formatDecimal(options.find((o) => o.key === key)!.defaultAmount, ',', 2))}
-				options={options.map((o) => ({ value: o.key, label: o.label }))}
-			/>
 			{#if lateNight}<Notice tone="info">{m.amount_late_night()}</Notice>{/if}
-			<Chips
-				label={m.amount_day()}
-				bind:value={day}
-				options={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
-			/>
-			<Chips
-				label={m.amount_meal()}
-				bind:value={meal}
-				options={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
+			<DayMealFields
+				bind:day
+				days={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
+				bind:meal
+				meals={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
 			/>
 			<MacroPreview nutrients={preview} />
 			{#if problem}<Notice>{problem}</Notice>{/if}

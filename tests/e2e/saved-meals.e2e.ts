@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, createFood, signedInAs } from './fixtures.ts';
+import { apiAs, createFood, signedInAs, choose } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
@@ -51,8 +51,8 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 	await page.getByRole('button', { name: /Pazar kahvaltısı.*2 items · 160 kcal/ }).click();
 	const sheet = page.getByRole('dialog', { name: 'Pazar kahvaltısı' });
 	await sheet.getByRole('checkbox', { name: /Çay ve zeytin/ }).uncheck();
-	await sheet.getByRole('radio', { name: 'Yesterday' }).click();
-	await sheet.getByRole('radio', { name: 'Dinner' }).click();
+	await choose(sheet, 'Day', 'Yesterday');
+	await choose(sheet, 'Meal', 'Dinner');
 	await sheet.getByRole('button', { name: 'Log 1 item · 100 kcal' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Yesterday' })).toBeVisible();
 	const dinner = page.getByRole('region', { name: 'Dinner' });
@@ -118,7 +118,7 @@ test('create a saved meal from scratch, without logging anything', async ({ page
 	await add.getByLabel('Search foods').fill(`yulaf ${tag}`);
 	await add.getByRole('button', { name: new RegExp(`Yulaf ${tag}`) }).click();
 	const amount = page.getByRole('dialog', { name: `Yulaf ${tag}` });
-	await amount.getByRole('radio', { name: 'kase (40 g)' }).click();
+	await choose(amount, 'Unit', 'kase (40 g)');
 	await amount.getByLabel('Amount').fill('1,5');
 	await amount.getByRole('button', { name: 'Add to meal' }).click();
 	await expect(page.getByRole('region', { name: 'Foods' })).toContainText('228 kcal');

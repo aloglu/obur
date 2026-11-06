@@ -1,7 +1,7 @@
 // Test-runner fixtures that write directly to the disposable e2e database. They create a person and a session
 // row, then hand the browser the session cookie: nothing in the application changes, so no login bypass ships.
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import postgres from 'postgres';
 import { e2eEnv } from '../../playwright.config.ts';
 
@@ -76,4 +76,15 @@ export async function losingToward(userId: string, goalKg: number) {
 	await sql`insert into profiles (user_id, birth_date, sex, height_cm) values (${userId}, '1990-01-01', 'female', 170)`;
 	await sql`insert into goal_versions (user_id, effective_from, mode, base_burn_kcal, deficit_kcal, goal_weight_kg,
 		inputs, calculation_version) values (${userId}, '2025-01-01', 'calculated', 2500, 700, ${goalKg}, '{}', 'e2e')`;
+}
+
+/** Picks a choice from a field's menu (docs/ui.md, "Choices"). */
+export async function choose(
+	scope: Page | Locator,
+	field: string | RegExp,
+	option: string | RegExp
+): Promise<void> {
+	const name = typeof field === 'string' ? new RegExp(`^${field}:`) : field;
+	await scope.getByRole('button', { name }).click();
+	await scope.getByRole('option', { name: option, exact: typeof option === 'string' }).click();
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Adds a food in the saved meal and recipe editors: search, then the amount and unit with the live preview.
 	// Nothing is saved here; the editor's Save sends everything.
+	import AmountField from '../AmountField.svelte';
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
@@ -12,7 +13,6 @@
 	import { unitOptions, type MeasureOption, type UnitOption } from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
 	import Notice from '../Notice.svelte';
-	import Chips from '../Chips.svelte';
 	import Sheet from '../Sheet.svelte';
 	import TextField from '../TextField.svelte';
 	import MacroPreview from '../log/MacroPreview.svelte';
@@ -120,25 +120,14 @@
 		</ul>
 	{:else}
 		<form class="flex flex-col gap-4" onsubmit={add}>
-			<div class="flex flex-col gap-1.5">
-				<label for="meal-add-amount" class="text-[13px] font-[650] text-muted"
-					>{m.amount_amount()}</label
-				>
-				<input
-					id="meal-add-amount"
-					bind:value={amountText}
-					inputmode="decimal"
-					autocomplete="off"
-					aria-invalid={amount === undefined}
-					class="min-h-12 rounded-input border border-line bg-surface2 px-3.5 text-[20px] font-bold tabular-nums"
-				/>
-			</div>
-			<Chips
-				label={m.amount_unit()}
-				bind:value={optionKey}
-				onchange={(key) =>
+			<AmountField
+				id="meal-add-amount"
+				bind:amount={amountText}
+				bind:unit={optionKey}
+				units={options.map((o) => ({ value: o.key, label: o.label }))}
+				invalid={amount === undefined}
+				onunit={(key) =>
 					(amountText = formatDecimal(options.find((o) => o.key === key)!.defaultAmount, ',', 2))}
-				options={options.map((o) => ({ value: o.key, label: o.label }))}
 			/>
 			<MacroPreview nutrients={preview} />
 			{#if nested}<Notice>{m.recipe_no_nesting()}</Notice>{/if}

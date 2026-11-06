@@ -7,7 +7,7 @@
 	import { MEALS, type Meal } from '#lib/shared/diary-types.ts';
 	import { mealName } from '#lib/shared/format.ts';
 	import Button from '../Button.svelte';
-	import Chips from '../Chips.svelte';
+	import Select from '../Select.svelte';
 	import Sheet from '../Sheet.svelte';
 
 	interface Props {
@@ -50,15 +50,25 @@
 
 <Sheet {title} {onclose}>
 	<div class="flex flex-col gap-4">
-		<Chips
-			label={m.bulk_day()}
-			bind:value={day}
-			options={[
-				{ value: 'today', label: m.bulk_today() },
-				{ value: 'yesterday', label: m.bulk_yesterday() },
-				{ value: 'other', label: m.bulk_other_day() }
-			]}
-		/>
+		<div class="grid grid-cols-2 gap-2">
+			<Select
+				label={m.bulk_day()}
+				bind:value={day}
+				wide
+				options={[
+					{ value: 'today', label: m.bulk_today() },
+					{ value: 'yesterday', label: m.bulk_yesterday() },
+					{ value: 'other', label: m.bulk_other_day() }
+				]}
+			/>
+			<Select
+				label={m.bulk_meal()}
+				value={meal ?? ('' as Meal)}
+				onchange={(v) => (meal = v)}
+				wide
+				options={MEALS.map((value) => ({ value, label: mealName(value) }))}
+			/>
+		</div>
 		{#if day === 'other'}
 			<label class="flex flex-col gap-1.5">
 				<span class="text-[13px] font-[650] text-muted">{m.bulk_date()}</span>
@@ -70,12 +80,6 @@
 				/>
 			</label>
 		{/if}
-		<Chips
-			label={m.bulk_meal()}
-			value={meal ?? ('' as Meal)}
-			onchange={(v) => (meal = v)}
-			options={MEALS.map((value) => ({ value, label: mealName(value) }))}
-		/>
 		{#if mode === 'copy'}<p class="text-[13px] text-muted">{m.bulk_copy_note()}</p>{/if}
 		{#if already}<p class="text-[13px] text-muted">{m.bulk_already_there()}</p>{/if}
 		<Button

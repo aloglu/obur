@@ -62,7 +62,8 @@
 		}
 		const below = viewHeight - box.bottom - GAP - EDGE;
 		const above = box.top - GAP - EDGE;
-		const needed = list.scrollHeight;
+		// The closed list can't measure itself; rows are 44 px, or 62 with a hint, inside 6 px of padding.
+		const needed = 12 + options.reduce((sum, o) => sum + (o.hint ? 62 : 44), 0);
 		if (needed <= below || below >= above) {
 			s.top = `${box.bottom + GAP}px`;
 			s.maxHeight = `${below}px`;
@@ -131,7 +132,9 @@
 	{id}
 	{disabled}
 	popovertarget={listId}
-	aria-label={label}
+	aria-label={label
+		? `${label}: ${options.find((o) => o.value === value)?.label ?? ''}`
+		: undefined}
 	aria-haspopup="listbox"
 	aria-expanded={open}
 	class={extra as string}

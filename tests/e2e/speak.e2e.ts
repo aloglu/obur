@@ -51,10 +51,7 @@ test('Speak records, sends the clip with the person’s foods as a prompt, and c
 		'Akşam bir kutu sesli ayran ve iki bardak su içtim.'
 	);
 	await expect(sheet.getByRole('region', { name: 'Köy Sesli Ayran' })).toContainText('80 kcal');
-	await expect(sheet.getByRole('radio', { name: 'Dinner' })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
+	await expect(sheet.getByRole('button', { name: /^Meal: Dinner/ })).toBeVisible();
 	const sent = await (await fetch(`${SPEECH_STUB}/last`)).json();
 	expect(sent.prompt).toContain('Köy');
 	expect(sent.prompt).toContain('Sesli Ayran');

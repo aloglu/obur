@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Logs a saved meal (docs/ui.md, "Saved meals"): pick items, day and meal, then one tap creates ordinary entries.
 	// Edit meal opens the editor; managing and logging are separate (owner review 2026-10-30).
+	import DayMealFields from '../DayMealFields.svelte';
 	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
@@ -10,7 +11,6 @@
 	import { MEALS, type DiaryEntry, type Meal, type SavedMeal } from '#lib/shared/diary-types.ts';
 	import { dayTitle, kcal, mealName } from '#lib/shared/format.ts';
 	import Button from '../Button.svelte';
-	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 	import ItemChecklist from './ItemChecklist.svelte';
@@ -91,15 +91,11 @@
 		<form class="flex flex-col gap-4" onsubmit={log}>
 			<ItemChecklist label={m.saved_items()} items={saved.items} bind:chosen />
 			{#if lateNight}<Notice tone="info">{m.amount_late_night()}</Notice>{/if}
-			<Chips
-				label={m.amount_day()}
-				bind:value={day}
-				options={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
-			/>
-			<Chips
-				label={m.amount_meal()}
-				bind:value={meal}
-				options={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
+			<DayMealFields
+				bind:day
+				days={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
+				bind:meal
+				meals={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
 			/>
 			<Button type="submit" wide disabled={busy || picked.length === 0}
 				>{busy

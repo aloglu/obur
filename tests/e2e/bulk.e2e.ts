@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { apiAs, signedInAs } from './fixtures.ts';
+import { apiAs, signedInAs, choose } from './fixtures.ts';
 
 const zone = 'Europe/Istanbul';
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
@@ -63,8 +63,8 @@ test('hold to select or drag; move, copy and delete several entries with one Und
 	// Move both to Dinner, then undo.
 	await bar.getByRole('button', { name: 'Move to…' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Move 2 entries' });
-	await expect(sheet.getByRole('radio', { name: 'Today' })).toHaveAttribute('aria-checked', 'true');
-	await sheet.getByRole('radio', { name: 'Dinner' }).click();
+	await expect(sheet.getByRole('button', { name: /^Day: Today/ })).toBeVisible();
+	await choose(sheet, 'Meal', 'Dinner');
 	await sheet.getByRole('button', { name: 'Move to Dinner' }).click();
 	await expect(page.getByRole('status')).toContainText('Moved 2 entries');
 	await expect(meal('Dinner')).toContainText('Simit');
@@ -83,8 +83,8 @@ test('hold to select or drag; move, copy and delete several entries with one Und
 	await meal('Dinner').getByRole('button', { name: 'Dinner actions' }).click();
 	await page.getByRole('menuitem', { name: 'Copy meal to…' }).click();
 	const copySheet = page.getByRole('dialog', { name: 'Copy 1 entry' });
-	await copySheet.getByRole('radio', { name: 'Yesterday' }).click();
-	await copySheet.getByRole('radio', { name: 'Snacks' }).click();
+	await choose(copySheet, 'Day', 'Yesterday');
+	await choose(copySheet, 'Meal', 'Snacks');
 	await copySheet.getByRole('button', { name: 'Copy to Snacks' }).click();
 	await expect(page.getByRole('status')).toContainText('Copied 1 entry');
 	await expect(page.getByRole('status')).toContainText('To Snacks · Yesterday');

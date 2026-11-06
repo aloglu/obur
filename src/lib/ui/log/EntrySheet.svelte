@@ -2,6 +2,8 @@
 	// A typed (later spoken) entry to confirm (docs/ui.md, "Speak" and "Typed entry"): the text as editable, one card
 	// per item with its own amount, unit and kcal, shared day and meal chips, then "Log all". Nothing is saved before
 	// that. Each card has its own client ID, so a retry never logs twice; cards that saved leave the sheet.
+	import AmountField from '../AmountField.svelte';
+	import DayMealFields from '../DayMealFields.svelte';
 	import Select from '../Select.svelte';
 	import { onMount, untrack } from 'svelte';
 	import X from '@lucide/svelte/icons/x';
@@ -18,7 +20,6 @@
 	import { basisFactor, scaleNutrients, type Unit } from '#lib/shared/quantity.ts';
 	import { unitOptions, type MeasureOption, type UnitOption } from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
-	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 	import TextField from '../TextField.svelte';
@@ -322,21 +323,17 @@
 						/>
 						{#if card.food}
 							{@const options = unitOptions(card.food, measures)}
-							<TextField
+							<AmountField
 								id="amount-{card.id}"
 								label={m.entry_amount()}
-								bind:value={card.amountText}
-								inputmode="decimal"
-								autocomplete="off"
+								large={false}
+								bind:amount={card.amountText}
+								bind:unit={card.optionKey}
+								units={options.map((o) => ({ value: o.key, label: o.label }))}
 							/>
 							{#if !card.amountText.trim()}<p class="text-[13px] text-warn">
 									{m.entry_how_much()}
 								</p>{/if}
-							<Chips
-								label={m.entry_unit()}
-								bind:value={card.optionKey}
-								options={options.map((o) => ({ value: o.key, label: o.label }))}
-							/>
 							{#if !card.optionKey}<p class="text-[13px] text-warn">
 									{m.entry_unit_choose({ said: card.said ?? '' })}
 								</p>{/if}
@@ -391,18 +388,13 @@
 		{/each}
 
 		{#if cards.length}
-			<Chips
-				label={m.amount_day()}
-				bind:value={day}
-				options={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
+			<DayMealFields
+				bind:day
+				days={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
+				bind:meal
+				meals={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
+				showMeal={cards.some((c) => c.kind === 'food' || c.kind === 'quick')}
 			/>
-			{#if cards.some((c) => c.kind === 'food' || c.kind === 'quick')}
-				<Chips
-					label={m.amount_meal()}
-					bind:value={meal}
-					options={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
-				/>
-			{/if}
 		{/if}
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		{#if cards.length}

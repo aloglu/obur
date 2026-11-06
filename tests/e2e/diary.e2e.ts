@@ -46,10 +46,7 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 	await page.getByRole('button', { name: new RegExp(`Untad Premium Light Ekmek ${tag}`) }).click();
 	const sheet = page.getByRole('dialog');
 	await expect(sheet.getByText('193 kcal per 100 g')).toBeVisible();
-	await expect(sheet.getByRole('radio', { name: 'slice (26 g)' })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
+	await expect(sheet.getByRole('button', { name: /^Unit: slice \(26 g\)/ })).toBeVisible();
 	await sheet.getByLabel('Amount').fill('3');
 	await expect(sheet.getByText('151 kcal')).toBeVisible();
 	await sheet.getByRole('button', { name: 'Save' }).click();
@@ -219,4 +216,20 @@ test('a theme chosen in More sticks and repaints the page', async ({ page }, tes
 
 	await page.getByRole('radio', { name: 'Pazar' }).click();
 	await expect(page.locator('html')).not.toHaveAttribute('data-palette');
+});
+
+test('a field menu opens where it fits, and closes with its choice made', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Menü ${testInfo.project.name}`);
+	await page.goto('/log');
+	await page.getByRole('button', { name: /Quick add/ }).click();
+	const sheet = page.getByRole('dialog');
+	await sheet.getByRole('button', { name: /^Meal:/ }).click();
+	for (const meal of ['Breakfast', 'Lunch', 'Dinner', 'Snacks']) {
+		await expect(sheet.getByRole('option', { name: meal })).toBeInViewport({ ratio: 1 });
+	}
+	await sheet.getByRole('option', { name: 'Snacks' }).click();
+	await expect(sheet.getByRole('button', { name: 'Meal: Snacks' })).toBeFocused();
+	await expect(sheet.getByRole('option', { name: 'Snacks' })).toBeHidden();
 });

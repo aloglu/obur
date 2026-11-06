@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { SPEECH_STUB } from '../../playwright.config.ts';
-import { scanEditsFor, signedInAs } from './fixtures.ts';
+import { scanEditsFor, signedInAs, choose } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 // Small images: the stand-in OCR answers by the photo's width (3, 5, 7 or 9 px), so each test gets its own made-up
@@ -89,8 +89,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 		name: new RegExp(`Fındıklı gofret ${testInfo.project.name}`)
 	});
 	await expect(sheet).toBeVisible();
-	await expect(sheet.getByRole('radio', { name: 'porsiyon (30 g)' })).toBeVisible();
-	await sheet.getByRole('radio', { name: 'porsiyon (30 g)' }).click();
+	await choose(sheet, 'Unit', 'porsiyon (30 g)');
 	await sheet.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(page.getByRole('main')).toContainText(`Fındıklı gofret ${testInfo.project.name}`);

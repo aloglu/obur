@@ -1,5 +1,6 @@
 <script lang="ts">
 	// docs/ui.md "Quick add calories": kcal, optional description, day and meal. Other nutrients stay unknown.
+	import DayMealFields from '../DayMealFields.svelte';
 	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { submit } from '#lib/client/offline/sync.svelte.ts';
@@ -9,7 +10,6 @@
 	import { dayTitle, mealName } from '#lib/shared/format.ts';
 	import { parseDecimal } from '#lib/shared/numbers.ts';
 	import Button from '../Button.svelte';
-	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 	import TextField from '../TextField.svelte';
@@ -84,15 +84,11 @@
 			maxlength={200}
 		/>
 		<p class="text-[13px] text-muted">{m.quick_note()}</p>
-		<Chips
-			label={m.amount_day()}
-			bind:value={day}
-			options={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
-		/>
-		<Chips
-			label={m.amount_meal()}
-			bind:value={meal}
-			options={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
+		<DayMealFields
+			bind:day
+			days={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
+			bind:meal
+			meals={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
 		/>
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<Button type="submit" wide disabled={busy || value === undefined}

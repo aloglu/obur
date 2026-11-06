@@ -1,6 +1,7 @@
 <script lang="ts">
 	// docs/ui.md "Edit entry": amount and unit (or kcal for quick adds), Save changes; "Move to…" lists meals with the
 	// current one disabled; Delete is immediate and the toast offers Undo.
+	import AmountField from '../AmountField.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
@@ -16,7 +17,6 @@
 		type MeasureOption
 	} from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
-	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 	import MacroPreview from './MacroPreview.svelte';
@@ -114,22 +114,11 @@
 			<TextField label={m.quick_kcal()} bind:value={kcalText} inputmode="decimal" />
 			<TextField label={m.quick_description()} bind:value={description} maxlength={200} />
 		{:else}
-			<div class="flex flex-col gap-1.5">
-				<label for="edit-amount" class="text-[13px] font-[650] text-muted"
-					>{m.amount_amount()}</label
-				>
-				<input
-					id="edit-amount"
-					bind:value={amountText}
-					inputmode="decimal"
-					autocomplete="off"
-					class="min-h-12 rounded-input border border-line bg-surface2 px-3.5 text-[20px] font-bold tabular-nums"
-				/>
-			</div>
-			<Chips
-				label={m.amount_unit()}
-				bind:value={optionKey}
-				options={options.map((o) => ({ value: o.key, label: o.label }))}
+			<AmountField
+				id="edit-amount"
+				bind:amount={amountText}
+				bind:unit={optionKey}
+				units={options.map((o) => ({ value: o.key, label: o.label }))}
 			/>
 			<MacroPreview nutrients={preview} />
 		{/if}

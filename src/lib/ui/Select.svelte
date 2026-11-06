@@ -2,6 +2,7 @@
 	// A form field that opens a menu of choices, styled like TextField beside it. `wide` fills the row and its menu
 	// matches the field (Day, Meal); otherwise the field and its menu are as wide as their content (docs/ui.md).
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import { m } from '#lib/paraglide/messages.js';
 	import Menu from './Menu.svelte';
 
 	interface Props {
@@ -50,7 +51,9 @@
 				.filter(Boolean)
 				.join(' ')}
 		>
-			<span class="min-w-0 truncate">{current}</span>
+			<span class={['min-w-0 truncate', !current && 'text-muted']}
+				>{current || m.common_choose()}</span
+			>
 			<ChevronDown size={18} strokeWidth={2.4} aria-hidden="true" class="shrink-0 text-muted" />
 		</Menu>
 	</span>

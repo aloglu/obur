@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createFood, signedInAs } from './fixtures.ts';
+import { createFood, signedInAs, choose } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
@@ -13,7 +13,7 @@ test('a curated food is found by its Turkish name and logged by a USDA portion',
 	const sheet = page.getByRole('dialog', { name: 'Banana' });
 	// Portion names are metric; the gram weight is USDA's.
 	await expect(sheet).not.toContainText('"');
-	await sheet.getByRole('radio', { name: 'medium (18–20 cm long) (118 g)' }).click();
+	await choose(sheet, 'Unit', 'medium (18–20 cm long) (118 g)');
 	await sheet.getByLabel('Amount').fill('1');
 	// 89 kcal per 100 g × 118 g.
 	await expect(sheet).toContainText('105 kcal');

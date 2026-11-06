@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createFood, signedInAs } from './fixtures.ts';
+import { createFood, signedInAs, choose } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
@@ -50,7 +50,7 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 		await add.getByLabel('Search foods').fill(name);
 		await add.getByRole('button', { name: new RegExp(name) }).click();
 		const amount = page.getByRole('dialog', { name: new RegExp(name) });
-		await amount.getByRole('radio', { name: 'g', exact: true }).click();
+		await expect(amount.getByText('g', { exact: true })).toBeVisible(); // the only unit is plain text, not a menu
 		await amount.getByLabel('Amount').fill(grams);
 		await amount.getByRole('button', { name: 'Add to meal' }).click();
 	};
@@ -70,10 +70,10 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await expect(result.locator('img[src="/icons/food/1F958.svg"]')).toBeVisible();
 	await result.click();
 	const sheet = page.getByRole('dialog', { name: `Mercimek çorbası ${tag}` });
-	await expect(sheet.getByRole('radio', { name: 'serving' })).toBeVisible();
-	await sheet.getByRole('radio', { name: 'g', exact: true }).click();
+	await expect(sheet.getByRole('button', { name: /^Unit: / })).toBeVisible();
+	await choose(sheet, 'Unit', 'g');
 	await sheet.getByLabel('Amount').fill('450');
-	await sheet.getByRole('radio', { name: 'Dinner' }).click();
+	await choose(sheet, 'Meal', 'Dinner');
 	await sheet.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	const dinner = page.getByRole('region', { name: 'Dinner' });

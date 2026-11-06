@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createFood, signedInAs } from './fixtures.ts';
+import { createFood, signedInAs, choose } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
@@ -24,18 +24,12 @@ test('a typed sentence becomes items to confirm, logged together and undone toge
 	await page.getByRole('button', { name: /Log as typed.*2 items · Today/ }).click();
 	const sheet = page.getByRole('dialog', { name: 'Check and log' });
 	const bread = sheet.getByRole('region', { name: `Fırıncı Tahıllı Ekmek ${tag}` });
-	await expect(bread.getByRole('radio', { name: 'dilim (30 g)' })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
+	await expect(bread.getByRole('button', { name: /^Unit: dilim \(30 g\)/ })).toBeVisible();
 	await expect(bread).toContainText('150 kcal'); // 2 × 30 g at 250 kcal per 100 g
 	await expect(sheet.getByRole('region', { name: 'Water' }).getByLabel('Millilitres')).toHaveValue(
 		'400'
 	);
-	await expect(sheet.getByRole('radio', { name: 'Breakfast' })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
+	await expect(sheet.getByRole('button', { name: /^Meal: Breakfast/ })).toBeVisible();
 
 	// A vague amount must be filled in before anything can be logged.
 	await sheet.getByLabel('You typed').fill(`biraz tahıllı ekmek ${tag} ve iki bardak su`);
@@ -43,7 +37,7 @@ test('a typed sentence becomes items to confirm, logged together and undone toge
 	await expect(sheet).toContainText('How much? Enter an amount.');
 	await expect(sheet.getByRole('button', { name: 'Log all (2)' })).toBeDisabled();
 	await sheet.getByLabel('Amount').fill('2');
-	await sheet.getByRole('radio', { name: 'dilim (30 g)' }).click();
+	await choose(sheet, 'Unit', 'dilim (30 g)');
 	await sheet.getByRole('button', { name: 'Log all (2)' }).click();
 
 	const toast = page.getByRole('status');
@@ -68,10 +62,7 @@ test('weight, calories-only and a curated food with a bare count', async ({ page
 	await sheet.getByLabel('You typed').fill('bir muz ve 120 kcal snack');
 	await sheet.getByRole('button', { name: 'Read again' }).click();
 	const banana = sheet.getByRole('region', { name: 'Banana' });
-	await expect(banana.getByRole('radio', { name: /^medium/ })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
+	await expect(banana.getByRole('button', { name: /^Unit: medium/ })).toBeVisible();
 	await expect(banana).toContainText('105 kcal');
 	await expect(
 		sheet.getByRole('region', { name: 'Calories only' }).getByLabel('Calories (kcal)')
