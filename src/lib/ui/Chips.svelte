@@ -1,6 +1,6 @@
 <script lang="ts" generics="T extends string">
-	// A single-choice row of chips (radio group semantics). Two options always sit side by side at equal width, never
-	// stacked (docs/ui.md); more options wrap.
+	// A segmented control for two to four options filled in once (radio group semantics, docs/ui.md "Choices"). Equal
+	// widths, never stacked; the highlight slides to the chosen option.
 	interface Option {
 		value: T;
 		label: string;
@@ -13,15 +13,19 @@
 		onchange?: (value: T) => void;
 	}
 	let { label, options, value = $bindable(), onchange }: Props = $props();
+	const at = $derived(options.findIndex((o) => o.value === value));
 </script>
 
 <fieldset class="flex flex-col gap-1.5">
 	<legend class="mb-1.5 text-[13px] font-[650] text-muted">{label}</legend>
 	<div
-		class={options.length === 2 ? 'grid grid-cols-2 gap-2' : 'flex flex-wrap gap-2'}
+		class="tray relative grid auto-cols-[minmax(0,1fr)] grid-flow-col rounded-input bg-surface2 p-1"
 		role="radiogroup"
 		aria-label={label}
+		style:--count={options.length}
+		style:--at={at}
 	>
+		{#if at >= 0}<span class="thumb" aria-hidden="true"></span>{/if}
 		{#each options as option (option.value)}
 			<button
 				type="button"
@@ -33,10 +37,8 @@
 					onchange?.(option.value);
 				}}
 				class={[
-					'min-h-11 rounded-input border px-4 py-1.5 text-[15px] leading-tight font-semibold disabled:opacity-40',
-					value === option.value
-						? 'border-accent bg-soft text-accent'
-						: 'border-line bg-surface2 text-text'
+					'relative z-1 min-h-11 rounded-small px-2 py-1.5 text-[15px] leading-tight font-semibold transition-colors disabled:opacity-40',
+					value === option.value ? 'text-text' : 'text-muted'
 				]}
 			>
 				{option.label}
@@ -44,3 +46,23 @@
 		{/each}
 	</div>
 </fieldset>
+
+<style>
+	.thumb {
+		position: absolute;
+		top: 4px;
+		bottom: 4px;
+		left: 4px;
+		width: calc((100% - 8px) / var(--count));
+		border-radius: var(--radius-small);
+		background: var(--surface);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+		transform: translateX(calc(100% * var(--at)));
+		transition: transform 380ms var(--travel);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.thumb {
+			transition: none;
+		}
+	}
+</style>

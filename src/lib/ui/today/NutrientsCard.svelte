@@ -99,7 +99,11 @@
 				>
 			</div>
 			<div class="h-2 overflow-hidden rounded-full bg-track" aria-hidden="true">
-				<div class="h-full rounded-full" style:background={n.color} style:width="{width(n)}%"></div>
+				<div
+					class="h-full rounded-full transition-[width] duration-600 ease-(--travel) motion-reduce:transition-none"
+					style:background={n.color}
+					style:width="{width(n)}%"
+				></div>
 			</div>
 			{#if s.note}<p class="text-[12.5px] text-muted">{s.note}</p>{/if}
 			{#if n.code === 'carbohydrate_excl_fibre' && carbNote}

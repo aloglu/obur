@@ -48,6 +48,11 @@
 	--shadow-tabbar: 0 8px 30px rgba(60, 40, 20, 0.16);
 	--tabbar-border: transparent;
 
+	/* Motion, from the reviewed demos: --travel for things moving across, --ui for things opening. */
+	--travel: cubic-bezier(0.45, 0, 0.1, 1);
+	--arrive: cubic-bezier(0.25, 0.8, 0.25, 1);
+	--ui: cubic-bezier(0.3, 0.75, 0.1, 1);
+
 	color-scheme: light;
 }
 

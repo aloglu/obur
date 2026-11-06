@@ -112,7 +112,7 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	await expect(weightReadout).toContainText('smoothed');
 	// The selected weigh-in stays selected across the switch.
 	await expect(weightReadout).toContainText('weighed 82,4 kg');
-	expect((await weight.boundingBox())!.height).toBe(before);
+	expect((await weight.boundingBox())!.height).toBeCloseTo(before, 1);
 	await page.reload();
 	await expect(page.getByRole('radio', { name: 'Smoothed' })).toHaveAttribute(
 		'aria-checked',

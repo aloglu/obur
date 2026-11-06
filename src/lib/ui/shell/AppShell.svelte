@@ -30,13 +30,17 @@
 		].some((p) => path.startsWith(p))
 	);
 
+	const activeTab = $derived(
+		is('/') ? 0 : is('/log') ? 1 : is('/journal') ? 2 : is('/progress') ? 3 : moreActive ? 4 : -1
+	);
+
 	const sideItem = (active: boolean) => [
 		'flex min-h-12 items-center justify-center gap-3 rounded-input px-3 text-[16px] font-semibold wide:justify-start',
 		active ? 'bg-soft text-accent' : 'text-text hover:bg-surface2'
 	];
 	const tabItem = (active: boolean) => [
-		'flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-input text-[11.5px] font-bold',
-		active ? 'bg-soft text-accent' : 'text-muted'
+		'relative z-1 flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-input text-[11.5px] font-bold transition-colors',
+		active ? 'text-accent' : 'text-muted'
 	];
 </script>
 
@@ -108,6 +112,7 @@
 	aria-label={m.nav_main()}
 	class="fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-30 flex gap-1 rounded-card border border-(--tabbar-border) bg-surface p-1.5 shadow-tabbar desk:hidden"
 >
+	{#if activeTab >= 0}<span class="tab-thumb" style:--at={activeTab} aria-hidden="true"></span>{/if}
 	<a href={resolve('/(app)')} class={tabItem(is('/'))} aria-current={is('/') ? 'page' : undefined}
 		><CalendarDays size={22} aria-hidden="true" />{m.nav_today()}</a
 	>
@@ -139,3 +144,23 @@
 
 <Toast />
 <Celebration />
+
+<style>
+	/* The five tabs share the bar's width: 6 px of padding each side and 4 px between them. */
+	.tab-thumb {
+		position: absolute;
+		top: 6px;
+		bottom: 6px;
+		left: 6px;
+		width: calc((100% - 12px - 16px) / 5);
+		border-radius: var(--radius-input);
+		background: var(--soft);
+		transform: translateX(calc((100% + 4px) * var(--at)));
+		transition: transform 380ms var(--travel);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.tab-thumb {
+			transition: none;
+		}
+	}
+</style>

@@ -47,6 +47,15 @@ The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app an
 - Rejected as default: Sade (too cold for a food app), Warm ink, Marigold, Rosewood, Persimmon. Rejected outright: Kayısı, Defter, Lokum. The default search is closed for now.
 - Open: the app icon is Pazar's orange on every theme, and the fonts are unchanged. Neither has been reviewed against the new themes.
 
+### Motion
+
+The owner expects the motion in the demos, not only their layout (2026-11-06). Curves: `--travel` for things moving across, `--ui` for things opening. All of it stops with reduced motion, and none of it blocks input.
+
+- **Built:** sheets slide up and down (dialogs fade and scale from 760 px) with the scrim fading, menus fade and scale from their own corner, the tab bar's and segmented controls' highlight slides (380 ms), a new page rises 8 px (220 ms), budget and nutrient bars travel to their value (600 ms).
+- **Build with each screen; do not skip:** numbers roll digit by digit when they change (`roll` in the demos), fields and inline forms open with the `.collapse` height and fade, charts draw on, entries and rows animate in and out, toasts pop their check. Look for it in the demo's CSS and script for each screen.
+
+**An open sheet holds the page behind it still** (`client/scroll-lock.ts`), and returns it to the same place when it closes. Closing gives the page back at once: the sheet unmounts immediately and a lifeless copy plays the slide-out, so nothing waits for the animation.
+
 ### Signing in and first day
 
 - **Sign in:** icon and "obur" centred on the screen, one button low, no subtitle and no invite line. On desktop the group is centred, with 72 px between name and button.

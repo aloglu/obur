@@ -64,10 +64,13 @@
 		const above = box.top - GAP - EDGE;
 		// The closed list can't measure itself; rows are 44 px, or 62 with a hint, inside 6 px of padding.
 		const needed = 12 + options.reduce((sum, o) => sum + (o.hint ? 62 : 44), 0);
+		const side = width === 'trigger' ? 'left' : 'right';
 		if (needed <= below || below >= above) {
+			s.setProperty('--menu-origin', `top ${side}`);
 			s.top = `${box.bottom + GAP}px`;
 			s.maxHeight = `${below}px`;
 		} else {
+			s.setProperty('--menu-origin', `bottom ${side}`);
 			s.bottom = `${window.innerHeight - box.top + GAP}px`;
 			s.maxHeight = `${above}px`;
 		}
@@ -186,6 +189,15 @@
 		border: 0;
 		padding: 6px;
 		overflow-y: auto;
+		overscroll-behavior: contain;
+		opacity: 0;
+		transform: scale(0.97);
+		transform-origin: var(--menu-origin, top right);
+		transition:
+			opacity 140ms ease,
+			transform 140ms var(--ui),
+			display 140ms allow-discrete,
+			overlay 140ms allow-discrete;
 		color: var(--text);
 		background: var(--surface);
 		border-radius: var(--radius-input);
@@ -196,7 +208,12 @@
 	.menu-panel:popover-open {
 		display: flex;
 		flex-direction: column;
-		animation: menu-in 140ms ease-out;
+		opacity: 1;
+		transform: none;
+		@starting-style {
+			opacity: 0;
+			transform: scale(0.97);
+		}
 	}
 	.menu-option {
 		display: flex;
@@ -219,15 +236,9 @@
 	.menu-option[aria-selected='true'] {
 		color: var(--accent);
 	}
-	@keyframes menu-in {
-		from {
-			opacity: 0;
-			transform: scale(0.97);
-		}
-	}
 	@media (prefers-reduced-motion: reduce) {
-		.menu-panel:popover-open {
-			animation: none;
+		.menu-panel {
+			transition: none;
 		}
 	}
 </style>

@@ -242,3 +242,45 @@ test('More shows its values; Settings links still arrive there', async ({ page }
 	await page.getByRole('link', { name: 'More' }).first().click();
 	await expect(page.getByRole('link', { name: /Units.*kg · 12-hour/ })).toBeVisible();
 });
+
+test('an open sheet holds the page behind it still, and puts it back', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Kaydırma ${testInfo.project.name}`);
+	await page.setViewportSize({ width: page.viewportSize()!.width, height: 260 });
+	await page.goto('/log');
+	await page.waitForLoadState('networkidle');
+	await page.evaluate(() => window.scrollTo({ top: 60, behavior: 'instant' }));
+
+	await page.getByRole('button', { name: /Quick add/ }).click();
+	const sheet = page.getByRole('dialog');
+	await expect(sheet).toBeVisible();
+	await expect(page.locator('body')).toHaveCSS('position', 'fixed');
+	await expect(sheet).toHaveCSS('overscroll-behavior-y', 'contain');
+	// Where the page was when the sheet opened (tapping the button may have scrolled it there).
+	const y = await page.evaluate(() => -parseFloat(document.body.style.top));
+	expect(y).toBeGreaterThan(0);
+
+	await sheet.getByRole('button', { name: 'Close' }).click();
+	await expect(page.locator('body')).not.toHaveCSS('position', 'fixed');
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(page.locator('dialog')).toHaveCount(0);
+	expect(await page.evaluate(() => window.scrollY)).toBe(y);
+});
+
+test('a sheet reopened while the last one slides away works, and focus returns to its button', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Yeniden ${testInfo.project.name}`);
+	await page.goto('/log');
+	await page.waitForLoadState('networkidle');
+	const open = page.getByRole('button', { name: /Quick add/ });
+	await open.click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+	await open.click();
+	await page.getByRole('dialog').getByLabel('Calories (kcal)').fill('150');
+	await expect(page.getByRole('dialog').getByLabel('Calories (kcal)')).toHaveValue('150');
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(open).toBeFocused();
+});

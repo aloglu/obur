@@ -164,3 +164,19 @@ input[type='checkbox']:disabled {
 		transition: none;
 	}
 }
+
+/* A new page rises into place (from the reviewed demos). Every page has its own <main>. */
+main {
+	animation: page-rise 220ms var(--ui);
+}
+@keyframes page-rise {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	main {
+		animation: none;
+	}
+}

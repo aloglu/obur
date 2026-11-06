@@ -59,7 +59,7 @@
 		>
 			<div
 				class={[
-					'h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none',
+					'h-full rounded-full transition-[width] duration-600 ease-(--travel) motion-reduce:transition-none',
 					over ? 'bg-bad' : 'bg-accent'
 				]}
 				style:width="{fraction * 100}%"
