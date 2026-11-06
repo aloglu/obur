@@ -4,7 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
-import { snapshotNutrients } from '../../../shared/diary-rules.ts';
+import { currentUnit, snapshotNutrients } from '../../../shared/diary-rules.ts';
 import type {
 	DiaryEntry,
 	SavedMeal,
@@ -40,8 +40,12 @@ const toItem = (r: ItemRow): SavedMealItem => ({
 	nutrients: r.nutrients
 });
 
-function summary(meal: MealRow, items: Pick<ItemRow, 'nutrients'>[]): SavedMealSummary {
+function summary(
+	meal: MealRow,
+	items: Pick<ItemRow, 'nutrients' | 'food' | 'position'>[]
+): SavedMealSummary {
 	const energies = items.map((i) => i.nutrients.energy_kcal?.value);
+	const first = items.filter((i) => i.food).sort((a, b) => a.position - b.position)[0]?.food;
 	return {
 		id: meal.id,
 		name: meal.name,
@@ -49,21 +53,9 @@ function summary(meal: MealRow, items: Pick<ItemRow, 'nutrients'>[]): SavedMealS
 		kcal: energies.reduce<number>((sum, v) => sum + (v ?? 0), 0),
 		partial: energies.some((v) => v === undefined),
 		revision: meal.revision,
-		updatedAt: meal.updatedAt.toISOString()
+		updatedAt: meal.updatedAt.toISOString(),
+		firstFood: first ? { name: first.name, brand: first.brand, icon: first.icon } : null
 	};
-}
-
-/**
- * A unit as it applies to the food's current servings: the same serving, or one with the same name (editing a food
- * recreates its servings); undefined when no such serving exists any more.
- */
-function currentUnit(unit: SnapshotUnit, food: FoodDetail): SnapshotUnit | undefined {
-	if (unit.kind !== 'serving') return unit;
-	const name = unit.name.toLocaleLowerCase('tr');
-	const s =
-		food.servings.find((x) => x.id === unit.servingId) ??
-		food.servings.find((x) => x.name.toLocaleLowerCase('tr') === name);
-	return s && { kind: 'serving', servingId: s.id, name: s.name, amount: s.amount, unit: s.unit };
 }
 
 export function createSavedMeals(db: Database, now: () => Date = () => new Date()) {
@@ -89,7 +81,12 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 					.limit(500);
 				if (meals.length === 0) return [];
 				const items = await tx
-					.select({ savedMealId: savedMealItems.savedMealId, nutrients: savedMealItems.nutrients })
+					.select({
+						savedMealId: savedMealItems.savedMealId,
+						nutrients: savedMealItems.nutrients,
+						food: savedMealItems.food,
+						position: savedMealItems.position
+					})
 					.from(savedMealItems)
 					.where(
 						inArray(

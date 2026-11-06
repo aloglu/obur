@@ -10,6 +10,10 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = ({ url, locals }) =>
 	respondCatalog(async () => {
 		const userId = locals.session!.userId;
+		if (url.searchParams.get('mine') !== null) {
+			const offset = Number(url.searchParams.get('offset') ?? 0);
+			return json(await catalog.ownFoods(userId, Number.isInteger(offset) ? offset : 0));
+		}
 		const q = (url.searchParams.get('q') ?? '').slice(0, 200);
 		const recent = await diary.recentFoodIds(userId, 20);
 		return json({ results: await catalog.searchFoods(userId, q, 20, recent) });

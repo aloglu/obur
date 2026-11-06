@@ -34,6 +34,8 @@ export interface Recipe {
 export interface RecipeSummary {
 	id: string;
 	name: string;
+	icon: string | null;
+	visibility: 'private' | 'shared';
 	servings: number;
 	/** Energy per serving; null when an ingredient doesn't state it. */
 	kcal: number | null;

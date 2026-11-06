@@ -49,7 +49,8 @@ test('a member creates a shared per-serving food that another member can find an
 	await otherPage.goto('/foods');
 	await otherPage.getByLabel('Search foods').fill(`highpro fellas ${tag.toLowerCase()}`);
 	const result = otherPage.getByRole('link', { name: new RegExp(`HighPro\\+.*${tag}`) });
-	await expect(result).toContainText('191 kcal per 1 bar');
+	await expect(result).toContainText('per 1 bar');
+	await expect(result).toContainText('191');
 	await expect(result).toContainText('Shared');
 	await result.click();
 	await expect(otherPage.getByText('Shared by someone in your household')).toBeVisible();

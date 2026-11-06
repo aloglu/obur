@@ -1,6 +1,6 @@
 // Food catalog operations, all under the signed-in person's identity (RLS decides visibility and edit rights).
 // Shared foods never expose who created them (docs/design.md, "Food catalog and recipes").
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { foodWarnings } from '../../../shared/food-checks.ts';
 import type { FoodInput } from '../../../shared/food-input.ts';
@@ -271,6 +271,59 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		 * similar enough to tolerate typos. Real matches come before typo-tolerant ones; within them, boosted
 		 * (recent) foods come first, then the person's own foods, then shared ones.
 		 */
+		/**
+		 * The person's own foods and scans, alphabetically and a page at a time, with archived ones last so they can
+		 * be restored. Recipes have their own list. `total` counts the foods still in use.
+		 */
+		async ownFoods(
+			userId: string,
+			offset = 0,
+			limit = 50
+		): Promise<{
+			foods: (FoodSearchResult & { archived: boolean })[];
+			total: number;
+			more: boolean;
+		}> {
+			return withUser(db, userId, async (tx) => {
+				const own = and(sql`${foods.ownerId} = app_current_user_id()`, ne(foods.origin, 'recipe'));
+				const size = Math.min(Math.max(limit, 1), 100);
+				const rows = await tx
+					.select({
+						id: foods.id,
+						name: foods.name,
+						brand: foods.brand,
+						basis: foods.basis,
+						servingLabel: foods.servingLabel,
+						icon: foods.icon,
+						visibility: foods.visibility,
+						kcal: foodNutrients.value,
+						archivedAt: foods.archivedAt
+					})
+					.from(foods)
+					.leftJoin(
+						foodNutrients,
+						and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
+					)
+					.where(own)
+					.orderBy(sql`${foods.archivedAt} is not null`, asc(foods.searchKey), asc(foods.id))
+					.offset(Math.max(offset, 0))
+					.limit(size + 1);
+				const [{ total }] = await tx
+					.select({ total: sql<number>`count(*)::int` })
+					.from(foods)
+					.where(and(own, sql`${foods.archivedAt} is null`));
+				return {
+					foods: rows.slice(0, size).map(({ archivedAt, ...r }) => ({
+						...r,
+						mine: true,
+						archived: archivedAt !== null
+					})),
+					total,
+					more: rows.length > size
+				};
+			});
+		},
+
 		async searchFoods(
 			userId: string,
 			query: string,

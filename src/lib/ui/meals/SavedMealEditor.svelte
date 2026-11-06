@@ -11,17 +11,21 @@
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { SavedMeal } from '#lib/shared/diary-types.ts';
 	import type { MeasureOption } from '#lib/shared/unit-options.ts';
+	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 	import Button from '../Button.svelte';
 	import Notice from '../Notice.svelte';
 	import TextField from '../TextField.svelte';
+	import EditorHead from '../items/EditorHead.svelte';
 	import ItemsCard from '../items/ItemsCard.svelte';
 	import { changed, keptDraft, nutrientsOf, payloadOf, type Draft } from '../items/drafts.ts';
 
 	interface Props {
 		/** The meal to edit, or null to create one. */
 		meal: SavedMeal | null;
+		/** A food in it has changed since it was added. */
+		stale?: boolean;
 	}
-	let { meal }: Props = $props();
+	let { meal, stale = false }: Props = $props();
 	const start = untrack(() => meal);
 	// A new meal's ID is chosen once, so a retried Save never creates it twice.
 	const id = start?.id ?? crypto.randomUUID();
@@ -34,7 +38,6 @@
 	let busy = $state(false);
 	let problem = $state('');
 	let showErrors = $state(false);
-	let confirmDelete = $state(false);
 
 	onMount(async () => (measures = await householdMeasures()));
 
@@ -105,6 +108,21 @@
 		});
 </script>
 
+<EditorHead
+	backHref={resolve('/(app)/saved-meals')}
+	backLabel={m.saved_title()}
+	title={start ? m.saved_edit_title() : m.saved_new_title()}
+	{busy}
+	remove={start
+		? {
+				label: m.saved_delete(),
+				confirm: m.saved_delete_ask({ name: start.name }),
+				yes: m.saved_delete_confirm(),
+				run: removeMeal
+			}
+		: undefined}
+/>
+
 <form class="flex flex-col gap-3" onsubmit={save} novalidate>
 	<section class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
 		<TextField
@@ -121,7 +139,14 @@
 		{measures}
 		emptyText={m.meal_editor_empty()}
 		{showErrors}
+		removeLabel={m.meal_editor_remove()}
 	/>
+
+	{#if stale && !dirty}
+		<Button variant="ghost" wide disabled={busy} onclick={refresh}>
+			<RefreshCw size={18} aria-hidden="true" />{m.saved_refresh()}
+		</Button>
+	{/if}
 
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	<div class="grid grid-cols-2 gap-2">
@@ -134,31 +159,4 @@
 			>{busy ? m.common_working() : m.meal_editor_save()}</Button
 		>
 	</div>
-
-	{#if start}
-		<section
-			class="mt-2 flex flex-col gap-2 rounded-card bg-surface p-[18px] shadow-card"
-			aria-labelledby="meal-more"
-		>
-			<h2 id="meal-more" class="text-[19px] font-bold">{m.meal_editor_more()}</h2>
-			<Button variant="ghost" disabled={busy || dirty} onclick={refresh}>{m.saved_refresh()}</Button
-			>
-			<p class="text-[13px] text-muted">
-				{dirty ? m.meal_editor_save_first() : m.saved_refresh_hint()}
-			</p>
-			{#if confirmDelete}
-				<p class="text-[14px]">{m.saved_delete_hint()}</p>
-				<div class="grid grid-cols-2 gap-2">
-					<Button variant="ghost" onclick={() => (confirmDelete = false)}
-						>{m.common_cancel()}</Button
-					>
-					<Button variant="danger" disabled={busy} onclick={removeMeal}
-						>{m.saved_delete_confirm()}</Button
-					>
-				</div>
-			{:else}
-				<Button variant="danger" onclick={() => (confirmDelete = true)}>{m.saved_delete()}</Button>
-			{/if}
-		</section>
-	{/if}
 </form>

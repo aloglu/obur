@@ -17,6 +17,9 @@
 		palette={data.palette}
 		timeFormat={data.timeFormat}
 		deletedCount={data.deletedCount}
+		foodCount={data.foodCount}
+		recipeCount={data.recipeCount}
+		mealCount={data.mealCount}
 		goal={data.goal === null ? null : paceLabel(data.goal)}
 		reminders={data.pushKey !== null}
 	/>

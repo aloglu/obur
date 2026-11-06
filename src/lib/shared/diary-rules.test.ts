@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	addDays,
+	anyValuesChanged,
 	carbohydrateDay,
 	dayTotals,
 	isIsoDate,
@@ -10,6 +11,7 @@ import {
 	snapshotNutrients
 } from './diary-rules.ts';
 import type { FoodSnapshot } from './diary-types.ts';
+import type { FoodDetail } from './food-types.ts';
 
 const bread: FoodSnapshot = {
 	name: 'Premium Light Ekmek',
@@ -140,5 +142,49 @@ describe('carbohydrateDay', () => {
 			unstated: { value: 42.5, entries: 2, approximate: true },
 			unknown: 1
 		});
+	});
+});
+
+describe('anyValuesChanged', () => {
+	const food = (kcal: number, servings: FoodDetail['servings'] = []) =>
+		({
+			id: 'f1',
+			name: 'Peynir',
+			brand: null,
+			basis: '100g',
+			servingLabel: null,
+			servingSize: null,
+			servings,
+			icon: null,
+			nutrients: [{ code: 'energy_kcal', value: kcal, qualifier: 'reported' }]
+		}) as unknown as FoodDetail;
+	const item = {
+		foodId: 'f1',
+		amount: 50,
+		unit: { kind: 'mass', unit: 'g' } as const,
+		nutrients: { energy_kcal: { value: 125, qualifier: 'reported' as const } }
+	};
+
+	it('is false while the food still comes to the same values', () => {
+		expect(anyValuesChanged([item], [food(250)])).toBe(false);
+	});
+	it('is true once it would come to different values', () => {
+		expect(anyValuesChanged([item], [food(300)])).toBe(true);
+	});
+	it('ignores items that would keep their snapshot: food gone, or a calories-only item', () => {
+		expect(anyValuesChanged([item], [])).toBe(false);
+		expect(
+			anyValuesChanged([{ foodId: null, amount: null, unit: null, nutrients: {} }], [food(300)])
+		).toBe(false);
+	});
+	it('ignores an item whose serving no longer exists', () => {
+		const unit = {
+			kind: 'serving',
+			servingId: 's1',
+			name: 'dilim',
+			amount: 30,
+			unit: 'g'
+		} as const;
+		expect(anyValuesChanged([{ ...item, unit }], [food(300)])).toBe(false);
 	});
 });

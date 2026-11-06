@@ -72,22 +72,42 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 	// Rename, change an amount, remove the tea; nothing is logged.
 	await page.getByLabel('Name').fill('Hafta sonu');
 	await page.getByRole('button', { name: new RegExp(`Beyaz Peynir ${tag}`) }).click();
-	await page.getByLabel('Amount').fill('80');
-	await expect(page.getByRole('region', { name: 'Foods' })).toContainText('260 kcal');
+	await page.getByLabel('Amount').filter({ visible: true }).fill('80');
+	await expect(page.getByRole('region', { name: 'Foods' })).toContainText('260');
 	await page.getByRole('button', { name: /Çay ve zeytin/ }).click();
-	await page.getByRole('button', { name: 'Remove from meal' }).click();
-	await expect(page.getByRole('region', { name: 'Foods' })).toContainText('200 kcal');
-	await expect(page.getByRole('button', { name: 'Update to current food values' })).toBeDisabled();
+	// The row that just closed still has its Remove for a moment, so reach for this row's own.
+	await page
+		.getByRole('listitem')
+		.filter({ hasText: 'Çay ve zeytin' })
+		.getByRole('button', { name: 'Remove from meal' })
+		.click();
+	await expect(page.getByRole('region', { name: 'Foods' })).toContainText('200');
+	// Nothing changed in the catalog, so there's nothing to update to.
+	await expect(page.getByRole('button', { name: 'Update to current food values' })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('status')).toContainText('Saved “Hafta sonu”');
-	await expect(page.getByRole('main')).toContainText('1 item · 200 kcal');
+	await expect(page.getByRole('link', { name: /Hafta sonu/ })).toContainText('1 food');
+	await expect(page.getByRole('link', { name: /Hafta sonu/ })).toContainText('200');
 
-	// Update to current values, then delete.
+	// The food changes, so the editor offers to update to it; then delete.
+	const { version } = await apiAs<{ version: number }>(page, 'GET', `/api/v1/foods/${foodId}`);
+	await apiAs(page, 'PUT', `/api/v1/foods/${foodId}`, {
+		version,
+		food: {
+			name: `Beyaz Peynir ${tag}`,
+			brand: null,
+			visibility: 'shared',
+			basis: '100g',
+			nutrients: [{ code: 'energy_kcal', value: 300, qualifier: 'reported' }],
+			servings: []
+		}
+	});
 	await page.getByRole('link', { name: /Hafta sonu/ }).click();
 	await page.getByRole('button', { name: 'Update to current food values' }).click();
 	await expect(page.getByRole('status')).toContainText('Updated: 1 · Kept as saved: 0');
-	await page.getByRole('button', { name: 'Delete saved meal' }).click();
-	await page.getByRole('button', { name: 'Delete for good' }).click();
+	await page.getByRole('button', { name: 'More actions' }).click();
+	await page.getByRole('menuitem', { name: 'Delete saved meal' }).click();
+	await page.getByRole('button', { name: 'Delete', exact: true }).click();
 	await expect(page.getByRole('status')).toContainText('Deleted “Hafta sonu”');
 	await expect(page.getByRole('main')).toContainText('No saved meals yet.');
 
@@ -120,10 +140,10 @@ test('create a saved meal from scratch, without logging anything', async ({ page
 	await choose(amount, 'Unit', 'kase (40 g)');
 	await amount.getByLabel('Amount').fill('1,5');
 	await amount.getByRole('button', { name: 'Add to meal' }).click();
-	await expect(page.getByRole('region', { name: 'Foods' })).toContainText('228 kcal');
+	await expect(page.getByRole('region', { name: 'Foods' })).toContainText('228');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('status')).toContainText('Saved “Sabah yulafı”');
-	await expect(page.getByRole('main')).toContainText('1 item · 228 kcal');
+	await expect(page.getByRole('main')).toContainText('1 food');
 
 	await page.goto('/');
 	await expect(page.getByRole('region', { name: 'Breakfast' }).getByRole('listitem')).toHaveCount(

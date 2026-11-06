@@ -34,7 +34,7 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await page.getByRole('link', { name: 'New recipe' }).click();
 	await page.getByLabel('Name').fill(`Mercimek çorbası ${tag}`);
 	await page.getByLabel('Servings it makes').fill('4');
-	await page.getByLabel('Cooked weight (g, optional)').fill('1200');
+	await page.getByLabel('Cooked weight, g').fill('1200');
 	// The icon: suggested from the name (çorba → soup), then a casserole chosen in the picker.
 	await expect(page.getByText('Suggested from the name')).toBeVisible();
 	await page.getByRole('button', { name: 'Change icon' }).click();
@@ -56,10 +56,10 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await addIngredient(`Kuru soğan ${tag}`, '100');
 	const perServing = page.getByRole('region', { name: 'Per serving' });
 	await expect(perServing).toContainText('185');
-	await expect(perServing).toContainText('One serving is 300 g');
+	await expect(perServing).toContainText('300 g a serving');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('status')).toContainText(`Saved “Mercimek çorbası ${tag}”`);
-	await expect(page.getByRole('main')).toContainText('185 kcal per serving · 4 servings');
+	await expect(page.getByRole('main')).toContainText('4 servings · Shared');
 
 	// Logged from Log like any food: by the serving, or in grams thanks to the cooked weight.
 	await page.goto('/log');
@@ -81,10 +81,12 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await page.goto('/recipes');
 	await page.getByRole('link', { name: new RegExp(`Mercimek çorbası ${tag}`) }).click();
 	await page.getByRole('button', { name: new RegExp(`Kuru soğan ${tag}`) }).click();
-	await page.getByRole('button', { name: 'Remove from meal' }).click();
+	await page.getByRole('button', { name: 'Remove from recipe' }).click();
 	await expect(page.getByRole('region', { name: 'Per serving' })).toContainText('175');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(page.getByRole('main')).toContainText('175 kcal per serving');
+	await expect(
+		page.getByRole('link', { name: new RegExp(`Mercimek çorbası ${tag}`) })
+	).toContainText('175');
 	await page.goto('/');
 	await expect(dinner).toContainText('278');
 

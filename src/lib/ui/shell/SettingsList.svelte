@@ -18,13 +18,27 @@
 		palette: PaletteId;
 		timeFormat: TimeFormat;
 		deletedCount: number;
+		foodCount: number;
+		recipeCount: number;
+		mealCount: number;
 		/** The goal row's value, when there's a calculated budget. */
 		goal: string | null;
 		/** Reminders are configured on this server. */
 		reminders: boolean;
 	}
-	let { isAdmin, displayName, theme, palette, timeFormat, deletedCount, goal, reminders }: Props =
-		$props();
+	let {
+		isAdmin,
+		displayName,
+		theme,
+		palette,
+		timeFormat,
+		deletedCount,
+		foodCount,
+		recipeCount,
+		mealCount,
+		goal,
+		reminders
+	}: Props = $props();
 
 	const mode = $derived(
 		{ system: m.theme_system(), light: m.theme_light(), dark: m.theme_dark() }[theme]
@@ -64,9 +78,9 @@
 
 <div class={group}>
 	<NavRow href={resolve('/(app)/profile')} label={m.more_profile()} />
-	<NavRow href={resolve('/(app)/foods')} label={m.more_foods()} />
-	<NavRow href={resolve('/(app)/recipes')} label={m.recipes_title()} />
-	<NavRow href={resolve('/(app)/saved-meals')} label={m.more_saved_meals()} />
+	<NavRow href={resolve('/(app)/foods')} label={m.more_foods()} value={foodCount} />
+	<NavRow href={resolve('/(app)/recipes')} label={m.recipes_title()} value={recipeCount} />
+	<NavRow href={resolve('/(app)/saved-meals')} label={m.more_saved_meals()} value={mealCount} />
 	<NavRow
 		href={resolve('/(app)/more/deleted')}
 		label={m.deleted_title()}
@@ -84,7 +98,9 @@
 	class="flex items-center justify-between gap-3 rounded-card bg-surface p-[14px_18px] shadow-card"
 >
 	<p class="min-w-0 text-[14px] break-words">{m.settings_signed_in_as({ name: displayName })}</p>
-	<Button variant="ghost" onclick={signOut}>{m.home_sign_out()}</Button>
+	<span class="shrink-0 whitespace-nowrap"
+		><Button variant="ghost" onclick={signOut}>{m.home_sign_out()}</Button></span
+	>
 </div>
 
 <!-- Credit the icons' licence requires (static/icons/food/LICENSE.txt, static/icons/achievements/LICENSE.txt). -->

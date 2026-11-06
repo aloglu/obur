@@ -455,3 +455,25 @@ describe('label scan edit counts', () => {
 		expect(await errorCode(catalog.labelScanTotals(MEHMET))).toBe('42501');
 	});
 });
+
+describe('own foods', () => {
+	it("lists only the person's foods, a page at a time, archived last and left out of the count", async () => {
+		const names = ['Çörek', 'Ayran', 'Börek'];
+		const ids = [];
+		for (const name of names) ids.push(await catalog.createFood(MEHMET, food({ name })));
+		await catalog.createFood(ZEYNEP, food({ name: 'Zeynep’s shared food' }));
+		await catalog.setArchived(MEHMET, ids[1], true);
+
+		const first = await catalog.ownFoods(MEHMET, 0, 1);
+		expect(first.total).toBe(2);
+		expect(first.more).toBe(true);
+		expect(first.foods.map((f) => f.name)).toEqual(['Börek']);
+
+		const rest = await catalog.ownFoods(MEHMET, 1, 50);
+		expect(rest.more).toBe(false);
+		expect(rest.foods.map((f) => [f.name, f.archived])).toEqual([
+			['Çörek', false],
+			['Ayran', true]
+		]);
+	});
+});

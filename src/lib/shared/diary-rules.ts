@@ -176,3 +176,43 @@ export function defaultMeal(
 	if (t >= 17 * 60 && t < 21 * 60 + 30) return 'dinner';
 	return 'snacks';
 }
+
+/**
+ * A unit as it applies to the food's current servings: the same serving, or one with the same name (editing a food
+ * recreates its servings); undefined when no such serving exists any more.
+ */
+export function currentUnit(unit: SnapshotUnit, food: FoodDetail): SnapshotUnit | undefined {
+	if (unit.kind !== 'serving') return unit;
+	const name = unit.name.toLocaleLowerCase('tr');
+	const s =
+		food.servings.find((x) => x.id === unit.servingId) ??
+		food.servings.find((x) => x.name.toLocaleLowerCase('tr') === name);
+	return s && { kind: 'serving', servingId: s.id, name: s.name, amount: s.amount, unit: s.unit };
+}
+
+interface SnapshotItem {
+	foodId: string | null;
+	amount: number | null;
+	unit: SnapshotUnit | null;
+	nutrients: EntryNutrients;
+}
+
+/**
+ * Whether updating to current food values would change anything: an item whose food still exists and can still be
+ * converted comes to different values. Items that would keep their snapshot don't count.
+ */
+export function anyValuesChanged(items: SnapshotItem[], current: FoodDetail[]): boolean {
+	const foods = new Map(current.map((f) => [f.id, f]));
+	return items.some((item) => {
+		const food = item.foodId ? foods.get(item.foodId) : undefined;
+		if (!food || item.amount === null || !item.unit) return false;
+		const unit = currentUnit(item.unit, food);
+		const next = unit && snapshotNutrients(snapshotOf(food), item.amount, unit);
+		if (!next) return false;
+		const codes = new Set([...Object.keys(next), ...Object.keys(item.nutrients)]);
+		return [...codes].some((code) => {
+			const [a, b] = [next, item.nutrients].map((n) => n[code as keyof EntryNutrients]);
+			return a?.value !== b?.value || a?.qualifier !== b?.qualifier;
+		});
+	});
+}

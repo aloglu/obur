@@ -111,6 +111,8 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 					.select({
 						id: foods.id,
 						name: foods.name,
+						icon: foods.icon,
+						visibility: foods.visibility,
 						servings: recipes.servings,
 						archived: foods.archivedAt,
 						kcal: foodNutrients.value

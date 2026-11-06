@@ -80,6 +80,8 @@ export interface SavedMealSummary {
 	partial: boolean;
 	revision: number;
 	updatedAt: string;
+	/** The first food in it, for the row's icon. */
+	firstFood: Pick<FoodSnapshot, 'name' | 'brand' | 'icon'> | null;
 }
 
 export interface SavedMeal extends SavedMealSummary {

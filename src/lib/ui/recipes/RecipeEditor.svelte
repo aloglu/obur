@@ -13,11 +13,13 @@
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import { recipeNutrients, type Recipe } from '#lib/shared/recipe.ts';
 	import type { MeasureOption } from '#lib/shared/unit-options.ts';
+	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 	import Button from '../Button.svelte';
 	import Chips from '../Chips.svelte';
 	import FoodIcon from '../FoodIcon.svelte';
 	import Notice from '../Notice.svelte';
 	import TextField from '../TextField.svelte';
+	import EditorHead from '../items/EditorHead.svelte';
 	import ItemsCard from '../items/ItemsCard.svelte';
 	import { changed, keptDraft, nutrientsOf, payloadOf, type Draft } from '../items/drafts.ts';
 	import IconPicker from '../food/IconPicker.svelte';
@@ -26,8 +28,10 @@
 	interface Props {
 		/** The recipe to edit, or null to create one. */
 		recipe: Recipe | null;
+		/** An ingredient's food has changed since it was added. */
+		stale?: boolean;
 	}
-	let { recipe }: Props = $props();
+	let { recipe, stale = false }: Props = $props();
 	const start = untrack(() => recipe);
 	// A new recipe's ID is chosen once, so a retried Save never creates it twice.
 	const id = start?.id ?? crypto.randomUUID();
@@ -44,7 +48,6 @@
 	let busy = $state(false);
 	let problem = $state('');
 	let showErrors = $state(false);
-	let confirmArchive = $state(false);
 
 	onMount(async () => (measures = await householdMeasures()));
 
@@ -144,6 +147,23 @@
 		});
 </script>
 
+<EditorHead
+	backHref={resolve('/(app)/recipes')}
+	backLabel={m.recipes_title()}
+	title={start ? m.recipe_edit_title() : m.recipe_new_title()}
+	{busy}
+	remove={start && !start.archived
+		? {
+				label: m.recipe_archive(),
+				confirm: m.recipe_archive_confirm({ name: start.name }),
+				yes: m.food_archive(),
+				run: () => setArchived(true)
+			}
+		: undefined}
+	direct={start?.archived ? { label: m.food_restore(), run: () => setArchived(false) } : undefined}
+/>
+{#if start?.archived}<p class="text-[14px] text-muted">{m.food_archived()}</p>{/if}
+
 <form class="flex flex-col gap-3" onsubmit={save} novalidate>
 	<section class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
 		<TextField
@@ -173,8 +193,7 @@
 				{ value: 'private', label: m.food_visibility_private() }
 			]}
 		/>
-		{#if visibility === 'shared'}<p class="text-[13px] text-muted">{m.recipe_shared_hint()}</p>{/if}
-		<div class="grid grid-cols-2 gap-2">
+		<div class="grid grid-cols-2 items-end gap-2">
 			<TextField
 				label={m.recipe_servings()}
 				bind:value={servingsText}
@@ -184,13 +203,14 @@
 			/>
 			<TextField
 				label={m.recipe_yield()}
+				placeholder={m.onb_optional()}
 				bind:value={yieldText}
 				inputmode="decimal"
 				autocomplete="off"
 				aria-invalid={showErrors && cookedYieldG === undefined}
 			/>
 		</div>
-		<p class="text-[13px] text-muted">{m.recipe_yield_hint()}</p>
+		<p class="text-[13px] text-muted">{m.recipe_hint()}</p>
 		{#if showErrors && numbersBad}<Notice>{m.recipe_invalid()}</Notice>{/if}
 	</section>
 
@@ -200,21 +220,32 @@
 		{measures}
 		emptyText={m.recipe_empty()}
 		{showErrors}
+		removeLabel={m.recipe_remove()}
 		allowRecipes={false}
 	/>
 
 	{#if items.length > 0}
 		<section
-			class="flex flex-col gap-2 rounded-card bg-surface p-[18px] shadow-card"
+			class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
 			aria-labelledby="per-serving"
 		>
-			<h2 id="per-serving" class="text-[19px] font-bold">{m.recipe_per_serving()}</h2>
+			<div class="flex items-baseline justify-between gap-3">
+				<h2 id="per-serving" class="text-[19px] font-bold">{m.recipe_per_serving()}</h2>
+				<span class="text-[14px] whitespace-nowrap text-muted tabular-nums"
+					>{servings && cookedYieldG
+						? m.recipe_serving_weight({ g: formatDecimal(cookedYieldG / servings, ',', 0) })
+						: m.recipe_no_cooked_weight()}</span
+				>
+			</div>
 			<MacroPreview nutrients={perServing} />
-			{#if servings && cookedYieldG}<p class="text-[13px] text-muted">
-					{m.recipe_serving_weight({ g: formatDecimal(cookedYieldG / servings, ',', 0) })}
-				</p>{/if}
 			{#if energyUnknown}<Notice tone="info">{m.recipe_energy_unknown()}</Notice>{/if}
 		</section>
+	{/if}
+
+	{#if stale && !dirty}
+		<Button variant="ghost" wide disabled={busy} onclick={refresh}>
+			<RefreshCw size={18} aria-hidden="true" />{m.saved_refresh()}
+		</Button>
 	{/if}
 
 	{#if problem}<Notice>{problem}</Notice>{/if}
@@ -228,37 +259,6 @@
 			>{busy ? m.common_working() : m.meal_editor_save()}</Button
 		>
 	</div>
-
-	{#if start}
-		<section
-			class="mt-2 flex flex-col gap-2 rounded-card bg-surface p-[18px] shadow-card"
-			aria-labelledby="recipe-more"
-		>
-			<h2 id="recipe-more" class="text-[19px] font-bold">{m.meal_editor_more()}</h2>
-			<Button variant="ghost" disabled={busy || dirty} onclick={refresh}>{m.saved_refresh()}</Button
-			>
-			<p class="text-[13px] text-muted">
-				{dirty ? m.meal_editor_save_first() : m.recipe_refresh_hint()}
-			</p>
-			{#if start.archived}
-				<Button variant="ghost" disabled={busy} onclick={() => setArchived(false)}
-					>{m.food_restore()}</Button
-				>
-			{:else if confirmArchive}
-				<p class="text-[14px]">{m.recipe_archive_hint()}</p>
-				<div class="grid grid-cols-2 gap-2">
-					<Button variant="ghost" onclick={() => (confirmArchive = false)}
-						>{m.common_cancel()}</Button
-					>
-					<Button variant="danger" disabled={busy} onclick={() => setArchived(true)}
-						>{m.food_archive()}</Button
-					>
-				</div>
-			{:else}
-				<Button variant="danger" onclick={() => (confirmArchive = true)}>{m.food_archive()}</Button>
-			{/if}
-		</section>
-	{/if}
 </form>
 
 {#if choosingIcon}
