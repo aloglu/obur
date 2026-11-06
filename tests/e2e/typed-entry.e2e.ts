@@ -222,7 +222,7 @@ test('Create it as food starts the form with the name that was said', async ({
 	await sheet.getByLabel('You typed').fill('qqqqzzzz');
 	await sheet.getByRole('button', { name: 'Create it as food' }).click();
 	await expect(page).toHaveURL(/\/foods\/new\?name=/);
-	await expect(page.getByLabel('Product name')).toHaveValue('qqqqzzzz');
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('qqqqzzzz');
 });
 
 test('a match that ignores some of the words asks, so a food cannot drop out unnoticed', async ({

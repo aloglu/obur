@@ -114,6 +114,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
   - Cooked weight is empty with the placeholder "Optional", never prefilled, and its label has no tag.
   - Beside "Per serving": "300 g a serving", or "No cooked weight", on one line.
   - Ingredient icons and Add food share one column.
+  - **Food form:** one card each for name and icon, Nutrition, Portions and Who can find it, then the variant and archive rows, Save (on only after a change, except for a scanned label), and a line saying the diary keeps what was logged. Kept against the demo: the kJ row, because a label may give only kJ and the kcal check needs it (empty kJ stays quiet rather than amber), and the Label type choice, because US and EU carbohydrate are different values.
   - **Lists:** Foods, Recipes and Saved meals are one card each with a small head ("Your recipes", "kcal a serving"), rows with an icon, a detail line and the number at the right, and their counts on More's rows. New recipe and New meal sit under the list. On Foods, the search stays and New food sits above the list, because an import can bring hundreds of foods (2026-11-07, my call against the demo, which had a short list and no search). Archived foods and recipes stay in their lists, faded and last, so they can be restored.
 
 ### Account and household

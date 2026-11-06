@@ -82,10 +82,11 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	await expect(page.locator('#n-fat')).toHaveValue('18');
 	await expect(page.locator('#n-carbohydrate')).toHaveValue('52');
 	await expect(page.locator('#n-salt')).toHaveValue('0,1');
-	await expect(
-		page.locator('#n-salt').locator('..').getByRole('checkbox', { name: 'Less than' })
-	).toBeChecked();
-	await page.getByLabel('Product name').fill(`Fındıklı gofret ${testInfo.project.name}`);
+	await expect(page.getByRole('button', { name: 'Salt: less than' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await page.getByLabel('Name', { exact: true }).fill(`Fındıklı gofret ${testInfo.project.name}`);
 	await page.getByRole('button', { name: 'Save and choose amount' }).click();
 
 	// Saved, then straight to the amount sheet in Log; nothing is logged until Save there.
@@ -154,11 +155,11 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 			.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE7 });
 	await choose();
 	await page.getByLabel('Log it after saving').uncheck();
-	await page.getByLabel('Product name').fill(`Gofret 1 ${testInfo.project.name}`);
+	await page.getByLabel('Name', { exact: true }).fill(`Gofret 1 ${testInfo.project.name}`);
 	await page.getByRole('button', { name: 'Save food' }).click();
 	await expect(page.getByText(`Saved “Gofret 1 ${testInfo.project.name}”`)).toBeVisible();
 	await expect(page.getByRole('heading', { level: 1, name: 'Scan a label' })).toBeVisible();
-	await expect(page.getByLabel('Product name')).toBeHidden();
+	await expect(page.getByLabel('Name', { exact: true })).toBeHidden();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	// The choice is remembered on this device.
 	await page.goto('/log');
@@ -168,7 +169,7 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 	await expect(page.getByLabel('Log it after saving')).not.toBeChecked();
 	// One value corrected before saving is counted as one change; admins see household totals.
 	await page.locator('#n-energy_kcal').fill('410');
-	await page.getByLabel('Product name').fill(`Gofret 2 ${testInfo.project.name}`);
+	await page.getByLabel('Name', { exact: true }).fill(`Gofret 2 ${testInfo.project.name}`);
 	await page.getByRole('button', { name: 'Save food' }).click();
 	await expect(page.getByText(`Saved “Gofret 2 ${testInfo.project.name}”`)).toBeVisible();
 	expect(await scanEditsFor(`Gofret 2 ${testInfo.project.name}`)).toMatchObject({

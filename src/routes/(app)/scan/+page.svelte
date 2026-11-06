@@ -349,14 +349,13 @@
 			<input type="checkbox" bind:checked={logAfter} onchange={rememberLogAfter} />
 			<span class="text-[15px] font-semibold">{m.scan_log_after()}</span>
 		</label>
-		<Card>
-			{#key proposal}<FoodForm
-					{initial}
-					{busy}
-					onsave={save}
-					saveLabel={logAfter ? m.scan_save_and_amount() : undefined}
-				/>{/key}
-		</Card>
+		{#key proposal}<FoodForm
+				{initial}
+				{busy}
+				onsave={save}
+				unsaved
+				saveLabel={logAfter ? m.scan_save_and_amount() : undefined}
+			/>{/key}
 		{@render camera(false)}
 	{/if}
 </main>

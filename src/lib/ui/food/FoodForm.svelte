@@ -1,8 +1,9 @@
 <script lang="ts">
-	// Create or edit a food. Layout follows the label-scan confirmation in docs/ui.md (basis chips, one row per
-	// value, empty rows highlighted as unknown). Food editing itself is not designed yet; see docs/ui.md.
-	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import { untrack } from 'svelte';
+	// Create or edit a food, and check a scanned label (docs/ui.md, "Food form"): one card each for the name, the values,
+	// the portions and who can find it. An empty value shows as Unknown, never as zero. `actions` go above Save.
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import Plus from '@lucide/svelte/icons/plus';
+	import { untrack, type Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { foodWarnings, type FoodWarning } from '#lib/shared/food-checks.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
@@ -13,6 +14,7 @@
 	import type { Basis } from '#lib/shared/quantity.ts';
 	import { suggestIcon } from '#lib/shared/food-icons.ts';
 	import Button from '../Button.svelte';
+	import Chips from '../Chips.svelte';
 	import FoodIcon from '../FoodIcon.svelte';
 	import IconPicker from './IconPicker.svelte';
 	import Notice from '../Notice.svelte';
@@ -27,13 +29,28 @@
 		startName?: string;
 		/** The save button's words, where saving also does something else. */
 		saveLabel?: string;
+		/** Values that aren't saved yet, such as a scanned label: Save is on from the start. */
+		unsaved?: boolean;
+		/** What else can be done with the food, above Save. */
+		actions?: Snippet;
+		/** A short line under Save. */
+		note?: string;
 	}
 
 	const UNITS: { value: 'g' | 'ml'; label: string }[] = [
 		{ value: 'g', label: 'g' },
 		{ value: 'ml', label: 'ml' }
 	];
-	let { initial, busy = false, onsave, startName = '', saveLabel }: Props = $props();
+	let {
+		initial,
+		busy = false,
+		onsave,
+		startName = '',
+		saveLabel,
+		unsaved = false,
+		actions,
+		note
+	}: Props = $props();
 	const start = untrack(() => initial);
 
 	type Field =
@@ -188,6 +205,32 @@
 		energy_missing: m.warning_energy_missing
 	};
 
+	// Save waits for a change when editing a saved food.
+	const formState = () =>
+		JSON.stringify({
+			name,
+			brand,
+			icon,
+			visibility,
+			basis,
+			servingLabel,
+			servingSizeText,
+			servingSizeUnit,
+			labelType,
+			rows,
+			extras,
+			portions
+		});
+	const startState = formState();
+	const dirty = $derived(formState() !== startState);
+	let extrasShown = $state(extrasOpen);
+
+	/** "Fat (g)" as its name and unit, for a row's two columns. */
+	const parts = (text: string) => {
+		const [, name, unit] = text.match(/^(.*) \((.*)\)$/) ?? [undefined, text, ''];
+		return { name, unit };
+	};
+
 	function submit(event: SubmitEvent) {
 		event.preventDefault();
 		showErrors = true;
@@ -222,212 +265,227 @@
 			})
 		});
 	}
-
-	const chip = (active: boolean) => [
-		'min-h-11 rounded-input px-2 py-1.5 text-[15px] leading-tight font-semibold border',
-		active ? 'bg-soft text-accent border-accent' : 'bg-surface2 text-text border-line'
-	];
 </script>
 
-{#snippet row(id: string, text: string, value: { text: string; lessThan: boolean }, core: boolean)}
+{#snippet row(
+	id: string,
+	text: string,
+	value: { text: string; lessThan: boolean },
+	core: boolean,
+	bound: boolean,
+	sub = false
+)}
 	{@const empty = value.text.trim() === ''}
 	{@const bad = invalid(value.text)}
-	<!-- Core rows mark an empty value as unknown; the optional extra rows stay quiet. -->
+	{@const { name: rowName, unit } = parts(text)}
 	<div
-		class={[
-			'flex min-h-14 items-center gap-2 rounded-input px-3',
-			empty && core ? 'bg-warn-soft' : 'bg-surface2'
-		]}
+		class="grid min-h-[52px] grid-cols-[minmax(0,1fr)_36px_88px_34px] items-center gap-2 border-line not-first:border-t"
 	>
-		<label for={id} class="min-w-0 flex-1 text-[15px] font-semibold">
-			{text}
-			{#if empty && core}<span class="ml-1 text-[13px] font-semibold text-warn"
-					>· {m.food_unknown()}</span
+		<label for={id} class={sub ? 'pl-3.5 text-[14px] text-muted' : 'text-[15px] font-[550]'}>
+			{rowName}<span class="sr-only"> {unit}</span>
+			{#if bad}<span class="block text-[13px] font-semibold text-bad"
+					>{m.food_invalid_number()}</span
 				>{/if}
-			{#if bad}<span class="block text-[13px] text-bad">{m.food_invalid_number()}</span>{/if}
 		</label>
-		<label class="flex min-h-11 items-center gap-1.5 text-[15px] font-semibold text-muted">
-			<input type="checkbox" bind:checked={value.lessThan} />
-			<span aria-hidden="true">&lt;</span><span class="sr-only">{m.food_less_than()}</span>
-		</label>
+		{#if bound}
+			<button
+				type="button"
+				aria-pressed={value.lessThan}
+				aria-label={m.food_less_than_of({ name: rowName })}
+				onclick={() => (value.lessThan = !value.lessThan)}
+				class={[
+					'size-9 rounded-[10px] text-[15px] font-[750]',
+					value.lessThan ? 'bg-soft text-accent' : 'bg-surface2 text-muted'
+				]}>&lt;</button
+			>
+		{:else}<span></span>{/if}
 		<input
 			{id}
 			bind:value={value.text}
 			inputmode="decimal"
 			autocomplete="off"
+			placeholder={core ? m.food_unknown() : '–'}
 			aria-invalid={bad}
-			class="h-11 w-24 rounded-small border border-line bg-surface px-2 text-right text-[16px] font-semibold tabular-nums"
+			class={[
+				'h-10 w-[88px] rounded-[10px] px-2.5 text-right text-[15px] font-[650] tabular-nums',
+				empty && core
+					? 'bg-warn-soft placeholder:font-semibold placeholder:text-warn'
+					: 'bg-surface2'
+			]}
 		/>
+		<span class="text-[13px] text-muted">{unit}</span>
 	</div>
 {/snippet}
 
-<form class="flex flex-col gap-4" onsubmit={submit} novalidate>
-	<TextField label={m.food_name()} bind:value={name} required maxlength={200} />
-	<TextField label={m.food_brand()} bind:value={brand} maxlength={120} />
-	<div class="flex items-center gap-3">
-		<FoodIcon {icon} name={name || '-'} {brand} />
-		<span class="flex min-w-0 flex-1 flex-col">
-			<span class="text-[13px] font-[650] text-muted">{m.icon_label()}</span>
-			<span class="text-[14px]">{icon ? m.icon_chosen() : m.icon_suggested()}</span>
-		</span>
-		<button
-			type="button"
-			onclick={() => (choosingIcon = true)}
-			class="min-h-11 rounded-input px-3 text-[15px] font-semibold text-accent"
-			>{m.icon_change()}</button
-		>
-	</div>
-
-	<fieldset class="flex flex-col gap-2">
-		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_visibility()}</legend>
-		<div class="grid grid-cols-2 gap-2">
+<form class="flex flex-col gap-3" onsubmit={submit} novalidate>
+	<section class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
+		<TextField label={m.food_name()} bind:value={name} required maxlength={200} />
+		<TextField label={m.food_brand()} bind:value={brand} maxlength={120} />
+		<div class="flex items-center gap-3">
+			<FoodIcon {icon} name={name || '-'} {brand} />
+			<span class="flex min-w-0 flex-1 flex-col">
+				<span class="text-[15px] font-semibold">{m.icon_label()}</span>
+				<span class="text-[13px] text-muted">{icon ? m.icon_chosen() : m.icon_suggested()}</span>
+			</span>
 			<button
 				type="button"
-				class={chip(visibility === 'shared')}
-				aria-pressed={visibility === 'shared'}
-				onclick={() => (visibility = 'shared')}>{m.food_visibility_shared()}</button
-			>
-			<button
-				type="button"
-				class={chip(visibility === 'private')}
-				aria-pressed={visibility === 'private'}
-				onclick={() => (visibility = 'private')}>{m.food_visibility_private()}</button
+				onclick={() => (choosingIcon = true)}
+				class="min-h-11 rounded-input px-3 text-[15px] font-semibold text-accent"
+				>{m.icon_change()}</button
 			>
 		</div>
-	</fieldset>
-
-	<fieldset class="flex flex-col gap-2">
-		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_basis()}</legend>
-		<div class="grid grid-cols-3 gap-2">
-			{#each [['100g', m.food_basis_100g()], ['100ml', m.food_basis_100ml()], ['serving', m.food_basis_serving()]] as const as [value, text] (value)}
-				<button
-					type="button"
-					class={chip(basis === value)}
-					aria-pressed={basis === value}
-					onclick={() => (basis = value)}>{text}</button
-				>
-			{/each}
-		</div>
-	</fieldset>
-
-	{#if basis === 'serving'}
-		<TextField
-			label={m.food_serving_label()}
-			placeholder={m.food_serving_label_placeholder()}
-			bind:value={servingLabel}
-			maxlength={60}
-			aria-invalid={showErrors && !servingLabel.trim()}
-		/>
-		<div class="flex items-end gap-2">
-			<div class="flex-1">
-				<TextField
-					label={m.food_serving_size()}
-					hint={m.food_serving_size_hint()}
-					bind:value={servingSizeText}
-					inputmode="decimal"
-					aria-invalid={invalid(servingSizeText)}
-				/>
-			</div>
-			<Select
-				bind:value={servingSizeUnit}
-				aria-label={m.food_unit()}
-				options={UNITS}
-				class="mb-[26px]"
-			/>
-		</div>
-	{/if}
-
-	<fieldset class="flex flex-col gap-2">
-		<legend class="mb-1.5 text-[13px] font-[650] text-muted">{m.food_label_type()}</legend>
-		<div class="grid grid-cols-2 gap-2">
-			<button
-				type="button"
-				class={chip(labelType === 'eu')}
-				aria-pressed={labelType === 'eu'}
-				onclick={() => (labelType = 'eu')}>{m.food_label_eu()}</button
-			>
-			<button
-				type="button"
-				class={chip(labelType === 'us')}
-				aria-pressed={labelType === 'us'}
-				onclick={() => (labelType = 'us')}>{m.food_label_us()}</button
-			>
-		</div>
-	</fieldset>
-
-	<section class="flex flex-col gap-2" aria-labelledby="values-heading">
-		<h2 id="values-heading" class="text-[17px] font-bold">{m.food_values()}</h2>
-		<p class="text-[13px] text-muted">{m.food_values_hint()}</p>
-		{#each FIELDS as field (field)}
-			{@render row(`n-${field}`, label(field), rows[field], true)}
-		{/each}
-		<details class="group flex flex-col" open={extrasOpen}>
-			<summary
-				class="flex min-h-11 cursor-pointer items-center gap-2 text-[15px] font-semibold text-accent"
-			>
-				<ChevronRight
-					size={18}
-					aria-hidden="true"
-					class="transition-transform group-open:rotate-90 motion-reduce:transition-none"
-				/>{m.food_more_nutrients()}
-			</summary>
-			<div class="mt-1 flex flex-col gap-2">
-				{#each EXTRA_CODES as code (code)}
-					{@render row(`n-${code}`, extraLabel[code](), extras[code], false)}
-				{/each}
-			</div>
-		</details>
 	</section>
 
-	{#each warnings as w (w)}<Notice>{warningText[w]()}</Notice>{/each}
+	<section
+		class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
+		aria-labelledby="values-heading"
+	>
+		<h2 id="values-heading" class="text-[19px] font-bold">{m.food_values()}</h2>
+		<Chips
+			label={m.food_basis()}
+			bind:value={basis}
+			options={[
+				{ value: '100g', label: m.food_basis_100g() },
+				{ value: '100ml', label: m.food_basis_100ml() },
+				{ value: 'serving', label: m.food_basis_serving() }
+			]}
+		/>
+		{#if basis === 'serving'}
+			<TextField
+				label={m.food_serving_label()}
+				placeholder={m.food_serving_label_placeholder()}
+				bind:value={servingLabel}
+				maxlength={60}
+				aria-invalid={showErrors && !servingLabel.trim()}
+			/>
+			<div class="flex items-end gap-2">
+				<div class="flex-1">
+					<TextField
+						label={m.food_serving_size()}
+						hint={m.food_serving_size_hint()}
+						bind:value={servingSizeText}
+						inputmode="decimal"
+						aria-invalid={invalid(servingSizeText)}
+					/>
+				</div>
+				<Select
+					bind:value={servingSizeUnit}
+					aria-label={m.food_unit()}
+					options={UNITS}
+					class="mb-[26px]"
+				/>
+			</div>
+		{/if}
+		<Chips
+			label={m.food_label_type()}
+			bind:value={labelType}
+			options={[
+				{ value: 'eu', label: m.food_label_eu() },
+				{ value: 'us', label: m.food_label_us() }
+			]}
+		/>
+		<p class="text-[13px] text-muted">{m.food_values_hint()}</p>
+		<div class="flex flex-col">
+			{#each FIELDS as field (field)}
+				{@render row(
+					`n-${field}`,
+					label(field),
+					rows[field],
+					field !== 'energy_kj',
+					field !== 'energy_kcal' && field !== 'energy_kj',
+					field === 'saturated_fat' || field === 'sugars'
+				)}
+			{/each}
+		</div>
+		<button
+			type="button"
+			aria-expanded={extrasShown}
+			onclick={() => (extrasShown = !extrasShown)}
+			class="flex min-h-11 items-center gap-1.5 self-start text-[15px] font-bold text-accent"
+		>
+			{m.food_more_nutrients()}
+			<ChevronDown
+				size={18}
+				aria-hidden="true"
+				class={['transition-transform duration-300', extrasShown && 'rotate-180']}
+			/>
+		</button>
+		<div class={['collapse-row -mt-3', extrasShown && 'open']}>
+			<div inert={!extrasShown}>
+				<div class="flex flex-col pt-3">
+					{#each EXTRA_CODES as code (code)}
+						{@render row(`n-${code}`, extraLabel[code](), extras[code], false, true)}
+					{/each}
+				</div>
+			</div>
+		</div>
+		{#each warnings as w (w)}<Notice>{warningText[w]()}</Notice>{/each}
+	</section>
 
-	<section class="flex flex-col gap-2" aria-labelledby="portions-heading">
-		<h2 id="portions-heading" class="text-[17px] font-bold">{m.food_portions()}</h2>
-		<p class="text-[13px] text-muted">{m.food_portions_hint()}</p>
+	<section
+		class="flex flex-col rounded-card bg-surface p-[18px] shadow-card"
+		aria-labelledby="portions-heading"
+	>
+		<h2 id="portions-heading" class="mb-1 text-[19px] font-bold">{m.food_portions()}</h2>
 		{#each portions as portion, i (i)}
-			<!-- Phone: the name on its own line, amount and unit below; desktop: one row. Remove sits in the name's label
-			     row, at the right (owner, 2026-10-31), not beside the unit. -->
-			<div
-				class={[
-					'grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 desk:grid-cols-[minmax(0,1fr)_6rem_auto]',
-					i > 0 && 'mt-2 border-t border-line pt-4 desk:mt-0 desk:border-0 desk:pt-1'
-				]}
-			>
-				<div class="relative col-span-2 min-w-0 desk:col-span-1">
+			<div class="flex flex-col gap-2 border-line py-3 not-first-of-type:border-t">
+				<div class="relative">
 					<TextField
 						id="portion-name-{i}"
 						label={m.food_portion_name()}
+						placeholder={m.food_portion_placeholder()}
 						bind:value={portion.name}
 						maxlength={60}
 					/>
 					<button
 						type="button"
-						class="absolute -top-3 right-0 min-h-11 px-1 text-[13px] font-semibold text-bad"
+						class="absolute -top-3 right-0 min-h-11 px-1 text-[13.5px] font-bold text-bad"
 						aria-label={m.food_portion_remove()}
 						onclick={() => portions.splice(i, 1)}>{m.food_portion_remove_short()}</button
 					>
 				</div>
-				<div class="min-w-0">
+				<div class="grid grid-cols-2 items-end gap-2">
 					<TextField
 						id="portion-amount-{i}"
 						label={m.food_portion_amount()}
 						bind:value={portion.text}
 						inputmode="decimal"
 					/>
+					<Select bind:value={portion.unit} label={m.food_unit()} options={UNITS} />
 				</div>
-				<Select bind:value={portion.unit} label={m.food_unit()} options={UNITS} />
 			</div>
+		{:else}
+			<p class="pt-1 pb-2 text-[13px] text-muted">{m.food_portions_none()}</p>
 		{/each}
-		<Button
-			variant="ghost"
+		<button
+			type="button"
 			onclick={() => portions.push({ name: '', text: '', unit: basis === '100ml' ? 'ml' : 'g' })}
-			>{m.food_portion_add()}</Button
+			class="flex min-h-11 items-center gap-1.5 self-start text-[15px] font-bold text-accent"
 		>
+			<Plus size={18} aria-hidden="true" />{m.food_portion_add()}
+		</button>
 	</section>
 
-	<Button type="submit" wide disabled={busy || !name.trim()}
+	<section class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
+		<Chips
+			label={m.food_visibility()}
+			bind:value={visibility}
+			options={[
+				{ value: 'shared', label: m.food_visibility_shared() },
+				{ value: 'private', label: m.food_visibility_private() }
+			]}
+		/>
+		<p class="text-[13px] text-muted">
+			{visibility === 'shared' ? m.food_share_note_shared() : m.food_share_note_private()}
+		</p>
+	</section>
+
+	{@render actions?.()}
+
+	<Button type="submit" wide disabled={busy || !name.trim() || (!!start && !unsaved && !dirty)}
 		>{busy ? m.common_working() : (saveLabel ?? m.food_save())}</Button
 	>
+	{#if note}<p class="px-1 text-[13px] text-muted">{note}</p>{/if}
 </form>
 
 {#if choosingIcon}

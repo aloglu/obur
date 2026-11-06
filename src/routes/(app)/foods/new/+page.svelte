@@ -5,6 +5,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
+	import BackLink from '#lib/ui/BackLink.svelte';
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 
@@ -30,13 +31,9 @@
 
 <svelte:head><title>{m.food_new_title()} · {m.app_name()}</title></svelte:head>
 
-<main class="mx-auto flex min-h-dvh max-w-[520px] flex-col gap-3 px-3.5 py-6">
-	<a href={resolve('/(app)/foods')} class="text-[14px] font-semibold text-accent"
-		>← {m.foods_title()}</a
-	>
+<main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
+	<BackLink href={resolve('/(app)/foods')} label={m.foods_title()} />
 	<h1 class="text-[24px] font-[750]">{m.food_new_title()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
-	<div class="rounded-card bg-surface p-[18px] shadow-card">
-		<FoodForm {busy} onsave={save} startName={page.url.searchParams.get('name') ?? ''} />
-	</div>
+	<FoodForm {busy} onsave={save} startName={page.url.searchParams.get('name') ?? ''} />
 </main>

@@ -1,26 +1,27 @@
 <script lang="ts">
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
+	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
-	import Button from '#lib/ui/Button.svelte';
+	import BackLink from '#lib/ui/BackLink.svelte';
 	import Card from '#lib/ui/Card.svelte';
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 
 	let { data } = $props();
 	const food = $derived(data.food);
+	const editing = $derived(food.editable && food.origin !== 'recipe');
 
 	let busy = $state(false);
 	let problem = $state('');
-	let info = $state('');
 
 	async function run(action: () => Promise<void>) {
 		busy = true;
 		problem = '';
-		info = '';
 		try {
 			await action();
 		} catch (e) {
@@ -39,7 +40,7 @@
 		run(async () => {
 			await api('PUT', `/api/v1/foods/${food.id}`, { version: food.version, food: input });
 			await invalidateAll();
-			info = m.food_saved();
+			showToast({ message: m.food_saved() });
 		});
 
 	const variant = () =>
@@ -85,15 +86,36 @@
 
 <svelte:head><title>{food.name} · {m.app_name()}</title></svelte:head>
 
-<main class="mx-auto flex min-h-dvh max-w-[520px] flex-col gap-3 px-3.5 py-6">
-	<a href={resolve('/(app)/foods')} class="text-[14px] font-semibold text-accent"
-		>← {m.foods_title()}</a
-	>
+{#snippet foodActions()}
+	<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
+		<button
+			type="button"
+			disabled={busy}
+			onclick={variant}
+			class="flex min-h-14 items-center justify-between gap-3 text-left text-[15px] font-semibold"
+		>
+			{m.food_variant()}
+			<ChevronRight size={20} aria-hidden="true" class="shrink-0 text-muted" />
+		</button>
+		{#if food.editable && food.origin !== 'recipe'}
+			<button
+				type="button"
+				disabled={busy}
+				onclick={() => setArchived(!food.archived)}
+				class="flex min-h-14 items-center text-left text-[15px] font-semibold {food.archived
+					? ''
+					: 'text-bad'}">{food.archived ? m.food_restore() : m.food_archive_row()}</button
+			>
+		{/if}
+	</div>
+{/snippet}
+
+<main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
+	<BackLink href={resolve('/(app)/foods')} label={m.foods_title()} />
 	<h1 class="text-[24px] font-[750] break-words">
-		{food.brand ? `${food.brand} ` : ''}{food.name}
+		{#if editing}{m.food_edit_title()}{:else}{food.brand ? `${food.brand} ` : ''}{food.name}{/if}
 	</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
-	{#if info}<Notice tone="info">{info}</Notice>{/if}
 	{#if food.archived}<Notice tone="info">{m.food_archived()}</Notice>{/if}
 	{#if food.curatedDataset}<p class="text-[14px] text-muted">
 			{m.food_source_usda({
@@ -113,10 +135,15 @@
 				>{m.recipe_edit()}</a
 			>
 		</Card>
-	{:else if food.editable && food.origin !== 'recipe'}
-		<Card title={m.food_edit_title()}>
-			{#key food.version}<FoodForm initial={food} {busy} onsave={save} />{/key}
-		</Card>
+		{@render foodActions()}
+	{:else if editing}
+		{#key food.version}<FoodForm
+				initial={food}
+				{busy}
+				onsave={save}
+				actions={foodActions}
+				note={m.food_saved_note()}
+			/>{/key}
 	{:else}
 		<Card>
 			<p class="text-[14px] text-muted">
@@ -139,15 +166,6 @@
 				{/each}
 			</dl>
 		</Card>
+		{@render foodActions()}
 	{/if}
-
-	<Card>
-		<p class="text-[13px] text-muted">{m.food_variant_hint()}</p>
-		<Button variant="ghost" disabled={busy} onclick={variant}>{m.food_variant()}</Button>
-		{#if food.editable && food.origin !== 'recipe'}
-			<Button variant="danger" disabled={busy} onclick={() => setArchived(!food.archived)}>
-				{food.archived ? m.food_restore() : m.food_archive()}
-			</Button>
-		{/if}
-	</Card>
 </main>

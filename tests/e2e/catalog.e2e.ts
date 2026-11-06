@@ -14,9 +14,9 @@ test('a member creates a shared per-serving food that another member can find an
 	await signedInAs(page, 'Mehmet');
 
 	await page.goto('/foods/new');
-	await page.getByLabel('Product name').fill(name);
+	await page.getByLabel('Name', { exact: true }).fill(name);
 	await page.getByLabel('Brand (optional)').fill('Fellas');
-	await page.getByRole('button', { name: 'per serving' }).click();
+	await page.getByRole('radio', { name: 'per serving' }).click();
 	await page.getByLabel('One serving is').fill('1 bar');
 	await page.getByLabel('Serving weight or volume (optional)').fill('50');
 	await nutrient(page, 'energy_kcal').fill('191');
@@ -24,23 +24,25 @@ test('a member creates a shared per-serving food that another member can find an
 	await nutrient(page, 'protein').fill('20');
 	await nutrient(page, 'salt').fill('0,5');
 	// An optional extra from the label, as an upper bound.
-	await page.getByText('More nutrients (optional)').click();
+	await page.getByRole('button', { name: 'More nutrients' }).click();
 	await nutrient(page, 'iron').fill('1,2');
-	await page.locator('#n-iron').locator('..').getByRole('checkbox', { name: 'Less than' }).check();
+	await page.getByRole('button', { name: 'Iron: less than' }).click();
 
 	// Empty rows are shown as unknown, never as zero.
-	await expect(page.locator('label[for="n-fibre"]')).toContainText('unknown');
+	await expect(nutrient(page, 'fibre')).toHaveAttribute('placeholder', 'Unknown');
 	await page.getByRole('button', { name: 'Save food' }).click();
 
-	await expect(page.getByRole('heading', { level: 1 })).toContainText('Fellas HighPro+');
+	await expect(page.getByRole('heading', { level: 1, name: 'Edit food' })).toBeVisible();
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue(new RegExp('HighPro\\+'));
 	await expect(nutrient(page, 'fibre')).toHaveValue('');
 	await expect(nutrient(page, 'fat')).toHaveValue('8,1');
 	// The edit form opens More nutrients when the food has any, with the value and its "<".
 	await expect(nutrient(page, 'iron')).toBeVisible();
 	await expect(nutrient(page, 'iron')).toHaveValue('1,2');
-	await expect(
-		page.locator('#n-iron').locator('..').getByRole('checkbox', { name: 'Less than' })
-	).toBeChecked();
+	await expect(page.getByRole('button', { name: 'Iron: less than' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 
 	// Another member finds it with a folded, reordered query and sees it read-only.
 	const other = await browser.newContext({ ...testInfo.project.use });
@@ -58,8 +60,8 @@ test('a member creates a shared per-serving food that another member can find an
 	// "Make my own variant" gives an editable private copy.
 	await otherPage.getByRole('button', { name: 'Make my own variant' }).click();
 	await expect(otherPage.getByText('Your variant of a shared food.')).toBeVisible();
-	await expect(otherPage.getByRole('button', { name: 'Only me' })).toHaveAttribute(
-		'aria-pressed',
+	await expect(otherPage.getByRole('radio', { name: 'Only me' })).toHaveAttribute(
+		'aria-checked',
 		'true'
 	);
 	await other.close();
@@ -68,7 +70,7 @@ test('a member creates a shared per-serving food that another member can find an
 test('the food form warns about implausible values without blocking the save', async ({ page }) => {
 	await signedInAs(page, 'Ayşe');
 	await page.goto('/foods/new');
-	await page.getByLabel('Product name').fill('Freeze Fresh Fruit Mix');
+	await page.getByLabel('Name', { exact: true }).fill('Freeze Fresh Fruit Mix');
 	await nutrient(page, 'energy_kcal').fill('330');
 	await nutrient(page, 'carbohydrate').fill('9628');
 	await expect(
