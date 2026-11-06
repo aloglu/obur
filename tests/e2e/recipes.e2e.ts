@@ -72,7 +72,7 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await choose(sheet, 'Unit', 'g');
 	await sheet.getByLabel('Amount').fill('450');
 	await choose(sheet, 'Meal', 'Dinner');
-	await sheet.getByRole('button', { name: 'Save', exact: true }).click();
+	await sheet.getByRole('button', { name: /^Log to/ }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	const dinner = page.getByRole('region', { name: 'Dinner' });
 	await expect(dinner).toContainText('278'); // 450 g ÷ 300 g × 185 kcal

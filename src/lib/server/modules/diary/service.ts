@@ -185,6 +185,19 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 			return rows.map(toEntry);
 		},
 
+		/** Entries still in the trash, most recently deleted first. */
+		async trash(userId: string): Promise<DiaryEntry[]> {
+			const since = new Date(now().getTime() - TRASH_DAYS * 24 * 3600 * 1000);
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select()
+					.from(diaryEntries)
+					.where(and(isNotNull(diaryEntries.deletedAt), gte(diaryEntries.deletedAt, since)))
+					.orderBy(desc(diaryEntries.deletedAt))
+			);
+			return rows.map(toEntry);
+		},
+
 		async logFood(
 			userId: string,
 			ctx: EntryContext,

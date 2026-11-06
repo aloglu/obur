@@ -6,6 +6,7 @@
 	import { kcal } from '#lib/shared/format.ts';
 	import type { NutrientCode, NutrientValue } from '#lib/shared/nutrients.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import Roll from '../Roll.svelte';
 
 	/** The nutrients for the chosen amount, or undefined while the amount or unit is missing. */
 	let { nutrients }: { nutrients: NutrientValue[] | undefined } = $props();
@@ -35,7 +36,9 @@
 			class="flex w-[7rem] shrink-0 flex-wrap content-center items-baseline gap-1 self-stretch border-r border-line pr-3"
 		>
 			<span class="font-display text-[26px] leading-none font-extrabold tabular-nums"
-				>{nutrients ? (energy ? kcal(energy.value) : m.amount_unknown_short()) : '—'}</span
+				><Roll
+					value={nutrients ? (energy ? kcal(energy.value) : m.amount_unknown_short()) : '—'}
+				/></span
 			>
 			<span class="text-[13px] font-semibold text-muted">kcal</span>
 		</p>
@@ -47,7 +50,7 @@
 							<span class="size-2 shrink-0 rounded-full" style:background={macro.color}></span>
 							{macro.label}
 						</dt>
-						<dd class="text-[15px] font-bold tabular-nums">{macro.value}</dd>
+						<dd class="text-[15px] font-bold tabular-nums"><Roll value={macro.value} /></dd>
 					</div>
 				{/each}
 			</dl>

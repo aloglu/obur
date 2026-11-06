@@ -30,7 +30,10 @@ test('Speak records, sends the clip with the person’s foods as a prompt, and c
 		.getByRole('button', { name: /Köy Sesli Ayran/ })
 		.first()
 		.click();
-	await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
+	await page
+		.getByRole('dialog')
+		.getByRole('button', { name: /^Log to/ })
+		.click();
 	await expect(page.getByRole('status')).toContainText('Logged');
 
 	await nextTranscript({

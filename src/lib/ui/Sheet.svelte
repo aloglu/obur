@@ -6,8 +6,14 @@
 	import { lockPageScroll } from '#lib/client/scroll-lock.ts';
 	import { m } from '#lib/paraglide/messages.js';
 
-	let { title, onclose, children }: { title: string; onclose: () => void; children: Snippet } =
-		$props();
+	interface Props {
+		title: string;
+		/** Replaces the plain title in the header. */
+		head?: Snippet;
+		onclose: () => void;
+		children: Snippet;
+	}
+	let { title, head, onclose, children }: Props = $props();
 	let dialog: HTMLDialogElement;
 	let scrolled = 0;
 
@@ -90,7 +96,7 @@
 >
 	<div class="flex flex-col gap-4 p-[18px] pb-[max(18px,env(safe-area-inset-bottom))]">
 		<div class="flex items-center justify-between gap-3">
-			<h2 class="text-[21px] font-[750]">{title}</h2>
+			{#if head}{@render head()}{:else}<h2 class="text-[21px] font-[750]">{title}</h2>{/if}
 			<button
 				type="button"
 				onclick={onclose}

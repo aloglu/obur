@@ -152,8 +152,8 @@ test('a LoseIt export imports after a preview that checks it against LoseIt’s 
 	);
 	expect(day.entries.map((e) => e.food?.name)).toContain('Greek yogurt, plain');
 	// Imported carbs state no definition: shown with a note, not left out.
-	await page.waitForLoadState('networkidle'); // the page is still refreshing after the import
-	await page.goto('/?date=2026-01-07');
+	// The page may still be refreshing after the import, which can interrupt a navigation.
+	await expect(() => page.goto('/?date=2026-01-07')).toPass();
 	const nutrients = page.getByRole('region', { name: 'Nutrients' });
 	await expect(nutrients).toContainText('84,4 g');
 	await expect(nutrients).toContainText('Definition not stated (imported)');

@@ -414,6 +414,7 @@
 {#if editing}
 	<EditEntrySheet
 		entry={editing}
+		today={data.today}
 		onsaved={saved}
 		ondeleted={deleted}
 		onconflict={conflict}

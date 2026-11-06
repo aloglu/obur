@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { apiAs, createFood, signedInAs, choose, openCaloriesOnly } from './fixtures.ts';
 
@@ -43,7 +44,7 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 	await expect(sheet.getByRole('button', { name: /^Unit: slice \(26 g\)/ })).toBeVisible();
 	await sheet.getByLabel('Amount').fill('3');
 	await expect(sheet.getByText('151 kcal')).toBeVisible();
-	await sheet.getByRole('button', { name: 'Save' }).click();
+	await sheet.getByRole('button', { name: /^Log to/ }).click();
 
 	const lunch = meal(page, 'Lunch');
 	await expect(lunch.getByText('3 × slice (26 g)')).toBeVisible();
@@ -57,7 +58,10 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 	await openLogFor(page, 'Lunch');
 	await page.getByRole('searchbox').fill(`untad ${tag}`);
 	await page.getByRole('button', { name: new RegExp(`Untad Premium Light Ekmek ${tag}`) }).click();
-	await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
+	await page
+		.getByRole('dialog')
+		.getByRole('button', { name: /^Log to/ })
+		.click();
 	await expect(lunch.getByText('1 × slice (26 g)')).toBeVisible();
 
 	// Now it is a recent food: focusing the empty search field suggests it.
@@ -77,11 +81,10 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 
 	// Move to dinner, through the menu.
 	await lunch.getByRole('button', { name: /Untad Premium Light Ekmek/ }).click();
-	await page.getByRole('dialog').getByRole('button', { name: 'Move to…' }).click();
-	await expect(
-		page.getByRole('dialog').getByRole('button', { name: 'Lunch (current)' })
-	).toBeDisabled();
-	await page.getByRole('dialog').getByRole('button', { name: 'Dinner' }).click();
+	const editSheet = page.getByRole('dialog');
+	await expect(editSheet.getByRole('button', { name: 'No changes' })).toBeDisabled();
+	await choose(editSheet, 'Meal', 'Dinner');
+	await editSheet.getByRole('button', { name: 'Move to Dinner' }).click();
 	await expect(meal(page, 'Dinner').getByText('2 × slice (26 g)')).toBeVisible();
 	await expect(page.getByRole('status').getByText('Moved to Dinner')).toBeVisible();
 
@@ -339,4 +342,32 @@ test('a day note saves itself, shows its Markdown, and stays with its day', asyn
 	await page.getByRole('button', { name: 'Previous day' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Yesterday' })).toBeVisible();
 	await expect(note).toContainText('Add a note for this day');
+});
+
+test('Recently deleted brings an entry back after the toast is gone', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Çöp ${testInfo.project.name}`);
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	const entry = await apiAs<{ id: string }>(page, 'POST', '/api/v1/diary/entries', {
+		kind: 'quick',
+		id: randomUUID(),
+		date,
+		meal: 'dinner',
+		zone: 'Europe/Istanbul',
+		kcal: 410,
+		description: 'Lahmacun'
+	});
+	await apiAs(page, 'POST', `/api/v1/diary/entries/${entry.id}?action=delete`, {});
+
+	await page.goto('/more');
+	await page.getByRole('link', { name: /Recently deleted.*1/ }).click();
+	const row = page.getByRole('listitem').filter({ hasText: 'Lahmacun' });
+	await expect(row).toContainText('Today · Dinner');
+	await row.getByRole('button', { name: 'Restore Lahmacun' }).click();
+	await expect(page.getByRole('status')).toContainText('Restored Lahmacun');
+	await expect(page.getByText('Nothing deleted in the last 30 days.')).toBeVisible();
+
+	await page.goto('/');
+	await expect(page.getByRole('region', { name: 'Dinner' })).toContainText('Lahmacun');
 });

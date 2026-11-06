@@ -17,10 +17,12 @@
 		theme: ThemeChoice;
 		palette: PaletteId;
 		timeFormat: TimeFormat;
+		deletedCount: number;
 		/** Reminders are configured on this server. */
 		reminders: boolean;
 	}
-	let { isAdmin, displayName, theme, palette, timeFormat, reminders }: Props = $props();
+	let { isAdmin, displayName, theme, palette, timeFormat, deletedCount, reminders }: Props =
+		$props();
 
 	const mode = $derived(
 		{ system: m.theme_system(), light: m.theme_light(), dark: m.theme_dark() }[theme]
@@ -62,6 +64,11 @@
 	<NavRow href={resolve('/(app)/foods')} label={m.more_foods()} />
 	<NavRow href={resolve('/(app)/recipes')} label={m.recipes_title()} />
 	<NavRow href={resolve('/(app)/saved-meals')} label={m.more_saved_meals()} />
+	<NavRow
+		href={resolve('/(app)/more/deleted')}
+		label={m.deleted_title()}
+		value={deletedCount || undefined}
+	/>
 	<NavRow href={resolve('/(app)/settings/data')} label={m.more_data()} />
 	<NavRow href={resolve('/(app)/settings/security')} label={m.more_security()} />
 	{#if isAdmin}

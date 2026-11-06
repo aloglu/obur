@@ -40,7 +40,10 @@ test('foods show the icon their name suggests, or the one chosen in the picker',
 	const result = page.getByRole('button', { name: new RegExp(`Beyaz peynir ${tag}`) }).first();
 	await expect(iconIn(result, '1F95B')).toBeVisible();
 	await result.click();
-	await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
+	await page
+		.getByRole('dialog')
+		.getByRole('button', { name: /^Log to/ })
+		.click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(iconIn(page.getByRole('main'), '1F95B').first()).toBeVisible();
 });

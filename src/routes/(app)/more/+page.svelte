@@ -15,6 +15,7 @@
 		theme={data.theme}
 		palette={data.palette}
 		timeFormat={data.timeFormat}
+		deletedCount={data.deletedCount}
 		reminders={data.pushKey !== null}
 	/>
 </main>

@@ -90,7 +90,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	});
 	await expect(sheet).toBeVisible();
 	await choose(sheet, 'Unit', 'porsiyon (30 g)');
-	await sheet.getByRole('button', { name: 'Save', exact: true }).click();
+	await sheet.getByRole('button', { name: /^Log to/ }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(page.getByRole('main')).toContainText(`Fındıklı gofret ${testInfo.project.name}`);
 	// Saved as proposed: the form added and changed nothing on its own.

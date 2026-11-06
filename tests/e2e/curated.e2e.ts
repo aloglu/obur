@@ -17,7 +17,7 @@ test('a curated food is found by its Turkish name and logged by a USDA portion',
 	await sheet.getByLabel('Amount').fill('1');
 	// 89 kcal per 100 g × 118 g.
 	await expect(sheet).toContainText('105 kcal');
-	await sheet.getByRole('button', { name: 'Save' }).click();
+	await sheet.getByRole('button', { name: /^Log to/ }).click();
 	await expect(page.getByRole('status')).toContainText('105 kcal');
 
 	// The food page says where the values come from.

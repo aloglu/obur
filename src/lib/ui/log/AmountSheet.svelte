@@ -17,6 +17,7 @@
 	import { basisFactor, scaleNutrients, type Unit } from '#lib/shared/quantity.ts';
 	import { unitOptions, type MeasureOption, type UnitOption } from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
+	import FoodSheetHead from './FoodSheetHead.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 	import MacroPreview from './MacroPreview.svelte';
@@ -132,8 +133,20 @@
 	title={food ? `${food.brand ? `${food.brand} ` : ''}${food.name}` : m.amount_title()}
 	{onclose}
 >
+	{#snippet head()}
+		{#if food}
+			<FoodSheetHead
+				name={`${food.brand ? `${food.brand} ` : ''}${food.name}`}
+				iconName={food.name}
+				icon={food.icon}
+				brand={food.brand}
+				detail={basisLine}
+			/>
+		{:else}
+			<h2 class="text-[21px] font-[750]">{m.amount_title()}</h2>
+		{/if}
+	{/snippet}
 	{#if food}
-		<p class="text-[14px] text-muted">{basisLine}</p>
 		<form class="flex flex-col gap-4" onsubmit={save}>
 			<div class="flex flex-col gap-1.5">
 				<AmountField
@@ -159,7 +172,7 @@
 			<MacroPreview nutrients={preview} />
 			{#if problem}<Notice>{problem}</Notice>{/if}
 			<Button type="submit" wide disabled={busy || amount === undefined || !preview}
-				>{busy ? m.common_working() : m.amount_save()}</Button
+				>{busy ? m.common_working() : m.amount_log_to({ meal: mealName(meal) })}</Button
 			>
 		</form>
 	{:else}

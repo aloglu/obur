@@ -197,6 +197,23 @@ describe('retries', () => {
 	});
 });
 
+describe('recently deleted', () => {
+	it('lists what is in the trash, newest first, only one’s own and only for 30 days', async () => {
+		const first = await diary.quickAdd(MEHMET, ctx(), 100, 'first');
+		const second = await diary.quickAdd(MEHMET, ctx(), 200, 'second');
+		const live = await diary.quickAdd(MEHMET, ctx(), 300, 'kept');
+		await diary.remove(MEHMET, first.id);
+		await diary.remove(MEHMET, second.id);
+
+		expect((await diary.trash(MEHMET)).map((e) => e.description)).toEqual(['second', 'first']);
+		expect((await diary.trash(MEHMET)).map((e) => e.id)).not.toContain(live.id);
+		expect(await diary.trash(ZEYNEP)).toEqual([]);
+
+		await admin`update diary_entries set deleted_at = now() - interval '31 days' where id = ${first.id}`;
+		expect((await diary.trash(MEHMET)).map((e) => e.description)).toEqual(['second']);
+	});
+});
+
 describe('day notes', () => {
 	const DAY = '2026-10-25';
 	const at = (time: string) => new Date(`2026-10-25T${time}:00Z`);
