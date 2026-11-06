@@ -6,6 +6,24 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 **Phase 2 — LoseIt replacement and early voice**: approved by the owner on 2026-10-30. Phase 1 is complete (deployed on the owner's Unraid, offline behaviour confirmed on the iPhone). The owner keeps using LoseIt until obur is production-ready.
 
+## Design review build
+
+The owner finished reviewing the design on 2026-11-06 and approved recording it and building it in small steps. The decisions are in `docs/ui.md`, "Design review, November 2026"; the reference demos are in `docs/ui/review-2026-11/`. Each step ends with passing checks and a commit, and deploys to the pilot.
+
+1. **Themes and tokens:** the eight themes, the `--fill` token, the corner set, an Appearance theme choice, contrast tests for every theme.
+2. **Shared controls:** field menus, rows with menus, unit inside the amount field, the warning card, the checkbox; replace pills and chips.
+3. **Navigation and More:** compact More with nested pages, sidebar and icon rail, centred dialogs on wide screens, the 24/12-hour setting.
+4. **Today:** budget card, status colours, Water and Weight rows, meal card grid, day titles, Show older in the list.
+5. **Day notes:** schema, RLS, export and import, offline rule, card.
+6. **Log:** search on top, three tiles, Recent, amount sheet, entry editing, Recently deleted, Type it.
+7. **Speak and Scan:** failure states, scan review.
+8. **Journal and Progress:** day box, month title return, desktop layout, chart label column.
+9. **Signing in and first day:** sign in, set up, join, recovery codes, signed out, budget setup, empty states.
+10. **Recipes, saved meals, foods, Your data, Household, Help, reminders.**
+11. **Offline warnings and a full desktop, dark-mode and 200 % pass.**
+
+Open and not blocking: the app icon and fonts against the new themes.
+
 ## Phase 2 plan
 
 1. **LoseIt reader** (pure parser, header-detected layout, redacted fixture with invented values for owner review).
@@ -36,6 +54,8 @@ Scope from `docs/design.md` (Phase 1). Each step ends with passing checks and a 
 11. **Operations.** Production Compose image (web and worker), deployment behind the existing Cloudflare Tunnel, pgBackRest with encrypted local and off-site backups, a weekly restore check, `docs/restore.md` with a rehearsed restore, and CI.
 
 ## In progress
+
+- Design review build, step 1 (themes and tokens), started 2026-11-06.
 
 - Phase 2 step 1 (LoseIt reader), 2026-10-30: `src/lib/server/modules/imports-exports/loseit.ts` (pure; exact header detection; deleted rows excluded; n/a unknown; thousands comma in Calories only; LoseIt's Morning/Afternoon Snacks to Snacks; units: grams and millilitres physical, others named portions; carbohydrate kept as the new `carbohydrate_unspecified` code, migration 0019). On the owner's real export (aggregates only, nothing stored): 2,420 active entries, 102 deleted, 147 custom foods, 150 weights, 268 water days, 55 activity rows, 270 completed days, 155 budget changes, and every one of 274 days reconciles exactly with LoseIt's daily food total. The 125 "kcal only" rows are the database food Walnuts, not quick adds (export notes corrected). Fixture `tests/fixtures/loseit/` (invented values, approved by the owner 2026-10-30) and `loseit.test.ts` (12 tests). Step 2 done (2026-10-30): `loseit-import.ts` planner and atomic apply, LoseIt preview on Your data (reconciliation line, deleted count, weight unit, share custom foods, trash missing rows), 8 real-Postgres tests and a browser test. Choices recorded in the module header: identities are content hash plus occurrence; diary rows link to a custom food only when exactly one has the name; LoseIt database foods become private foods from their latest diary row; custom foods per 100 g/ml when stated so, otherwise per serving; salt and kJ derived and marked; budgets as manual target versions only before the first obur target. Not imported: LoseIt serving definitions (investigated 2026-10-30: no usable portions) and recipes (headers only, no ingredients). Step 3 done (2026-10-30): the owner imported the real export on the server and spot-checked it; works. Follow-up from the owner: carbs were missing on imported days (LoseIt's carbohydrate is stored with an unstated definition), now shown on the Nutrients card with a note and never added to the excluding-fibre total (`carbohydrateDay`). Next: step 4, automatic budget recalculation (owner to confirm), or step 5, saved meals.
 

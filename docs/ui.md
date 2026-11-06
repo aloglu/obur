@@ -2,11 +2,117 @@
 
 The owner chose this direction from three demos. It is the source of truth for the look and behaviour of the interface. Where it disagrees with `docs/design.md`, this file wins on visual and interaction matters, and the conflict is listed under "Changes to other docs" so design.md can be updated.
 
-The reference demo is `docs/ui/pazar-demo.dc.html`. It was built in a design-canvas format: the markup with `{{holes}}`, `<sc-if>` and `<sc-for>`, and the `Component` script at the bottom, show the structure, styles and behaviour exactly. It does not run outside that canvas, so read it, don't serve it. Do not copy its inline-style approach; build proper Svelte components with Tailwind using the tokens below.
+The current reference is `docs/ui/review-2026-11/` (see "Design review" below). The original demo is `docs/ui/pazar-demo.dc.html`. It was built in a design-canvas format: the markup with `{{holes}}`, `<sc-if>` and `<sc-for>`, and the `Component` script at the bottom, show the structure, styles and behaviour exactly. It does not run outside that canvas, so read it, don't serve it. Do not copy its inline-style approach; build proper Svelte components with Tailwind using the tokens below.
+
+## Design review, November 2026
+
+The owner reviewed every screen, on phone and on desktop, over five rounds and two theme rounds (2026-11-01 to 2026-11-06). **Where this section disagrees with anything below, this section wins.** Older text is replaced as each screen is built (`docs/progress.md`, "Design review build").
+
+The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app and More), `account.html` (signing in, first day, Profile, Security, Household, Your data, Help) and `open-ends.html` (empty states, Speak and Scan failures, offline, install). They run in a browser and show exact sizes, states and wording. They are a reference, not code to copy: they open in Sade, carry review-only controls, and fake the data. Build proper components with the tokens.
+
+### Across the app
+
+- **Corners.** One set: cards 22, buttons and fields 14, small controls 10. Only things round by nature stay round: icon buttons, switches, avatars, dots and rings. No fully rounded toggles or chips anywhere (owner, three times), and the tab bar and its active item use the same corners.
+- **Choices.**
+  - In sheets, **Day** and **Meal** are two fields side by side. Each opens a menu with a tick on the current choice, as wide as its field.
+  - **Settings choices** are rows showing the value; tapping opens a menu (Goal pace, Units, Profile, the LoseIt weight unit).
+  - **Every other open menu is only as wide as its longest option** and lines up with the right edge of its row. It never stretches across the row.
+  - **The unit sits inside the amount field:** "piece ⌄" opens a menu when there are several units; a single unit (g, ml) is plain text, not a button.
+  - **Forms with two or three options filled in once** (Female / Male, Shared / Only me, Appearance mode) keep a segmented control with the usual corners. **Type it** has a toggle listing all four meals.
+- **One warning style.** A plain surface card: an icon tile coloured by severity (grey information, amber needs you, red failure, green done), a bold one-line title, a short line under it, actions below when there are any. Used for offline and back online, a refused entry, entries waiting while signed out, no microphone, Speak switched off, and the recovery-codes warning. The card itself is never tinted. Household's backup status keeps its own larger line.
+- **Fewer descriptions.** No explanatory text under titles and fields unless the owner kept it. Help carries explanations; no inline "?" links. Help's topics scroll sideways by finger (with a soft fade at the edge), and by dragging with a mouse.
+- **Checkbox.** One app-drawn style, for example "I've saved these codes", the pregnancy questions and delete confirmations.
+- **Inline fields** (Other amount, New weigh-in and so on): a tap on any non-interactive area closes them without saving, and so does opening another one. Only one is open at a time.
+- **Examples and placeholders are in English,** in the English interface, although Turkish input works (including messages such as `speak_example`).
+- **Macro colours** do not follow the accent. Protein, carbs and fat change together, per theme, never protein alone.
+- **Keyboard.** An open sheet sits on top of the on-screen keyboard (`visualViewport` inset).
+- **Wide screens.** The desktop layout starts at 760 px: icon rail on mid widths, labelled sidebar from 1100 px. Sheets become centred dialogs. Today has two columns, other pages use reading widths. Keys: ←/→ for days, Enter and Esc in dialogs. Chart text keeps a fixed size rather than scaling (13.5 px on desktop).
+
+### Themes
+
+**Pazar stays the default** (owner, 2026-11-06, after two rounds of alternatives). Themes are chosen in More → Appearance; light, dark or system is a separate choice. Every theme is complete, in light and dark, including macro colours; each must pass the contrast test. All values are in `docs/ui/review-2026-11/diary.html`, in the last style block and the base tokens.
+
+| Theme | Light | Dark |
+|---|---|---|
+| **Pazar** (default) | As in Tokens below | As in Tokens below |
+| **Sade** | Neutral greys `#F6F5F4`, one blue accent `#2563EB` | `#111113` with `#6EA2FF` |
+| **Zerde** | Butter page `#FBEFCB`, saffron buttons `#F5B301` with dark text, pomegranate links `#8B1E4A` | Warm dark `#1C130A`, saffron accent |
+| **Patlıcan** | Rosy oat page `#F5E8E2`, aubergine `#5B1F52` | Plum `#1A0E19`, buttons `#8A3D7D`, links `#E6A4D4` |
+| **Zeytin** | Oat page `#EFEAD2`, olive `#55600F` | `#15160A`, accent `#CBD66A` |
+| **Disko** (80s) | Pink page `#FFD9EF`, cyan fields, hot pink buttons `#FF4FB0` with dark text, links `#B8007F` | Indigo `#120829`, neon buttons `#FF2E9A`, thin neon glow on cards |
+| **Kaset** (90s) | Turquoise page `#6FE3D6`, purple `#5B1FBF`, yellow fields, hard outline and block shadow on cards | `#12103A`, yellow `#FFE14D`, turquoise outlines, pink block shadows |
+| **Sinyal** (modern, bright) | Acid page `#C6FF00`, white outlined cards, black buttons with acid text, blue links `#2020E8` | `#0A0B08`, acid accent, outlined cards |
+
+- A separate `--fill` token sets the background of filled buttons when it differs from the link colour `--accent` (Zerde, Disko, Sinyal, dark Patlıcan). Shadow tokens carry Kaset's and Sinyal's outlines.
+- Rejected as default: Sade (too cold for a food app), Warm ink, Marigold, Rosewood, Persimmon. Rejected outright: Kayısı, Defter, Lokum. The default search is closed for now.
+- Open: the app icon is Pazar's orange on every theme, and the fonts are unchanged. Neither has been reviewed against the new themes.
+
+### Signing in and first day
+
+- **Sign in:** icon and "obur" centred on the screen, one button low, no subtitle and no invite line. On desktop the group is centred, with 72 px between name and button.
+- **Set up and Join:** no description under the title, no hints under fields, no closing line.
+- **Recovery codes:** an amber warning card ("Keep these somewhere safe", shown only now), then "I've saved these codes" as its own row with the app's checkbox; Continue waits for it.
+- **Signed out with entries waiting:** the regular sign-in layout, with the warning card right above the button. It must never cover the name.
+- **The budget is a free choice.** First day is the real Today, only empty. After "Just log" nothing on Today mentions a missing budget; the only pointer is the toast when the welcome card is dismissed (More → Profile). Profile's empty card reads "Daily budget · Optional…". Repeatedly mentioning a missing budget makes people feel they are doing something wrong (owner).
+- **Budget setup:** Body fat and Waist are always visible under the other fields, with no divider, expander or "Optional" in the label (the fields say it), and even spacing. No explanation under "Sex used by the formula".
+- **Empty Journal day:** the date and Open, then only "Nothing logged", centred in its line; no kcal or dashes. A day with a weigh-in but no food keeps its columns, so the weight shows.
+
+### Today
+
+- **All cards share one surface** (no two-tone fills for hierarchy).
+- **Budget card:** Activity is a "Now"-style pill beside "kcal left". Its sheet takes any typed amount, with 100, 150 and 250 as shortcuts, and activity is shown in words. The bar uses **status colours**: green with room, amber in the last 200 kcal or 10 %, red over; never the protein colour.
+- **Water and Weight:** four aligned rows each. Weight has a sparkline of the last 7 weigh-ins and **New weigh-in**, which opens in place like Other amount. Slim side padding on phones.
+- **Edit sheets for water and weigh-ins:** rows with Edit and Delete. **Show older** is the last thing in the list, right after the oldest row shown, and scrolls with it; it adds 20 in place and goes away when nothing older is left.
+- **Meal cards:** one grid (icon, name, number) for the header, entries and a trailing **Add food** row; the meal total sits in the kcal column; bookmark moves into the … menu as **Save as a meal**.
+- **Day titles:** Today, Yesterday, the weekday for days this week, then the date with the weekday under it. The year shows only for other years.
+- **Day notes (new feature):** a collapsible card above Mark the day complete, Markdown, saves itself. See `docs/design.md`.
+- **Editing an entry:** the amount sheet in edit mode (Save changes, or "No changes"; Move to…; Delete beside it; Undo toast).
+- **More → Recently deleted:** 30 days, with Restore.
+- **Hold-to-drag and select** stay as decided below, restyled.
+
+### Logging
+
+- **Log screen:** the search bar at the top on phone and desktop; three equal tiles (Speak, Scan a label, Type it); **Recent is always visible** and fills the room down to the tab bar (at least three foods). No meal or day dropdown in the header; a preset pill appears only after a meal's Add food. This replaces "suggestions only when focused" below.
+- **Amount sheet:** one sheet with a rolling preview, using the fields above.
+- **Type it** replaces Quick add and the search's "Log as typed" row: natural-language typing parsed into foods or calories-only items. The meal toggle follows the text ("for dinner"); removing the meal word returns to the tapped or preset meal. Only the placeholder gives an example ("two eggs and toast for breakfast").
+- **Speak:** "I heard" rows.
+  - **Not sure:** one short line ("Not sure. Which one?"), full rows under the food name with portion and kcal, a tick on the chosen one; "Something else" has a tint so it reads as a different kind of action.
+  - **Food not found:** three stacked full-width rows: "Create it as food", "Log calories only", "Search your foods". No food name in the button, so a long name can't break it.
+  - **No microphone:** amber warning, no assumption about the device.
+  - **Voice off:** the normal Log layout with one dismissible **grey** information card.
+- **Scan:** the food form filled in from the photo ("Check the label"), photo one tap away, notes per decision, "Save and choose amount". The camera frame follows the theme. Failure states: no table, blurry, busy, limit, offline.
+
+### Journal and Progress
+
+- **Journal:** tapping a day selects it and shows a fixed-size day box with Open; it does not jump to the day. It opens on the month of the day you came from, with that day picked. Summary bar and 2×2 key stay, the month sentence goes. Quieter highlights. Desktop: one column up to 760 px, taller calendar with bigger rings, highlights under it.
+- **Returning to today:** no Today pill. Away from today the month title turns accent-coloured with a small return icon, and tapping it goes back. On today it is plain and does nothing. Arrows and title never shift.
+- **Rings:** the green ring always keeps its gap when under budget.
+- **Progress charts:** the Y labels sit in their own column right of the plot, level with their lines; the plot and its lines stop before that column. The first and last dates line up with the edges of the numbers below. "Goal" uses the same column. No explanation under Smoothed; only the weekly change.
+- **Achievements:** confetti falls to the bottom of the viewport.
+
+### More and settings
+
+- **More** is compact: rows with current values; Appearance, Goal, Units and Reminders on nested pages. Sign out sits in its row beside the name.
+- **Appearance:** mode, then themes as cards, then app icons, with no descriptions except a short line: "A new icon shows after you add obur to the Home Screen again."
+- **Goal:** Pace is a row ("Steady · 0,25 kg a week") opening a menu. **Units:** Weight and a new **Time** (24-hour or 12-hour, defaulting to the device).
+- **Reminders:** just the time; tapping opens the native picker. The Home Screen hint shows only on Reminders, in three one-line steps with room between them.
+- **Recipes and saved meals:**
+  - Archive moves into a "…" menu by the title; its confirmation opens under the title.
+  - "Update to current food values" is a full-width secondary button with an icon, shown only when an ingredient has changed.
+  - Cooked weight is empty with the placeholder "Optional", never prefilled, and its label has no tag.
+  - Beside "Per serving": "300 g a serving", or "No cooked weight", on one line.
+  - Ingredient icons and Add food share one column.
+
+### Account and household
+
+- **Passkeys:** labels sit beside the name; rows open a detail sheet with Rename and Remove.
+- **Household:** "Backups are working" is one larger line with a bigger mark.
+- **Your data, LoseIt import:** the chosen file replaces the picker (name, source, dates, size in one row); one "To add" list with numbers on the right, deleted entries as the last grey row; weight unit and sharing as two settings rows; even spacing throughout.
+- **Offline refused entry:** calories only, other food or discard, with Undo; waiting entries are tied to one account.
 
 ## 1. Direction: Pazar
 
-Pazar (Turkish: "market", also "Sunday") is warm and friendly but practical first. It uses off-white and warm-brown neutrals, one terracotta-orange accent, rounded cards, a characterful display face for headings and numbers, and a plain, highly legible body face.
+Pazar (Turkish: "market", also "Sunday") is warm and friendly but practical first. It uses off-white and warm-brown neutrals, one terracotta-orange accent, rounded cards, a characterful display face for headings and numbers, and a plain, highly legible body face. It remains the default theme (see "Themes" above).
 
 The owner chose it over the other two directions (Defter, a dense ledger with hairlines and a monospace face; Lokum, a playful pastel design with colour-coded meals) for these reasons:
 - It reads at a glance on a phone.
