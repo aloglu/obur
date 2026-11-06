@@ -84,7 +84,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 
 - **Log screen:** the search bar at the top on phone and desktop; three equal tiles (Speak, Scan a label, Type it); **Recent is always visible** and fills the room down to the tab bar (at least three foods). No meal or day dropdown in the header; a preset pill appears only after a meal's Add food. This replaces "suggestions only when focused" below.
 - **Amount sheet:** one sheet with a rolling preview, using the fields above.
-- **Type it** replaces Quick add and the search's "Log as typed" row: natural-language typing parsed into foods or calories-only items. The meal toggle follows the text ("for dinner"); removing the meal word returns to the tapped or preset meal. Only the placeholder gives an example ("two eggs and toast for breakfast").
+- **Type it** replaces Quick add and the search's "Log as typed" row: natural-language typing parsed into foods or calories-only items. The meal toggle follows the text ("for dinner"); removing the meal word returns to the tapped or preset meal. Only the placeholder gives an example ("two eggs and toast for breakfast"). Reading a sentence needs the server, so **Log calories only** stays: from a search that finds nothing, and from Type it when the server can't be reached. It is what can wait offline.
 - **Speak:** "I heard" rows.
   - **Not sure:** one short line ("Not sure. Which one?"), full rows under the food name with portion and kcal, a tick on the chosen one; "Something else" has a tint so it reads as a different kind of action.
   - **Food not found:** three stacked full-width rows: "Create it as food", "Log calories only", "Search your foods". No food name in the button, so a long name can't break it.

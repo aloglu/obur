@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, createFood, signedInAs, choose } from './fixtures.ts';
+import { apiAs, createFood, signedInAs, choose, openCaloriesOnly } from './fixtures.ts';
 
 const bread = (tag: string) => ({
 	name: `Premium Light Ekmek ${tag}`,
@@ -97,8 +97,8 @@ test('a quick add records calories only and makes totals partial', async ({ page
 	await signedInAs(page, 'Mehmet');
 	await page.goto('/');
 	await openLogFor(page, 'Snacks');
-	await page.getByRole('button', { name: 'Quick add calories' }).click();
-	const sheet = page.getByRole('dialog', { name: 'Quick add calories' });
+	await openCaloriesOnly(page);
+	const sheet = page.getByRole('dialog', { name: 'Log calories only' });
 	await sheet.getByLabel('Calories (kcal)').fill('300');
 	await sheet.getByLabel('What was it? (optional)').fill('Simit');
 	await sheet.getByRole('button', { name: 'Save' }).click();
@@ -213,7 +213,7 @@ test('a field menu opens where it fits, and closes with its choice made', async 
 }, testInfo) => {
 	await signedInAs(page, `Menü ${testInfo.project.name}`);
 	await page.goto('/log');
-	await page.getByRole('button', { name: /Quick add/ }).click();
+	await openCaloriesOnly(page);
 	const sheet = page.getByRole('dialog');
 	await sheet.getByRole('button', { name: /^Meal:/ }).click();
 	for (const meal of ['Breakfast', 'Lunch', 'Dinner', 'Snacks']) {
@@ -246,7 +246,7 @@ test('an open sheet holds the page behind it still, and puts it back', async ({
 	await page.waitForLoadState('networkidle');
 	await page.evaluate(() => window.scrollTo({ top: 60, behavior: 'instant' }));
 
-	await page.getByRole('button', { name: /Quick add/ }).click();
+	await openCaloriesOnly(page);
 	const sheet = page.getByRole('dialog');
 	await expect(sheet).toBeVisible();
 	await expect(page.locator('body')).toHaveCSS('position', 'fixed');
@@ -268,7 +268,8 @@ test('a sheet reopened while the last one slides away works, and focus returns t
 	await signedInAs(page, `Yeniden ${testInfo.project.name}`);
 	await page.goto('/log');
 	await page.waitForLoadState('networkidle');
-	const open = page.getByRole('button', { name: /Quick add/ });
+	await page.getByRole('searchbox').fill('zzzz');
+	const open = page.getByRole('button', { name: 'Log calories only' });
 	await open.click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
 	await expect(open).toBeFocused();

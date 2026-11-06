@@ -109,6 +109,7 @@
 </div>
 
 <nav
+	data-tabbar
 	aria-label={m.nav_main()}
 	class="fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-30 flex gap-1 rounded-card border border-(--tabbar-border) bg-surface p-1.5 shadow-tabbar desk:hidden"
 >

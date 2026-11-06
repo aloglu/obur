@@ -41,6 +41,7 @@
 	);
 	let quick = $state(false);
 	let openSaved = $state<string | null>(null);
+	let typing = $state(false);
 	let typedEntry = $state<ParsedEntry | null>(null);
 	let speaking = $state(false);
 	let heard = $state(false);
@@ -73,7 +74,7 @@
 
 <svelte:head><title>{m.log_title()} · {m.app_name()}</title></svelte:head>
 
-<main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
+<main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-3 desk:px-7 desk:py-5">
 	<h1 class="text-[24px] font-[750]">{m.log_title()}</h1>
 	<LogPanel
 		{date}
@@ -83,7 +84,7 @@
 		onquick={() => (quick = true)}
 		onclearpreset={() => (preset = null)}
 		onpickmeal={(id) => (openSaved = id)}
-		onentry={(e) => ((heard = false), (typedEntry = e))}
+		ontype={() => ((heard = false), (typedEntry = null), (typing = true))}
 		onspeak={data.speech ? () => (speaking = true) : undefined}
 		scan={data.scan}
 	/>
@@ -116,23 +117,26 @@
 			speaking = false;
 			heard = true;
 			typedEntry = e;
+			typing = true;
 		}}
 		ontype={() => (speaking = false)}
 		onclose={() => (speaking = false)}
 	/>
 {/if}
-{#if typedEntry}
+{#if typing}
 	<EntrySheet
 		{heard}
-		entry={typedEntry}
+		entry={typedEntry ?? undefined}
+		{date}
 		today={data.today}
 		meal={sheetMeal}
+		oncalories={() => ((typing = false), (quick = true))}
 		onlogged={async (logged) => {
-			typedEntry = null;
+			typing = false;
 			await goto(dayHref(logged.date, logged.firstEntryId ?? undefined));
 			showLoggedEntry(logged, () => goto(dayHref(logged.date), { invalidateAll: true }));
 		}}
-		onclose={() => (typedEntry = null)}
+		onclose={() => (typing = false)}
 	/>
 {/if}
 {#if openSaved}

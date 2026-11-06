@@ -1,10 +1,10 @@
 <script lang="ts">
-	// docs/ui.md "Log": search; Speak and Scan tiles (Coming soon until each feature works); suggestions only while
-	// the empty field is focused; typing shows results; the meal preset pill.
-	import { onMount } from 'svelte';
+	// docs/ui.md "Logging": search on top; Speak, Scan and Type it tiles; Recent always there, filling the room it has;
+	// typing shows results; the meal preset pill. Calories alone stay one tap from search, also offline.
+	import { onMount, tick } from 'svelte';
 	import { resolve } from '$app/paths';
 	import Bookmark from '@lucide/svelte/icons/bookmark';
-	import TextCursorInput from '@lucide/svelte/icons/text-cursor-input';
+	import PencilLine from '@lucide/svelte/icons/pencil-line';
 	import Mic from '@lucide/svelte/icons/mic';
 	import ScanLine from '@lucide/svelte/icons/scan-line';
 	import FoodIcon from '../FoodIcon.svelte';
@@ -13,8 +13,6 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import type { Meal, SavedMealSummary } from '#lib/shared/diary-types.ts';
-	import type { ParsedEntry } from '#lib/shared/entry-types.ts';
-	import { deviceZone } from '#lib/client/prefs.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { dayTitle, kcal, mealName } from '#lib/shared/format.ts';
 	import { foldForSearch } from '#lib/shared/search-text.ts';
@@ -30,12 +28,10 @@
 		onspeak?: () => void;
 		/** Label scanning is configured: the Scan tile links to it. */
 		scan?: boolean;
-		/** Opens the confirmation for a typed sentence; offered only when given. */
-		onentry?: (entry: ParsedEntry) => void;
+		/** Opens Type it. */
+		ontype: () => void;
 		/** Opens a saved meal; saved meals are listed only when given. */
 		onpickmeal?: (savedMealId: string) => void;
-		/** Desktop: bumped each time a meal's + chooses the meal, to replay the pill's pulse. */
-		presetRequest?: number;
 	}
 	let {
 		date,
@@ -45,10 +41,9 @@
 		onquick,
 		onclearpreset,
 		onpickmeal,
-		onentry,
+		ontype,
 		scan = false,
-		onspeak,
-		presetRequest = 0
+		onspeak
 	}: Props = $props();
 
 	let query = $state('');
@@ -62,34 +57,6 @@
 
 	const typing = $derived(query.trim().length > 0);
 
-	// A sentence with more than a food's name ("3 dilim ekmek", "iki bardak su") is offered as an entry to confirm.
-	let typed = $state<ParsedEntry | null>(null);
-	let parseTimer: ReturnType<typeof setTimeout> | undefined;
-	$effect(() => {
-		const q = query.trim();
-		clearTimeout(parseTimer);
-		typed = null;
-		if (!onentry || q.split(/\s+/).length < 2) return;
-		parseTimer = setTimeout(async () => {
-			try {
-				const entry = await api<ParsedEntry>('POST', '/api/v1/entry/parse', {
-					text: q,
-					date,
-					zone: deviceZone()
-				});
-				const worth =
-					entry.items.length > 1 ||
-					entry.items.some((i) => i.kind !== 'food' || i.amount !== null || i.vague);
-				if (q === query.trim() && worth) typed = entry;
-			} catch {
-				// Offline or unreachable: the ordinary search says so.
-			}
-		}, 250);
-	});
-	const typedSummary = (e: ParsedEntry) =>
-		e.items.length === 1
-			? m.log_as_typed_one({ day: dayTitle(e.date, today) })
-			: m.log_as_typed_many({ count: String(e.items.length), day: dayTitle(e.date, today) });
 	const showSuggestions = $derived(focused && !typing);
 
 	// Refreshed on every focus: logging, undo or edits elsewhere change what is recent.
@@ -100,6 +67,22 @@
 		} catch {
 			// Keep what was shown; offline, the saved copy normally answers.
 		}
+		void fitRecent();
+	}
+
+	// Recent fills the room down to the tab bar (or the window's end), and always shows at least three foods.
+	const MIN_RECENT = 3;
+	let recentCard = $state<HTMLElement>();
+	async function fitRecent() {
+		await tick();
+		const card = recentCard;
+		if (!card) return;
+		const rows = [...card.querySelectorAll<HTMLElement>('li')];
+		for (const row of rows) row.hidden = false;
+		const bar = document.querySelector('[data-tabbar]')?.getBoundingClientRect();
+		const limit = (bar && bar.height ? bar.top : window.innerHeight) - 12 + window.scrollY;
+		const bottom = () => card.getBoundingClientRect().bottom + window.scrollY;
+		for (let i = rows.length; i > MIN_RECENT && bottom() > limit; i--) rows[i - 1].hidden = true;
 	}
 
 	let savedMeals = $state<SavedMealSummary[]>([]);
@@ -112,7 +95,10 @@
 	}
 	// Also on mount: a search typed before the page finished loading never saw the focus event.
 	onMount(() => {
-		if (onpickmeal) void loadSavedMeals();
+		void loadRecent();
+		const refit = () => void fitRecent();
+		addEventListener('resize', refit);
+		return () => removeEventListener('resize', refit);
 	});
 	// Few enough to match here, with the same Turkish-aware folding as food search.
 	const matchingMeals = $derived.by(() => {
@@ -156,6 +142,9 @@
 
 	const per = (r: FoodSearchResult) =>
 		r.basis === 'serving' ? (r.servingLabel ?? '') : r.basis === '100g' ? '100 g' : '100 ml';
+
+	const tile =
+		'flex min-h-28 flex-col items-center justify-center gap-2.5 rounded-tile bg-surface px-1.5 text-center text-[14.5px] leading-tight font-bold shadow-card transition-transform active:scale-[0.97]';
 </script>
 
 {#snippet mealList(items: SavedMealSummary[])}
@@ -187,23 +176,28 @@
 {/snippet}
 
 {#snippet foodList(items: FoodSearchResult[])}
-	<ul class="flex flex-col">
+	<ul class="-mx-2.5 flex flex-col">
 		{#each items as r (r.id)}
 			<li>
 				<button
 					type="button"
 					onclick={() => onpick(r.id)}
-					class="flex min-h-14 w-full items-center gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
+					class="grid min-h-14 w-full grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-input px-2.5 py-1.5 text-left hover:bg-surface2"
 				>
 					<FoodIcon icon={r.icon} name={r.name} brand={r.brand} />
-					<span class="min-w-0 flex-1">
-						<span class="line-clamp-2 text-[15px] font-semibold break-words"
+					<span class="min-w-0">
+						<span class="line-clamp-2 text-[15px] leading-[1.3] font-semibold break-words"
 							>{r.brand ? `${r.brand} ` : ''}{r.name}</span
 						>
 						<span class="block text-[13px] text-muted"
-							>{r.kcal === null ? m.foods_kcal_unknown() : `${kcal(r.kcal)} kcal · ${per(r)}`}</span
+							>{r.kcal === null ? m.foods_kcal_unknown() : per(r)}</span
 						>
 					</span>
+					{#if r.kcal !== null}
+						<span class="min-w-11 text-right text-[15px] font-[650] tabular-nums"
+							>{kcal(r.kcal)}</span
+						>
+					{/if}
 				</button>
 			</li>
 		{/each}
@@ -211,32 +205,11 @@
 {/snippet}
 
 <div class="flex flex-col gap-3">
-	<!-- Announced when a meal's + sets it, since focus stays on that button. -->
-	<div aria-live="polite" class="flex flex-col empty:hidden">
-		{#if preset}
-			<!-- Keyed by the request too, so choosing a meal again replays the short pulse. -->
-			{#key `${preset}:${presetRequest}`}
-				<div
-					class="preset flex items-center gap-2 self-start rounded-menu bg-soft py-1 pr-1 pl-3.5 text-[14px] font-semibold text-accent"
-				>
-					{m.log_adding_to({ meal: mealName(preset), day: dayTitle(date, today) })}
-					<button
-						type="button"
-						onclick={onclearpreset}
-						aria-label={m.log_clear_preset()}
-						class="grid size-9 place-items-center rounded-full"
-						><X size={16} aria-hidden="true" /></button
-					>
-				</div>
-			{/key}
-		{/if}
-	</div>
-
 	<div class="flex items-center gap-2">
 		<label
-			class="flex min-h-12 flex-1 items-center gap-2 rounded-input border border-line bg-surface2 px-3 focus-within:outline-3 focus-within:outline-accent"
+			class="flex min-h-12 flex-1 items-center gap-2 rounded-input bg-surface px-3.5 text-muted shadow-card focus-within:outline-2 focus-within:outline-accent"
 		>
-			<Search size={20} class="shrink-0 text-muted" aria-hidden="true" />
+			<Search size={20} class="shrink-0" aria-hidden="true" />
 			<span class="sr-only">{m.log_search_label()}</span>
 			<input
 				bind:this={input}
@@ -246,36 +219,48 @@
 				placeholder={m.log_search_placeholder()}
 				onfocus={() => {
 					focused = true;
-					loadRecent();
+					void loadRecent();
 				}}
-				class="min-w-0 flex-1 bg-transparent text-[16px] font-semibold outline-none placeholder:font-normal placeholder:text-muted"
+				class="min-w-0 flex-1 bg-transparent text-[16px] font-medium text-text outline-none placeholder:font-normal placeholder:text-muted"
 			/>
 		</label>
 		{#if focused || typing}
 			<button
 				type="button"
 				onclick={cancel}
-				class="min-h-12 px-2 text-[15px] font-semibold text-accent">{m.log_cancel()}</button
+				class="min-h-12 px-1 text-[14px] font-[650] text-accent">{m.log_cancel()}</button
 			>
 		{/if}
 	</div>
 
-	{#if typing}
-		{#if typed}
-			<button
-				type="button"
-				onclick={() => typed && onentry?.(typed)}
-				class="flex min-h-14 w-full items-center gap-3 rounded-input bg-soft px-3 py-2 text-left"
+	<!-- Announced when it appears after a meal's Add food. -->
+	<div aria-live="polite" class="flex flex-col empty:hidden">
+		{#if preset}
+			<div
+				class="preset flex h-10 items-center gap-1.5 self-start rounded-small bg-soft pr-1 pl-3.5 text-[14px] font-semibold text-accent"
 			>
-				<TextCursorInput size={20} class="shrink-0 text-accent" aria-hidden="true" />
-				<span class="min-w-0 flex-1">
-					<span class="block text-[15px] font-bold text-accent">{m.log_as_typed()}</span>
-					<span class="block text-[13px] text-muted">{typedSummary(typed)}</span>
-				</span>
-			</button>
+				{m.log_adding_to({ meal: mealName(preset), day: dayTitle(date, today) })}
+				<button
+					type="button"
+					onclick={onclearpreset}
+					aria-label={m.log_clear_preset()}
+					class="grid size-9 place-items-center rounded-full"
+					><X size={16} aria-hidden="true" /></button
+				>
+			</div>
 		{/if}
-		{#if matchingMeals.length}{@render mealList(matchingMeals)}{/if}
-		<section aria-label={m.log_results()}>
+	</div>
+
+	{#if typing}
+		{#if matchingMeals.length}
+			<div class="rounded-card bg-surface px-[18px] py-2 shadow-card">
+				{@render mealList(matchingMeals)}
+			</div>
+		{/if}
+		<section
+			class="rounded-card bg-surface px-[18px] py-2 shadow-card"
+			aria-label={m.log_results()}
+		>
 			{#if searchFailed}
 				<div class="flex flex-col items-start gap-2 py-2">
 					<p class="text-[15px] text-muted">{m.log_search_offline()}</p>
@@ -297,77 +282,62 @@
 				{@render foodList(results)}
 			{/if}
 		</section>
-	{:else if showSuggestions}
-		<!-- The five most recently changed; search finds the rest. -->
-		{#if savedMeals.length}{@render mealList(savedMeals.slice(0, 5))}{/if}
-		<section aria-labelledby="recent-heading">
-			<h2
-				id="recent-heading"
-				class="px-2 text-[12px] font-bold tracking-[0.06em] text-muted uppercase"
-			>
+	{:else}
+		{#if !showSuggestions}
+			<div class="grid grid-cols-3 gap-2.5">
+				<button
+					type="button"
+					disabled={!onspeak}
+					onclick={() => onspeak?.()}
+					class={[tile, !onspeak && 'opacity-60']}
+				>
+					<span class="grid size-12 place-items-center rounded-input bg-voice-bg text-voice"
+						><Mic size={24} aria-hidden="true" /></span
+					>
+					{m.log_speak()}
+				</button>
+				{#if scan}
+					<a href={resolve('/(app)/scan')} class={tile}>
+						<span class="grid size-12 place-items-center rounded-input bg-scan-bg text-scan"
+							><ScanLine size={24} aria-hidden="true" /></span
+						>
+						{m.log_scan()}
+					</a>
+				{:else}
+					<button type="button" disabled class={[tile, 'opacity-60']}>
+						<span class="grid size-12 place-items-center rounded-input bg-scan-bg text-scan"
+							><ScanLine size={24} aria-hidden="true" /></span
+						>
+						{m.log_scan()}
+					</button>
+				{/if}
+				<button type="button" onclick={ontype} class={tile}>
+					<span class="grid size-12 place-items-center rounded-input bg-soft text-accent"
+						><PencilLine size={24} aria-hidden="true" /></span
+					>
+					{m.log_type_it()}
+				</button>
+			</div>
+		{:else if savedMeals.length}
+			<!-- The five most recently changed; search finds the rest. -->
+			<div class="rounded-card bg-surface px-[18px] py-2 shadow-card">
+				{@render mealList(savedMeals.slice(0, 5))}
+			</div>
+		{/if}
+		<section
+			bind:this={recentCard}
+			class="rounded-card bg-surface px-[18px] py-2 shadow-card"
+			aria-labelledby="recent-heading"
+		>
+			<h2 id="recent-heading" class="pt-2 text-[13px] font-[650] text-muted">
 				{m.log_recent()}
 			</h2>
 			{#if recent && recent.length === 0}
-				<p class="px-2 py-2 text-[14px] text-muted">{m.log_no_recent()}</p>
+				<p class="py-2 text-[14px] text-muted">{m.log_no_recent()}</p>
 			{:else if recent}
 				{@render foodList(recent)}
 			{/if}
 		</section>
-	{:else}
-		<div class="grid grid-cols-2 gap-3">
-			<button
-				type="button"
-				disabled={!onspeak}
-				aria-describedby={onspeak ? undefined : 'coming-soon'}
-				onclick={() => onspeak?.()}
-				class={[
-					'flex min-h-32 flex-col items-center justify-center gap-2 rounded-tile bg-surface2 p-3',
-					!onspeak && 'opacity-70'
-				]}
-			>
-				<span class="grid size-14 place-items-center rounded-button bg-voice-bg text-voice"
-					><Mic size={28} aria-hidden="true" /></span
-				>
-				<span class="text-[15px] font-semibold">{m.log_speak()}</span>
-				{#if !onspeak}<span
-						class="rounded-menu bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
-						>{m.log_coming_soon()}</span
-					>{/if}
-			</button>
-			{#if scan}
-				<a
-					href={resolve('/(app)/scan')}
-					class="flex min-h-32 flex-col items-center justify-center gap-2 rounded-tile bg-surface2 p-3"
-				>
-					<span class="grid size-14 place-items-center rounded-button bg-scan-bg text-scan"
-						><ScanLine size={28} aria-hidden="true" /></span
-					>
-					<span class="text-[15px] font-semibold">{m.log_scan()}</span>
-				</a>
-			{:else}
-				<button
-					type="button"
-					disabled
-					aria-describedby="coming-soon"
-					class="flex min-h-32 flex-col items-center justify-center gap-2 rounded-tile bg-surface2 p-3 opacity-70"
-				>
-					<span class="grid size-14 place-items-center rounded-button bg-scan-bg text-scan"
-						><ScanLine size={28} aria-hidden="true" /></span
-					>
-					<span class="text-[15px] font-semibold">{m.log_scan()}</span>
-					<span class="rounded-menu bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
-						>{m.log_coming_soon()}</span
-					>
-				</button>
-			{/if}
-		</div>
-		<span id="coming-soon" class="sr-only">{m.log_coming_soon()}</span>
-		<button
-			type="button"
-			onclick={onquick}
-			class="min-h-12 rounded-input border border-line bg-surface text-[15px] font-semibold"
-			>{m.log_quick_add()}</button
-		>
 	{/if}
 </div>
 

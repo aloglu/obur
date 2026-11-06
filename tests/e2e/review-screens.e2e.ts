@@ -156,14 +156,14 @@ for (const theme of ['light', 'dark'] as const) {
 
 		// Typed entry and Speak.
 		await page.goto('/log');
+		await page.getByRole('button', { name: 'Type it' }).click();
 		await page
-			.getByRole('searchbox')
+			.getByRole('dialog')
+			.getByLabel('You typed')
 			.fill('kahvaltıda iki dilim untad ekmek, 60 gram beyaz peynir ve iki bardak su');
-		await page.getByRole('button', { name: /Log as typed/ }).click();
-		await expect(page.getByRole('dialog', { name: 'Check and log' })).toContainText('kcal');
+		await expect(page.getByRole('dialog', { name: 'Type what you ate' })).toContainText('kcal');
 		await shot(page, '10-check-and-log', theme);
 		await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
-		await page.getByRole('searchbox').fill('');
 		await page.getByRole('button', { name: 'Cancel' }).click();
 		await context.grantPermissions(['microphone']);
 		await page.getByRole('button', { name: 'Speak' }).click();

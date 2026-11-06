@@ -1,9 +1,9 @@
 <script lang="ts">
-	// A typed (later spoken) entry to confirm (docs/ui.md, "Speak" and "Typed entry"): the text as editable, one card
-	// per item with its own amount, unit and kcal, shared day and meal chips, then "Log all". Nothing is saved before
-	// that. Each card has its own client ID, so a retry never logs twice; cards that saved leave the sheet.
+	// Type it, and what Speak heard (docs/ui.md, "Logging"): the text, read again as it changes, one card per item with its
+	// own amount, unit and kcal, the meal as a toggle that follows the text, then Log. Nothing is saved before that. Each
+	// card has its own client ID, so a retry never logs twice; cards that saved leave the sheet.
 	import AmountField from '../AmountField.svelte';
-	import DayMealFields from '../DayMealFields.svelte';
+	import Chips from '../Chips.svelte';
 	import Select from '../Select.svelte';
 	import { onMount, untrack } from 'svelte';
 	import X from '@lucide/svelte/icons/x';
@@ -26,10 +26,15 @@
 	import MacroPreview from './MacroPreview.svelte';
 
 	interface Props {
-		entry: ParsedEntry;
+		/** What Speak heard; without it, an empty Type it. */
+		entry?: ParsedEntry;
+		/** The day being logged to, when the sentence names none. */
+		date: string;
 		today: string;
 		/** The meal to use when the sentence names none. */
 		meal: Meal;
+		/** Calories alone work without the server. */
+		oncalories?: () => void;
 		/** The text came from speech: label it "I heard". */
 		heard?: boolean;
 		onlogged: (logged: LoggedEntry) => void;
@@ -37,8 +42,10 @@
 	}
 	let {
 		entry: initial,
+		date,
 		today,
 		meal: presetMeal,
+		oncalories,
 		heard = false,
 		onlogged,
 		onclose
@@ -101,37 +108,67 @@
 		});
 	}
 
-	let text = $state(untrack(() => initial.heard));
-	let cards = $state<Card[]>(untrack(() => cardsFor(initial.items)));
-	let day = $state(untrack(() => initial.date));
-	let meal = $state<Meal>(untrack(() => initial.meal ?? presetMeal));
+	let text = $state(untrack(() => initial?.heard ?? ''));
+	let cards = $state<Card[]>(untrack(() => cardsFor(initial?.items ?? [])));
+	let day = $state(untrack(() => initial?.date ?? date));
+	// The meal follows the text; without a meal word it goes back to the one tapped, or the preset.
+	let tapped = $state<Meal | null>(null);
+	let meal = $state<Meal>(untrack(() => initial?.meal ?? presetMeal));
 	let measures = $state<MeasureOption[]>([]);
 	let busy = $state(false);
 	let problem = $state('');
+	let unreachable = $state(false);
+	let field = $state<HTMLTextAreaElement>();
 
-	onMount(async () => (measures = await householdMeasures()));
+	onMount(async () => {
+		if (!initial) field?.focus();
+		measures = await householdMeasures();
+	});
 
 	const dayOptions = $derived(
-		[...new Set([initial.date, today, addDays(today, -1)])].sort().reverse()
+		[...new Set([day, date, today, addDays(today, -1)])].sort().reverse()
 	);
 
-	async function readAgain() {
-		if (!text.trim()) return;
-		busy = true;
+	let lastRead = $state(untrack(() => initial?.heard.trim() ?? ''));
+	let readTimer: ReturnType<typeof setTimeout> | undefined;
+	function textChanged() {
+		clearTimeout(readTimer);
+		readTimer = setTimeout(read, 350);
+	}
+
+	function retry() {
+		if (!unreachable) return;
+		lastRead = '';
+		void read();
+	}
+
+	async function read() {
+		const wanted = text.trim();
+		if (wanted === lastRead) return;
+		lastRead = wanted;
 		problem = '';
+		if (!wanted) {
+			unreachable = false;
+			cards = [];
+			day = date;
+			meal = tapped ?? presetMeal;
+			return;
+		}
 		try {
 			const parsed = await api<ParsedEntry>('POST', '/api/v1/entry/parse', {
-				text,
-				date: day,
+				text: wanted,
+				date,
 				zone: deviceZone()
 			});
+			if (wanted !== text.trim()) return; // typed on meanwhile
+			unreachable = false;
 			cards = cardsFor(parsed.items);
 			day = parsed.date;
-			if (parsed.meal) meal = parsed.meal;
+			meal = parsed.meal ?? tapped ?? presetMeal;
 		} catch {
-			problem = m.error_generic();
-		} finally {
-			busy = false;
+			// Stays until the text changes or the connection is back: a retry on blur would pull the offered button away
+			// from under the finger.
+			unreachable = true;
 		}
 	}
 
@@ -174,6 +211,16 @@
 						? positive(c.kgText, 699) !== undefined
 						: positive(c.kcalText, 10_000) !== undefined;
 	const allValid = $derived(cards.length > 0 && cards.every(valid));
+	// With only one unit to choose from, it is chosen.
+	$effect(() => {
+		for (const c of cards) {
+			if (c.kind !== 'food' || !c.food || c.optionKey) continue;
+			const options = unitOptions(c.food, measures);
+			if (options.length === 1) c.optionKey = options[0].key;
+		}
+	});
+
+	const usesMeal = $derived(cards.some((c) => c.kind === 'food' || c.kind === 'quick'));
 
 	const title = (c: Card) =>
 		c.kind === 'food'
@@ -269,34 +316,45 @@
 	}
 </script>
 
-<Sheet title={m.entry_title()} {onclose}>
-	<form class="flex flex-col gap-2" onsubmit={(e) => (e.preventDefault(), readAgain())}>
-		<label class="flex flex-col gap-1.5">
-			<span class="text-[13px] font-[650] text-muted"
-				>{heard ? m.entry_heard() : m.entry_typed()}</span
-			>
-			<textarea
-				bind:value={text}
-				maxlength={300}
-				rows="2"
-				autocomplete="off"
-				class="resize-none rounded-input border border-line bg-surface2 px-3.5 py-3 text-[16px] font-semibold text-text focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-accent"
-			></textarea>
-		</label>
-		<button
-			type="submit"
-			disabled={busy || !text.trim()}
-			class="min-h-11 self-start rounded-input px-1 text-[14px] font-semibold text-accent"
-			>{m.entry_read_again()}</button
+<svelte:window ononline={retry} />
+
+<Sheet title={heard ? m.entry_heard_title() : m.entry_title()} {onclose}>
+	<label class="flex flex-col gap-1.5">
+		<span class={heard ? 'text-[13px] font-[650] text-muted' : 'sr-only'}
+			>{heard ? m.entry_heard() : m.entry_typed()}</span
 		>
-	</form>
+		<textarea
+			bind:this={field}
+			bind:value={text}
+			oninput={textChanged}
+			onblur={read}
+			maxlength={300}
+			rows="2"
+			autocomplete="off"
+			placeholder={m.entry_placeholder()}
+			class="resize-none rounded-input bg-surface2 px-3.5 py-3 text-[16px] font-medium text-text placeholder:font-normal placeholder:text-muted focus-visible:outline-2 focus-visible:outline-accent"
+		></textarea>
+	</label>
+	{#if unreachable}
+		<Notice title={m.entry_unreachable_title()}>
+			{m.entry_unreachable()}
+			{#snippet actions()}
+				{#if oncalories}
+					<Button variant="ghost" wide onclick={oncalories}>{m.log_quick_add()}</Button>
+				{/if}
+			{/snippet}
+		</Notice>
+	{/if}
 
 	<form class="flex flex-col gap-4" onsubmit={logAll}>
-		{#if cards.length === 0}
+		{#if cards.length === 0 && text.trim() && lastRead && !unreachable}
 			<Notice tone="info">{m.entry_nothing()}</Notice>
 		{/if}
 		{#each cards as card, i (card.id)}
-			<section class="flex flex-col gap-3 rounded-small bg-surface2 p-3.5" aria-label={title(card)}>
+			<section
+				class="flex flex-col gap-3 rounded-input border border-line bg-surface p-3.5"
+				aria-label={title(card)}
+			>
 				<div class="flex items-start justify-between gap-2">
 					<h3 class="min-w-0 text-[16px] font-bold break-words">{title(card)}</h3>
 					<button
@@ -335,7 +393,7 @@
 									{m.entry_how_much()}
 								</p>{/if}
 							{#if !card.optionKey}<p class="text-[13px] text-warn">
-									{m.entry_unit_choose({ said: card.said ?? '' })}
+									{card.said ? m.entry_unit_choose({ said: card.said }) : m.entry_unit_pick()}
 								</p>{/if}
 							<MacroPreview nutrients={foodNutrients(card)} />
 						{/if}
@@ -387,24 +445,33 @@
 			</section>
 		{/each}
 
-		{#if cards.length}
-			<DayMealFields
-				bind:day
-				days={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
-				bind:meal
-				meals={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
-				showMeal={cards.some((c) => c.kind === 'food' || c.kind === 'quick')}
+		{#if day !== date}
+			<Select
+				label={m.amount_day()}
+				bind:value={day}
+				wide
+				options={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
+			/>
+		{/if}
+		{#if !cards.length || usesMeal}
+			<Chips
+				label={m.amount_meal()}
+				bind:value={meal}
+				onchange={(next) => (tapped = next)}
+				options={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
 			/>
 		{/if}
 		{#if problem}<Notice>{problem}</Notice>{/if}
-		{#if cards.length}
-			<Button type="submit" wide disabled={busy || !allValid}
-				>{busy
-					? m.common_working()
-					: cards.length === 1
-						? m.entry_log_one()
-						: m.entry_log_many({ count: String(cards.length) })}</Button
-			>
-		{/if}
+		<Button type="submit" wide disabled={busy || !allValid}>
+			{busy
+				? m.common_working()
+				: !cards.length
+					? m.entry_title()
+					: usesMeal
+						? m.entry_log_to({ count: String(cards.length), meal: mealName(meal) })
+						: cards.length === 1
+							? m.entry_log_one()
+							: m.entry_log_many({ count: String(cards.length) })}
+		</Button>
 	</form>
 </Sheet>

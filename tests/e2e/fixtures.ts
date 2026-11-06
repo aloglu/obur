@@ -88,3 +88,9 @@ export async function choose(
 	await scope.getByRole('button', { name }).click();
 	await scope.getByRole('option', { name: option, exact: typeof option === 'string' }).click();
 }
+
+/** Calories alone are one tap from a search that finds nothing (docs/ui.md, "Logging"). */
+export async function openCaloriesOnly(page: Page): Promise<void> {
+	await page.getByRole('searchbox').fill('zzzz');
+	await page.getByRole('button', { name: 'Log calories only' }).click();
+}

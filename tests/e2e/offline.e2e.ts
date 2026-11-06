@@ -1,7 +1,7 @@
 // The bounded offline scope (docs/design.md): queued new entries with ordered, retry-safe sending, visible pending
 // state, cached viewing, and sign-out that never silently drops unsent entries.
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, signedInAs } from './fixtures.ts';
+import { apiAs, signedInAs, openCaloriesOnly } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
@@ -30,8 +30,8 @@ async function quickAdd(page: Page, kcal: string, description: string) {
 		.getByRole('region', { name: 'Snacks' })
 		.getByRole('button', { name: 'Add to Snacks' })
 		.click();
-	await page.getByRole('button', { name: 'Quick add calories' }).click();
-	const sheet = page.getByRole('dialog', { name: 'Quick add calories' });
+	await openCaloriesOnly(page);
+	const sheet = page.getByRole('dialog', { name: 'Log calories only' });
 	await sheet.getByLabel('Calories (kcal)').fill(kcal);
 	await sheet.getByLabel('What was it? (optional)').fill(description);
 	await sheet.getByRole('button', { name: 'Save' }).click();
@@ -142,8 +142,8 @@ test('the Log tab opens offline without a visit online, and a quick add there co
 	await nav.getByRole('link', { name: 'Log' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Quick add calories' }).click();
-	const sheet = page.getByRole('dialog', { name: 'Quick add calories' });
+	await openCaloriesOnly(page);
+	const sheet = page.getByRole('dialog', { name: 'Log calories only' });
 	await sheet.getByLabel('Calories (kcal)').fill('250');
 	await sheet.getByLabel('What was it? (optional)').fill('Tost');
 	await sheet.getByRole('button', { name: 'Save' }).click();
