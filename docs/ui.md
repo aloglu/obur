@@ -96,7 +96,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 
 ### Journal and Progress
 
-- **Journal:** tapping a day selects it and shows a fixed-size day box with Open; it does not jump to the day. It opens on the month of the day you came from, with that day picked. Summary bar and 2×2 key stay, the month sentence goes. Quieter highlights. Desktop: one column up to 760 px, taller calendar with bigger rings, highlights under it.
+- **Journal:** tapping a day selects it and shows a fixed-size day box with Open; it does not jump to the day. It opens on the month of the day you came from, with that day picked. The month sentence, the summary bar and the key are gone, as in the final demo (the ring colours are explained in Help). Quieter highlights. Desktop: one column up to 760 px, taller calendar with bigger rings, highlights under it.
 - **Returning to today:** no Today pill. Away from today the month title turns accent-coloured with a small return icon, and tapping it goes back. On today it is plain and does nothing. Arrows and title never shift.
 - **Rings:** the green ring always keeps its gap when under budget.
 - **Progress charts:** the Y labels sit in their own column right of the plot, level with their lines; the plot and its lines stop before that column. The first and last dates line up with the edges of the numbers below. "Goal" uses the same column. No explanation under Smoothed; only the weekly change.

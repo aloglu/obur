@@ -51,58 +51,59 @@
 
 {#snippet words(e: JournalEvent)}
 	<span class="min-w-0">
-		<b class="block text-[15px] font-semibold">{title(e)}</b>
+		<b class="block text-[14px] font-semibold">{title(e)}</b>
 		<span class="block text-[13px] text-muted">{detail(e)}</span>
 	</span>
 {/snippet}
 
-<section class="flex min-w-0 flex-col gap-3" aria-labelledby="highlights-title">
-	<h2 id="highlights-title" class="px-1 text-[19px] font-bold">
+<section
+	class="rounded-card bg-surface px-[18px] py-2 shadow-card"
+	aria-labelledby="highlights-title"
+>
+	<h2 id="highlights-title" class="pt-2.5 text-[19px] font-bold">
 		{m.journal_highlights({ month: monthName })}
 	</h2>
 	{#each weeks as w (w.from)}
-		<article
-			class="flex flex-col gap-2.5 rounded-card bg-surface p-[18px] shadow-card"
-			aria-label={span(w)}
-		>
-			<h3 class="text-[12px] font-bold tracking-[0.06em] text-muted uppercase">{span(w)}</h3>
-			<p class="flex flex-wrap gap-x-3 gap-y-1 text-[14px] text-muted tabular-nums">
-				{#if w.averageKcal !== null}
-					<span
-						><b class="text-text">{kcal(w.averageKcal)}</b>
-						{m.journal_kcal_a_day()}</span
-					>
-					{#if w.averageDiff !== null}
-						<span
-							><b class="text-text">{kcal(Math.abs(w.averageDiff))}</b>
-							{w.averageDiff > 0 ? m.journal_over() : m.journal_under()}</span
-						>
-					{/if}
-				{:else}
-					<span>{m.journal_no_complete()}</span>
-				{/if}
+		<article class="py-[18px] not-last:border-b not-last:border-line" aria-label={span(w)}>
+			<div class="flex items-baseline justify-between gap-3">
+				<h3 class="text-[15px] font-bold">{span(w)}</h3>
 				{#if w.weightChange !== null}
-					<span><b class="text-text">{signed(w.weightChange)} kg</b></span>
+					<span
+						class={[
+							'text-[14px] font-[650] whitespace-nowrap tabular-nums',
+							w.weightChange < 0 ? 'text-good' : 'text-muted'
+						]}>{signed(w.weightChange)} kg</span
+					>
+				{/if}
+			</div>
+			<p class="mt-[3px] text-[13.5px] text-muted tabular-nums">
+				{#if w.averageKcal !== null}
+					{kcal(w.averageKcal)}
+					{m.journal_kcal_a_day()}{#if w.averageDiff !== null}
+						· {kcal(Math.abs(w.averageDiff))}
+						{w.averageDiff > 0 ? m.journal_over() : m.journal_under()}{/if}
+				{:else}
+					{m.journal_no_complete()}
 				{/if}
 			</p>
 			{#if w.events.length}
-				<ul class="flex flex-col gap-2.5">
-					{#each w.events as e (e.kind === 'achievement' ? `${e.achievement.kind}:${e.achievement.level}` : e.kind + e.date)}
+				<ul class="mt-3 flex flex-col gap-2">
+					{#each w.events as e (e.kind === 'achievement' ? `${e.achievement.kind}:${e.achievement.level}` : `${e.kind}:${e.date}`)}
 						<li>
 							{#if e.kind === 'achievement'}
-								<a href={resolve('/(app)/achievements')} class="flex items-center gap-3">
+								<a href={resolve('/(app)/achievements')} class="flex items-center gap-2.5">
 									<Badge achievement={e.achievement} size="sm" />
 									{@render words(e)}
 								</a>
 							{:else}
-								<div class="flex items-center gap-3">
+								<div class="flex items-center gap-2.5">
 									<span
-										class="grid size-10 shrink-0 place-items-center rounded-full bg-surface2 text-muted"
+										class="grid size-7 shrink-0 place-items-center rounded-full bg-surface2 text-muted"
 										aria-hidden="true"
 									>
-										{#if e.kind === 'lowest'}<TrendingDown size={20} />
-										{:else if e.kind === 'budget'}<Target size={20} />
-										{:else}<Flag size={20} />{/if}
+										{#if e.kind === 'lowest'}<TrendingDown size={15} />
+										{:else if e.kind === 'budget'}<Target size={15} />
+										{:else}<Flag size={15} />{/if}
 									</span>
 									{@render words(e)}
 								</div>
@@ -113,8 +114,6 @@
 			{/if}
 		</article>
 	{:else}
-		<p class="rounded-card bg-surface p-[18px] text-[15px] text-muted shadow-card">
-			{m.journal_empty()}
-		</p>
+		<p class="py-3.5 text-[15px] text-muted">{m.journal_empty()}</p>
 	{/each}
 </section>

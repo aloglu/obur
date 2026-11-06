@@ -3,8 +3,9 @@ import { body } from '#lib/server/body.ts';
 import { diary } from '#lib/server/diary.ts';
 import { goals } from '#lib/server/goals.ts';
 import { progress } from '#lib/server/progress.ts';
-import { calendarDays, monthDays, monthSummary } from '#lib/shared/calendar.ts';
+import { calendarDays, monthDays } from '#lib/shared/calendar.ts';
 import { journal } from '#lib/shared/journal.ts';
+import { isIsoDate } from '#lib/shared/diary-rules.ts';
 import type { PageServerLoad } from './$types';
 
 /** Weigh-ins from the start of time, for "new lowest" and the change into the month's first week. */
@@ -13,7 +14,10 @@ const EARLIEST = '0001-01-01';
 export const load: PageServerLoad = async ({ url, locals, parent }) => {
 	const { today } = await parent();
 	const current = today.slice(0, 7);
-	const month = url.searchParams.get('month') ?? current;
+	// Coming from a past day on Today: its month, with that day picked.
+	const dayParam = url.searchParams.get('day');
+	const day = dayParam && isIsoDate(dayParam) && dayParam <= today ? dayParam : null;
+	const month = url.searchParams.get('month') ?? day?.slice(0, 7) ?? current;
 	if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || month > current) redirect(303, '/journal');
 	const userId = locals.session!.userId;
 	const days = monthDays(month);
@@ -37,12 +41,23 @@ export const load: PageServerLoad = async ({ url, locals, parent }) => {
 		completed,
 		versions
 	});
+	// The last weigh-in of each day this month (readings come oldest first).
+	const dayWeights: Record<string, number> = {};
+	for (const r of readings) if (r.localDate.startsWith(month)) dayWeights[r.localDate] = r.value;
+	const lastLogged = calendar.findLast((d) => d.status !== 'unlogged' && d.status !== 'future');
+	const selectedDay =
+		day?.startsWith(month) === true
+			? day
+			: month === current
+				? today
+				: (lastLogged?.date ?? calendar[0].date);
 	return {
 		month,
 		isCurrentMonth: month === current,
 		firstDayOfWeek,
 		calendar,
-		summary: monthSummary(calendar),
+		dayWeights,
+		selectedDay,
 		weeks: journal({
 			month,
 			today,

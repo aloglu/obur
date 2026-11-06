@@ -1,26 +1,47 @@
 <script lang="ts">
-	// docs/ui.md "Progress": month grid, a ring per day filled by eaten ÷ budget; green only for complete days at or
-	// under budget, a full red ring when over, neutral for logged but incomplete days, track only when nothing was
-	// logged; today outlined; future days disabled. Tapping a day opens it.
+	// docs/ui.md "Journal": a month grid with a ring per day filled by eaten ÷ budget; green only for complete days at or
+	// under budget (its ring always keeps a gap), a full red ring when over, neutral for logged but incomplete days, track
+	// only when nothing was logged; today outlined; future days disabled. Tapping a day selects it: the highlight travels
+	// there and the day box below follows. Away from today the month title turns into the way back.
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import Undo2 from '@lucide/svelte/icons/undo-2';
+	import { tick } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { dayHref } from '#lib/client/links.ts';
-	import { monthWeeks, type CalendarDay, type MonthSummary } from '#lib/shared/calendar.ts';
+	import { monthWeeks, type CalendarDay } from '#lib/shared/calendar.ts';
 	import { dayAndMonth, kcal, monthTitle } from '#lib/shared/format.ts';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		month: string;
 		days: CalendarDay[];
-		summary: MonthSummary;
 		firstDayOfWeek: number;
 		canGoNext: boolean;
+		selected: string;
+		away: boolean;
+		/** Which way the month just moved, for the slide. */
+		direction: number;
+		onselect: (date: string) => void;
 		onmonth: (delta: number) => void;
+		ontoday: () => void;
+		children: Snippet;
 	}
-	let { month, days, summary, firstDayOfWeek, canGoNext, onmonth }: Props = $props();
+	let {
+		month,
+		days,
+		firstDayOfWeek,
+		canGoNext,
+		selected,
+		away,
+		direction,
+		onselect,
+		onmonth,
+		ontoday,
+		children
+	}: Props = $props();
 
 	const byDate = $derived(new Map(days.map((d) => [d.date, d])));
-	const weeks = $derived(monthWeeks(month, firstDayOfWeek));
+	const cells = $derived(monthWeeks(month, firstDayOfWeek).flat());
 	const names = [
 		m.weekday_mon,
 		m.weekday_tue,
@@ -38,6 +59,8 @@
 	const C = 2 * Math.PI * R;
 	const colour = (d: CalendarDay) =>
 		d.status === 'under' ? 'var(--good)' : d.status === 'over' ? 'var(--bad)' : 'var(--muted)';
+	// A day within budget never closes its ring, even exactly at it: a closed ring means over.
+	const fillOf = (d: CalendarDay) => (d.status === 'over' ? d.fill : Math.min(d.fill, 0.92));
 
 	function label(d: CalendarDay): string {
 		const day = dayAndMonth(d.date);
@@ -68,10 +91,45 @@
 				return m.progress_day_future({ day });
 		}
 	}
+
+	// The highlight travels to the selected day; when a new month arrives it just appears.
+	let grid = $state<HTMLElement>();
+	let highlight = $state<HTMLElement>();
+	async function place(jump: boolean) {
+		await tick();
+		const cell = grid?.querySelector<HTMLElement>(`[data-date="${selected}"]`);
+		if (!highlight) return;
+		if (!cell) {
+			highlight.style.opacity = '0';
+			return;
+		}
+		const s = highlight.style;
+		if (jump) s.transition = 'none';
+		s.opacity = '1';
+		s.width = `${cell.offsetWidth}px`;
+		s.height = `${cell.offsetHeight}px`;
+		s.transform = `translate(${cell.offsetLeft}px, ${cell.offsetTop}px)`;
+		if (jump) {
+			void highlight.offsetWidth;
+			s.transition = '';
+		}
+	}
+	let placedMonth = '';
+	$effect(() => {
+		void selected;
+		const jump = placedMonth !== month;
+		placedMonth = month;
+		void place(jump);
+	});
+	$effect(() => {
+		const refit = () => void place(true);
+		addEventListener('resize', refit);
+		return () => removeEventListener('resize', refit);
+	});
 </script>
 
 {#snippet ring(d: CalendarDay)}
-	<svg viewBox="0 0 36 36" class="absolute inset-0 size-full -rotate-90" aria-hidden="true">
+	<svg viewBox="0 0 36 36" class="day-ring absolute -rotate-90" aria-hidden="true">
 		<circle cx="18" cy="18" r={R} fill="none" stroke="var(--track)" stroke-width="3.5" />
 		{#if d.status !== 'unlogged' && d.fill > 0}
 			<circle
@@ -83,99 +141,164 @@
 				stroke-width="3.5"
 				stroke-linecap={d.status === 'over' ? 'butt' : 'round'}
 				stroke-dasharray={C}
-				stroke-dashoffset={C * (1 - d.fill)}
+				stroke-dashoffset={C * (1 - fillOf(d))}
 			/>
 		{/if}
 	</svg>
 {/snippet}
 
 <section
-	class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
-	aria-labelledby="month-title"
+	class="flex flex-col rounded-card bg-surface p-[18px] shadow-card"
+	aria-label={monthTitle(month)}
 >
-	<div class="flex items-center justify-between gap-2">
+	<div class="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center text-center">
 		<button
 			type="button"
 			onclick={() => onmonth(-1)}
 			aria-label={m.progress_month_previous()}
-			class="grid size-11 place-items-center rounded-full bg-surface2"
-			><ChevronLeft size={22} aria-hidden="true" /></button
+			class="grid size-11 place-items-center rounded-full"
+			><ChevronLeft size={24} aria-hidden="true" /></button
 		>
-		<h2 id="month-title" class="text-[19px] font-bold">{monthTitle(month)}</h2>
+		<button
+			type="button"
+			disabled={!away}
+			onclick={ontoday}
+			aria-label={away ? m.journal_back_to_today({ month: monthTitle(month) }) : undefined}
+			class={[
+				'inline-flex min-h-11 items-center justify-center gap-1.5 justify-self-center px-2 font-display text-[19px] font-bold transition-colors',
+				away ? 'text-accent' : 'text-text'
+			]}
+		>
+			<h2>{monthTitle(month)}</h2>
+			<!-- It always takes its room, so nothing shifts when it appears. -->
+			<Undo2
+				size={16}
+				aria-hidden="true"
+				class={['transition-opacity', away ? 'opacity-100' : 'w-0 opacity-0']}
+			/>
+		</button>
 		<button
 			type="button"
 			onclick={() => onmonth(1)}
 			disabled={!canGoNext}
 			aria-label={m.progress_month_next()}
-			class="grid size-11 place-items-center rounded-full bg-surface2 disabled:opacity-35"
-			><ChevronRight size={22} aria-hidden="true" /></button
+			class="grid size-11 place-items-center rounded-full disabled:text-line"
+			><ChevronRight size={24} aria-hidden="true" /></button
 		>
 	</div>
 
-	<table class="w-full table-fixed border-separate border-spacing-y-1.5">
-		<thead>
-			<tr
-				>{#each headers as h (h)}<th
-						scope="col"
-						class="text-[12px] font-bold tracking-[0.06em] text-muted uppercase">{h}</th
-					>{/each}</tr
-			>
-		</thead>
-		<tbody>
-			{#each weeks as week, i (i)}
-				<tr>
-					{#each week as date, j (j)}
-						<td class="text-center">
-							{#if date}
-								{@const d = byDate.get(date)!}
-								{#if d.status === 'future'}
-									<span
-										class="inline-grid size-10 place-items-center text-[13px] text-muted opacity-50 desk:size-[54px]"
-										aria-disabled="true"
-										aria-label={label(d)}>{Number(date.slice(8))}</span
-									>
-								{:else}
-									<a
-										href={dayHref(date)}
-										aria-label={label(d)}
-										class={[
-											'relative inline-grid size-10 place-items-center rounded-full text-[13px] font-semibold tabular-nums desk:size-[54px] desk:text-[15px]',
-											d.isToday && 'outline-2 outline-offset-1 outline-accent'
-										]}
-									>
-										{@render ring(d)}
-										<span class="relative">{Number(date.slice(8))}</span>
-									</a>
-								{/if}
-							{/if}
-						</td>
-					{/each}
-				</tr>
+	{#key month}
+		<div
+			bind:this={grid}
+			class={['cal', direction !== 0 && 'slide']}
+			style:--from="{direction * 14}px"
+		>
+			{#each headers as h (h)}
+				<div class="pb-1 text-center text-[12px] font-semibold text-muted">{h}</div>
 			{/each}
-		</tbody>
-	</table>
-
-	<ul class="flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted" aria-label="Key">
-		<li class="flex items-center gap-1.5">
-			<span class="size-3 rounded-full bg-good"></span>{m.progress_key_under()}
-		</li>
-		<li class="flex items-center gap-1.5">
-			<span class="size-3 rounded-full bg-bad"></span>{m.progress_key_over()}
-		</li>
-		<li class="flex items-center gap-1.5">
-			<span class="size-3 rounded-full bg-muted"></span>{m.progress_key_incomplete()}
-		</li>
-		<li class="flex items-center gap-1.5">
-			<span class="size-3 rounded-full border-2 border-track"></span>{m.progress_key_unlogged()}
-		</li>
-	</ul>
-	<p class="text-[15px] font-semibold">
-		{m.progress_summary({
-			under: String(summary.under),
-			over: String(summary.over),
-			incomplete: String(summary.incomplete),
-			unlogged: String(summary.unlogged)
-		})}
-	</p>
-	<p class="text-[13px] text-muted">{m.progress_summary_note()}</p>
+			<span bind:this={highlight} class="highlight" aria-hidden="true"></span>
+			{#each cells as date, i (i)}
+				{#if !date}
+					<span></span>
+				{:else}
+					{@const d = byDate.get(date)!}
+					{#if d.status === 'future'}
+						<span class="day text-muted opacity-50" aria-disabled="true" aria-label={label(d)}
+							>{Number(date.slice(8))}</span
+						>
+					{:else}
+						<button
+							type="button"
+							data-date={date}
+							aria-label={label(d)}
+							aria-pressed={date === selected}
+							onclick={() => onselect(date)}
+							class={['day', d.isToday && 'today']}
+						>
+							{@render ring(d)}
+							<span class="relative">{Number(date.slice(8))}</span>
+						</button>
+					{/if}
+				{/if}
+			{/each}
+		</div>
+	{/key}
+	{@render children()}
 </section>
+
+<style>
+	.cal {
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(7, minmax(0, 1fr));
+		row-gap: 4px;
+		margin-top: 6px;
+	}
+	.slide {
+		animation: month-in 260ms var(--ui);
+	}
+	@keyframes month-in {
+		from {
+			opacity: 0;
+			transform: translateX(var(--from));
+		}
+	}
+	.highlight {
+		position: absolute;
+		top: 0;
+		left: 0;
+		border-radius: var(--radius-input);
+		background: var(--surface2);
+		transition: transform 340ms var(--travel);
+		pointer-events: none;
+	}
+	.day {
+		position: relative;
+		display: grid;
+		place-items: center;
+		height: 46px;
+		font-size: 13px;
+		font-weight: 650;
+		font-variant-numeric: tabular-nums;
+	}
+	.day-ring {
+		width: 40px;
+		height: 40px;
+	}
+	.today span {
+		color: var(--accent);
+	}
+	.today::before {
+		content: '';
+		position: absolute;
+		width: 44px;
+		height: 44px;
+		border: 2px solid var(--accent);
+		border-radius: 999px;
+	}
+	@media (min-width: 760px) {
+		.cal {
+			row-gap: 6px;
+		}
+		.day {
+			height: 68px;
+			font-size: 15px;
+		}
+		.day-ring {
+			width: 54px;
+			height: 54px;
+		}
+		.today::before {
+			width: 58px;
+			height: 58px;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.slide {
+			animation: none;
+		}
+		.highlight {
+			transition: none;
+		}
+	}
+</style>

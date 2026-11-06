@@ -25,4 +25,8 @@ export const logHref = (meal: Meal, date: string) =>
 /** The Log tab with a food's amount sheet open (nothing is logged until Save). */
 export const logFoodHref = (foodId: string) => withQuery(resolve('/(app)/log'), { food: foodId });
 
+/** The Journal, opened on a day when coming from one in the past. */
+export const journalHref = (day: string | null) =>
+	day ? withQuery(resolve('/(app)/journal'), { day }) : resolve('/(app)/journal');
+
 export const newFoodHref = (name: string) => withQuery(resolve('/(app)/foods/new'), { name });

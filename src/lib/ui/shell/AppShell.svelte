@@ -9,6 +9,7 @@
 	import Ellipsis from '@lucide/svelte/icons/ellipsis';
 	import TrendingUp from '@lucide/svelte/icons/trending-up';
 	import { m } from '#lib/paraglide/messages.js';
+	import { journalHref } from '#lib/client/links.ts';
 	import AppLogo from '../AppLogo.svelte';
 	import Celebration from '../achievements/Celebration.svelte';
 	import Toast from './Toast.svelte';
@@ -30,6 +31,7 @@
 		].some((p) => path.startsWith(p))
 	);
 
+	const journalLink = $derived(journalHref(is('/') ? page.url.searchParams.get('date') : null));
 	const activeTab = $derived(
 		is('/') ? 0 : is('/log') ? 1 : is('/journal') ? 2 : is('/progress') ? 3 : moreActive ? 4 : -1
 	);
@@ -72,7 +74,7 @@
 				></a
 			>
 			<a
-				href={resolve('/(app)/journal')}
+				href={journalLink}
 				class={sideItem(is('/journal'))}
 				aria-current={is('/journal') ? 'page' : undefined}
 				><BookOpen size={22} aria-hidden="true" /><span class="sr-only wide:not-sr-only"
@@ -124,7 +126,7 @@
 		><CirclePlus size={22} aria-hidden="true" />{m.nav_log()}</a
 	>
 	<a
-		href={resolve('/(app)/journal')}
+		href={journalLink}
 		class={tabItem(is('/journal'))}
 		aria-current={is('/journal') ? 'page' : undefined}
 		><BookOpen size={22} aria-hidden="true" />{m.nav_journal()}</a

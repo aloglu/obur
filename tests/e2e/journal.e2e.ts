@@ -30,24 +30,31 @@ test('the month calendar colours days by budget and completion', async ({ page }
 	await page.goto('/journal?month=2026-09');
 	const calendar = page.getByRole('region', { name: 'September 2026' });
 	await expect(
-		calendar.getByRole('link', { name: 'Tuesday 1 September: 1800 of 2000 kcal, 200 under' })
+		calendar.getByRole('button', { name: 'Tuesday 1 September: 1800 of 2000 kcal, 200 under' })
 	).toBeVisible();
 	await expect(
-		calendar.getByRole('link', { name: 'Wednesday 2 September: 2400 of 2000 kcal, 400 over' })
+		calendar.getByRole('button', { name: 'Wednesday 2 September: 2400 of 2000 kcal, 400 over' })
 	).toBeVisible();
 	await expect(
-		calendar.getByRole('link', {
+		calendar.getByRole('button', {
 			name: 'Thursday 3 September: 1500 of 2000 kcal, not marked complete'
 		})
 	).toBeVisible();
 	await expect(
-		calendar.getByRole('link', { name: 'Friday 4 September: nothing logged' })
+		calendar.getByRole('button', { name: 'Friday 4 September: nothing logged' })
 	).toBeVisible();
-	await expect(calendar).toContainText('Under 1 · Over 1 · Not complete 1 · Not logged 27');
 	await expect(calendar).toHaveScreenshot('calendar-september.png', { animations: 'disabled' });
 
-	// A day opens in Today.
-	await calendar.getByRole('link', { name: /^Wednesday 2 September/ }).click();
+	// Tapping a day selects it, without leaving: the box shows it, and Open goes there.
+	await calendar.getByRole('button', { name: /^Wednesday 2 September/ }).click();
+	await expect(calendar).toContainText('Wednesday 2 Sep');
+	await expect(calendar).toContainText('2400 of 2000');
+	await expect(calendar).toContainText('400 over');
+	await calendar.getByRole('button', { name: /^Friday 4 September/ }).click();
+	await expect(calendar).toContainText('Nothing logged');
+	await expect(calendar).not.toContainText('of 2000');
+	await calendar.getByRole('button', { name: /^Wednesday 2 September/ }).click();
+	await calendar.getByRole('link', { name: 'Open' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: /^2 September/ })).toBeVisible();
 });
 
@@ -99,4 +106,44 @@ test('the highlights follow the calendar’s month', async ({ page }, testInfo) 
 	await expect(page.getByRole('article', { name: '24–30 Aug' })).toContainText(
 		'No days marked complete'
 	);
+});
+
+test('Journal opens on the day you came from, and the month title leads back to today', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Dönüş ${testInfo.project.name}`);
+	await page.goto('/?date=2026-09-02');
+	await page
+		.getByRole('navigation', { name: 'Main' })
+		.filter({ visible: true })
+		.getByRole('link', { name: 'Journal' })
+		.click();
+	const calendar = page.getByRole('region', { name: 'September 2026' });
+	await expect(calendar).toBeVisible();
+	await expect(calendar.getByRole('button', { name: /^Wednesday 2 September/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+
+	const back = calendar.getByRole('button', { name: /back to today/ });
+	await back.click();
+	await expect(page.getByRole('region', { name: 'September 2026' })).toHaveCount(0);
+	const now = page.locator('section').first();
+	await expect(now).toContainText('Today');
+	// On today the title is plain and does nothing.
+	await expect(page.getByRole('button', { name: /back to today/ })).toHaveCount(0);
+	await expect(now.getByRole('heading', { level: 2 })).toBeVisible();
+});
+
+test('a day with a weigh-in but no food keeps its columns', async ({ page }, testInfo) => {
+	await signedInAs(page, `Tartı ${testInfo.project.name}`);
+	await apiAs(page, 'POST', '/api/v1/body/weight', {
+		date: '2026-09-05',
+		zone: 'UTC',
+		value: 82.4
+	});
+	await page.goto('/journal?day=2026-09-05');
+	const calendar = page.getByRole('region', { name: 'September 2026' });
+	await expect(calendar).toContainText('82,4 kg');
+	await expect(calendar).toContainText('Nothing logged');
 });

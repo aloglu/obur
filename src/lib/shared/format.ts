@@ -62,6 +62,14 @@ export function dayHeading(date: string, today: string): { title: string; detail
 	return { title: dayMonth, detail: name };
 }
 
+/** The Journal's day box: "Today", or "Tuesday 2 Sep"; the year only for other years. */
+export function dayBoxTitle(date: string, today: string): string {
+	if (date === today) return m.day_today();
+	const { y, mo, d, weekday } = parts(date);
+	const year = y !== parts(today).y ? ` ${y}` : '';
+	return `${WEEKDAYS[weekday]} ${d} ${MONTHS[mo - 1].slice(0, 3)}${year}`;
+}
+
 /** "Thu". */
 export function weekdayShort(date: string): string {
 	return WEEKDAYS[parts(date).weekday].slice(0, 3);
