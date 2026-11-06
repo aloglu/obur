@@ -17,19 +17,15 @@
 
 <svelte:head><title>{m.progress_title()} · {m.app_name()}</title></svelte:head>
 
-<main
-	class="mx-auto grid max-w-[1064px] items-start gap-3 px-3.5 py-4 desk:grid-cols-2 desk:gap-6 desk:px-7"
->
-	<div class="flex items-center justify-between gap-3 desk:col-span-2">
+<main class="mx-auto flex max-w-[920px] flex-col gap-3 px-3.5 py-4 desk:px-7">
+	<div class="flex items-center justify-between gap-3">
 		<h1 class="text-[24px] font-[750]">{m.progress_title()}</h1>
-		<div class="hidden desk:block">
-			<RangeSelect id="range-desktop" value={data.history.range} onchange={setRange} />
-		</div>
+		<RangeSelect id="range" value={data.history.range} onchange={setRange} />
 	</div>
-	<HistorySection history={data.history} onrange={setRange} />
+	<HistorySection history={data.history} />
 	<a
 		href={resolve('/(app)/achievements')}
-		class="flex min-h-14 items-center gap-3 rounded-card bg-surface px-[18px] py-3 shadow-card desk:col-span-2"
+		class="flex min-h-14 items-center gap-3 rounded-card bg-surface px-[18px] py-3 shadow-card"
 	>
 		<span class="flex-1 text-[17px] font-bold">{m.achievements_row()}</span>
 		<span class="text-[14px] text-muted"

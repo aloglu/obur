@@ -1,8 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { apiAs, createFood, signedInAs } from './fixtures.ts';
 
 const zone = 'Europe/Istanbul';
-const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 const daysAgo = (n: number) => {
 	const d = new Date();
 	d.setDate(d.getDate() - n);
@@ -75,22 +74,18 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	await quick(4, 900);
 
 	await page.goto('/progress?range=1M');
-	const phone = isPhone(page);
 	const tab = (name: string) => page.getByRole('tab', { name });
-	if (phone) await expect(tab('Weight')).toHaveAttribute('aria-selected', 'true');
-	else await expect(page.getByRole('tablist')).toBeHidden();
+	await expect(tab('Weight')).toHaveAttribute('aria-selected', 'true');
 
-	const weight = page.locator('[role="tabpanel"]').filter({
-		has: page.getByRole('radiogroup', { name: 'Show' })
-	});
+	// One card, whichever tab is open.
+	const weight = page.getByRole('tabpanel');
 	// Readings: what was weighed. The label above the weight is the switch: both names, the one shown checked.
 	const show = weight.getByRole('radiogroup', { name: 'Show' });
 	await expect(show.getByRole('radio', { name: 'Latest weigh-in' })).toHaveAttribute(
 		'aria-checked',
 		'true'
 	);
-	await expect(weight.getByText(/Evens out day-to-day/).filter({ visible: true })).toBeHidden();
-	await expect(weight).toContainText('82,6kg');
+	await expect(weight).toContainText(/82,6\s*kg/);
 	await expect(weight).toContainText('−1,4 kg');
 	await expect(weight.getByText('Average change per week')).toBeVisible();
 	await expect(weight).toContainText(/Average change per week\s*−0,5 kg/);
@@ -100,6 +95,12 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	await weight.getByRole('slider', { name: 'Weight' }).focus();
 	await page.keyboard.press('ArrowLeft');
 	await expect(weightReadout).toContainText(': 82,4 kg');
+	// Looking at a weigh-in turns the headline into it, and leaving goes back to the latest.
+	await expect(weight.locator('p').filter({ hasText: /^82,4\s*kg$/ })).toBeVisible();
+	await expect(weight).not.toContainText('−1,4 kg');
+	await page.locator('h1').click();
+	await expect(weight).toContainText('−1,4 kg');
+	await expect(weightReadout).toContainText(': 82,6 kg');
 	// Trend: the smoothed weight and pace, remembered on this device; the card keeps its height.
 	const before = (await weight.boundingBox())!.height;
 	await show.getByRole('radio', { name: 'Smoothed' }).click();
@@ -107,11 +108,9 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 		'aria-checked',
 		'true'
 	);
-	await expect(weight.getByText(/Evens out day-to-day/).filter({ visible: true })).toBeVisible();
-	await expect(weight.getByText('a week', { exact: true })).toBeVisible();
+	await expect(weight).toContainText(/kg a week/);
 	await expect(weightReadout).toContainText('smoothed');
-	// The selected weigh-in stays selected across the switch.
-	await expect(weightReadout).toContainText('weighed 82,4 kg');
+	await expect(weightReadout).toContainText('weighed 82,6 kg');
 	expect((await weight.boundingBox())!.height).toBeCloseTo(before, 1);
 	await page.reload();
 	await expect(page.getByRole('radio', { name: 'Smoothed' })).toHaveAttribute(
@@ -120,33 +119,31 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	);
 	await page.getByRole('radio', { name: 'Latest weigh-in' }).click();
 
-	if (phone) await tab('Calories').click();
-	const calories = page
-		.locator('[role="tabpanel"]')
-		.filter({ has: page.getByText('Days under budget') });
-	await expect(calories).toBeVisible();
-	await expect(calories).toContainText('2050kcal');
-	await expect(calories).toContainText('50 over');
-	await expect(calories).toContainText('Over 2 complete days.');
+	await tab('Calories').click();
+	const calories = page.getByRole('tabpanel');
+	await expect(calories.getByText('Days under budget')).toBeVisible();
+	await expect(calories).toContainText(/2050\s*kcal/);
+	await expect(calories).toContainText('50 over budget on 2 complete days');
 	const caloriesReadout = calories.locator('[aria-live="polite"]');
 	await expect(caloriesReadout).toContainText('nothing logged');
 	await calories.getByRole('slider', { name: 'Calories' }).focus();
 	await page.keyboard.press('ArrowLeft');
 	await expect(caloriesReadout).toContainText('2300 of 2000 kcal, 300 over');
+	await expect(calories).toContainText('of 2000 · 300 over');
 	await page.keyboard.press('ArrowLeft');
 	await page.keyboard.press('ArrowLeft');
 	await page.keyboard.press('ArrowLeft');
 	await expect(caloriesReadout).toContainText('900 of 2000 kcal, 1100 under · not marked complete');
 
-	if (phone) await tab('Nutrients').click();
-	const nutrients = page.locator('[role="tabpanel"]').filter({ has: page.getByText('Protein') });
-	await expect(nutrients).toBeVisible();
+	await tab('Nutrients').click();
+	const nutrients = page.getByRole('tabpanel');
+	await expect(nutrients.getByText('Protein', { exact: true })).toBeVisible();
 	await expect(nutrients).toContainText('100 g');
 	// The over-budget day was a calories-only quick add: its macros are unknown, never zero.
 	await expect(nutrients).toContainText('Protein, carbs, fat from 1 of 2 days');
 
-	await page.getByLabel('Range').filter({ visible: true }).selectOption('1W');
+	await page.getByLabel('Range').selectOption('1W');
 	await expect(page).toHaveURL(/range=1W/);
-	if (phone) await tab('Weight').click();
+	await tab('Weight').click();
 	await expect(page.getByText('Weigh-ins3').filter({ visible: true })).toHaveCount(1);
 });

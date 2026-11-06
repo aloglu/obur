@@ -1,13 +1,13 @@
 <script lang="ts">
-	// Weight over the range (docs/ui.md, "Progress"): LayerChart's frame and y axis, our marks, a legend and a
-	// readout line for the selected weigh-in (the latest at first). Readings shows the weigh-ins; Trend the smoothed
-	// weight with the weigh-ins faint behind it. The goal never stretches the scale.
-	import { Axis, Chart, Svg } from 'layerchart';
+	// Weight over the range (docs/ui.md, "Progress charts"): LayerChart's frame with our marks. Readings shows the weigh-ins;
+	// Trend the smoothed weight with the weigh-ins faint behind it. The goal never stretches the scale. Looking at a
+	// weigh-in reports it through `onlook`, and the headline above the chart shows it; screen readers get the same as text.
+	import { Chart, Svg } from 'layerchart';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { m } from '#lib/paraglide/messages.js';
-	import { dayAndMonth } from '#lib/shared/format.ts';
+	import { dayAndMonth, shortDate } from '#lib/shared/format.ts';
 	import type { WeightPoint } from '#lib/shared/history.ts';
-	import { formatDecimal } from '#lib/shared/numbers.ts';
-	import { axisLabels, dayNumber } from './history-axis.ts';
+	import { dayNumber } from './history-axis.ts';
 	import WeightMarks from './WeightMarks.svelte';
 
 	interface Props {
@@ -16,10 +16,11 @@
 		from: string;
 		to: string;
 		goalKg: number | null;
-		height?: number;
+		onlook: (point: WeightPoint | null) => void;
 	}
-	let { points, mode, from, to, goalKg, height = 200 }: Props = $props();
+	let { points, mode, from, to, goalKg, onlook }: Props = $props();
 
+	const wide = new MediaQuery('min-width: 760px', false);
 	const data = $derived(points.map((p) => ({ ...p, n: dayNumber(p.date) })));
 	const yDomain = $derived.by((): [number, number] => {
 		const values = data.flatMap((p) => (mode === 'trend' ? [p.weight, p.trend] : [p.weight]));
@@ -28,26 +29,27 @@
 		return [lo - pad, hi + pad];
 	});
 	let picked = $state<number | null>(null);
-	const selected = $derived(picked !== null && picked < data.length ? picked : data.length - 1);
-	const current = $derived(data[selected]);
+	const selected = $derived(picked !== null && picked < data.length ? picked : null);
+	const current = $derived(data[selected ?? data.length - 1]);
+	function look(index: number | null) {
+		picked = index;
+		onlook(index === null ? null : (points[index] ?? null));
+	}
 	// Weights always with one decimal ("83,0 kg"), as the person reads a scale.
 	const kg = (v: number) => v.toFixed(1).replace('.', ',');
 	const pace = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${kg(Math.abs(v))}`;
-	// Both views' readouts, so the line can keep the taller one's height and the card doesn't jump on a switch.
-	const readouts = $derived.by(() => {
-		if (!current) return { readings: '', trend: '' };
+	const readout = $derived.by(() => {
+		if (!current) return '';
 		const day = dayAndMonth(current.date);
-		return {
-			readings: m.history_reading_readout({ day, weight: kg(current.weight) }),
-			trend: m.history_trend_readout({
-				day,
-				trend: kg(current.trend),
-				pace: pace(current.pacePerWeek),
-				weight: kg(current.weight)
-			})
-		};
+		return mode === 'trend'
+			? m.history_trend_readout({
+					day,
+					trend: kg(current.trend),
+					pace: pace(current.pacePerWeek),
+					weight: kg(current.weight)
+				})
+			: m.history_reading_readout({ day, weight: kg(current.weight) });
 	});
-	const readout = $derived(readouts[mode]);
 	const summary = $derived.by(() => {
 		if (!data.length) return '';
 		const [first, last] = [data[0], data.at(-1)!];
@@ -61,75 +63,42 @@
 				})
 			: m.history_weight_summary({ ...ends, first: kg(first.weight), last: kg(last.weight) });
 	});
+	const inset = 6;
+	const gutter = $derived(wide.current ? 42 : 30);
 </script>
 
 {#if data.length === 0}
 	<p class="text-[14px] text-muted">{m.history_weight_none()}</p>
 {:else}
-	<figure class="m-0 flex flex-col gap-2">
+	<figure class="m-0">
 		<figcaption class="sr-only">{summary}</figcaption>
-		<div style:height="{height}px">
+		<p class="sr-only" aria-live="polite">{readout}</p>
+		<div class="h-[170px] desk:h-[280px]">
 			<Chart
 				{data}
 				x="n"
 				y="weight"
 				xDomain={[dayNumber(from), dayNumber(to)]}
 				{yDomain}
-				padding={{ left: 34, right: 8, top: 14, bottom: 22 }}
+				padding={{ left: inset, right: gutter, top: 8, bottom: 22 }}
 			>
 				<Svg>
-					<Axis
-						placement="left"
-						ticks={4}
-						rule={false}
-						format={(v: number) => formatDecimal(v, ',', v % 1 ? 1 : 0)}
-						grid={{ class: 'stroke-line' }}
-						tickLabelProps={{ class: 'fill-muted text-[11px] tabular-nums' }}
-					/>
 					<WeightMarks
 						points={data}
 						{mode}
-						labels={axisLabels(from, to)}
 						{goalKg}
+						{gutter}
+						{inset}
+						firstDate={shortDate(from)}
+						lastDate={shortDate(to)}
 						{selected}
-						onselect={(i) => (picked = i)}
+						onselect={look}
+						onrelease={() => look(null)}
 						label={m.progress_weight()}
 						valuetext={readout}
 					/>
 				</Svg>
 			</Chart>
-		</div>
-		<div class="flex flex-wrap gap-x-3.5 gap-y-1 text-[12px] text-muted" aria-hidden="true">
-			{#if mode === 'trend'}
-				<span class="inline-flex items-center gap-1.5"
-					><i class="inline-block h-[3px] w-3.5 rounded bg-accent"
-					></i>{m.history_legend_trend()}</span
-				>
-				<span class="inline-flex items-center gap-1.5"
-					><i class="inline-block size-2 rounded-full bg-muted opacity-60"
-					></i>{m.history_legend_weighins()}</span
-				>
-			{:else}
-				<span class="inline-flex items-center gap-1.5"
-					><i class="inline-block size-2 rounded-full bg-accent"
-					></i>{m.history_legend_weighins()}</span
-				>
-			{/if}
-			{#if goalKg !== null}<span class="inline-flex items-center gap-1.5"
-					><i class="inline-block w-3.5 border-t-2 border-dashed border-good"
-					></i>{m.history_legend_goal()}</span
-				>{/if}
-		</div>
-		<div class="grid min-h-[2.6em] rounded-[10px] bg-surface2 px-2.5 py-2 text-[13px] tabular-nums">
-			{#each ['readings', 'trend'] as const as view (view)}
-				<p
-					class={['m-0 [grid-area:1/1]', view !== mode && 'invisible']}
-					aria-live={view === mode ? 'polite' : undefined}
-					aria-hidden={view !== mode}
-				>
-					{readouts[view]}
-				</p>
-			{/each}
 		</div>
 	</figure>
 {/if}
