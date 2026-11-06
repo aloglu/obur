@@ -38,6 +38,7 @@ test('a typed sentence becomes items to confirm, logged together and undone toge
 		.fill(`kahvaltıda biraz tahıllı ekmek ${tag} ve iki bardak su`);
 	await expect(sheet).toContainText('How much? Enter an amount.');
 	await expect(sheet.getByRole('button', { name: /^Log 2 to/ })).toBeDisabled();
+	await expect(sheet.getByLabel('Amount')).toHaveCount(1); // the row it replaced has slid away
 	await sheet.getByLabel('Amount').fill('2');
 	await choose(sheet, 'Unit', 'dilim (30 g)');
 	await sheet.getByRole('button', { name: /^Log 2 to/ }).click();
@@ -222,4 +223,22 @@ test('Create it as food starts the form with the name that was said', async ({
 	await sheet.getByRole('button', { name: 'Create it as food' }).click();
 	await expect(page).toHaveURL(/\/foods\/new\?name=/);
 	await expect(page.getByLabel('Product name')).toHaveValue('qqqqzzzz');
+});
+
+test('a match that ignores some of the words asks, so a food cannot drop out unnoticed', async ({
+	page
+}, testInfo) => {
+	const tag = testInfo.project.name.replace(/\W/g, '');
+	await signedInAs(page, `Virgül ${testInfo.project.name}`);
+	await createFood(page, {
+		name: `Yumurtam${tag}`,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 150, qualifier: 'reported' }]
+	});
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Type it' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
+	await sheet.getByLabel('You typed').fill(`100 g yumurtam${tag}, karpuz`);
+	await expect(sheet).toContainText('Not sure. Which one?');
+	await expect(sheet).toContainText(`yumurtam${tag} karpuz?`);
 });

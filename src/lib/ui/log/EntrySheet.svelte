@@ -6,6 +6,7 @@
 	import Chips from '../Chips.svelte';
 	import Select from '../Select.svelte';
 	import { onMount, untrack } from 'svelte';
+	import { slide } from 'svelte/transition';
 	import Check from '@lucide/svelte/icons/check';
 	import Flame from '@lucide/svelte/icons/flame';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -158,6 +159,25 @@
 		readTimer = setTimeout(read, 350);
 	}
 
+	// A row that reads the same keeps its place (and any edit made in it), so only what changed moves.
+	const signature = (c: Card) =>
+		c.kind === 'food'
+			? `food:${c.text}:${c.amountText}:${c.optionKey}`
+			: c.kind === 'quick'
+				? `quick:${c.kcalText}:${c.description}`
+				: c.kind === 'water'
+					? `water:${c.mlText}`
+					: c.kind === 'weight'
+						? `weight:${c.kgText}`
+						: `activity:${c.kcalText}:${c.note}`;
+	function keepUnchanged(next: Card[]): Card[] {
+		const old = [...cards];
+		return next.map((c) => {
+			const at = old.findIndex((o) => signature(o) === signature(c));
+			return at < 0 ? c : old.splice(at, 1)[0];
+		});
+	}
+
 	function retry() {
 		if (!unreachable) return;
 		lastRead = '';
@@ -184,7 +204,7 @@
 			});
 			if (wanted !== text.trim()) return; // typed on meanwhile
 			unreachable = false;
-			cards = cardsFor(parsed.items);
+			cards = keepUnchanged(cardsFor(parsed.items));
 			day = parsed.date;
 			meal = parsed.meal ?? tapped ?? presetMeal;
 		} catch {
@@ -406,6 +426,7 @@
 		}
 		onlogged({ count: undo.length, date: day, undo, firstEntryId, skipped });
 	}
+	const rowMs = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
 	const action =
 		'flex min-h-[52px] items-center justify-between gap-3 rounded-small bg-surface2 py-1.5 pr-3 pl-3.5 text-left text-[15px] font-[650]';
 </script>
@@ -447,7 +468,11 @@
 		{#if cards.length}
 			<div class="flex flex-col divide-y divide-line">
 				{#each cards as card, i (card.id)}
-					<section aria-label={title(card)} class="py-1 first:pt-0">
+					<section
+						aria-label={title(card)}
+						class="py-1 first:pt-0"
+						transition:slide={{ duration: rowMs() }}
+					>
 						<div class="grid min-h-14 grid-cols-[minmax(0,1fr)_44px] items-center gap-1">
 							<button
 								type="button"

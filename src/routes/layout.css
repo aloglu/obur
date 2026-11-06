@@ -76,7 +76,15 @@
 	}
 	[data-hold-row][data-pressing] {
 		background: var(--surface2);
-		transition: background 450ms;
+		transform: scale(0.97);
+		transition:
+			background 450ms,
+			transform 450ms ease-in;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		[data-hold-row][data-pressing] {
+			transform: none;
+		}
 	}
 	[data-meal-drop][data-drop-target] {
 		outline: 2px solid var(--accent);

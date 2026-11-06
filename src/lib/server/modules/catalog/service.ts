@@ -376,7 +376,8 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						limit,
 						boostIds
 					);
-					if (part[0]?.whole) return strip(part);
+					// Some of the words were ignored: a food may have been lost, so it counts as loose too.
+					if (part[0]?.whole) return strip(part).map((r) => ({ ...r, loose: true }));
 				}
 			}
 			return strip(full);

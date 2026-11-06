@@ -15,6 +15,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import X from '@lucide/svelte/icons/x';
+	import Swap from '#lib/ui/Swap.svelte';
 	import { discard, offline } from '#lib/client/offline/sync.svelte.ts';
 	import type { QueuedOp } from '#lib/client/offline/store.ts';
 	import ActivitySheet from '#lib/ui/log/ActivitySheet.svelte';
@@ -306,27 +307,30 @@
 				</p>
 			{/if}
 			<div class="rounded-card bg-surface px-[18px] pt-1.5 pb-2 shadow-card">
-				{#each MEALS as meal (meal)}
-					<MealCard
-						{meal}
-						entries={byMeal[meal]}
-						{highlight}
-						onadd={() => goto(logHref(meal, data.date))}
-						onsave={() => (savingMeal = meal)}
-						onopen={(e) => (editing = e)}
-						pending={pendingFor(meal)}
-						onpending={(op) => (pendingOpen = op)}
-						bulk={{
-							selecting,
-							selected,
-							lifted,
-							ontoggle: toggle,
-							onlift: lift,
-							ondrop: dropped,
-							onmeal: (action) => mealAction(meal, action)
-						}}
-					/>
-				{/each}
+				<!-- Keyed by day: rows animate out when deleted, not when the whole day changes. -->
+				{#key data.date}
+					{#each MEALS as meal (meal)}
+						<MealCard
+							{meal}
+							entries={byMeal[meal]}
+							{highlight}
+							onadd={() => goto(logHref(meal, data.date))}
+							onsave={() => (savingMeal = meal)}
+							onopen={(e) => (editing = e)}
+							pending={pendingFor(meal)}
+							onpending={(op) => (pendingOpen = op)}
+							bulk={{
+								selecting,
+								selected,
+								lifted,
+								ontoggle: toggle,
+								onlift: lift,
+								ondrop: dropped,
+								onmeal: (action) => mealAction(meal, action)
+							}}
+						/>
+					{/each}
+				{/key}
 			</div>
 		</div>
 	</div>
@@ -367,7 +371,7 @@
 					aria-label={m.day_complete_switch()}
 					class="flex min-h-14 w-full items-center justify-between gap-3 text-left font-[650]"
 				>
-					<span>{data.complete ? m.day_complete_switch() : m.day_mark_complete()}</span>
+					<Swap a={m.day_mark_complete()} b={m.day_complete_switch()} showB={data.complete} />
 					<span
 						aria-hidden="true"
 						class={[

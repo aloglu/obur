@@ -3,6 +3,7 @@
 	// and a trailing Add food row; the meal total sits in the number column. Bulk actions ("Bulk actions"): the … menu,
 	// holding a row to select it or drag it to another meal, and, while selecting, a round check on each row that a tap
 	// toggles. Ctrl/⌘-click also selects.
+	import { slide } from 'svelte/transition';
 	import Check from '@lucide/svelte/icons/check';
 	import Plus from '@lucide/svelte/icons/plus';
 	import { holdDrag } from '#lib/client/hold-drag.ts';
@@ -54,6 +55,7 @@
 		entries.reduce((sum, e) => sum + (e.nutrients.energy_kcal?.value ?? 0), 0)
 	);
 	const row = 'grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-3';
+	const leaveMs = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
 </script>
 
 <section
@@ -74,7 +76,7 @@
 		<ul class="flex flex-col gap-0.5">
 			{#each entries as e (e.id)}
 				{@const on = bulk?.selected.has(e.id) ?? false}
-				<li class="entry-in">
+				<li class="entry-in" out:slide={{ duration: leaveMs() }}>
 					<button
 						type="button"
 						data-hold-row
@@ -90,30 +92,26 @@
 						}}
 						aria-pressed={selecting ? on : undefined}
 						class={[
-							'grid min-h-14 w-full items-center gap-3 rounded-input px-2.5 py-1.5 text-left transition-colors duration-700',
-							selecting
-								? 'grid-cols-[24px_40px_minmax(0,1fr)_auto]'
-								: 'grid-cols-[40px_minmax(0,1fr)_auto]',
+							'grid min-h-14 w-full grid-cols-[auto_40px_minmax(0,1fr)_auto] items-center rounded-input px-2.5 py-1.5 text-left transition-colors duration-700',
 							on || e.id === highlight ? 'bg-soft' : 'hover:bg-surface2',
 							bulk?.lifted.has(e.id) && 'opacity-35'
 						]}
 					>
-						{#if selecting}
+						<span class={['check-slot', selecting && 'on']} aria-hidden="true">
 							<span
 								class={[
 									'grid size-6 shrink-0 place-items-center rounded-full border-2',
 									on ? 'border-accent bg-fill text-on-accent' : 'border-muted bg-surface'
 								]}
-								aria-hidden="true"
 								>{#if on}<Check size={14} strokeWidth={3} />{/if}</span
 							>
-						{/if}
+						</span>
 						<FoodIcon
 							icon={e.food?.icon}
 							name={e.kind === 'quick' ? (e.description ?? '') : (e.food?.name ?? '')}
 							brand={e.food?.brand}
 						/>
-						<span class="min-w-0">
+						<span class="ml-3 min-w-0">
 							<span class="line-clamp-2 text-[15px] leading-[1.3] font-semibold break-words"
 								>{entryName(e)}</span
 							>
@@ -129,7 +127,7 @@
 									>{/if}
 							</span>
 						</span>
-						<span class="min-w-11 text-right text-[15px] font-[650] tabular-nums"
+						<span class="ml-3 min-w-11 text-right text-[15px] font-[650] tabular-nums"
 							>{kcal(e.nutrients.energy_kcal?.value ?? 0)}</span
 						>
 					</button>
@@ -199,6 +197,28 @@
 <style>
 	.entry-in {
 		animation: entry-in 300ms var(--ui);
+	}
+	/* The room for the check opens as selecting starts; closed, it takes no space, not even its gap. */
+	.check-slot {
+		display: grid;
+		width: 0;
+		margin-right: 0;
+		overflow: hidden;
+		opacity: 0;
+		transition:
+			width 300ms var(--ui),
+			margin-right 300ms var(--ui),
+			opacity 200ms;
+	}
+	.check-slot.on {
+		width: 24px;
+		margin-right: 12px;
+		opacity: 1;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.check-slot {
+			transition: none;
+		}
 	}
 	@keyframes entry-in {
 		from {

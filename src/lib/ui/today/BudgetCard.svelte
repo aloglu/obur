@@ -8,6 +8,7 @@
 	import type { DayBudget } from '#lib/shared/goals.ts';
 	import { budgetStatus } from '#lib/shared/goals.ts';
 	import Roll from '../Roll.svelte';
+	import Swap from '../Swap.svelte';
 
 	interface Props {
 		eaten: number;
@@ -38,7 +39,11 @@
 				]}><Roll value={kcal(total ? Math.abs(total - eaten) : eaten)} /></span
 			>
 			<span class={['ml-1 text-[15px] font-[650]', over ? 'text-bad' : 'text-muted']}
-				>{!total ? m.budget_eaten_kcal() : over ? m.budget_over() : m.budget_left()}</span
+				>{#if total}<Swap
+						a={m.budget_left()}
+						b={m.budget_over()}
+						showB={over}
+					/>{:else}{m.budget_eaten_kcal()}{/if}</span
 			>
 		</p>
 		{#if budget}

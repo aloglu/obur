@@ -31,10 +31,12 @@
 	>
 		<ChevronLeft size={24} aria-hidden="true" />
 	</button>
-	<div class="min-w-0">
-		<h1 class="text-[24px] leading-tight font-[750]">{heading.title}</h1>
-		<p class="mt-0.5 text-[13px] text-muted">{heading.detail}</p>
-	</div>
+	{#key heading.title}
+		<div class="title-in min-w-0">
+			<h1 class="text-[24px] leading-tight font-[750]">{heading.title}</h1>
+			<p class="mt-0.5 text-[13px] text-muted">{heading.detail}</p>
+		</div>
+	{/key}
 	<button
 		type="button"
 		onclick={() => onmove(1)}
@@ -45,3 +47,20 @@
 		<ChevronRight size={24} aria-hidden="true" />
 	</button>
 </header>
+
+<style>
+	.title-in {
+		animation: title-in 200ms var(--ui);
+	}
+	@keyframes title-in {
+		from {
+			opacity: 0;
+			transform: translateY(4px);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.title-in {
+			animation: none;
+		}
+	}
+</style>
