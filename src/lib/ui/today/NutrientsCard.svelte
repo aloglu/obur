@@ -99,8 +99,9 @@
 					></div>
 				</div>
 				<span class="min-w-[92px] text-right text-muted tabular-nums"
-					><b class="font-[650] text-text">{s.text}</b>{#if targets}
-						/ {targets[n.target]} g{/if}</span
+					><b class="font-[650] text-text">{s.text}</b>{#if targets}<span class="ml-1"
+							>/ {targets[n.target]} g</span
+						>{/if}</span
 				>
 			</div>
 			{#if s.note}<p class="mt-0.5 text-right text-[12.5px] text-muted">{s.note}</p>{/if}
