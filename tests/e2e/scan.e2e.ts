@@ -62,6 +62,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	});
 	await page.goto(isPhone(page) ? '/log' : '/');
 	await page.getByRole('link', { name: 'Scan a label' }).click();
+	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	await page.getByLabel('Choose photo').setInputFiles({
 		name: 'label.png',
 		mimeType: 'image/png',
@@ -114,6 +115,7 @@ test('a label that cannot be read says so and leaves the form empty to fill in',
 	});
 	await page.goto(isPhone(page) ? '/log' : '/');
 	await page.getByRole('link', { name: 'Scan a label' }).click();
+	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	await page
 		.getByLabel('Choose photo')
 		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE5 });
@@ -138,6 +140,7 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 	});
 	await page.goto(isPhone(page) ? '/log' : '/');
 	await page.getByRole('link', { name: 'Scan a label' }).click();
+	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	const choose = () =>
 		page
 			.getByLabel('Choose photo')
@@ -153,6 +156,7 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 	// The choice is remembered on this device.
 	await page.goto(isPhone(page) ? '/log' : '/');
 	await page.getByRole('link', { name: 'Scan a label' }).click();
+	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	await choose();
 	await expect(page.getByLabel('Log it after saving')).not.toBeChecked();
 	// One value corrected before saving is counted as one change; admins see household totals.

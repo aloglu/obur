@@ -5,6 +5,7 @@
 	let { href, label, value }: { href: string; label: string; value?: string | number } = $props();
 </script>
 
+<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- every caller passes resolve(...) -->
 <a {href} class="flex min-h-14 items-center justify-between gap-3 py-2 text-[15px] font-semibold">
 	<span class="min-w-0">{label}</span>
 	<span class="flex shrink-0 items-center gap-1 text-[14px] font-medium text-muted tabular-nums">

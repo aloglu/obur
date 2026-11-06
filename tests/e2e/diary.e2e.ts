@@ -239,6 +239,6 @@ test('More shows its values; Settings links still arrive there', async ({ page }
 	await page.getByRole('link', { name: /Units/ }).click();
 	await choose(page, /^Time:/, '12-hour');
 	await expect(page.getByRole('button', { name: 'Time: 12-hour' })).toBeVisible();
-	await page.goto('/more');
+	await page.getByRole('link', { name: 'More' }).first().click();
 	await expect(page.getByRole('link', { name: /Units.*kg · 12-hour/ })).toBeVisible();
 });
