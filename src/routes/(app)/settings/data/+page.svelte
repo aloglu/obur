@@ -10,9 +10,16 @@
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
+	import { shortDate } from '#lib/shared/format.ts';
+	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import Download from '@lucide/svelte/icons/download';
+	import FileArchive from '@lucide/svelte/icons/file-archive';
+	import BackLink from '#lib/ui/BackLink.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Card from '#lib/ui/Card.svelte';
 	import Chips from '#lib/ui/Chips.svelte';
+	import Switch from '#lib/ui/Switch.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 
@@ -33,6 +40,7 @@
 		counts: Record<string, Counts>;
 		warnings: string[];
 		deletedInLoseIt?: number;
+		firstWeight?: number | null;
 		reconciliation?: { days: number; mismatched: string[] };
 	}
 
@@ -74,6 +82,10 @@
 	const QUIET_WARNINGS = new Set(['missing_rows']);
 
 	let busy = $state(false);
+	let exporting = $state(false);
+	let importing = $state(false);
+	// What the last import did, shown until another file is chosen.
+	let finished = $state<{ count: number; from: string | null } | null>(null);
 	// A file chosen before the page is interactive would be lost silently, so the picker waits for hydration.
 	let ready = $state(false);
 	onMount(() => (ready = true));
@@ -88,8 +100,6 @@
 	let confirming = $state(false);
 	let understood = $state(false);
 
-	const date = (iso: string) =>
-		new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
 	const rows = $derived(
 		summary
 			? KINDS.map((k) => ({ kind: k, ...summary!.counts[k] })).filter(
@@ -100,6 +110,34 @@
 	const missing = $derived(
 		summary ? Object.values(summary.counts).reduce((n, c) => n + (c.missing ?? 0), 0) : 0
 	);
+	const toAdd = $derived(rows.reduce((n, r) => n + r.new, 0));
+	const size = (bytes: number) =>
+		bytes < 1_000_000
+			? `${formatDecimal(bytes / 1000, ',', 0)} kB`
+			: `${formatDecimal(bytes / 1_000_000, ',', 1)} MB`;
+	/** What the picker says about the chosen file once it has been read. */
+	const fileDetail = $derived.by(() => {
+		if (!file) return m.data_import_choose_hint();
+		const what = summary?.source === 'loseit' ? m.data_import_loseit() : m.data_import_obur();
+		if (!summary) return size(file.size);
+		const dates = summary.dateRange
+			? m.data_import_range({
+					from: shortDate(summary.dateRange.from),
+					to: shortDate(summary.dateRange.to)
+				})
+			: null;
+		return [what, dates, size(file.size)].filter(Boolean).join(' · ');
+	});
+	const rowNote = (kind: string) =>
+		summary?.source !== 'loseit'
+			? undefined
+			: kind === 'food'
+				? m.data_row_food()
+				: kind === 'activity'
+					? m.data_row_activity()
+					: kind === 'target'
+						? m.data_row_target()
+						: undefined;
 	const nothingNew = $derived(rows.every((r) => r.new === 0) && !(trashMissing && missing > 0));
 
 	function importProblem(e: unknown): string {
@@ -132,6 +170,7 @@
 	const download = () =>
 		run(() =>
 			withRecentAuth(async () => {
+				exporting = true;
 				// A JSON body, so the request is never mistaken for a cross-site form post.
 				const response = await fetch('/api/v1/export', {
 					method: 'POST',
@@ -150,8 +189,8 @@
 				const link = Object.assign(document.createElement('a'), { href: url, download: name });
 				link.click();
 				setTimeout(() => URL.revokeObjectURL(url), 10_000);
-				showToast({ message: m.data_export_done() });
-			})
+				showToast({ message: m.data_export_done(), detail: name });
+			}).finally(() => (exporting = false))
 		);
 
 	async function upload(apply: boolean): Promise<Summary> {
@@ -182,6 +221,7 @@
 		const input = event.currentTarget as HTMLInputElement;
 		file = input.files?.[0] ?? null;
 		summary = null;
+		finished = null;
 		trashMissing = false;
 		if (file) void preview();
 	}
@@ -194,7 +234,13 @@
 
 	const apply = () =>
 		run(async () => {
-			await upload(true);
+			importing = true;
+			try {
+				await upload(true);
+			} finally {
+				importing = false;
+			}
+			finished = { count: toAdd, from: summary?.dateRange?.from ?? null };
 			summary = null;
 			file = null;
 			showToast({ message: m.data_import_done() });
@@ -221,20 +267,39 @@
 <svelte:head><title>{m.data_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
+	<BackLink href={resolve('/(app)/more')} label={m.nav_more()} />
 	<h1 class="text-[24px] font-[750]">{m.data_title()}</h1>
 	{#if problem && !confirming}<Notice>{problem}</Notice>{/if}
 
 	<Card title={m.data_export_title()}>
-		<p class="text-[15px]">{m.data_export_body()}</p>
-		<Button disabled={busy} onclick={download}>{m.data_export_button()}</Button>
+		<p class="text-[13px] text-muted">{m.data_export_body()}</p>
+		<Button disabled={busy} onclick={download}>
+			{#if exporting}{m.data_export_busy()}{:else}<Download
+					size={18}
+					aria-hidden="true"
+				/>{m.data_export_button()}{/if}
+		</Button>
 	</Card>
 
 	<Card title={m.data_import_title()}>
-		<p class="text-[15px]">{m.data_import_body()}</p>
+		<p class="text-[13px] text-muted">{m.data_import_body()}</p>
 		<label
-			class="flex min-h-[52px] cursor-pointer items-center justify-center rounded-button border border-line bg-surface px-5 text-[17px] font-[750] focus-within:outline-3 focus-within:outline-accent"
+			class={[
+				'flex min-h-16 cursor-pointer items-center gap-3 rounded-input border-line px-3.5 py-2.5 focus-within:outline-3 focus-within:outline-accent',
+				file ? 'border' : 'border-2 border-dashed'
+			]}
 		>
-			{file ? file.name : m.data_import_choose()}
+			<span
+				class={[
+					'grid size-10 shrink-0 place-items-center rounded-small',
+					file ? 'bg-soft text-accent' : 'bg-surface2 text-muted'
+				]}><FileArchive size={20} aria-hidden="true" /></span
+			>
+			<span class="min-w-0">
+				<span class="block font-[650] break-words">{file ? file.name : m.data_import_choose()}</span
+				>
+				<small class="block text-[13px] text-muted">{fileDetail}</small>
+			</span>
 			<input
 				type="file"
 				accept=".zip,application/zip"
@@ -243,92 +308,133 @@
 				onchange={choose}
 			/>
 		</label>
+		{#if finished}
+			<p class="flex items-start gap-2 text-[14px] font-semibold text-good">
+				<CircleCheck size={18} aria-hidden="true" class="mt-px shrink-0" />
+				{m.data_import_finished({ count: String(finished.count) })}
+			</p>
+			{#if finished.from}<p class="text-[13.5px] text-muted">
+					{m.data_import_goes_back({ day: shortDate(finished.from) })}
+				</p>{/if}
+		{/if}
 		{#if summary}
+			{@const check = summary.reconciliation}
 			<div class="flex flex-col gap-3" data-testid="import-preview">
-				<p class="text-[14px] text-muted">
-					{summary.source === 'loseit'
-						? m.data_import_loseit()
-						: m.data_import_preview({ date: date(summary.exportedAt ?? '') })}
-					{#if summary.dateRange}
-						· {m.data_import_range({ from: summary.dateRange.from, to: summary.dateRange.to })}
-					{/if}
-				</p>
-				<table class="w-full text-left text-[14px]">
-					<thead class="text-muted">
-						<tr>
-							<th scope="col" class="py-1 font-semibold">{m.data_import_kind()}</th>
-							<th scope="col" class="py-1 text-right font-semibold">{m.data_import_new()}</th>
-							<th scope="col" class="py-1 text-right font-semibold">{m.data_import_here()}</th>
-							<th scope="col" class="py-1 text-right font-semibold">{m.data_import_kept()}</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-line">
-						{#each rows as r (r.kind)}
+				{#if check && check.mismatched.length === 0}
+					<p class="flex items-start gap-2 text-[14px] font-semibold text-good">
+						<CircleCheck size={18} aria-hidden="true" class="mt-px shrink-0" />
+						{m.data_import_loseit_check_ok({ days: String(check.days) })}
+					</p>
+				{:else if check}
+					<Notice
+						>{m.data_import_loseit_check_bad({
+							count: String(check.mismatched.length),
+							dates: check.mismatched.slice(0, 5).join(', ')
+						})}</Notice
+					>
+				{/if}
+				{#if summary.alreadyImported}
+					<Notice title={m.data_warn_already_imported()}>{m.data_already_detail()}</Notice>
+				{:else}
+					<table class="w-full text-left text-[14.5px]">
+						<thead class="text-[12.5px] text-muted">
 							<tr>
-								<th scope="row" class="py-2 font-semibold">{kindName[r.kind]()}</th>
-								<td class="py-2 text-right tabular-nums">{r.new}</td>
-								<td class="py-2 text-right tabular-nums">{r.unchanged}</td>
-								<td class="py-2 text-right tabular-nums">{(r.changed ?? 0) + r.skipped}</td>
+								<th scope="col" class="pb-1.5 font-[650]">{m.data_import_to_add()}</th>
+								<th scope="col" class="pb-1.5 text-right font-[650]">{m.data_import_records()}</th>
 							</tr>
-						{/each}
-					</tbody>
-				</table>
-				{#if summary.source === 'loseit'}
-					{@const check = summary.reconciliation}
-					{#if check && check.mismatched.length === 0}
-						<p class="text-[14px] font-semibold">
-							{m.data_import_loseit_check_ok({ days: String(check.days) })}
-						</p>
-					{:else if check}
-						<Notice
-							>{m.data_import_loseit_check_bad({
-								count: String(check.mismatched.length),
-								dates: check.mismatched.slice(0, 5).join(', ')
-							})}</Notice
-						>
+						</thead>
+						<tbody class="divide-y divide-line border-t border-line">
+							{#each rows as r (r.kind)}
+								{@const kept = (r.changed ?? 0) + r.skipped}
+								{@const others = [
+									rowNote(r.kind),
+									r.unchanged ? m.data_row_here({ count: String(r.unchanged) }) : null,
+									kept ? m.data_row_kept({ count: String(kept) }) : null
+								].filter(Boolean)}
+								<tr>
+									<th scope="row" class="py-2.5 font-normal">
+										{kindName[r.kind]()}
+										{#if others.length}<small class="block text-[12.5px] text-muted"
+												>{others.join(' · ')}</small
+											>{/if}
+									</th>
+									<td class="py-2.5 text-right align-baseline font-[650] tabular-nums">{r.new}</td>
+								</tr>
+							{/each}
+							{#if summary.deletedInLoseIt}
+								<tr class="text-muted">
+									<th scope="row" class="py-2.5 font-normal">
+										{m.data_row_deleted()}
+										<small class="block text-[12.5px]">{m.data_row_left_out()}</small>
+									</th>
+									<td class="py-2.5 text-right align-baseline font-[650] tabular-nums"
+										>{summary.deletedInLoseIt}</td
+									>
+								</tr>
+							{/if}
+						</tbody>
+					</table>
+					{#if summary.source === 'loseit'}
+						<div class="flex flex-col divide-y divide-line border-y border-line">
+							<div class="flex min-h-[60px] items-center justify-between gap-3 py-1.5">
+								<span class="min-w-0 text-[15px] font-semibold">
+									{m.data_import_weight_unit()}
+									{#if summary.firstWeight != null}<small
+											class="block text-[13px] font-normal text-muted"
+											>{m.data_first_weight({
+												value: formatDecimal(summary.firstWeight, ',', 1),
+												unit: weightUnit
+											})}</small
+										>{/if}
+								</span>
+								<div class="w-[116px] shrink-0">
+									<Chips
+										label={m.data_import_weight_unit()}
+										hideLabel
+										bind:value={weightUnit}
+										onchange={preview}
+										options={[
+											{ value: 'kg', label: 'kg' },
+											{ value: 'lb', label: 'lb' }
+										]}
+									/>
+								</div>
+							</div>
+							<Switch
+								label={m.data_import_share()}
+								detail={m.data_import_share_detail()}
+								bind:checked={shareFoods}
+							/>
+							{#if missing > 0}
+								<Switch
+									label={m.data_import_missing_label({ count: String(missing) })}
+									detail={m.data_import_missing_detail()}
+									bind:checked={trashMissing}
+								/>
+							{/if}
+						</div>
 					{/if}
-					{#if summary.deletedInLoseIt}
-						<p class="text-[14px] text-muted">
-							{m.data_import_loseit_deleted({ count: String(summary.deletedInLoseIt) })}
-						</p>
-					{/if}
-					<p class="text-[14px] text-muted">{m.data_import_activity_note()}</p>
-					<Chips
-						label={m.data_import_weight_unit()}
-						bind:value={weightUnit}
-						onchange={preview}
-						options={[
-							{ value: 'kg', label: 'kg' },
-							{ value: 'lb', label: 'lb' }
-						]}
-					/>
-					<label class="flex min-h-11 items-center gap-3 text-[15px] font-semibold">
-						<input type="checkbox" bind:checked={shareFoods} class="size-5" />
-						{m.data_import_share()}
-					</label>
-					{#if missing > 0}
-						<label class="flex min-h-11 items-center gap-3 text-[15px]">
-							<input type="checkbox" bind:checked={trashMissing} class="size-5" />
-							{m.data_import_missing({ count: String(missing) })}
-						</label>
+					{#each summary.warnings.filter((w) => !QUIET_WARNINGS.has(w) && w !== 'already_imported') as w (w)}
+						<Notice tone="info">{warning[w]?.() ?? w}</Notice>
+					{/each}
+					{#if nothingNew}
+						<p class="text-[14px] text-muted">{m.data_import_nothing()}</p>
+					{:else}
+						<Button disabled={busy} onclick={apply}>
+							{importing
+								? m.data_importing()
+								: toAdd > 0
+									? m.data_import_count({ count: String(toAdd) })
+									: m.data_import_button()}
+						</Button>
 					{/if}
 				{/if}
-				{#each summary.warnings.filter((w) => !QUIET_WARNINGS.has(w)) as w (w)}
-					<Notice tone={w === 'already_imported' ? 'warn' : 'info'}>{warning[w]?.() ?? w}</Notice>
-				{/each}
-				{#if nothingNew && !summary.alreadyImported}
-					<p class="text-[14px] text-muted">{m.data_import_nothing()}</p>
-				{/if}
-				<Button disabled={busy || summary.alreadyImported || nothingNew} onclick={apply}
-					>{m.data_import_button()}</Button
-				>
 			</div>
 		{/if}
 	</Card>
 
 	<Card title={m.data_delete_title()}>
-		<p class="text-[15px]">{m.data_delete_body()}</p>
-		<p class="text-[14px] text-muted">{m.data_delete_backups()}</p>
+		<p class="text-[13px] text-muted">{m.data_delete_body()}</p>
 		<Chips
 			label={m.data_delete_shared()}
 			bind:value={removeShared}
@@ -338,19 +444,23 @@
 			]}
 		/>
 		<p class="text-[13px] text-muted">{m.data_delete_shared_note()}</p>
-		<Button
-			variant="danger"
+		<p class="text-[13px] text-muted">{m.data_delete_backups()}</p>
+		<button
+			type="button"
 			disabled={busy}
 			onclick={() => ((confirming = true), (understood = false), (problem = ''))}
-			>{m.data_delete_button()}</Button
+			class="min-h-[52px] rounded-button bg-surface2 px-5 text-[17px] font-[750] text-bad disabled:opacity-50"
+			>{m.data_delete_button()}</button
 		>
 	</Card>
 </main>
 
 {#if confirming}
 	<Sheet title={m.data_delete_confirm_title()} onclose={() => (confirming = false)}>
-		<p class="text-[15px]">{m.data_delete_body()}</p>
-		<p class="text-[14px] text-muted">{m.data_delete_backups()}</p>
+		<p class="text-[15px]">
+			{m.data_delete_confirm_body()}
+			{removeShared === 'keep' ? m.data_delete_confirm_keep() : m.data_delete_confirm_remove()}
+		</p>
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<label class="flex min-h-11 items-center gap-3 text-[15px] font-semibold">
 			<input type="checkbox" bind:checked={understood} class="size-5 accent-[var(--bad)]" />

@@ -11,13 +11,16 @@
 		options: Option[];
 		value: T;
 		onchange?: (value: T) => void;
+		/** The row around it already says what this is. */
+		hideLabel?: boolean;
 	}
-	let { label, options, value = $bindable(), onchange }: Props = $props();
+	let { label, options, value = $bindable(), onchange, hideLabel = false }: Props = $props();
 	const at = $derived(options.findIndex((o) => o.value === value));
 </script>
 
 <fieldset class="flex flex-col gap-1.5">
-	<legend class="mb-1.5 text-[13px] font-[650] text-muted">{label}</legend>
+	<legend class={hideLabel ? 'sr-only' : 'mb-1.5 text-[13px] font-[650] text-muted'}>{label}</legend
+	>
 	<div
 		class="tray relative grid auto-cols-[minmax(0,1fr)] grid-flow-col rounded-input bg-surface2 p-1"
 		role="radiogroup"

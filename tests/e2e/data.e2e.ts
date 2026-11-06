@@ -44,7 +44,7 @@ test('an export imports into another account after a preview, once', async ({ pa
 	const empty = await apiAs<{ entries: unknown[] }>(page, 'GET', `/api/v1/diary/${DAY}`);
 	expect(empty.entries).toHaveLength(0);
 
-	await preview.getByRole('button', { name: 'Import' }).click();
+	await preview.getByRole('button', { name: /^Import/ }).click();
 	await expect(page.getByRole('status')).toContainText('Import finished');
 	const day = await apiAs<{ entries: { description: string }[] }>(
 		page,
@@ -57,7 +57,7 @@ test('an export imports into another account after a preview, once', async ({ pa
 	// The same file again is recognised and cannot be applied.
 	await chooser.setInputFiles({ name: 'export.zip', mimeType: 'application/zip', buffer: archive });
 	await expect(preview).toContainText('already been imported');
-	await expect(preview.getByRole('button', { name: 'Import' })).toBeDisabled();
+	await expect(preview.getByRole('button', { name: /^Import/ })).toHaveCount(0);
 });
 
 test('a file that is not an intact export is refused', async ({ page }) => {
@@ -138,12 +138,16 @@ test('a LoseIt export imports after a preview that checks it against LoseIt’s 
 		buffer: Buffer.from(loseit)
 	});
 	const preview = page.getByTestId('import-preview');
-	await expect(preview).toContainText('LoseIt export');
-	await expect(preview).toContainText('All 4 days add up');
+	await expect(page.getByText(/^LoseIt · /)).toBeVisible();
+	await expect(preview).toContainText('All 4 days match');
 	await expect(preview.getByRole('row', { name: /Diary entries/ })).toContainText('18');
-	await expect(preview).toContainText('Entries you deleted in LoseIt are left out (1)');
+	await expect(preview.getByRole('row', { name: /Deleted in LoseIt/ })).toContainText('1');
+	await expect(preview).toContainText('First weigh-in');
+	await preview.getByRole('radio', { name: 'lb' }).click();
+	await expect(preview).toContainText(/First weigh-in: [\d,]+ lb/);
 	await preview.getByRole('radio', { name: 'kg' }).click();
-	await preview.getByRole('button', { name: 'Import' }).click();
+	await expect(preview).toContainText(/First weigh-in: [\d,]+ kg/);
+	await preview.getByRole('button', { name: /^Import/ }).click();
 	await expect(page.getByRole('status')).toContainText('Import finished');
 	const day = await apiAs<{ entries: { food: { name: string } | null }[] }>(
 		page,

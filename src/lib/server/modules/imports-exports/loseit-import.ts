@@ -62,6 +62,8 @@ export interface LoseItSummary {
 	dateRange: { from: string; to: string } | null;
 	counts: Record<Kind | 'dayCompletion' | 'profile', LoseItCounts>;
 	deletedInLoseIt: number;
+	/** The earliest weigh-in as written in the file (it has no unit), so the person can tell which unit it is in. */
+	firstWeight: number | null;
 	/** Days whose imported entries do not add up to LoseIt's own daily food total (should be none). */
 	reconciliation: { days: number; mismatched: string[] };
 	warnings: LoseItWarning[];
@@ -358,6 +360,11 @@ export async function planLoseIt(
 			dateRange,
 			counts,
 			deletedInLoseIt: data.deletedEntries,
+			firstWeight:
+				data.weights.reduce<{ date: string; value: number } | null>(
+					(first, w) => (!first || w.date < first.date ? w : first),
+					null
+				)?.value ?? null,
 			reconciliation: { days: data.days.length, mismatched },
 			warnings: [...warnings],
 			options
