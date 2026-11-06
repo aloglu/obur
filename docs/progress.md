@@ -20,9 +20,14 @@ The owner finished reviewing the design on 2026-11-06 and approved recording it 
 8. **Journal and Progress:** day box, month title return, desktop layout, chart label column.
 9. **Signing in and first day:** sign in, set up, join, recovery codes, signed out, budget setup, empty states.
 10. **Recipes, saved meals, foods, Your data, Household, Help, reminders.**
-11. **Offline warnings and a full desktop, dark-mode and 200 % pass.**
+11. **Finish label scanning and the leftovers:** a blurry-photo message, a waiting line when the scanner is busy, notes per decision on Check the label; Create it as food keeps what is already in the sheet; a browser test of the voice-off and no-microphone cards; Profile's details as rows into setup; the badge grid on a new account's Progress; New weigh-in on an empty Progress opening in place.
+12. **App icon choice** on the Appearance page. The owner picks the icons from a review page first, and checks the fonts against the new themes at the same stop. An iPhone reads the icon when the app is added to the Home Screen, so changing it there means removing and adding the app again.
+13. **Pounds,** if the owner says yes (asked 2026-11-07).
+14. **Offline warnings and a full desktop, dark-mode and 200 % pass,** last, so it covers everything above.
 
-Open and not blocking: the app icon and fonts against the new themes.
+Then the pre-release check (security, accessibility, long Turkish names, restore rehearsal), the owner's real-iPhone pass, and the LoseIt cut-over when the owner chooses.
+
+Owner, 2026-11-07: scan gaps and the app icon choice are in before release, nothing is deferred to after it: "I don't want a half-baked released product."
 
 ## Phase 2 plan
 
