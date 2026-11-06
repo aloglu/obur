@@ -371,3 +371,26 @@ test('Recently deleted brings an entry back after the toast is gone', async ({
 	await page.goto('/');
 	await expect(page.getByRole('region', { name: 'Dinner' })).toContainText('Lahmacun');
 });
+
+test('a note being edited stays above the keyboard and the tab bar', async ({ page }, testInfo) => {
+	await signedInAs(page, `Klavye ${testInfo.project.name}`);
+	await page.goto('/');
+	await page.waitForLoadState('networkidle');
+	const size = page.viewportSize()!;
+	const note = page.getByRole('region', { name: 'Notes' });
+	await note.getByRole('button', { name: /^Notes/ }).click();
+	const field = note.getByLabel('Note for this day');
+	await expect(field).toBeFocused();
+	const done = note.getByRole('button', { name: 'Done' });
+	await expect(done).toBeInViewport({ ratio: 1 });
+
+	// The keyboard opening shrinks what can be seen; the page follows without the field being tapped again.
+	await page.setViewportSize({ width: size.width, height: Math.round(size.height * 0.55) });
+	await expect(field).toBeFocused();
+	await expect(async () => {
+		const box = (await done.boundingBox())!;
+		const bar = await page.locator('[data-tabbar]').boundingBox();
+		const limit = bar?.height ? bar.y : page.viewportSize()!.height;
+		expect(box.y + box.height).toBeLessThanOrEqual(limit);
+	}).toPass();
+});

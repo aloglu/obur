@@ -5,6 +5,7 @@
 	import { onDestroy, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
+	import { keepInView } from '#lib/client/keep-in-view.ts';
 	import { offline, submit } from '#lib/client/offline/sync.svelte.ts';
 	import { clockTime } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -28,6 +29,7 @@
 	let status = $state<'idle' | 'saving' | 'saved' | 'device'>('idle');
 	let savedAt = $state('');
 	let field = $state<HTMLTextAreaElement>();
+	let editor = $state<HTMLElement>();
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let dirty = false;
 
@@ -94,6 +96,11 @@
 		field?.setSelectionRange(text.length, text.length);
 	}
 
+	// While editing, the field and its Done stay above the keyboard, also while the card is still opening.
+	$effect(() => {
+		if (editing && editor) return keepInView(editor);
+	});
+
 	function toggle() {
 		open = !open;
 		if (open && !hasText) void edit();
@@ -146,7 +153,7 @@
 	</button>
 	<div class={['collapse-row', open && 'open']}>
 		<div>
-			<div class="flex flex-col gap-2 pt-[3px] pb-3.5">
+			<div bind:this={editor} class="flex flex-col gap-2 pt-[3px] pb-3.5">
 				{#if editing}
 					<textarea
 						bind:this={field}

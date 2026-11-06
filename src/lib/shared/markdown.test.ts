@@ -15,6 +15,28 @@ describe('parseInline', () => {
 		]);
 	});
 
+	it('reads underscores as well as asterisks', () => {
+		expect(parseInline('_a_ and __b__')).toEqual([
+			{ kind: 'italic', text: 'a' },
+			{ kind: 'text', text: ' and ' },
+			{ kind: 'bold', text: 'b' }
+		]);
+	});
+
+	it('handles Turkish text around underscores', () => {
+		expect(parseInline('_çay_ içtim')).toEqual([
+			{ kind: 'italic', text: 'çay' },
+			{ kind: 'text', text: ' içtim' }
+		]);
+	});
+
+	it.each(['snake_case_name', 'çay_ve_simit', '2_000_000', 'a _ b _ c', '_ open'])(
+		'leaves %j as text',
+		(source) => {
+			expect(parseInline(source)).toEqual([{ kind: 'text', text: source }]);
+		}
+	);
+
 	it('leaves anything but an http(s) link as text', () => {
 		const source = '[x](javascript:alert(1)) <img src=x onerror=alert(1)>';
 		expect(parseInline(source)).toEqual([{ kind: 'text', text: source }]);
@@ -53,6 +75,8 @@ describe('notePreview', () => {
 	it.each([
 		['\n\n- [ ] **Weigh** in', 'Weigh in'],
 		['# Heading', 'Heading'],
+		['_soft_ and __loud__', 'soft and loud'],
+		['snake_case_name', 'snake_case_name'],
 		['[a link](https://x.example) here', 'a link here'],
 		['', '']
 	])('%j reads %j', (source, preview) => {

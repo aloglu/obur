@@ -1,5 +1,5 @@
-// The small Markdown a day note understands (docs/ui.md, "Day notes"): headings, bold, italic, code, links, lists, to-dos
-// and quotes. It parses to plain data, rendered by ui/today/NoteBody.svelte as ordinary elements, never as HTML, so a note
+// The small Markdown a day note understands (docs/ui.md, "Day notes"): our own subset, not a full flavour. Headings, bold,
+// italic, code, links, lists, to-dos and quotes, with no nesting inside a line. It parses to plain data, rendered by ui/today/NoteBody.svelte as ordinary elements, never as HTML, so a note
 // can't inject anything into the page. Only http(s) links become links.
 export type Inline =
 	| { kind: 'text'; text: string }
@@ -13,17 +13,30 @@ export type Block =
 	| { kind: 'list'; ordered: boolean; items: Inline[][] }
 	| { kind: 'tasks'; items: { line: number; done: boolean; content: Inline[] }[] };
 
-const INLINE = /`([^`]+)`|\*\*([^*]+)\*\*|\*([^*\s][^*]*?)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+// `_` only counts at a word's edge, so names like snake_case stay as they are.
+const INLINE = new RegExp(
+	[
+		'`(?<code>[^`]+)`',
+		'\\*\\*(?<bold>[^*]+)\\*\\*',
+		'(?<![\\p{L}\\p{N}_])__(?<bold2>[^_]+)__(?![\\p{L}\\p{N}_])',
+		'\\*(?<italic>[^*\\s][^*]*?)\\*',
+		'(?<![\\p{L}\\p{N}_])_(?<italic2>[^_\\s][^_]*?)_(?![\\p{L}\\p{N}_])',
+		'\\[(?<label>[^\\]]+)\\]\\((?<href>https?:\\/\\/[^)\\s]+)\\)'
+	].join('|'),
+	'gu'
+);
 
 export function parseInline(source: string): Inline[] {
 	const out: Inline[] = [];
 	let at = 0;
 	for (const m of source.matchAll(INLINE)) {
+		const g = m.groups!;
 		if (m.index > at) out.push({ kind: 'text', text: source.slice(at, m.index) });
-		if (m[1] !== undefined) out.push({ kind: 'code', text: m[1] });
-		else if (m[2] !== undefined) out.push({ kind: 'bold', text: m[2] });
-		else if (m[3] !== undefined) out.push({ kind: 'italic', text: m[3] });
-		else out.push({ kind: 'link', text: m[4], href: m[5] });
+		if (g.code !== undefined) out.push({ kind: 'code', text: g.code });
+		else if ((g.bold ?? g.bold2) !== undefined) out.push({ kind: 'bold', text: g.bold ?? g.bold2 });
+		else if ((g.italic ?? g.italic2) !== undefined)
+			out.push({ kind: 'italic', text: g.italic ?? g.italic2 });
+		else out.push({ kind: 'link', text: g.label, href: g.href });
 		at = m.index + m[0].length;
 	}
 	if (at < source.length) out.push({ kind: 'text', text: source.slice(at) });
@@ -80,10 +93,10 @@ export function parseNote(source: string): Block[] {
 /** The first line without its Markdown, for the closed card. */
 export function notePreview(source: string): string {
 	const first = source.split('\n').find((l) => l.trim()) ?? '';
-	return first
-		.replace(/^\s*([-*]\s+(\[[ xX]\]\s*)?|#{1,3}\s+|>\s?|\d+[.)]\s+)/, '')
-		.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-		.replace(/\*\*|\*|`/g, '');
+	const line = first.replace(/^\s*([-*]\s+(\[[ xX]\]\s*)?|#{1,3}\s+|>\s?|\d+[.)]\s+)/, '');
+	return parseInline(line)
+		.map((part) => part.text)
+		.join('');
 }
 
 /** Ticks or unticks the to-do on a line. */
