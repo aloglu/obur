@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, signedInAs } from './fixtures.ts';
+import { apiAs, signedInAs, choose } from './fixtures.ts';
 
 /** A birth date that makes the person exactly `years` old today (birthdays count from the day itself). */
 const bornYearsAgo = (years: number) => `${new Date().getFullYear() - years}-01-01`;
@@ -182,15 +182,8 @@ test('day totals replace each other, and the budget settings apply from today', 
 	await page.goto('/profile');
 	await page.getByLabel('Add calories I burn to my budget').uncheck();
 	await expect(page.getByRole('status')).toContainText('Budget settings saved');
-	await expect(page.getByRole('radio', { name: 'Keep deficit' })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
-	await page.getByRole('radio', { name: 'Maintain' }).click();
-	await expect(page.getByRole('radio', { name: 'Maintain' })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
+	await choose(page, /: Keep deficit$/, 'Maintain');
+	await expect(page.getByRole('button', { name: /: Maintain$/ })).toBeVisible();
 	// Own macro percentages: they start from the balanced split, must add up to 100 %, and apply from today.
 	await page.getByRole('radio', { name: 'My own %' }).click();
 	const protein = page.getByLabel('Protein', { exact: true });

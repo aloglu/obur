@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, createFood, signedInAs } from './fixtures.ts';
+import { apiAs, createFood, signedInAs, choose } from './fixtures.ts';
 
 const bread = (tag: string) => ({
 	name: `Premium Light Ekmek ${tag}`,
@@ -196,12 +196,8 @@ for (const theme of ['light', 'dark'] as const) {
 }
 
 test('a theme chosen in More sticks and repaints the page', async ({ page }, testInfo) => {
-	test.skip(
-		testInfo.project.name.includes('desktop'),
-		'More is the phone route; Settings shares it'
-	);
 	await signedInAs(page, `Tema ${testInfo.project.name}`);
-	await page.goto('/more');
+	await page.goto('/more/appearance');
 	const background = () =>
 		page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
 	expect(await background()).toBe('#f6f3ee');
@@ -232,4 +228,17 @@ test('a field menu opens where it fits, and closes with its choice made', async 
 	await sheet.getByRole('option', { name: 'Snacks' }).click();
 	await expect(sheet.getByRole('button', { name: 'Meal: Snacks' })).toBeFocused();
 	await expect(sheet.getByRole('option', { name: 'Snacks' })).toBeHidden();
+});
+
+test('More shows its values; Settings links still arrive there', async ({ page }, testInfo) => {
+	await signedInAs(page, `Daha ${testInfo.project.name}`);
+	await page.goto('/settings');
+	await expect(page).toHaveURL(/\/more$/);
+	await expect(page.getByRole('link', { name: /Appearance.*Pazar · System/ })).toBeVisible();
+
+	await page.getByRole('link', { name: /Units/ }).click();
+	await choose(page, /^Time:/, '12-hour');
+	await expect(page.getByRole('button', { name: 'Time: 12-hour' })).toBeVisible();
+	await page.goto('/more');
+	await expect(page.getByRole('link', { name: /Units.*kg · 12-hour/ })).toBeVisible();
 });

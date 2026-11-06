@@ -123,9 +123,9 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 
 **Navigation**
 - **Phone status bar:** pages start 12 px below the status bar (`env(safe-area-inset-top)`, plus room for iOS's blur fading out below it); content scrolls under it, where iOS blurs it (owner, 2026-10-31: keep the blur, but nothing should sit in it at rest).
-- **Phone:** a floating pill tab bar inset 12 px from the screen edges, with Today, Log, Progress and More. The active tab gets a soft accent background and accent text.
-- **Desktop (≥ 760 px):** a 232 px side nav with Today, Log and Progress at the top, and Profile and Settings pinned at the bottom. The side nav is sticky at full viewport height, so the bottom links are always visible. There is no More on desktop.
-- **More (phone only):** Appearance first, then rows for Profile and goals, Units and formats, Your data and Household (admin).
+- **Phone:** a floating tab bar inset 12 px from the screen edges, with Today, Log, Journal, Progress and More. The active tab gets a soft accent background and accent text.
+- **From 760 px:** a sticky side nav with the same five items: icons only (72 px) until 1100 px, labelled (232 px) from there. `/settings` redirects to `/more`.
+- **More:** see "More and settings" in the design review above.
 - **Theme:** chosen in Settings (desktop) or More (phone) as System / Light / Dark, with System as the default. There is no theme toggle in the header.
 
 **Header**

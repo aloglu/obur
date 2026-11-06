@@ -5,7 +5,7 @@
 	import { api } from '#lib/client/api.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { BudgetSettings } from '#lib/shared/goal-types.ts';
-	import Chips from '#lib/ui/Chips.svelte';
+	import MenuRow from '#lib/ui/MenuRow.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 	import { dayTitle, kcal } from '#lib/shared/format.ts';
 	import { budgetForDay } from '#lib/shared/goals.ts';
@@ -102,7 +102,7 @@
 				</span>
 			</label>
 			{#if t.mode === 'calculated' && t.goalWeightKg !== null}
-				<Chips
+				<MenuRow
 					label={m.profile_settings_goal()}
 					value={t.atGoal}
 					onchange={(atGoal) => change({ atGoal: atGoal as BudgetSettings['atGoal'] })}

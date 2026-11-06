@@ -12,8 +12,9 @@
 	<SettingsList
 		isAdmin={data.user?.role === 'admin'}
 		displayName={data.user?.displayName ?? ''}
-		initialTheme={data.theme}
-		initialPalette={data.palette}
+		theme={data.theme}
+		palette={data.palette}
+		timeFormat={data.timeFormat}
 		reminders={data.pushKey !== null}
 	/>
 </main>

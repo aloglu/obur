@@ -37,6 +37,24 @@ export function setPalette(id: PaletteId): void {
 	document.querySelector('meta[name="theme-color"][media*="dark"]')?.setAttribute('content', dark);
 }
 
+export type TimeFormat = 'device' | '24' | '12';
+
+export function setTimeFormat(choice: TimeFormat): void {
+	document.cookie =
+		choice === 'device'
+			? `obur_time=; path=/; max-age=0; samesite=lax${secure()}`
+			: `obur_time=${choice}; path=/; max-age=${YEAR}; samesite=lax${secure()}`;
+}
+
+/** A clock time in the chosen format; "device" leaves it to the browser's locale. */
+export function clockTime(iso: string, format: TimeFormat): string {
+	return new Date(iso).toLocaleTimeString(format === 'device' ? undefined : 'en-GB', {
+		hour: '2-digit',
+		minute: '2-digit',
+		...(format === 'device' ? {} : { hourCycle: format === '12' ? 'h12' : 'h23' })
+	});
+}
+
 /** Stores the device's time zone; returns true if it changed (so the page should reload its data). */
 export function syncZoneCookie(): boolean {
 	const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;

@@ -2,6 +2,8 @@
 	// Edit or delete water and weight readings after the Undo toast is gone. A deleted row stays in place with its
 	// own Undo (a toast would sit behind the open sheet). Weight changes can move a calculated budget, which the
 	// sheet reports in place.
+	import { page } from '$app/state';
+	import { clockTime } from '#lib/client/prefs.ts';
 	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
@@ -35,8 +37,7 @@
 
 	const unit = $derived(kind === 'weight' ? 'kg' : 'ml');
 	const show = (value: number) => formatDecimal(value, ',', kind === 'weight' ? 2 : 0);
-	const time = (iso: string) =>
-		new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+	const time = (iso: string) => clockTime(iso, page.data.timeFormat ?? 'device');
 	const value = $derived(parseDecimal(text));
 	// The same ranges as the database: weight under 700 kg, water up to 10 litres.
 	const valid = $derived(

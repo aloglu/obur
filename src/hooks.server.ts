@@ -86,6 +86,8 @@ const handleSession: Handle = async ({ event, resolve }) => {
 	event.locals.theme = theme === 'light' || theme === 'dark' ? theme : undefined;
 	const palette = event.cookies.get('obur_palette');
 	event.locals.palette = isPalette(palette) ? palette : DEFAULT_PALETTE;
+	const time = event.cookies.get('obur_time');
+	event.locals.timeFormat = time === '12' || time === '24' ? time : 'device';
 	const zone = event.cookies.get('obur_zone') ?? '';
 	event.locals.zone = isValidZone(zone) ? zone : 'UTC';
 

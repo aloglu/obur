@@ -30,7 +30,6 @@
 				resolve('/(app)/journal'),
 				resolve('/(app)/progress'),
 				resolve('/(app)/more'),
-				resolve('/(app)/settings'),
 				resolve('/(app)/profile'),
 				resolve('/(app)/offline')
 			];

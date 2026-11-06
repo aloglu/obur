@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Bottom sheet on phones, 440 px right-side sheet on desktop (docs/ui.md). A native <dialog> provides the focus
+	// Bottom sheet on phones, a centred dialog from 760 px (docs/ui.md). A native <dialog> provides the focus
 	// trap, Escape to close and an inert background.
 	import type { Snippet } from 'svelte';
 	import X from '@lucide/svelte/icons/x';
@@ -20,7 +20,7 @@
 	aria-label={title}
 	{onclose}
 	onclick={(e) => e.target === dialog && onclose()}
-	class="sheet m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-sheet bg-surface p-0 text-text shadow-sheet backdrop:bg-scrim desk:mt-0 desk:ml-auto desk:h-dvh desk:max-h-dvh desk:w-[440px] desk:rounded-none desk:rounded-l-sheet"
+	class="sheet m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-sheet bg-surface p-0 text-text shadow-sheet backdrop:bg-scrim desk:m-auto desk:max-h-[86dvh] desk:w-[480px] desk:rounded-sheet"
 >
 	<div class="flex flex-col gap-4 p-[18px] pb-[max(18px,env(safe-area-inset-bottom))]">
 		<div class="flex items-center justify-between gap-3">
@@ -42,7 +42,7 @@
 	}
 	@media (min-width: 760px) {
 		.sheet[open] {
-			animation-name: slide-left;
+			animation-name: fade-in;
 		}
 	}
 	@keyframes slide-up {
@@ -51,10 +51,10 @@
 			opacity: 0.6;
 		}
 	}
-	@keyframes slide-left {
+	@keyframes fade-in {
 		from {
-			transform: translateX(24px);
-			opacity: 0.6;
+			transform: scale(0.97);
+			opacity: 0;
 		}
 	}
 </style>

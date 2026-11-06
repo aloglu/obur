@@ -106,7 +106,7 @@ test('signing out asks before discarding entries that have not been sent', async
 	await context.setOffline(true);
 	await quickAdd(page, '120', 'Elma');
 	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
-	await nav.getByRole('link', { name: isPhone(page) ? 'More' : 'Settings' }).click();
+	await nav.getByRole('link', { name: 'More' }).click();
 
 	// Sign-out tries to send first, then asks; declining keeps everything.
 	let dialog = page.waitForEvent('dialog');
