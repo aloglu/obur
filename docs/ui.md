@@ -65,7 +65,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 - **Recovery codes:** an amber warning card ("Keep these somewhere safe", shown only now), then "I've saved these codes" as its own row with the app's checkbox; Continue waits for it.
 - **Signed out with entries waiting:** the regular sign-in layout, with the warning card right above the button. It must never cover the name. The device keeps a small note (`client/offline/waiting.ts`: name and count only) because nobody is signed in to read the queue by account.
 - **The budget is a free choice.** First day is the real Today, only empty. After "Just log" nothing on Today mentions a missing budget; the only pointer is the toast when the welcome card is dismissed (More → Profile). Profile's empty card reads "Daily budget · Optional…". Repeatedly mentioning a missing budget makes people feel they are doing something wrong (owner).
-- **Budget setup:** Body fat and Waist are always visible under the other fields, with no divider, expander or "Optional" in the label (the fields say it), and even spacing. No explanation under "Sex used by the formula".
+- **Budget setup:** Body fat and Waist are always visible under the other fields, with no divider, expander or "Optional" in the label (the fields say it), and even spacing. No explanation under "Sex used by the formula". Three steps (About you, Your estimate, Your goal). A quiet "Set a number yourself" under step 1 keeps a fixed budget reachable for anyone, not only those the formula doesn't apply to (the demo offered it only from the restriction card).
 - **Empty Journal day:** the date and Open, then only "Nothing logged", centred in its line; no kcal or dashes. A day with a weigh-in but no food keeps its columns, so the weight shows.
 
 ### Today
@@ -106,7 +106,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 
 - **More** is compact: rows with current values; Appearance, Goal, Units and Reminders on nested pages. Sign out sits in its row beside the name.
 - **Appearance:** mode, then themes as cards, then app icons, with no descriptions except a short line: "A new icon shows after you add obur to the Home Screen again."
-- **Goal:** Pace is a row ("Steady · 0,25 kg a week") opening a menu. **Units:** Weight and a new **Time** (24-hour or 12-hour, defaulting to the device).
+- **Goal:** Pace is a row ("Steady · 0,25 kg a week") opening a menu. Goal weight opens in place and moved here from Profile's details; Maintain and the 1 kg pace ("Fastest") stay as options because setup offers them. Without a calculated budget the page points to setup. **Units:** Weight and a new **Time** (24-hour or 12-hour, defaulting to the device).
 - **Reminders:** just the time; tapping opens the native picker. The Home Screen hint shows only on Reminders, in three one-line steps with room between them.
 - **Recipes and saved meals:**
   - Archive moves into a "…" menu by the title; its confirmation opens under the title.

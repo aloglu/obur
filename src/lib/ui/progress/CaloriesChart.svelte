@@ -68,9 +68,7 @@
 	const overStripes = 'repeating-linear-gradient(45deg, var(--bad) 0 3px, var(--surface) 3px 5px)';
 </script>
 
-{#if bars.every((b) => b.eatenKcal === null)}
-	<p class="text-[14px] text-muted">{m.history_calories_none()}</p>
-{:else}
+{#if bars.some((b) => b.eatenKcal !== null)}
 	<figure class="m-0 flex flex-col gap-1.5">
 		<figcaption class="sr-only">{summary}</figcaption>
 		<p class="sr-only" aria-live="polite">{readout}</p>

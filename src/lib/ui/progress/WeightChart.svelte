@@ -67,9 +67,7 @@
 	const gutter = $derived(wide.current ? 42 : 30);
 </script>
 
-{#if data.length === 0}
-	<p class="text-[14px] text-muted">{m.history_weight_none()}</p>
-{:else}
+{#if data.length > 0}
 	<figure class="m-0">
 		<figcaption class="sr-only">{summary}</figcaption>
 		<p class="sr-only" aria-live="polite">{readout}</p>

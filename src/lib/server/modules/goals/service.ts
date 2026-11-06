@@ -19,6 +19,7 @@ import {
 	ProfileDetailsInput,
 	ProfileInput,
 	type BudgetSettings,
+	type BudgetSettingsChange,
 	type DetailsOutcome,
 	type MacroChoice,
 	type Profile,
@@ -326,7 +327,7 @@ export function createGoals(db: Database) {
 			userId: string,
 			today: string,
 			latestWeightKg: number | null,
-			change: Partial<BudgetSettings>
+			change: BudgetSettingsChange
 		): Promise<TargetVersion> {
 			return withUser(db, userId, async (tx) => {
 				const [current] = await tx
@@ -347,7 +348,16 @@ export function createGoals(db: Database) {
 						? await calculatedValues(
 								tx,
 								userId,
-								{ ...repeatRequest(current, today), ...settings },
+								{
+									...repeatRequest(current, today),
+									...settings,
+									...(change.rateKgPerWeek === undefined
+										? {}
+										: { rateKgPerWeek: change.rateKgPerWeek }),
+									...(change.goalWeightKg === undefined
+										? {}
+										: { goalWeightKg: change.goalWeightKg })
+								},
 								latestWeightKg ?? ((current.inputs as Record<string, unknown>).weightKg as number)
 							)
 						: {

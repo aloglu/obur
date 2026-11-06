@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
+	import { paceLabel } from '#lib/ui/goal-pace.ts';
 	import SettingsList from '#lib/ui/shell/SettingsList.svelte';
 
 	let { data } = $props();
@@ -16,6 +17,7 @@
 		palette={data.palette}
 		timeFormat={data.timeFormat}
 		deletedCount={data.deletedCount}
+		goal={data.goal === null ? null : paceLabel(data.goal)}
 		reminders={data.pushKey !== null}
 	/>
 </main>

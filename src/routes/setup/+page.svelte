@@ -11,6 +11,7 @@
 		suggestedLabel,
 		takeFragmentToken
 	} from '#lib/client/passkeys.ts';
+	import { showToast } from '#lib/client/toast.svelte.ts';
 	import AuthShell from '#lib/ui/AuthShell.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
@@ -55,6 +56,10 @@
 	async function finish() {
 		await invalidateAll();
 		await goto(resolve('/(app)'));
+		showToast({
+			message: m.welcome_toast({ name: name.trim() }),
+			detail: m.welcome_toast_detail()
+		});
 	}
 </script>
 

@@ -48,5 +48,9 @@
 	>
 		{#if day}<DayBox {day} today={data.today} weight={data.dayWeights[day.date] ?? null} />{/if}
 	</CalendarMonth>
-	<MonthHighlights weeks={data.weeks} monthName={monthName(data.month)} />
+	<MonthHighlights
+		weeks={data.weeks}
+		monthName={monthName(data.month)}
+		current={data.isCurrentMonth}
+	/>
 </main>

@@ -18,10 +18,12 @@
 		palette: PaletteId;
 		timeFormat: TimeFormat;
 		deletedCount: number;
+		/** The goal row's value, when there's a calculated budget. */
+		goal: string | null;
 		/** Reminders are configured on this server. */
 		reminders: boolean;
 	}
-	let { isAdmin, displayName, theme, palette, timeFormat, deletedCount, reminders }: Props =
+	let { isAdmin, displayName, theme, palette, timeFormat, deletedCount, goal, reminders }: Props =
 		$props();
 
 	const mode = $derived(
@@ -53,6 +55,7 @@
 		label={m.more_appearance()}
 		value="{paletteOf(palette).name} · {mode}"
 	/>
+	<NavRow href={resolve('/(app)/more/goal')} label={m.more_goal()} value={goal ?? undefined} />
 	<NavRow href={resolve('/(app)/more/units')} label={m.more_units()} value="kg · {time}" />
 	{#if reminders}
 		<NavRow href={resolve('/(app)/settings/reminders')} label={m.reminders_title()} />

@@ -2,6 +2,10 @@
 	// The history on Progress (docs/ui.md, "Progress charts"): Weight, Calories and Nutrients tabs on every screen, one
 	// topic at a time in one card. Each topic's headline is also the chart's readout: it follows the finger while
 	// looking at a point, and goes back to the range's figure on release.
+	import ChartColumn from '@lucide/svelte/icons/chart-column';
+	import ChartPie from '@lucide/svelte/icons/chart-pie';
+	import TrendingDown from '@lucide/svelte/icons/trending-down';
+	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { dateWithYear, dayAndMonth, kcal, shortDate } from '#lib/shared/format.ts';
 	import type { CalorieBar, ProgressHistory, WeightPoint } from '#lib/shared/history.ts';
@@ -95,6 +99,7 @@
 	});
 
 	let lookedBar = $state<CalorieBar | null>(null);
+	const noBars = $derived(history.bars.every((b) => b.eatenKcal === null));
 	const completeDays = (count: number) =>
 		count === 1 ? m.history_complete_day() : m.history_complete_days({ count: String(count) });
 	const calorieLabel = $derived.by(() => {
@@ -173,6 +178,14 @@
 	const value = 'font-[650] text-text tabular-nums';
 </script>
 
+{#snippet empty(text: string, Icon: typeof ChartPie)}
+	<div
+		class="mt-3 flex h-[150px] flex-col items-center justify-center gap-1.5 rounded-input border-2 border-dashed border-line px-4 text-center text-[14px] text-muted"
+	>
+		<Icon size={22} aria-hidden="true" />{text}
+	</div>
+{/snippet}
+
 {#snippet weightRows(v: WeightView)}
 	{@const current = v === 'trend' ? last!.trend : last!.weight}
 	{#if history.weight.goalKg !== null && current > history.weight.goalKg}
@@ -234,6 +247,19 @@
 >
 	{#if tab === 'weight'}
 		<h2 class="sr-only">{m.history_tab_weight()}</h2>
+		{#if !first}
+			<p class="text-[13px] font-[650] text-muted">{m.history_latest()}</p>
+			<p class="mt-2 {big}">–</p>
+			{@render empty(
+				history.range === 'All' ? m.history_empty_weight() : m.history_weight_none(),
+				TrendingDown
+			)}
+			<a
+				href={resolve('/(app)')}
+				class="mt-3 grid min-h-12 place-items-center rounded-input border border-line text-[15px] font-[750]"
+				>{m.history_new_weighin()}</a
+			>
+		{/if}
 		{#if first && last}
 			<!-- The label above the weight is the switch: both names, the one shown dark, the other faint. Each keeps a 44 px
 			     tap area without adding height. -->
@@ -261,16 +287,18 @@
 			</p>
 			<p class={sub}>{weightSub}</p>
 		{/if}
-		<div class="mt-2.5">
-			<WeightChart
-				{points}
-				mode={view}
-				from={history.from}
-				to={history.to}
-				goalKg={history.weight.goalKg}
-				onlook={(point) => (lookedAt = point)}
-			/>
-		</div>
+		{#if first}
+			<div class="mt-2.5">
+				<WeightChart
+					{points}
+					mode={view}
+					from={history.from}
+					to={history.to}
+					goalKg={history.weight.goalKg}
+					onlook={(point) => (lookedAt = point)}
+				/>
+			</div>
+		{/if}
 		{#if first && last}
 			<!-- Both views' rows share one cell, so switching never changes the card's height. -->
 			<div class="mt-2 grid">
@@ -291,69 +319,80 @@
 		<p class="mt-2 flex items-baseline gap-1.5">
 			<span class={big}><Roll value={calorieValue} /></span><span class={unit}>kcal</span>
 		</p>
-		<p class={sub}>{calorieSub}</p>
-		<div class="mt-2.5">
-			<CaloriesChart
-				bars={history.bars}
-				weekly={history.weekly}
-				from={history.from}
-				to={history.to}
-				onlook={(bar) => (lookedBar = bar)}
-			/>
-		</div>
-		<div class={[rows, 'mt-2']}>
-			<div class={row}>
-				<span>{m.history_days_under()}</span><b class={value}>{daysUnder}</b>
+		{#if noBars}
+			{@render empty(
+				history.range === 'All' ? m.history_empty_calories() : m.history_calories_none(),
+				ChartColumn
+			)}
+		{:else}
+			<p class={sub}>{calorieSub}</p>
+			<div class="mt-2.5">
+				<CaloriesChart
+					bars={history.bars}
+					weekly={history.weekly}
+					from={history.from}
+					to={history.to}
+					onlook={(bar) => (lookedBar = bar)}
+				/>
 			</div>
-			<div class={row}>
-				<span>{m.history_days_over()}</span><b class={value}>{a.overBudgetDays}</b>
+			<div class={[rows, 'mt-2']}>
+				<div class={row}>
+					<span>{m.history_days_under()}</span><b class={value}>{daysUnder}</b>
+				</div>
+				<div class={row}>
+					<span>{m.history_days_over()}</span><b class={value}>{a.overBudgetDays}</b>
+				</div>
+				<div class={row}>
+					<span>{m.history_water()}</span>
+					<b class={value}
+						>{a.waterMl.value === null
+							? '–'
+							: `${formatDecimal(a.waterMl.value / 1000, ',', 1)} l`}</b
+					>
+				</div>
 			</div>
-			<div class={row}>
-				<span>{m.history_water()}</span>
-				<b class={value}
-					>{a.waterMl.value === null
-						? '–'
-						: `${formatDecimal(a.waterMl.value / 1000, ',', 1)} l`}</b
-				>
-			</div>
-		</div>
+		{/if}
 	{:else}
 		<h2 class="sr-only">{m.history_tab_nutrients()}</h2>
 		<p class="text-[13px] font-[650] text-muted">{m.history_average_complete()}</p>
-		<div class="mt-3.5 flex flex-col gap-3">
-			{#each macroRows as r (r.key)}
-				{@const amount = r.avg.value}
-				<div class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2.5 text-[14px]">
-					<span class="truncate">{r.name}</span>
-					<span
-						class={['h-2 overflow-hidden rounded-full', r.target && 'bg-track']}
-						aria-hidden="true"
-					>
-						{#if amount !== null && r.target}<span
-								class="macro block h-full rounded-full {r.color}"
-								style:width="{Math.min(100, (amount / r.target) * 100)}%"
-							></span>{/if}
-					</span>
-					<b class="text-right font-[650] tabular-nums"
-						>{amount === null
-							? m.history_unknown()
-							: r.target
-								? m.history_macro_of({
-										value: String(Math.round(amount)),
-										target: String(r.target)
-									})
-								: m.history_macro_value({ value: String(Math.round(amount)) })}</b
-					>
-				</div>
-			{/each}
-		</div>
-		{#each coverage as note (note)}<p class="mt-3 text-[13px] text-muted">{note}</p>{/each}
-		<p class="mt-3 text-[13px] text-muted">
-			{a.completeDays
-				? m.history_basis({ days: completeDays(a.completeDays) })
-				: m.history_basis_none()}
-			{#if history.macros}{m.history_targets_note()}{/if}
-		</p>
+		{#if noBars && history.range === 'All'}
+			{@render empty(m.history_empty_nutrients(), ChartPie)}
+		{:else}
+			<div class="mt-3.5 flex flex-col gap-3">
+				{#each macroRows as r (r.key)}
+					{@const amount = r.avg.value}
+					<div class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2.5 text-[14px]">
+						<span class="truncate">{r.name}</span>
+						<span
+							class={['h-2 overflow-hidden rounded-full', r.target && 'bg-track']}
+							aria-hidden="true"
+						>
+							{#if amount !== null && r.target}<span
+									class="macro block h-full rounded-full {r.color}"
+									style:width="{Math.min(100, (amount / r.target) * 100)}%"
+								></span>{/if}
+						</span>
+						<b class="text-right font-[650] tabular-nums"
+							>{amount === null
+								? m.history_unknown()
+								: r.target
+									? m.history_macro_of({
+											value: String(Math.round(amount)),
+											target: String(r.target)
+										})
+									: m.history_macro_value({ value: String(Math.round(amount)) })}</b
+						>
+					</div>
+				{/each}
+			</div>
+			{#each coverage as note (note)}<p class="mt-3 text-[13px] text-muted">{note}</p>{/each}
+			<p class="mt-3 text-[13px] text-muted">
+				{a.completeDays
+					? m.history_basis({ days: completeDays(a.completeDays) })
+					: m.history_basis_none()}
+				{#if history.macros}{m.history_targets_note()}{/if}
+			</p>
+		{/if}
 	{/if}
 </div>
 

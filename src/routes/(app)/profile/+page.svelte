@@ -47,9 +47,9 @@
 		target={t}
 		today={data.today}
 	/>
-	<Card title={m.profile_target()}>
-		<!-- A headline and labelled rows, so nothing wraps mid-sentence (owner review 2026-10-30). -->
-		{#if t && day}
+	{#if t && day}
+		<Card title={m.profile_target()}>
+			<!-- A headline and labelled rows, so nothing wraps mid-sentence (owner review 2026-10-30). -->
 			<p class="flex items-baseline gap-2">
 				<span class="font-display text-[28px] leading-none font-extrabold tabular-nums"
 					>{kcal(day.budget)}</span
@@ -70,22 +70,31 @@
 			{:else}
 				<p class="text-[15px] text-muted">{m.profile_target_own()}</p>
 			{/if}
-		{:else}
-			<p class="text-[15px]">{m.profile_target_none()}</p>
-		{/if}
-		{#if t}<p class="text-[13px] text-muted">
+			<p class="text-[13px] text-muted">
 				{m.profile_since({ day: dayTitle(t.effectiveFrom, data.today) })}
-			</p>{/if}
-		{#if t?.mode === 'calculated'}
-			<p class="text-[13px] text-muted">{m.profile_follows_weight()}</p>
-		{/if}
-		<a
-			href={resolve('/(app)/onboarding')}
-			class="inline-flex min-h-11 items-center self-start rounded-button bg-fill px-4 font-[750] text-on-accent"
-		>
-			{t ? m.profile_recalc() : m.profile_setup()}
-		</a>
-	</Card>
+			</p>
+			{#if t.mode === 'calculated'}
+				<p class="text-[13px] text-muted">{m.profile_follows_weight()}</p>
+			{/if}
+			<a
+				href="{resolve('/(app)/onboarding')}?from=profile"
+				class="inline-flex min-h-11 items-center self-start rounded-button bg-fill px-4 font-[750] text-on-accent"
+			>
+				{m.profile_recalc()}
+			</a>
+		</Card>
+	{:else}
+		<!-- A budget is a free choice: optional, said once, and only here (docs/ui.md). -->
+		<Card title={m.profile_budget_title()}>
+			<p class="text-[14px] text-muted">{m.profile_budget_optional()}</p>
+			<a
+				href="{resolve('/(app)/onboarding')}?from=profile"
+				class="grid min-h-12 place-items-center rounded-input bg-fill px-4 text-[15px] font-[750] text-on-accent"
+			>
+				{m.profile_setup()}
+			</a>
+		</Card>
+	{/if}
 	{#if t && t.mode !== 'none'}
 		<Card title={m.profile_settings()}>
 			<label class="flex min-h-11 cursor-pointer items-start gap-3">

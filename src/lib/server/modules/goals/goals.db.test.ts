@@ -378,6 +378,21 @@ describe('budget settings', () => {
 		expect((await goals.followWeight(MEHMET, '2026-06-20', 79))?.target.deficitKcal).toBe(550);
 	});
 
+	it('changes the pace and goal weight from today on, and a goal can be cleared', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		const first = await goals.setTarget(MEHMET, calc, 80);
+		const slower = await goals.changeSettings(MEHMET, '2026-06-10', 80, { rateKgPerWeek: 0.25 });
+		expect(slower).toMatchObject({
+			effectiveFrom: '2026-06-10',
+			rateKgPerWeek: 0.25,
+			goalWeightKg: 78
+		});
+		expect(slower.deficitKcal).toBeLessThan(first.deficitKcal);
+		const cleared = await goals.changeSettings(MEHMET, '2026-06-11', 80, { goalWeightKg: null });
+		expect(cleared).toMatchObject({ rateKgPerWeek: 0.25, goalWeightKg: null });
+		expect(await goals.targetFor(MEHMET, '2026-06-05')).toMatchObject({ id: first.id });
+	});
+
 	it('records own macro percentages from today; recalculations keep them; balanced comes back with its fat share', async () => {
 		await goals.saveProfile(MEHMET, adult);
 		const first = await goals.setTarget(MEHMET, { ...calc, fatShare: 0.25 }, 80);

@@ -20,7 +20,7 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 }, testInfo) => {
 	await signedInAs(page, `Geçmiş ${testInfo.project.name}`);
 	await page.goto('/progress');
-	await expect(page.getByText('No weigh-ins in this range.').first()).toBeAttached();
+	await expect(page.getByText('Your weight line starts with your first weigh-in.')).toBeVisible();
 	// Seed away from the app, so its periodic refresh can't race the navigation below.
 	await page.goto('about:blank');
 	await apiAs(page, 'POST', '/api/v1/targets', {

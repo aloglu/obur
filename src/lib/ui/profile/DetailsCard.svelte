@@ -1,6 +1,6 @@
 <script lang="ts">
-	// Profile's "Your details" (owner review 2026-10-30): height, birth date, sex, the latest weight and a calculated
-	// budget's goal weight, shown as rows and edited in place. A new weight is saved as today's weigh-in; a
+	// Profile's "Your details" (owner review 2026-10-30): height, birth date, sex and the latest weight, shown as rows and
+	// edited in place; the goal weight is on the Goal page. A new weight is saved as today's weigh-in; a
 	// calculated budget follows the details from today on, and the toast says when it moved.
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
@@ -15,6 +15,7 @@
 	import Chips from '../Chips.svelte';
 	import Notice from '../Notice.svelte';
 	import TextField from '../TextField.svelte';
+	import UnitField from '../UnitField.svelte';
 
 	interface Props {
 		profile: Profile | null;
@@ -33,7 +34,6 @@
 	let birthDate = $state('');
 	let sex = $state<'female' | 'male' | ''>('');
 	let weight = $state('');
-	let goal = $state('');
 
 	const kg = (n: number) => formatDecimal(n, ',', 1);
 	function startEditing() {
@@ -41,7 +41,6 @@
 		birthDate = profile?.birthDate ?? '';
 		sex = profile?.sex ?? '';
 		weight = latestWeight ? formatDecimal(latestWeight.value, ',', 2) : '';
-		goal = target?.goalWeightKg ? formatDecimal(target.goalWeightKg, ',', 2) : '';
 		problem = '';
 		showErrors = false;
 		editing = true;
@@ -49,14 +48,12 @@
 
 	const heightCm = $derived(parseDecimal(height));
 	const weightKg = $derived(parseDecimal(weight));
-	const goalKg = $derived(goal.trim() === '' ? null : parseDecimal(goal));
 	const errors = $derived({
 		height: heightCm === undefined || heightCm < 50 || heightCm > 260,
 		birth: !/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || birthDate > today,
 		sex: sex === '',
 		// An empty weight keeps the weigh-ins as they are.
-		weight: weight.trim() !== '' && (weightKg === undefined || weightKg < 20 || weightKg > 700),
-		goal: goalKg === undefined || (goalKg !== null && (goalKg < 20 || goalKg > 700))
+		weight: weight.trim() !== '' && (weightKg === undefined || weightKg < 20 || weightKg > 700)
 	});
 
 	async function save(event: SubmitEvent) {
@@ -80,8 +77,7 @@
 			const r = await api<{ outcome: DetailsOutcome }>('PATCH', '/api/v1/profile/details', {
 				heightCm: heightCm!,
 				birthDate,
-				sex,
-				...(calculated ? { goalWeightKg: goalKg } : {})
+				sex
 			});
 			if (r.outcome.kind === 'recalculated') {
 				before ??= r.outcome.beforeKcal;
@@ -147,15 +143,7 @@
 				latestWeight
 					? `${kg(latestWeight.value)} kg · ${dayTitle(latestWeight.localDate, today)}`
 					: null
-			],
-			...(calculated
-				? [
-						[
-							m.details_goal(),
-							target?.goalWeightKg ? `${kg(target.goalWeightKg)} kg` : m.details_no_goal()
-						]
-					]
-				: [])
+			]
 		]}
 		<dl class="flex flex-col text-[15px]">
 			{#each rows as [label, value] (label)}
@@ -171,11 +159,11 @@
 		</dl>
 	{:else}
 		<form class="flex flex-col gap-3" onsubmit={save} novalidate>
-			<TextField
+			<UnitField
 				label={m.onb_height()}
+				unit="cm"
 				bind:value={height}
 				inputmode="decimal"
-				autocomplete="off"
 				aria-invalid={showErrors && errors.height}
 			/>
 			<TextField
@@ -193,23 +181,14 @@
 					{ value: 'male', label: m.onb_male() }
 				]}
 			/>
-			<TextField
+			<UnitField
 				label={m.onb_weight()}
+				unit="kg"
 				hint={m.details_weight_hint()}
 				bind:value={weight}
 				inputmode="decimal"
-				autocomplete="off"
 				aria-invalid={showErrors && errors.weight}
 			/>
-			{#if calculated}
-				<TextField
-					label={m.onb_goal_weight()}
-					bind:value={goal}
-					inputmode="decimal"
-					autocomplete="off"
-					aria-invalid={showErrors && errors.goal}
-				/>
-			{/if}
 			{#if showErrors && Object.values(errors).some(Boolean)}
 				<Notice>{m.details_invalid()}</Notice>
 			{/if}

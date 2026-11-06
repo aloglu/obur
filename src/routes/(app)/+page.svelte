@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { slide } from 'svelte/transition';
 	// docs/ui.md "Today". Phone: one column. From 760 px: Budget and the meals on the left, the rest on the right.
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
@@ -27,12 +28,28 @@
 	import DayNoteCard from '#lib/ui/today/DayNoteCard.svelte';
 	import SelectionBar from '#lib/ui/today/SelectionBar.svelte';
 	import DayHeader from '#lib/ui/today/DayHeader.svelte';
+	import WelcomeCard from '#lib/ui/today/WelcomeCard.svelte';
 	import MealCard from '#lib/ui/today/MealCard.svelte';
 	import NutrientsCard from '#lib/ui/today/NutrientsCard.svelte';
 	import WaterCard from '#lib/ui/today/WaterCard.svelte';
 	import WeightCard from '#lib/ui/today/WeightCard.svelte';
 
 	let { data } = $props();
+
+	// "Just log" records the choice, so the welcome doesn't come back on any device.
+	let skipping = $state(false);
+	async function justLog() {
+		skipping = true;
+		try {
+			await api('POST', '/api/v1/targets', { mode: 'none', effectiveFrom: data.today });
+			await invalidateAll();
+			showToast({ message: m.welcome_skipped(), detail: m.welcome_skipped_detail() });
+		} catch {
+			showToast({ message: m.error_generic() });
+		} finally {
+			skipping = false;
+		}
+	}
 
 	let addingActivity = $state(false);
 	let pendingOpen = $state<QueuedOp | null>(null);
@@ -280,6 +297,11 @@
 
 <main class="today mx-auto max-w-[1064px] px-3.5 py-3 desk:px-7 desk:py-5">
 	<DayHeader date={data.date} today={data.today} onmove={move} />
+	{#if data.date === data.today && !data.target}
+		<div transition:slide={{ duration: 260 }}>
+			<WelcomeCard name={data.user?.displayName ?? ''} busy={skipping} onskip={justLog} />
+		</div>
+	{/if}
 	<div class="today-a">
 		<div class="o-budget">
 			<BudgetCard

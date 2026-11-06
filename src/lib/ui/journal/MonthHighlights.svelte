@@ -12,7 +12,8 @@
 	import Badge from '../achievements/Badge.svelte';
 	import { achievementTitle, comparison } from '../achievements/text.ts';
 
-	let { weeks, monthName }: { weeks: JournalWeek[]; monthName: string } = $props();
+	let { weeks, monthName, current }: { weeks: JournalWeek[]; monthName: string; current: boolean } =
+		$props();
 
 	const kg = (v: number) => v.toFixed(1).replace('.', ',');
 	const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${kg(Math.abs(v))}`;
@@ -114,6 +115,8 @@
 			{/if}
 		</article>
 	{:else}
-		<p class="py-3.5 text-[15px] text-muted">{m.journal_empty()}</p>
+		<p class="py-3.5 text-[15px] text-muted">
+			{current ? m.journal_empty_current() : m.journal_empty()}
+		</p>
 	{/each}
 </section>

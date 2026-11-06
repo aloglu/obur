@@ -17,8 +17,8 @@ async function expectBreakdown(page: Page, base: number, activity: number, goal:
 
 async function fillDetails(page: Page, birthDate: string) {
 	await page.goto('/onboarding');
-	await page.getByLabel('Height (cm)').fill('180');
-	await page.getByLabel('Weight (kg)').fill('80');
+	await page.getByLabel('Height').fill('180');
+	await page.getByLabel('Weight').fill('80');
 	await page.getByLabel('Birth date').fill(birthDate);
 	await page.getByRole('radio', { name: 'Male', exact: true }).click();
 	await page.getByRole('button', { name: 'See my estimate' }).click();
@@ -31,13 +31,15 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await page.goto('/onboarding');
 
 	await fillDetails(page, bornYearsAgo(30));
-	await expect(page.getByText('BMI 24,7')).toBeVisible();
+	await expect(page.getByText('Step 2 of 3 · Your estimate')).toBeVisible();
+	await expect(page.getByText('24,7', { exact: true })).toBeVisible();
 	await expect(page.getByText('Healthy weight (WHO adult category)')).toBeVisible();
 	await expect(page.getByText("can't tell muscle from fat")).toBeVisible();
 	// Mifflin–St Jeor: 10·80 + 6.25·180 − 5·30 + 5 = 1,780; × 1.2 = 2,136.
-	await expect(page.getByText('Estimated base burn: 2136 kcal/day')).toBeVisible();
-	await page.getByRole('radio', { name: '0,5 kg/week' }).click();
-	await expect(page.getByText('Daily budget: 1586 kcal')).toBeVisible();
+	await expect(page.getByText('2136', { exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Choose a goal' }).click();
+	await page.getByRole('radio', { name: '0,5', exact: true }).click();
+	await expect(page.getByText('1586', { exact: true }).first()).toBeVisible();
 	await expect(page.getByText('not medical advice').first()).toBeVisible();
 	await page.getByRole('button', { name: 'Save my budget' }).click();
 
@@ -92,20 +94,39 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await expect(details).toContainText('180 cm');
 	await expect(details).toContainText('80 kg · Today');
 	await details.getByRole('button', { name: 'Edit your details' }).click();
-	await details.getByLabel('Height (cm)').fill('20');
+	await details.getByLabel('Height').fill('20');
 	await details.getByRole('button', { name: 'Save details' }).click();
 	await expect(details).toContainText('Check the highlighted values');
 	// 182 cm and 79 kg: 10·79 + 6.25·182 − 5·30 + 5 = 1,782.5; × 1.2 = 2,139 base.
-	await details.getByLabel('Height (cm)').fill('182');
-	await details.getByLabel('Weight (kg)').fill('79');
-	await details.getByLabel('Goal weight (kg, optional)').fill('74');
+	await details.getByLabel('Height').fill('182');
+	await details.getByLabel('Weight').fill('79');
 	await details.getByRole('button', { name: 'Save details' }).click();
 	await expect(page.getByRole('status')).toContainText('Details saved');
 	await expect(page.getByRole('status')).toContainText('Budget now 1589 kcal (was 1586)');
 	await expect(details).toContainText('182 cm');
 	await expect(details).toContainText('79 kg · Today');
-	await expect(details).toContainText('74 kg');
 	await expect(page.getByRole('definition').filter({ hasText: '2139 kcal' })).toBeVisible();
+
+	// Goal: the goal weight in place, the pace from a menu; each is a new budget version from today.
+	await page
+		.getByRole('link', { name: 'More', exact: true })
+		.filter({ visible: true })
+		.first()
+		.click();
+	await page.getByRole('link', { name: /^Goal/ }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Goal' })).toBeVisible();
+	await page.getByRole('button', { name: /^Goal weight/ }).click();
+	await page.getByLabel('New goal weight').fill('74');
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(page.getByRole('button', { name: /^Goal weight/ })).toContainText('74 kg');
+	await choose(page, 'Pace', 'Steady · 0,25 kg a week');
+	await expect(page.getByRole('status')).toContainText('Budget settings saved');
+	await page
+		.getByRole('link', { name: 'More', exact: true })
+		.filter({ visible: true })
+		.first()
+		.click();
+	await expect(page.getByRole('link', { name: /^Goal/ })).toContainText('Steady · 0,25 kg a week');
 });
 
 test('under-18s get no calculated target but can enter a professional’s number; over budget shows red', async ({
@@ -119,7 +140,8 @@ test('under-18s get no calculated target but can enter a professional’s number
 	await expect(page.getByText("doesn't calculate targets")).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Save my budget' })).toHaveCount(0);
 
-	await page.getByLabel('Daily budget (kcal)').fill('2000');
+	await page.getByRole('button', { name: 'Enter a target I was given' }).click();
+	await page.getByLabel('Daily budget').fill('2000');
 	await page.getByRole('button', { name: 'Use this budget' }).click();
 	const budget = page.getByRole('region', { name: 'Budget' });
 	await expect(budget).toContainText('2000 kcal');
@@ -148,7 +170,8 @@ test('day totals replace each other, and the budget settings apply from today', 
 	const budget = page.getByRole('region', { name: 'Budget' });
 	await page.goto('/onboarding');
 	await fillDetails(page, bornYearsAgo(30));
-	await page.getByRole('radio', { name: '0,5 kg/week' }).click();
+	await page.getByRole('button', { name: 'Choose a goal' }).click();
+	await page.getByRole('radio', { name: '0,5', exact: true }).click();
 	await page.getByLabel(/Goal weight/).fill('75');
 	await page.getByRole('button', { name: 'Save my budget' }).click();
 	await expectBreakdown(page, 2136, 0, 550);
@@ -206,4 +229,22 @@ test('day totals replace each other, and the budget settings apply from today', 
 	await expect(nutrients).toContainText('/ 119 g');
 	await expect(nutrients).toContainText('/ 40 g');
 	await expect(nutrients).toContainText('/ 106 g');
+});
+
+test('first day: the welcome offers a budget once, and "Just log" leaves no mention of it on Today', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Selin ${testInfo.project.name}`);
+	await page.goto('/');
+	const welcome = page.getByRole('region', { name: /^Welcome, Selin/ });
+	await expect(welcome).toBeVisible();
+	await welcome.getByRole('button', { name: 'Just log' }).click();
+	await expect(page.getByRole('status')).toContainText('Set one up any time in More → Profile');
+	await expect(welcome).toBeHidden();
+	await page.reload();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect(welcome).toBeHidden();
+	await expect(page.getByRole('link', { name: /budget/i })).toHaveCount(0);
+	await page.goto('/profile');
+	await expect(page.getByText('Optional. A budget shows what')).toBeVisible();
 });

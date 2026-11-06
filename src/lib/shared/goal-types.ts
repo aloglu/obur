@@ -55,8 +55,15 @@ export const MacroChoiceInput = v.variant('mode', [
 export const BudgetSettingsInput = v.object({
 	countActivity: v.optional(v.boolean()),
 	atGoal: v.optional(v.picklist(['keep', 'maintain'])),
-	macros: v.optional(MacroChoiceInput)
+	macros: v.optional(MacroChoiceInput),
+	/** A calculated budget's pace and goal weight (the Goal page). */
+	rateKgPerWeek: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(1))),
+	goalWeightKg: v.optional(v.nullable(v.pipe(v.number(), v.minValue(20), v.maxValue(700))))
 });
+export type BudgetSettingsChange = Partial<BudgetSettings> & {
+	rateKgPerWeek?: number;
+	goalWeightKg?: number | null;
+};
 export type BudgetSettings = {
 	countActivity: boolean;
 	atGoal: 'keep' | 'maintain';
