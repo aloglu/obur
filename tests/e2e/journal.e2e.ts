@@ -48,7 +48,7 @@ test('the month calendar colours days by budget and completion', async ({ page }
 
 	// A day opens in Today.
 	await calendar.getByRole('link', { name: /^Wednesday 2 September/ }).click();
-	await expect(page.getByRole('heading', { level: 1, name: 'Wed 2 Sep' })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: /^2 September/ })).toBeVisible();
 });
 
 test('month navigation stops at the current month', async ({ page }) => {

@@ -83,41 +83,40 @@
 </script>
 
 <section
-	class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
-	aria-labelledby="nutrients-title"
+	class="flex flex-col gap-3 rounded-card bg-surface px-[18px] py-4 shadow-card"
+	aria-label={m.nutrients_title()}
 >
-	<h2 id="nutrients-title" class="text-[19px] font-bold">{m.nutrients_title()}</h2>
 	{#each main as n (n.code)}
 		{@const s = shown(totalFor(n.code))}
-		<div class="flex flex-col gap-1">
-			<div class="flex items-baseline justify-between gap-2 text-[15px]">
-				<span class="font-semibold">{n.label()}</span>
-				<span class="font-semibold tabular-nums"
-					>{s.text}{#if targets}<span class="font-normal text-muted">
-							/ {targets[n.target]} g</span
-						>{/if}</span
+		<div>
+			<div class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2.5 text-[14px]">
+				<span>{n.label()}</span>
+				<div class="h-2 overflow-hidden rounded-full bg-track" aria-hidden="true">
+					<div
+						class="h-full rounded-full transition-[width] duration-600 ease-(--travel) motion-reduce:transition-none"
+						style:background={n.color}
+						style:width="{width(n)}%"
+					></div>
+				</div>
+				<span class="min-w-[92px] text-right text-muted tabular-nums"
+					><b class="font-[650] text-text">{s.text}</b>{#if targets}
+						/ {targets[n.target]} g{/if}</span
 				>
 			</div>
-			<div class="h-2 overflow-hidden rounded-full bg-track" aria-hidden="true">
-				<div
-					class="h-full rounded-full transition-[width] duration-600 ease-(--travel) motion-reduce:transition-none"
-					style:background={n.color}
-					style:width="{width(n)}%"
-				></div>
-			</div>
-			{#if s.note}<p class="text-[12.5px] text-muted">{s.note}</p>{/if}
+			{#if s.note}<p class="mt-0.5 text-right text-[12.5px] text-muted">{s.note}</p>{/if}
 			{#if n.code === 'carbohydrate_excl_fibre' && carbNote}
-				<p class="text-[12.5px] text-muted">{carbNote}</p>
+				<p class="mt-0.5 text-right text-[12.5px] text-muted">{carbNote}</p>
 			{/if}
 		</div>
 	{/each}
-	<dl class="grid grid-cols-2 gap-2">
+	<dl
+		class="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-3 text-[13.5px] text-muted tabular-nums"
+	>
 		{#each minor as n (n.code)}
 			{@const s = shown(totals[n.code])}
-			<div class="rounded-small bg-surface2 p-3">
-				<dt class="text-[13px] text-muted">{n.label()}</dt>
-				<dd class="text-[15px] font-semibold tabular-nums">{s.text}</dd>
-				{#if s.note}<dd class="text-[12px] text-muted">{s.note}</dd>{/if}
+			<div class="flex justify-between gap-2" title={s.note ?? undefined}>
+				<dt>{n.label()}</dt>
+				<dd class="font-semibold text-text">{s.text}</dd>
 			</div>
 		{/each}
 	</dl>

@@ -197,3 +197,12 @@ export function budgetForDay(
 		floorApplied: budget > raw
 	};
 }
+
+export type BudgetStatus = 'plenty' | 'close' | 'over';
+
+/** The budget bar's colour (docs/ui.md): with room, in the last 200 kcal or 10 %, or over. */
+export function budgetStatus(eaten: number, budget: number): BudgetStatus {
+	const left = budget - eaten;
+	if (left < 0) return 'over';
+	return left < 200 || left < budget * 0.1 ? 'close' : 'plenty';
+}

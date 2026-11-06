@@ -7,7 +7,7 @@ test('a curated food is found by its Turkish name and logged by a USDA portion',
 	page
 }, testInfo) => {
 	await signedInAs(page, `Deniz ${testInfo.project.name}`);
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 	await page.getByRole('searchbox').fill('muz');
 	await page.getByRole('button', { name: /^Banana/ }).click();
 	const sheet = page.getByRole('dialog', { name: 'Banana' });
@@ -44,7 +44,7 @@ test('the amount preview shows kcal and coloured macros, carbs never "?" when th
 		],
 		servings: []
 	});
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 	await page.getByRole('searchbox').fill(`ithal biskuvi ${tag}`);
 	await page.getByRole('button', { name: new RegExp(`İthal Bisküvi ${tag}`) }).click();
 	const sheet = page.getByRole('dialog');

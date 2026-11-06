@@ -1,7 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createFood, signedInAs } from './fixtures.ts';
 
-const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 const iconIn = (scope: ReturnType<Page['locator']>, hex: string) =>
 	scope.locator(`img[src="/icons/food/${hex}.svg"]`);
 
@@ -36,7 +35,7 @@ test('foods show the icon their name suggests, or the one chosen in the picker',
 	await expect(page.getByText('Saved')).toBeVisible();
 
 	// Logged: the meal card shows the chosen icon (from the entry's snapshot).
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 	await page.getByRole('searchbox').fill(`beyaz peynir ${tag}`);
 	const result = page.getByRole('button', { name: new RegExp(`Beyaz peynir ${tag}`) }).first();
 	await expect(iconIn(result, '1F95B')).toBeVisible();

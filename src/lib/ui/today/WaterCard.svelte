@@ -1,15 +1,18 @@
 <script lang="ts">
-	// docs/ui.md "Water and weight": +250 / +500 ml buttons and any other amount (ml or l); each addition can be undone
-	// from the toast.
+	// docs/ui.md "Water and Weight": four rows lined up with Weight's (it sits in the parent's grid): title, amount,
+	// quick amounts, Other amount, which opens in place as a field with a tappable ml / l.
 	import Check from '@lucide/svelte/icons/check';
+	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
+	import { inlineField } from '#lib/client/inline-field.svelte.ts';
 	import { offline, submit } from '#lib/client/offline/sync.svelte.ts';
-	import { deviceZone } from '#lib/client/prefs.ts';
+	import { clockTime, deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { parseWaterMl, type BodyReading } from '#lib/shared/body-types.ts';
 	import { dayTitle } from '#lib/shared/format.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import Roll from '../Roll.svelte';
 	import ReadingsSheet from './ReadingsSheet.svelte';
 
 	interface Props {
@@ -22,17 +25,18 @@
 	let { date, today, entries, totalMl, onchange }: Props = $props();
 	let busy = $state(false);
 	let editing = $state(false);
-	let other = $state(false);
 	let amount = $state('');
 	let amountError = $state('');
 	let unit = $state<'ml' | 'l'>('ml');
+	const other = $derived(inlineField.open === 'water');
 
-	function close() {
-		other = false;
+	$effect(() => {
+		if (other) return;
 		amount = '';
 		amountError = '';
 		unit = 'ml';
-	}
+	});
+
 	const pendingMl = $derived(
 		offline.items.reduce(
 			(sum, i) =>
@@ -42,6 +46,7 @@
 			0
 		)
 	);
+	const lastAdded = $derived(entries.at(-1)?.createdAt);
 
 	async function addOther(event: SubmitEvent) {
 		event.preventDefault();
@@ -51,7 +56,7 @@
 			return;
 		}
 		amountError = '';
-		if (await add(ml)) close();
+		if (await add(ml)) inlineField.open = null;
 	}
 
 	/** True once saved or queued. */
@@ -84,99 +89,104 @@
 </script>
 
 <section
-	class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
+	class="row-span-4 grid grid-rows-subgrid gap-y-0 rounded-card bg-surface px-3.5 pt-4 pb-[18px] shadow-card desk:px-[18px]"
 	aria-labelledby="water-title"
 >
-	<div class="flex items-center justify-between gap-2">
-		<h2 id="water-title" class="text-[19px] font-bold">{m.water_title()}</h2>
+	<div class="flex h-6 items-center justify-between gap-2">
+		<h2 id="water-title" class="text-[15px] font-bold">{m.water_title()}</h2>
 		{#if entries.length > 0}
 			<button
 				type="button"
 				onclick={() => (editing = true)}
 				aria-label={m.water_edit_label()}
-				class="-my-2 -mr-2 min-h-11 rounded-input px-2 text-[14px] font-semibold text-accent"
-				>{m.water_edit()}</button
+				class="-mr-1.5 min-h-11 px-1.5 text-[14px] font-[650] text-accent">{m.water_edit()}</button
 			>
 		{/if}
 	</div>
-	<p class="font-display text-[28px] leading-none font-extrabold tabular-nums">
-		{m.water_total({ ml: formatDecimal(totalMl, ',', 0) })}
-	</p>
-	{#if pendingMl}
-		<p class="text-[13px] font-semibold text-warn">
-			{m.offline_water_pending({ ml: String(pendingMl) })}
+	<div class="mt-2.5 flex flex-col gap-[3px]">
+		<p class="font-display text-[26px] leading-[1.1] font-[750] tracking-[-0.02em] tabular-nums">
+			<Roll value={formatDecimal(totalMl, ',', 0)} />
+			<small class="font-sans text-[13px] font-semibold tracking-normal text-muted">ml</small>
 		</p>
-	{/if}
-	<!-- Quick amounts share the first row; the second is "Other amount", which turns into a field in place with a
-	     tappable ml / l suffix (owner review 2026-10-30). -->
-	<div class="grid grid-cols-2 gap-2">
+		<p class="text-[13px] leading-[1.3] text-muted">
+			{#if pendingMl}
+				<span class="font-semibold text-warn"
+					>{m.offline_water_pending({ ml: String(pendingMl) })}</span
+				>
+			{:else if lastAdded}
+				{m.water_last_added({ time: clockTime(lastAdded, page.data.timeFormat ?? 'device') })}
+			{:else}
+				{m.water_nothing()}
+			{/if}
+		</p>
+	</div>
+	<div class="mt-3.5 grid grid-cols-2 gap-1.5">
 		{#each [250, 500] as ml (ml)}
 			<button
 				type="button"
 				disabled={busy}
 				onclick={() => add(ml)}
 				aria-label={m.water_add_label({ ml: String(ml) })}
-				class="min-h-11 rounded-input bg-soft px-2 text-[15px] font-bold whitespace-nowrap text-accent disabled:opacity-50"
-				>{m.water_add({ ml: String(ml) })}</button
+				class="min-h-12 rounded-input bg-surface2 text-[15px] font-bold whitespace-nowrap transition-transform active:scale-[0.97] disabled:opacity-50"
+				>+{ml}</button
 			>
 		{/each}
 	</div>
-	{#if other}
-		<form class="flex flex-col gap-1" onsubmit={addOther} novalidate>
-			<div
-				class={[
-					// A ring, not a border: the field keeps the 44 px height of the button it replaces.
-					'flex h-11 items-center rounded-input bg-surface2 pl-4 ring-1',
-					amountError ? 'ring-bad' : 'ring-line focus-within:ring-accent'
-				]}
-			>
-				<!-- svelte-ignore a11y_autofocus -->
-				<input
-					id="water-amount"
-					bind:value={amount}
-					autofocus
-					inputmode="decimal"
-					autocomplete="off"
-					aria-label={m.water_other_label()}
-					placeholder={m.water_other_placeholder()}
-					aria-invalid={amountError ? 'true' : undefined}
-					aria-describedby={amountError ? 'water-amount-error' : undefined}
-					onkeydown={(e) => {
-						if (e.key === 'Escape') close();
-					}}
-					class="min-w-0 flex-1 bg-transparent text-[16px] font-semibold tabular-nums outline-none"
-				/>
-				<button
-					type="button"
-					onclick={() => (unit = unit === 'ml' ? 'l' : 'ml')}
-					aria-label={unit === 'ml' ? m.water_unit_ml() : m.water_unit_l()}
-					class="min-h-11 min-w-11 px-2 text-[15px] font-bold text-accent underline decoration-dotted underline-offset-4"
-					>{unit}</button
+	<div class="mt-1.5 grid">
+		{#if other}
+			<form onsubmit={addOther} novalidate class="field-swap">
+				<div
+					class={[
+						'flex h-12 items-center gap-0.5 rounded-input bg-surface2 py-1 pr-1 pl-3 ring-1',
+						amountError ? 'ring-bad' : 'ring-transparent focus-within:ring-accent'
+					]}
 				>
-				<button
-					type="submit"
-					disabled={busy}
-					aria-label={m.water_other_add()}
-					class="grid size-11 place-items-center disabled:opacity-50"
-				>
-					<span class="grid size-9 place-items-center rounded-full bg-fill text-on-accent"
-						><Check size={20} aria-hidden="true" /></span
+					<!-- svelte-ignore a11y_autofocus -->
+					<input
+						id="water-amount"
+						bind:value={amount}
+						autofocus
+						inputmode="decimal"
+						autocomplete="off"
+						aria-label={m.water_other_label()}
+						placeholder={m.water_other_placeholder()}
+						aria-invalid={amountError ? 'true' : undefined}
+						aria-describedby={amountError ? 'water-amount-error' : undefined}
+						onkeydown={(e) => {
+							if (e.key === 'Escape') inlineField.open = null;
+						}}
+						class="w-0 min-w-0 flex-1 bg-transparent text-[16px] font-semibold tabular-nums outline-none placeholder:font-medium placeholder:text-muted"
+					/>
+					<button
+						type="button"
+						onclick={() => (unit = unit === 'ml' ? 'l' : 'ml')}
+						aria-label={unit === 'ml' ? m.water_unit_ml() : m.water_unit_l()}
+						class="h-10 shrink-0 px-1 text-[14px] font-[650] text-muted">{unit}</button
 					>
-				</button>
-			</div>
-			{#if amountError}
-				<p id="water-amount-error" class="px-1 text-[13px] font-semibold text-bad">{amountError}</p>
-			{/if}
-		</form>
-	{:else}
-		<button
-			type="button"
-			disabled={busy}
-			onclick={() => (other = true)}
-			class="min-h-11 rounded-input bg-surface2 px-2 text-[15px] font-bold text-text disabled:opacity-50"
-			>{m.water_other()}</button
-		>
-	{/if}
+					<button
+						type="submit"
+						disabled={busy}
+						aria-label={m.water_other_add()}
+						class="grid size-10 shrink-0 place-items-center rounded-small bg-fill text-on-accent disabled:opacity-50"
+						><Check size={18} aria-hidden="true" /></button
+					>
+				</div>
+				{#if amountError}
+					<p id="water-amount-error" class="mt-1 px-1 text-[13px] font-semibold text-bad">
+						{amountError}
+					</p>
+				{/if}
+			</form>
+		{:else}
+			<button
+				type="button"
+				disabled={busy}
+				onclick={() => (inlineField.open = 'water')}
+				class="min-h-12 rounded-input bg-surface2 text-[15px] font-bold transition-transform active:scale-[0.97] disabled:opacity-50"
+				>{m.water_other()}</button
+			>
+		{/if}
+	</div>
 </section>
 
 {#if editing}

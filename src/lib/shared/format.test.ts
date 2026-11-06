@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateWithYear, dayTitle, longDate, quantityText } from './format.ts';
+import { dateWithYear, dayHeading, dayTitle, longDate, quantityText } from './format.ts';
 
 describe('format', () => {
 	it('titles days the same way in every engine', () => {
@@ -27,5 +27,22 @@ describe('format', () => {
 		expect(
 			quantityText(2, { kind: 'measure', code: 'su_bardagi', name: 'Su bardağı', ml: 200 }, null)
 		).toBe('2 × Su bardağı (200 ml)');
+	});
+});
+
+describe('dayHeading', () => {
+	const today = '2026-11-06'; // a Friday
+	it.each([
+		['2026-11-06', 'Today', 'Friday 6 November'],
+		['2026-11-05', 'Yesterday', 'Thursday 5 November'],
+		['2026-11-02', 'Monday', '2 November'], // this week's Monday
+		['2026-11-01', '1 November', 'Sunday'], // last week
+		['2025-12-31', '31 December 2025', 'Wednesday'] // the year only for other years
+	])('%s reads %s / %s', (date, title, detail) => {
+		expect(dayHeading(date, today)).toEqual({ title, detail });
+	});
+
+	it('shows the year on Today only if today is in another year than itself: never', () => {
+		expect(dayHeading(today, today).detail).not.toContain('2026');
 	});
 });

@@ -10,9 +10,9 @@ async function expectBreakdown(page: Page, base: number, activity: number, goal:
 	const toggle = budget.getByRole('button', { name: /^Budget/ });
 	if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
 	const rows = budget.locator('#budget-breakdown');
-	await expect(rows).toContainText(`${base} kcal`);
-	await expect(rows).toContainText(`+ ${activity} kcal`);
-	await expect(rows).toContainText(`− ${goal} kcal`);
+	await expect(rows).toContainText(`${base}`);
+	await expect(rows).toContainText(`+${activity}`);
+	await expect(rows).toContainText(`−${goal}`);
 }
 
 async function fillDetails(page: Page, birthDate: string) {
@@ -28,7 +28,7 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await signedInAs(page, 'Mehmet');
 	await page.goto('/');
 	const budget = page.getByRole('region', { name: 'Budget' });
-	await budget.getByRole('link', { name: 'Set up your budget' }).click();
+	await page.goto('/onboarding');
 
 	await fillDetails(page, bornYearsAgo(30));
 	await expect(page.getByText('BMI 24,7')).toBeVisible();
@@ -70,7 +70,8 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 
 	// A new weight moves the calculated budget from today on (base 2,136 − 10 × 2 × 1.2 = 2,112); Undo moves it back.
 	const weight = page.getByRole('region', { name: 'Weight' });
-	await weight.getByLabel('Weight (kg)').fill('78');
+	await weight.getByRole('button', { name: 'New weigh-in' }).click();
+	await weight.getByLabel('New weight').fill('78');
 	await weight.getByRole('button', { name: 'Save' }).click();
 	const toast = page.getByRole('status');
 	await expect(toast).toContainText('Saved 78 kg');
@@ -145,7 +146,7 @@ test('day totals replace each other, and the budget settings apply from today', 
 	await signedInAs(page, 'Saat');
 	await page.goto('/');
 	const budget = page.getByRole('region', { name: 'Budget' });
-	await budget.getByRole('link', { name: 'Set up your budget' }).click();
+	await page.goto('/onboarding');
 	await fillDetails(page, bornYearsAgo(30));
 	await page.getByRole('radio', { name: '0,5 kg/week' }).click();
 	await page.getByLabel(/Goal weight/).fill('75');

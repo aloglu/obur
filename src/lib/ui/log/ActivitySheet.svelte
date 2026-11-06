@@ -16,13 +16,15 @@
 	import TextField from '../TextField.svelte';
 
 	interface Props {
+		/** Activity already counted in this day's budget. */
+		counted?: number;
 		date: string;
 		/** The day's newest watch total, if any. */
 		watchTotal: number | null;
 		onsaved: (entry: ActivityEntry) => void;
 		onclose: () => void;
 	}
-	let { date, watchTotal, onsaved, onclose }: Props = $props();
+	let { counted = 0, date, watchTotal, onsaved, onclose }: Props = $props();
 	// Someone who already entered a watch total today most likely updates it.
 	let kind = $state<ActivityEntry['kind']>(untrack(() => (watchTotal ? 'day_total' : 'extra')));
 	let kcalText = $state('');
@@ -69,6 +71,11 @@
 		<p class="text-[14px] text-muted">
 			{kind === 'extra' ? m.activity_meaning() : m.activity_total_meaning()}
 		</p>
+		{#if kind === 'extra'}
+			<p class="-mt-2 text-[14px] text-muted tabular-nums">
+				{counted ? m.activity_counted({ kcal: kcal(counted) }) : m.activity_counted_none()}
+			</p>
+		{/if}
 		{#if kind === 'day_total' && watchTotal}
 			<p class="text-[14px] font-semibold tabular-nums">
 				{m.activity_total_current({ kcal: kcal(watchTotal) })}
@@ -81,6 +88,21 @@
 			autocomplete="off"
 			aria-invalid={kcalText.trim() !== '' && !valid}
 		/>
+		{#if kind === 'extra'}
+			<div class="grid grid-cols-3 gap-2">
+				{#each [100, 150, 250] as amount (amount)}
+					<button
+						type="button"
+						onclick={() => (kcalText = String(amount))}
+						aria-pressed={kcalText === String(amount)}
+						class={[
+							'min-h-11 rounded-input text-[15px] font-bold tabular-nums transition-colors',
+							kcalText === String(amount) ? 'bg-soft text-accent' : 'bg-surface2'
+						]}>{amount}</button
+					>
+				{/each}
+			</div>
+		{/if}
 		{#if kind === 'extra'}
 			<TextField
 				label={m.activity_note()}

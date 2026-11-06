@@ -185,3 +185,48 @@ main {
 [data-quiet-focus]:focus {
 	outline: none !important;
 }
+
+/* Opens by height and fades in (from the reviewed demos). The child holds the content. */
+.collapse-row {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 340ms var(--ui);
+}
+.collapse-row > div {
+	overflow: hidden;
+	min-height: 0;
+	visibility: hidden;
+	opacity: 0;
+	transition:
+		opacity 200ms,
+		visibility 340ms;
+}
+.collapse-row.open {
+	grid-template-rows: 1fr;
+}
+.collapse-row.open > div {
+	visibility: visible;
+	opacity: 1;
+	transition:
+		opacity 240ms 120ms,
+		visibility 0s;
+}
+/* A field that replaces a button in place. */
+.field-swap {
+	animation: field-swap 260ms var(--ui);
+}
+@keyframes field-swap {
+	from {
+		opacity: 0;
+		transform: scale(0.97);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.collapse-row,
+	.collapse-row > div {
+		transition: none;
+	}
+	.field-swap {
+		animation: none;
+	}
+}

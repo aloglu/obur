@@ -1,8 +1,8 @@
 <script lang="ts">
-	// docs/ui.md "Meal cards": total, + button, entry rows with a two-line clamped name, quantity, badges and kcal.
-	// Bulk actions ("Bulk actions"): the … menu, holding a row to select it or drag it to another meal (the card is
-	// a drop target), and, while selecting, a round check on each row that a tap toggles. Ctrl/⌘-click also selects.
-	import BookmarkPlus from '@lucide/svelte/icons/bookmark-plus';
+	// docs/ui.md "Meal cards": one meal in the shared card, on one grid (icon, name, number) for its header, its entries
+	// and a trailing Add food row; the meal total sits in the number column. Bulk actions ("Bulk actions"): the … menu,
+	// holding a row to select it or drag it to another meal, and, while selecting, a round check on each row that a tap
+	// toggles. Ctrl/⌘-click also selects.
 	import Check from '@lucide/svelte/icons/check';
 	import Plus from '@lucide/svelte/icons/plus';
 	import { holdDrag } from '#lib/client/hold-drag.ts';
@@ -10,6 +10,7 @@
 	import type { DiaryEntry, Meal } from '#lib/shared/diary-types.ts';
 	import type { QueuedOp } from '#lib/client/offline/store.ts';
 	import FoodIcon from '../FoodIcon.svelte';
+	import Roll from '../Roll.svelte';
 	import MealMenu from './MealMenu.svelte';
 	import { entryName, entryQuantity, kcal, mealName } from '#lib/shared/format.ts';
 
@@ -52,63 +53,28 @@
 	const total = $derived(
 		entries.reduce((sum, e) => sum + (e.nutrients.energy_kcal?.value ?? 0), 0)
 	);
+	const row = 'grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-3';
 </script>
 
 <section
-	class="rounded-card bg-surface p-[18px] shadow-card"
+	class="-mx-2.5 rounded-[16px] px-2.5 pt-3 pb-2 not-first:rounded-t-none not-first:border-t not-first:border-line first:pt-0.5"
 	aria-labelledby="meal-{meal}"
 	data-meal-drop={bulk ? meal : undefined}
 >
-	<div class="flex items-center justify-between gap-3">
-		<h2 id="meal-{meal}" class="text-[19px] font-bold">{mealName(meal)}</h2>
-		<!-- Two small round icon buttons, alike but for colour; each keeps a 44 px tap target around its 36 px circle. -->
-		<div class="-mr-1 flex items-center">
-			<span class="mr-1.5 text-[15px] font-semibold text-muted tabular-nums"
-				>{kcal(total)} kcal</span
+	<div class={[row, 'min-h-11 px-2.5']}>
+		<h2 id="meal-{meal}" class="col-span-2 text-[19px] font-bold">{mealName(meal)}</h2>
+		{#if total}
+			<span
+				class="min-w-11 text-right text-[15px] font-[750] tabular-nums"
+				aria-label="{kcal(total)} kcal"><Roll value={kcal(total)} /></span
 			>
-			{#if !selecting}
-				{#if onsave && entries.length > 0}
-					<button
-						type="button"
-						onclick={onsave}
-						aria-label={m.saved_save_label({ meal: mealName(meal) })}
-						class="group grid size-11 place-items-center"
-					>
-						<span
-							class="grid size-9 place-items-center rounded-full bg-surface2 text-muted group-hover:text-text"
-							><BookmarkPlus size={18} aria-hidden="true" /></span
-						>
-					</button>
-				{/if}
-				<button
-					type="button"
-					onclick={onadd}
-					aria-label={m.meal_add({ meal: mealName(meal) })}
-					class="grid size-11 place-items-center"
-				>
-					<span class="grid size-9 place-items-center rounded-full bg-soft text-accent"
-						><Plus size={20} aria-hidden="true" /></span
-					>
-				</button>
-				{#if bulk && entries.length > 0}
-					<MealMenu
-						label={m.meal_actions({ meal: mealName(meal) })}
-						onselect={() => bulk.onmeal('select')}
-						onmove={() => bulk.onmeal('move')}
-						oncopy={() => bulk.onmeal('copy')}
-						ondelete={() => bulk.onmeal('delete')}
-					/>
-				{/if}
-			{/if}
-		</div>
+		{/if}
 	</div>
-	{#if entries.length === 0 && pending.length === 0}
-		<p class="mt-1 text-[14px] text-muted">{m.meal_empty()}</p>
-	{:else}
-		<ul class="-mx-2 mt-2 flex flex-col gap-0.5">
+	{#if entries.length > 0 || pending.length > 0}
+		<ul class="flex flex-col gap-0.5">
 			{#each entries as e (e.id)}
 				{@const on = bulk?.selected.has(e.id) ?? false}
-				<li>
+				<li class="entry-in">
 					<button
 						type="button"
 						data-hold-row
@@ -124,7 +90,10 @@
 						}}
 						aria-pressed={selecting ? on : undefined}
 						class={[
-							'flex min-h-14 w-full items-center gap-3 rounded-input px-2 py-2 text-left transition-colors duration-700',
+							'grid min-h-14 w-full items-center gap-3 rounded-input px-2.5 py-1.5 text-left transition-colors duration-700',
+							selecting
+								? 'grid-cols-[24px_40px_minmax(0,1fr)_auto]'
+								: 'grid-cols-[40px_minmax(0,1fr)_auto]',
 							on || e.id === highlight ? 'bg-soft' : 'hover:bg-surface2',
 							bulk?.lifted.has(e.id) && 'opacity-35'
 						]}
@@ -144,8 +113,10 @@
 							name={e.kind === 'quick' ? (e.description ?? '') : (e.food?.name ?? '')}
 							brand={e.food?.brand}
 						/>
-						<span class="min-w-0 flex-1">
-							<span class="line-clamp-2 text-[15px] font-semibold break-words">{entryName(e)}</span>
+						<span class="min-w-0">
+							<span class="line-clamp-2 text-[15px] leading-[1.3] font-semibold break-words"
+								>{entryName(e)}</span
+							>
 							<span class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
 								{entryQuantity(e)}
 								{#if e.kind === 'quick'}<span
@@ -158,7 +129,7 @@
 									>{/if}
 							</span>
 						</span>
-						<span class="shrink-0 text-[15px] font-semibold tabular-nums"
+						<span class="min-w-11 text-right text-[15px] font-[650] tabular-nums"
 							>{kcal(e.nutrients.energy_kcal?.value ?? 0)}</span
 						>
 					</button>
@@ -166,15 +137,15 @@
 			{/each}
 			{#each pending as op (op.seq)}
 				{#if op.preview.kind === 'diary'}
-					<li>
+					<li class="entry-in">
 						<button
 							type="button"
 							onclick={() => onpending?.(op)}
-							class="flex min-h-14 w-full items-center gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
+							class="grid min-h-14 w-full grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-input px-2.5 py-1.5 text-left hover:bg-surface2"
 						>
 							<FoodIcon name={op.preview.name} />
-							<span class="min-w-0 flex-1">
-								<span class="line-clamp-2 text-[15px] font-semibold break-words"
+							<span class="min-w-0">
+								<span class="line-clamp-2 text-[15px] leading-[1.3] font-semibold break-words"
 									>{op.preview.name}</span
 								>
 								<span class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
@@ -185,7 +156,7 @@
 									>
 								</span>
 							</span>
-							<span class="shrink-0 text-[15px] font-semibold text-muted tabular-nums"
+							<span class="min-w-11 text-right text-[15px] font-[650] text-muted tabular-nums"
 								>{op.preview.kcal === null ? '?' : kcal(op.preview.kcal)}</span
 							>
 						</button>
@@ -194,4 +165,50 @@
 			{/each}
 		</ul>
 	{/if}
+	<div
+		class={[
+			'flex min-h-14 items-center gap-1 rounded-input px-2.5 transition-[background-color,opacity] has-[.add-food:hover]:bg-surface2',
+			selecting && 'pointer-events-none opacity-30'
+		]}
+	>
+		<button
+			type="button"
+			onclick={onadd}
+			aria-label={m.meal_add({ meal: mealName(meal) })}
+			class="add-food grid min-h-[52px] min-w-0 flex-1 grid-cols-[40px_minmax(0,1fr)] items-center gap-3 text-left font-[650] text-accent"
+		>
+			<span class="grid size-10 place-items-center rounded-small bg-soft"
+				><Plus size={20} aria-hidden="true" /></span
+			>
+			<span>{m.meal_add_food()}</span>
+		</button>
+		{#if bulk && entries.length > 0}
+			<MealMenu
+				label={m.meal_actions({ meal: mealName(meal) })}
+				saveLabel={m.saved_save_label({ meal: mealName(meal) })}
+				onsave={() => onsave?.()}
+				onselect={() => bulk.onmeal('select')}
+				onmove={() => bulk.onmeal('move')}
+				oncopy={() => bulk.onmeal('copy')}
+				ondelete={() => bulk.onmeal('delete')}
+			/>
+		{/if}
+	</div>
 </section>
+
+<style>
+	.entry-in {
+		animation: entry-in 300ms var(--ui);
+	}
+	@keyframes entry-in {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.entry-in {
+			animation: none;
+		}
+	}
+</style>

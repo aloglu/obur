@@ -1,7 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { apiAs, createFood, signedInAs, choose } from './fixtures.ts';
-
-const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
 test('save a meal, log it to another day and meal, undo, then edit and delete it', async ({
 	page
@@ -38,7 +36,8 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 	// Save Breakfast as a meal.
 	await page.goto('/');
 	const breakfast = page.getByRole('region', { name: 'Breakfast' });
-	await breakfast.getByRole('button', { name: 'Save Breakfast as a meal' }).click();
+	await breakfast.getByRole('button', { name: 'Breakfast actions' }).click();
+	await breakfast.getByRole('menuitem', { name: 'Save Breakfast as a meal' }).click();
 	const save = page.getByRole('dialog', { name: 'Save as a meal' });
 	await save.getByLabel('Name').fill('Pazar kahvaltısı');
 	await expect(save.getByRole('checkbox')).toHaveCount(2);
@@ -46,7 +45,7 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 	await expect(page.getByRole('status')).toContainText('Saved “Pazar kahvaltısı”');
 
 	// Log it from search (Turkish-insensitive) to Yesterday's dinner, without the tea.
-	if (isPhone(page)) await page.goto('/log');
+	await page.goto('/log');
 	await page.getByRole('searchbox').fill('pazar kahvaltisi');
 	await page.getByRole('button', { name: /Pazar kahvaltısı.*2 items · 160 kcal/ }).click();
 	const sheet = page.getByRole('dialog', { name: 'Pazar kahvaltısı' });
@@ -57,14 +56,14 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 	await expect(page.getByRole('heading', { level: 1, name: 'Yesterday' })).toBeVisible();
 	const dinner = page.getByRole('region', { name: 'Dinner' });
 	await expect(dinner).toContainText(`Beyaz Peynir ${tag}`);
-	await expect(dinner).toContainText('100 kcal');
+	await expect(dinner).toContainText('100');
 	const toast = page.getByRole('status');
 	await expect(toast).toContainText('Logged 1 item');
 	await toast.getByRole('button', { name: 'Undo' }).click();
-	await expect(dinner).toContainText('Nothing logged yet.');
+	await expect(dinner.getByRole('listitem')).toHaveCount(0);
 
 	// Managing is separate from logging: the sheet links to the editor.
-	if (isPhone(page)) await page.goto('/log');
+	await page.goto('/log');
 	await page.getByRole('searchbox').fill('pazar');
 	await page.getByRole('button', { name: /Pazar kahvaltısı/ }).click();
 	await page.getByRole('dialog').getByRole('link', { name: 'Edit meal' }).click();
@@ -94,7 +93,7 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 
 	// The diary entries it was saved from are untouched.
 	await page.goto('/');
-	await expect(page.getByRole('region', { name: 'Breakfast' })).toContainText('160 kcal');
+	await expect(page.getByRole('region', { name: 'Breakfast' })).toContainText('160');
 });
 
 test('create a saved meal from scratch, without logging anything', async ({ page }, testInfo) => {
@@ -127,7 +126,7 @@ test('create a saved meal from scratch, without logging anything', async ({ page
 	await expect(page.getByRole('main')).toContainText('1 item · 228 kcal');
 
 	await page.goto('/');
-	await expect(page.getByRole('region', { name: 'Breakfast' })).toContainText(
-		'Nothing logged yet.'
+	await expect(page.getByRole('region', { name: 'Breakfast' }).getByRole('listitem')).toHaveCount(
+		0
 	);
 });

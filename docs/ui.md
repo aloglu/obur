@@ -69,10 +69,11 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 ### Today
 
 - **All cards share one surface** (no two-tone fills for hierarchy).
-- **Budget card:** Activity is a "Now"-style pill beside "kcal left". Its sheet takes any typed amount, with 100, 150 and 250 as shortcuts, and activity is shown in words. The bar uses **status colours**: green with room, amber in the last 200 kcal or 10 %, red over; never the protein colour.
-- **Water and Weight:** four aligned rows each. Weight has a sparkline of the last 7 weigh-ins and **New weigh-in**, which opens in place like Other amount. Slim side padding on phones.
+- **From 760 px:** two columns, Budget and meals on the left, the rest on the right. The Log panel is gone from Today: Add food opens the Log page on every screen size, so there is one way to log.
+- **Budget card:** an Activity chip beside "kcal left" shows what is counted today and opens its sheet. The sheet takes any typed amount, with 100, 150 and 250 as shortcuts, and says in words what is already counted. The bar uses **status colours**: green with room, amber in the last 200 kcal or 10 %, red over; never the protein colour. Without a budget, the card is just "kcal eaten", with no bar and no link to set one up.
+- **Water and Weight:** four aligned rows each. Weight has a sparkline of the last 7 weigh-ins and **New weigh-in**, which opens in place like Other amount. Slim side padding on phones. The older "Same as last time" button did not survive the redesign.
 - **Edit sheets for water and weigh-ins:** rows with Edit and Delete. **Show older** is the last thing in the list, right after the oldest row shown, and scrolls with it; it adds 20 in place and goes away when nothing older is left.
-- **Meal cards:** one grid (icon, name, number) for the header, entries and a trailing **Add food** row; the meal total sits in the kcal column; bookmark moves into the … menu as **Save as a meal**.
+- **Meal cards:** all four meals share one card, divided by lines. Each is one grid (icon, name, number) for its header, entries and a trailing **Add food** row; the meal total sits in the kcal column and an empty meal has no "nothing logged" text. The bookmark moves into the … menu as **Save as a meal**.
 - **Day titles:** Today, Yesterday, the weekday for days this week, then the date with the weekday under it. The year shows only for other years.
 - **Day notes (new feature):** a collapsible card above Mark the day complete, Markdown, saves itself. See `docs/design.md`.
 - **Editing an entry:** the amount sheet in edit mode (Save changes, or "No changes"; Move to…; Delete beside it; Undo toast).
@@ -142,7 +143,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - The next-day arrow is disabled on today. You can go back as far as the data goes.
 - On desktop the header spans only the left column, so the next-day arrow lines up with the cards' right edge. On phone the title is centred.
 
-**Today**
+**Today** (superseded by the design review above where they differ)
 - **Budget card** (owner's pick 2026-10-30, "number and bar", from an Artifact comparing it with the ring, an equation-tiles card and a half gauge): "kcal left" or "kcal over" as the headline (Bricolage 44 px phone, 48 px desktop) with a compact **+ Activity** pill beside it; one full-width 12 px bar of eaten ÷ budget; Eaten at its left end and Budget at its right. The budget's breakdown is not on the card face (the owner found the "base + activity − goal" line spoils the design): tapping **Budget** opens rows for Base burn (or Your own target), Activity, Goal and the total, plus the activity-not-added and minimum notes. Without a budget the headline is "kcal eaten" with a Set up link. The owner may revisit a ring if the activity button and breakdown can be placed well; the calendar keeps its rings.
 - **Budget colours:** accent while under budget. When over, the bar and number turn **red** (`bad`). This was the owner's explicit choice.
 - **Nutrients card:** protein, carbohydrate and fat bars against their targets. Fibre, sugars, saturated fat and salt sit in a 2×2 grid. Unknown values show a "+" and "N entries unknown", never zero.

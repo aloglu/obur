@@ -46,6 +46,27 @@ export function dayTitle(date: string, today: string): string {
 	return `${WEEKDAYS[weekday].slice(0, 3)} ${d} ${MONTHS[mo - 1].slice(0, 3)}`;
 }
 
+/**
+ * The day header (docs/ui.md, "Day titles"): Today and Yesterday, the weekday for other days this week (Monday first),
+ * then the date with the weekday under it. The year shows only for other years.
+ */
+export function dayHeading(date: string, today: string): { title: string; detail: string } {
+	const { y, mo, d, weekday } = parts(date);
+	const dayMonth = `${d} ${MONTHS[mo - 1]}${y !== parts(today).y ? ` ${y}` : ''}`;
+	const name = WEEKDAYS[weekday];
+	if (date === today) return { title: m.day_today(), detail: `${name} ${dayMonth}` };
+	if (date === addDays(today, -1))
+		return { title: m.day_yesterday(), detail: `${name} ${dayMonth}` };
+	const sinceMonday = (parts(today).weekday + 6) % 7;
+	if (date >= addDays(today, -sinceMonday)) return { title: name, detail: dayMonth };
+	return { title: dayMonth, detail: name };
+}
+
+/** "Thu". */
+export function weekdayShort(date: string): string {
+	return WEEKDAYS[parts(date).weekday].slice(0, 3);
+}
+
 /** "Tuesday 20 October". */
 export function dayAndMonth(date: string): string {
 	const { mo, d, weekday } = parts(date);

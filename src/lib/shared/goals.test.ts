@@ -1,6 +1,7 @@
 // Fixture tests for the target formulas, using worked examples from the published equations.
 import { describe, expect, it } from 'vitest';
 import {
+	budgetStatus,
 	ageOn,
 	baseBurn,
 	bmi,
@@ -183,5 +184,19 @@ describe('budgetForDay', () => {
 			activityKcal: 0,
 			activityNotAddedKcal: 300
 		});
+	});
+});
+
+describe('budgetStatus', () => {
+	it.each([
+		[1000, 2000, 'plenty'],
+		[1700, 2000, 'plenty'],
+		[1801, 2000, 'close'], // inside the last 200 kcal
+		[2000, 2000, 'close'],
+		[2001, 2000, 'over'],
+		[2700, 3000, 'plenty'], // exactly 10 % left
+		[2750, 3000, 'close'] // 250 left: more than 200, but under 10 %
+	] as const)('%i of %i is %s', (eaten, budget, status) => {
+		expect(budgetStatus(eaten, budget)).toBe(status);
 	});
 });

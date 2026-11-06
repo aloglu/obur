@@ -1,8 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { SPEECH_STUB } from '../../playwright.config.ts';
 import { scanEditsFor, signedInAs, choose } from './fixtures.ts';
 
-const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 // Small images: the stand-in OCR answers by the photo's width (3, 5, 7 or 9 px), so each test gets its own made-up
 // table even while both browsers run at once. A width's answer is never changed while the other browser may use it.
 const png = (b64: string) => Buffer.from(b64, 'base64');
@@ -60,7 +59,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
 		data: { width: 3, status: 200, body: { lines: TABLE, ocrMs: 900, queueMs: 0 } }
 	});
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 	await page.getByRole('link', { name: 'Scan a label' }).click();
 	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	await page.getByLabel('Choose photo').setInputFiles({
@@ -113,7 +112,7 @@ test('a label that cannot be read says so and leaves the form empty to fill in',
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
 		data: { width: 5, status: 200, body: { lines: [line('Net Miktar: 400 g', 20, 40)], ocrMs: 1 } }
 	});
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 	await page.getByRole('link', { name: 'Scan a label' }).click();
 	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	await page
@@ -138,7 +137,7 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
 		data: { width: 7, status: 200, body: { lines: TABLE, ocrMs: 1 } }
 	});
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 	await page.getByRole('link', { name: 'Scan a label' }).click();
 	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	const choose = () =>
@@ -154,7 +153,7 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 	await expect(page.getByLabel('Product name')).toBeHidden();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	// The choice is remembered on this device.
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 	await page.getByRole('link', { name: 'Scan a label' }).click();
 	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	await choose();

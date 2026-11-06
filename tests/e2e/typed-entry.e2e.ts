@@ -1,7 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { createFood, signedInAs, choose } from './fixtures.ts';
-
-const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
 test('a typed sentence becomes items to confirm, logged together and undone together', async ({
 	page
@@ -15,7 +13,7 @@ test('a typed sentence becomes items to confirm, logged together and undone toge
 		nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }],
 		servings: [{ name: 'dilim', amount: 30, unit: 'g' }]
 	});
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 
 	// Plain food names stay a search; a sentence is offered as an entry.
 	await page
@@ -45,15 +43,15 @@ test('a typed sentence becomes items to confirm, logged together and undone toge
 	await expect(page.getByRole('region', { name: 'Breakfast' })).toContainText('150');
 	await expect(page.getByRole('region', { name: 'Water' })).toContainText('400 ml');
 	await toast.getByRole('button', { name: 'Undo' }).click();
-	await expect(page.getByRole('region', { name: 'Breakfast' })).toContainText(
-		'Nothing logged yet.'
+	await expect(page.getByRole('region', { name: 'Breakfast' }).getByRole('listitem')).toHaveCount(
+		0
 	);
 	await expect(page.getByRole('region', { name: 'Water' })).toContainText('0 ml');
 });
 
 test('weight, calories-only and a curated food with a bare count', async ({ page }, testInfo) => {
 	await signedInAs(page, `Kaan ${testInfo.project.name}`);
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 	await page.getByRole('searchbox').fill('bugün 80,5 kiloydum');
 	await page.getByRole('button', { name: /Log as typed/ }).click();
 	const sheet = page.getByRole('dialog', { name: 'Check and log' });

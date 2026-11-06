@@ -22,7 +22,7 @@ async function openLogFor(page: Page, mealName: string) {
 	await meal(page, mealName)
 		.getByRole('button', { name: `Add to ${mealName}` })
 		.click();
-	if (isPhone(page)) await expect(page).toHaveURL(/\/log\?meal=/);
+	await expect(page).toHaveURL(/\/log\?meal=/);
 	await expect(page.getByText(`Adding to ${mealName} · Today`)).toBeVisible();
 }
 
@@ -33,12 +33,6 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Next day' })).toBeDisabled();
-	if (!isPhone(page)) {
-		// The Log panel starts level with the Budget card, not with the day header.
-		const panel = await page.getByRole('complementary', { name: 'Log' }).boundingBox();
-		const budget = await page.getByRole('region', { name: 'Budget' }).boundingBox();
-		expect(Math.abs(panel!.y - budget!.y)).toBeLessThan(1);
-	}
 
 	// Log three slices to lunch.
 	await openLogFor(page, 'Lunch');
@@ -57,7 +51,7 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 
 	// Undo from the toast removes it again.
 	await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
-	await expect(lunch.getByText('Nothing logged yet.')).toBeVisible();
+	await expect(lunch.getByRole('listitem')).toHaveCount(0);
 
 	// Log it again, then correct the amount from the entry's own snapshot.
 	await openLogFor(page, 'Lunch');
@@ -74,7 +68,7 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 		recent.getByRole('button', { name: new RegExp(`Untad Premium Light Ekmek ${tag}`) })
 	).toBeVisible();
 	await page.getByRole('button', { name: 'Cancel' }).click();
-	if (isPhone(page)) await page.goto('/');
+	await page.goto('/');
 	await lunch.getByRole('button', { name: /Untad Premium Light Ekmek/ }).click();
 	await page.getByRole('dialog').getByLabel('Amount').fill('2');
 	await page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click();
@@ -94,7 +88,7 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 	// Delete with Undo, no confirmation dialog.
 	await meal(page, 'Dinner').getByRole('button', { name: /Untad/ }).click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
-	await expect(meal(page, 'Dinner').getByText('Nothing logged yet.')).toBeVisible();
+	await expect(meal(page, 'Dinner').getByRole('listitem')).toHaveCount(0);
 	await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
 	await expect(meal(page, 'Dinner').getByText('2 × slice (26 g)')).toBeVisible();
 });
@@ -185,7 +179,7 @@ for (const theme of ['light', 'dark'] as const) {
 		});
 
 		await page.goto(`/?date=${date}`);
-		await expect(page.getByRole('heading', { level: 1, name: 'Tue 20 Oct' })).toBeVisible();
+		await expect(page.getByRole('heading', { level: 1, name: /^20 October/ })).toBeVisible();
 		await page.evaluate(() => document.fonts.ready);
 		// Phones: the viewport, where the floating tab bar belongs. Desktop: the whole page.
 		await expect(page).toHaveScreenshot(`today-${theme}.png`, {
@@ -285,4 +279,21 @@ test('a sheet reopened while the last one slides away works, and focus returns t
 	await page.keyboard.press('Escape');
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await expect(open).toBeFocused();
+});
+
+test('the arrow keys move between days, and leave fields alone', async ({ page }, testInfo) => {
+	await signedInAs(page, `Ok ${testInfo.project.name}`);
+	await page.goto('/');
+	await page.waitForLoadState('networkidle');
+	await page.keyboard.press('ArrowRight'); // no further than today
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await page.keyboard.press('ArrowLeft');
+	await expect(page.getByRole('heading', { level: 1, name: 'Yesterday' })).toBeVisible();
+	await page.keyboard.press('ArrowRight');
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+
+	await page.getByRole('button', { name: 'Other amount' }).click();
+	await page.getByLabel('Amount of water').fill('12');
+	await page.keyboard.press('ArrowLeft');
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 });

@@ -1,7 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { createFood, signedInAs, choose } from './fixtures.ts';
-
-const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
 test('create a recipe, log a serving, edit it without changing the diary, and share it as a plain food', async ({
 	page,
@@ -64,7 +62,7 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await expect(page.getByRole('main')).toContainText('185 kcal per serving · 4 servings');
 
 	// Logged from Log like any food: by the serving, or in grams thanks to the cooked weight.
-	await page.goto(isPhone(page) ? '/log' : '/');
+	await page.goto('/log');
 	await page.getByRole('searchbox').fill(`mercimek corbasi ${tag}`);
 	const result = page.getByRole('button', { name: new RegExp(`Mercimek çorbası ${tag}`) }).first();
 	await expect(result.locator('img[src="/icons/food/1F958.svg"]')).toBeVisible();

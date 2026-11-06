@@ -202,10 +202,8 @@
 			type="button"
 			disabled={busy}
 			onclick={loadOlder}
-			class="min-h-11 rounded-input border border-line text-[14px] font-semibold"
+			class="min-h-12 w-full rounded-input bg-surface2 text-[15px] font-bold disabled:opacity-50"
 			>{m.readings_older()}</button
 		>
-	{:else if older && rows.length > 0}
-		<p class="text-[13px] text-muted">{m.readings_no_older()}</p>
 	{/if}
 </Sheet>

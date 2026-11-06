@@ -311,6 +311,19 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 			return row ? toReading(row, row.kg) : null;
 		},
 
+		/** The latest weigh-ins on or before a day, newest first. */
+		async recentWeights(userId: string, onOrBefore: string, limit: number): Promise<BodyReading[]> {
+			const rows = await withUser(db, userId, (tx) =>
+				tx
+					.select()
+					.from(weightEntries)
+					.where(and(lte(weightEntries.localDate, onOrBefore), isNull(weightEntries.deletedAt)))
+					.orderBy(desc(weightEntries.localDate), desc(weightEntries.createdAt))
+					.limit(limit)
+			);
+			return rows.map((row) => toReading(row, row.kg));
+		},
+
 		/**
 		 * A page of weigh-ins, newest first (latest day, then latest recorded), after an optional cursor: the last
 		 * reading of the previous page.

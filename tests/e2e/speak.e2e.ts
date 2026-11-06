@@ -24,7 +24,7 @@ test('Speak records, sends the clip with the person’s foods as a prompt, and c
 		servings: [{ name: 'kutu', amount: 200, unit: 'ml' }]
 	});
 	// Log it once so it is a recent food and part of the prompt.
-	await page.goto('/');
+	await page.goto('/log');
 	await page.getByRole('searchbox').fill('sesli ayran');
 	await page
 		.getByRole('button', { name: /Köy Sesli Ayran/ })
@@ -40,6 +40,7 @@ test('Speak records, sends the clip with the person’s foods as a prompt, and c
 		queueMs: 0,
 		asrMs: 900
 	});
+	await page.goto('/log');
 	await page.getByRole('button', { name: 'Speak' }).click();
 	const speak = page.getByRole('dialog', { name: 'Speak' });
 	await expect(speak).toContainText('Listening… say what you ate');
@@ -64,7 +65,7 @@ test('Speak says when nothing was heard or the service is busy, and offers to tr
 	page
 }) => {
 	await signedInAs(page, 'Sessiz');
-	await page.goto('/');
+	await page.goto('/log');
 	await nextTranscript({ text: '  ', language: 'tr', audioS: 1, queueMs: 0, asrMs: 300 });
 	await page.getByRole('button', { name: 'Speak' }).click();
 	const speak = page.getByRole('dialog', { name: 'Speak' });

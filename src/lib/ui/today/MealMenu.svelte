@@ -8,12 +8,14 @@
 
 	interface Props {
 		label: string;
+		saveLabel: string;
+		onsave: () => void;
 		onselect: () => void;
 		onmove: () => void;
 		oncopy: () => void;
 		ondelete: () => void;
 	}
-	let { label, onselect, onmove, oncopy, ondelete }: Props = $props();
+	let { label, saveLabel, onsave, onselect, onmove, oncopy, ondelete }: Props = $props();
 	let open = $state(false);
 	let button: HTMLButtonElement;
 	let menu = $state<HTMLDivElement>();
@@ -80,8 +82,15 @@
 			tabindex="-1"
 			aria-label={label}
 			onkeydown={keys}
-			class="absolute top-full right-1 z-20 mt-1 flex min-w-[13rem] flex-col rounded-[14px] border border-line bg-surface p-1.5 shadow-sheet"
+			class="absolute right-0 bottom-full z-20 mb-1 flex min-w-[13rem] flex-col rounded-[14px] border border-line bg-surface p-1.5 shadow-sheet"
 		>
+			<button
+				type="button"
+				role="menuitem"
+				aria-label={saveLabel}
+				class={item}
+				onclick={() => choose(onsave)}>{m.saved_save_as()}</button
+			>
 			<button type="button" role="menuitem" class={item} onclick={() => choose(onselect)}
 				>{m.meal_menu_select()}</button
 			>
