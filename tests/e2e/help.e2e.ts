@@ -40,3 +40,11 @@ test('Help explains the Journal rings with an example of each', async ({ page })
 	await expect(examples).toHaveCount(4);
 	await expect(examples.first()).toContainText('Green');
 });
+
+test('Help explains day notes', async ({ page }, testInfo) => {
+	await signedInAs(page, `Notlar ${testInfo.project.name}`);
+	await page.goto('/help');
+	await page.getByRole('searchbox').fill('notlar');
+	await expect(page.getByText('What are day notes?')).toBeVisible();
+	await expect(page.getByText('Only you see your notes')).toBeVisible();
+});

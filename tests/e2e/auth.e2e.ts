@@ -149,6 +149,7 @@ test('an invited member joins with their own passkey', async ({ browser }) => {
 	await page.goto('/household');
 	await page.getByLabel('Who is it for? (optional)').fill('Mehmet');
 	await page.getByRole('button', { name: 'Create invite link' }).click();
+	await expect(page.getByTestId('invite-link')).toContainText('/join#');
 	const link = (await page.getByTestId('invite-link').textContent())!.trim();
 	expect(link).toMatch(/\/join#/);
 

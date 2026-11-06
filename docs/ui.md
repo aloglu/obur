@@ -107,7 +107,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 - **More** is compact: rows with current values; Appearance, Goal, Units and Reminders on nested pages. Sign out sits in its row beside the name.
 - **Appearance:** mode, then themes as cards, then app icons, with no descriptions except a short line: "A new icon shows after you add obur to the Home Screen again."
 - **Goal:** Pace is a row ("Steady · 0,25 kg a week") opening a menu. Goal weight opens in place and moved here from Profile's details; Maintain and the 1 kg pace ("Fastest") stay as options because setup offers them. Without a calculated budget the page points to setup. **Units:** Weight and a new **Time** (24-hour or 12-hour, defaulting to the device).
-- **Reminders:** just the time; tapping opens the native picker. The Home Screen hint shows only on Reminders, in three one-line steps with room between them.
+- **Reminders:** just the time; tapping opens the native picker. The Home Screen hint shows only on Reminders, in three one-line steps with room between them. Quiet hours stay on the page as their own card (the demo left them out; they are a real setting, owner 2026-10-31).
 - **Recipes and saved meals:**
   - Archive moves into a "…" menu by the title; its confirmation opens under the title.
   - "Update to current food values" is a full-width secondary button with an icon, shown only when an ingredient has changed.
@@ -120,7 +120,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 ### Account and household
 
 - **Passkeys:** labels sit beside the name; rows open a detail sheet with Rename and Remove.
-- **Household:** "Backups are working" is one larger line with a bigger mark.
+- **Household:** "Backups are working" is one larger line with a bigger mark. Sections have small labels above their cards: People, Invite someone, Backups, Label scans, Deleted accounts. Deleting someone needs the "I understand" tick as well as a passkey. Deleted accounts list opaque IDs, not the demo's names: names are not kept after deletion. The off-site row says whether a copy is set up, not when it last ran, because the backup report only has that.
 - **Your data, LoseIt import:** the chosen file replaces the picker (name, source, dates, size in one row); one "To add" list with numbers on the right, deleted entries as the last grey row; weight unit and sharing as two settings rows; even spacing throughout.
 - **Offline refused entry:** calories only, other food or discard, with Undo; waiting entries are tied to one account.
 

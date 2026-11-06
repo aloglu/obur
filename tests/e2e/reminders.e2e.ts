@@ -53,5 +53,9 @@ test('reminders: a switch and the system time picker per reminder, quiet hours, 
 		'aria-checked',
 		'false'
 	);
-	await expect(page.getByLabel('Dinner time')).toHaveCount(0);
+	await expect(page.getByRole('switch', { name: 'Dinner' })).toHaveAttribute(
+		'aria-checked',
+		'false'
+	);
+	await expect(page.locator('[inert]').getByLabel('Dinner time')).toHaveCount(1);
 });

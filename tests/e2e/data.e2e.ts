@@ -102,16 +102,16 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	await page.goto('/household');
 	// Development and test installations have no backup service, and the page says so.
 	await expect(page.getByText("Backups aren't set up on this installation.")).toBeVisible();
-	const people = page.locator('section', { has: page.getByRole('heading', { name: 'People' }) });
+	const people = page.getByRole('region', { name: 'People' });
 	await people
 		.getByRole('listitem')
 		.filter({ hasText: name })
 		.getByRole('button', { name: 'Delete account' })
 		.click();
-	await page
-		.getByRole('dialog', { name: `Delete ${name}'s account?` })
-		.getByRole('button', { name: 'Delete account' })
-		.click();
+	const sheet = page.getByRole('dialog', { name: `Delete ${name}'s account?` });
+	await expect(sheet.getByRole('button', { name: 'Delete account' })).toBeDisabled();
+	await sheet.getByRole('checkbox').check();
+	await sheet.getByRole('button', { name: 'Delete account' }).click();
 	await expect(people).not.toContainText(name);
 	await expect(page.getByTestId('deletions')).toContainText(memberId);
 	await expect(page.getByTestId('deletions')).not.toContainText(name);
