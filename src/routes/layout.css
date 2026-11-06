@@ -180,3 +180,8 @@ main {
 		animation: none;
 	}
 }
+
+/* Focus returned to a button after a sheet closed by tap (ui/Sheet.svelte). */
+[data-quiet-focus]:focus {
+	outline: none !important;
+}

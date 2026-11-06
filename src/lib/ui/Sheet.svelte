@@ -14,6 +14,9 @@
 	$effect(() => {
 		const opener = document.activeElement as HTMLElement | null;
 		const unlock = lockPageScroll();
+		let usedKeys = false;
+		const onkey = () => (usedKeys = true);
+		window.addEventListener('keydown', onkey, { capture: true });
 		dialog.showModal();
 		return () => {
 			// The sheet itself goes at once, so the page is usable straight away and opening it again gets a fresh one. What
@@ -21,7 +24,17 @@
 			const copy = dialog.cloneNode(true) as HTMLDialogElement;
 			dialog.close();
 			unlock();
-			if (document.activeElement === document.body) opener?.focus({ preventScroll: true });
+			window.removeEventListener('keydown', onkey, { capture: true });
+			if (opener && document.activeElement === document.body) {
+				// Focus goes back for assistive tech and keyboards; after a tap, no ring around the button.
+				if (!usedKeys) {
+					opener.toggleAttribute('data-quiet-focus', true);
+					opener.addEventListener('blur', () => opener.removeAttribute('data-quiet-focus'), {
+						once: true
+					});
+				}
+				opener.focus({ preventScroll: true });
+			}
 			slideAway(copy, scrolled);
 		};
 	});

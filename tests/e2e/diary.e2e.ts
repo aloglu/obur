@@ -277,6 +277,8 @@ test('a sheet reopened while the last one slides away works, and focus returns t
 	const open = page.getByRole('button', { name: /Quick add/ });
 	await open.click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+	await expect(open).toBeFocused();
+	await expect(open).toHaveCSS('outline-style', 'none'); // no ring after a tap
 	await open.click();
 	await page.getByRole('dialog').getByLabel('Calories (kcal)').fill('150');
 	await expect(page.getByRole('dialog').getByLabel('Calories (kcal)')).toHaveValue('150');
