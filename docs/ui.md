@@ -63,7 +63,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 - **Sign in:** icon and "obur" centred on the screen, one button low, no subtitle and no invite line. On desktop the group is centred, with 72 px between name and button.
 - **Set up and Join:** no description under the title, no hints under fields, no closing line.
 - **Recovery codes:** an amber warning card ("Keep these somewhere safe", shown only now), then "I've saved these codes" as its own row with the app's checkbox; Continue waits for it.
-- **Signed out with entries waiting:** the regular sign-in layout, with the warning card right above the button. It must never cover the name.
+- **Signed out with entries waiting:** the regular sign-in layout, with the warning card right above the button. It must never cover the name. The device keeps a small note (`client/offline/waiting.ts`: name and count only) because nobody is signed in to read the queue by account.
 - **The budget is a free choice.** First day is the real Today, only empty. After "Just log" nothing on Today mentions a missing budget; the only pointer is the toast when the welcome card is dismissed (More → Profile). Profile's empty card reads "Daily budget · Optional…". Repeatedly mentioning a missing budget makes people feel they are doing something wrong (owner).
 - **Budget setup:** Body fat and Waist are always visible under the other fields, with no divider, expander or "Optional" in the label (the fields say it), and even spacing. No explanation under "Sex used by the formula".
 - **Empty Journal day:** the date and Open, then only "Nothing logged", centred in its line; no kcal or dashes. A day with a weigh-in but no food keeps its columns, so the weight shows.

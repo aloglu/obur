@@ -48,3 +48,22 @@ test('sends hardening headers and rejects cross-site state changes', async ({
 	const unauthenticated = await request.get('/api/v1/auth/credentials');
 	expect(unauthenticated.status()).toBe(401);
 });
+
+test('signed out with entries waiting: the card says whose they are and never covers the name', async ({
+	page
+}) => {
+	await page.goto('/login');
+	await page.evaluate(() =>
+		localStorage.setItem(
+			'obur:waiting',
+			JSON.stringify({ someone: { name: 'Selin Yılmaz-Karaosmanoğlu', count: 3 } })
+		)
+	);
+	await page.reload();
+	const card = page.getByRole('alert').filter({ hasText: '3 entries are waiting on this device' });
+	await expect(card).toContainText('nobody else sees them');
+	const name = await page.getByText('obur', { exact: true }).boundingBox();
+	const top = await page.getByRole('alert').first().boundingBox();
+	expect(name!.y + name!.height).toBeLessThanOrEqual(top!.y);
+	await expect(page.getByRole('button', { name: 'Sign in with a passkey' })).toBeInViewport();
+});

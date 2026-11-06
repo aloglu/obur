@@ -1,4 +1,5 @@
 <script lang="ts">
+	import KeyRound from '@lucide/svelte/icons/key-round';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -57,31 +58,28 @@
 	}
 </script>
 
-<AuthShell title={m.join_title()} body={codes ? undefined : m.join_body()}>
+<AuthShell title={codes ? m.codes_title() : m.join_title()} brand={!codes}>
 	{#if codes}
 		<RecoveryCodes {codes} ondone={finish} />
 	{:else if ready && !token}
 		<Notice>{m.join_missing()}</Notice>
 	{:else if ready}
 		{#if problem}<Notice>{problem}</Notice>{/if}
-		<form class="flex flex-col gap-4" onsubmit={create}>
-			<TextField
-				label={m.field_display_name()}
-				hint={m.field_display_name_hint()}
-				bind:value={name}
-				required
-				maxlength={80}
-				autocomplete="name"
-			/>
-			<TextField
-				label={m.field_passkey_label()}
-				hint={m.field_passkey_label_hint()}
-				bind:value={label}
-				maxlength={40}
-			/>
-			<Button type="submit" wide disabled={busy || !name.trim()}
-				>{busy ? m.common_working() : m.join_button()}</Button
-			>
+		<form class="flex flex-col gap-3.5" onsubmit={create}>
+			<div class="flex flex-col gap-4 rounded-card bg-surface p-[18px] shadow-card">
+				<TextField
+					label={m.field_display_name()}
+					bind:value={name}
+					required
+					maxlength={80}
+					autocomplete="name"
+				/>
+				<TextField label={m.field_passkey_label()} bind:value={label} maxlength={40} />
+			</div>
+			<Button type="submit" wide disabled={busy || !name.trim()}>
+				<KeyRound size={20} aria-hidden="true" />
+				{busy ? m.common_working() : m.join_button()}
+			</Button>
 		</form>
 	{/if}
 </AuthShell>

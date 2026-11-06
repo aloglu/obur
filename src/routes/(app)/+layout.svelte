@@ -6,6 +6,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { offer } from '#lib/client/celebration.svelte.ts';
 	import { offline, recentlyUnreachable, startSync } from '#lib/client/offline/sync.svelte.ts';
+	import { noteWaiting } from '#lib/client/offline/waiting.ts';
 	import { syncZoneCookie } from '#lib/client/prefs.ts';
 	import AppShell from '#lib/ui/shell/AppShell.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
@@ -58,6 +59,11 @@
 	});
 
 	const waiting = $derived(offline.items.filter((i) => i.status === 'pending').length);
+	// So the sign-in page can say whose entries are waiting if the session ends.
+	$effect(() => {
+		if (data.user && offline.ownerId === data.user.id)
+			noteWaiting(data.user.id, data.user.displayName, waiting);
+	});
 </script>
 
 <AppShell>

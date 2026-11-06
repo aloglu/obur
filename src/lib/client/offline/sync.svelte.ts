@@ -3,6 +3,7 @@
 // never from navigator.onLine (which reported "online" in Airplane Mode on the owner's iPhone in Phase 0).
 import { ApiError } from '../api.ts';
 import { deleteQueue, openQueue, type Preview, type Queue, type QueuedOp } from './store.ts';
+import { noteWaiting } from './waiting.ts';
 
 /** Background sends can wait; a person tapping Save should not. */
 const TIMEOUT_MS = 10_000;
@@ -258,6 +259,7 @@ export async function discard(seq: number): Promise<void> {
 export async function clearDeviceData(ownerId: string): Promise<void> {
 	stopSync();
 	await deleteQueue(ownerId);
+	noteWaiting(ownerId, '', 0);
 	if ('caches' in globalThis) {
 		for (const key of await caches.keys())
 			if (key.startsWith('obur-data')) await caches.delete(key);

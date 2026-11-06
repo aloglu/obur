@@ -1,4 +1,5 @@
 <script lang="ts">
+	import KeyRound from '@lucide/svelte/icons/key-round';
 	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -76,44 +77,50 @@
 </script>
 
 <AuthShell
-	title={m.recover_title()}
-	body={stage === 'code' ? (viaLink ? m.recover_link_body() : m.recover_body()) : undefined}
+	title={stage === 'codes' ? m.codes_title() : m.recover_title()}
+	brand={stage !== 'codes'}
+	lead={stage === 'code' ? (viaLink ? m.recover_link_body() : m.recover_body()) : undefined}
 >
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if stage === 'code'}
 		<form
-			class="flex flex-col gap-4"
+			class="flex flex-col gap-3.5"
 			onsubmit={(e) => {
 				e.preventDefault();
 				begin({ code });
 			}}
 		>
-			<TextField
-				label={m.recover_code()}
-				bind:value={code}
-				autocomplete="one-time-code"
-				autocapitalize="characters"
-				spellcheck={false}
-				placeholder="XXXX-XXXX-XXXX-XXXX"
-			/>
+			<div class="rounded-card bg-surface p-[18px] shadow-card">
+				<TextField
+					label={m.recover_code()}
+					bind:value={code}
+					autocomplete="one-time-code"
+					autocapitalize="characters"
+					spellcheck={false}
+					placeholder="XXXX-XXXX-XXXX-XXXX"
+				/>
+			</div>
 			<Button type="submit" wide disabled={busy || code.trim().length < 16}
 				>{busy ? m.common_working() : m.recover_start()}</Button
 			>
 		</form>
-	{:else if stage === 'enrol'}
-		<div class="flex flex-col gap-1">
-			<h2 class="text-[17px] font-bold">{m.recover_warning_title()}</h2>
-			<p class="text-[14px] text-muted">{m.recover_warning()}</p>
-		</div>
-		<TextField
-			label={m.field_passkey_label()}
-			hint={m.field_passkey_label_hint()}
-			bind:value={label}
-			maxlength={40}
-		/>
-		<Button wide disabled={busy} onclick={enrol}
-			>{busy ? m.common_working() : m.recover_button()}</Button
+		<a
+			href={resolve('/login')}
+			class="inline-flex min-h-11 items-center justify-center self-center text-[15px] font-[650] text-accent"
+			>{m.recover_back()}</a
 		>
+		<p class="mt-auto pt-6 text-center text-[13px] text-balance text-muted">
+			{m.recover_no_codes()}
+		</p>
+	{:else if stage === 'enrol'}
+		<Notice title={m.recover_warning_title()}>{m.recover_warning()}</Notice>
+		<div class="rounded-card bg-surface p-[18px] shadow-card">
+			<TextField label={m.field_passkey_label()} bind:value={label} maxlength={40} />
+		</div>
+		<Button wide disabled={busy} onclick={enrol}>
+			<KeyRound size={20} aria-hidden="true" />
+			{busy ? m.common_working() : m.recover_button()}
+		</Button>
 	{:else}
 		<RecoveryCodes {codes} ondone={finish} />
 	{/if}
