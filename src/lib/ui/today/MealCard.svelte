@@ -149,11 +149,11 @@
 							<span class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
 								{entryQuantity(e)}
 								{#if e.kind === 'quick'}<span
-										class="rounded-full bg-surface2 px-2 py-0.5 text-[12px] font-semibold"
+										class="rounded-menu bg-surface2 px-2 py-0.5 text-[12px] font-semibold"
 										>{m.entry_macros_unknown()}</span
 									>{/if}
 								{#if e.pending}<span
-										class="rounded-full bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn"
+										class="rounded-menu bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn"
 										>{m.entry_pending()}</span
 									>{/if}
 							</span>
@@ -180,7 +180,7 @@
 								<span class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
 									{op.preview.quantity}
 									<span
-										class="rounded-full bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn"
+										class="rounded-menu bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn"
 										>{op.status === 'review' ? m.offline_review() : m.entry_pending()}</span
 									>
 								</span>

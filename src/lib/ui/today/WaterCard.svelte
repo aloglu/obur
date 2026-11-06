@@ -116,7 +116,7 @@
 				disabled={busy}
 				onclick={() => add(ml)}
 				aria-label={m.water_add_label({ ml: String(ml) })}
-				class="min-h-11 rounded-full bg-soft px-2 text-[15px] font-bold whitespace-nowrap text-accent disabled:opacity-50"
+				class="min-h-11 rounded-input bg-soft px-2 text-[15px] font-bold whitespace-nowrap text-accent disabled:opacity-50"
 				>{m.water_add({ ml: String(ml) })}</button
 			>
 		{/each}
@@ -126,7 +126,7 @@
 			<div
 				class={[
 					// A ring, not a border: the field keeps the 44 px height of the button it replaces.
-					'flex h-11 items-center rounded-full bg-surface2 pl-4 ring-1',
+					'flex h-11 items-center rounded-input bg-surface2 pl-4 ring-1',
 					amountError ? 'ring-bad' : 'ring-line focus-within:ring-accent'
 				]}
 			>
@@ -173,7 +173,7 @@
 			type="button"
 			disabled={busy}
 			onclick={() => (other = true)}
-			class="min-h-11 rounded-full bg-surface2 px-2 text-[15px] font-bold text-text disabled:opacity-50"
+			class="min-h-11 rounded-input bg-surface2 px-2 text-[15px] font-bold text-text disabled:opacity-50"
 			>{m.water_other()}</button
 		>
 	{/if}

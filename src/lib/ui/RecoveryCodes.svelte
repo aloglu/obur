@@ -35,7 +35,7 @@
 		<Button variant="ghost" onclick={download}>{m.codes_download()}</Button>
 	</div>
 	<label class="flex min-h-11 items-center gap-3 text-[15px] font-semibold">
-		<input type="checkbox" bind:checked={saved} class="size-5 accent-accent" />
+		<input type="checkbox" bind:checked={saved} />
 		{m.codes_saved()}
 	</label>
 	<Button wide disabled={!saved} onclick={ondone}>{m.common_continue()}</Button>

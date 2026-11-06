@@ -28,7 +28,7 @@
 		active ? 'bg-soft text-accent' : 'text-text hover:bg-surface2'
 	];
 	const tabItem = (active: boolean) => [
-		'flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-full text-[11.5px] font-bold',
+		'flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-input text-[11.5px] font-bold',
 		active ? 'bg-soft text-accent' : 'text-muted'
 	];
 </script>
@@ -94,7 +94,7 @@
 
 <nav
 	aria-label={m.nav_main()}
-	class="fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-30 flex gap-1 rounded-full border border-(--tabbar-border) bg-surface p-1.5 shadow-tabbar desk:hidden"
+	class="fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-30 flex gap-1 rounded-card border border-(--tabbar-border) bg-surface p-1.5 shadow-tabbar desk:hidden"
 >
 	<a href={resolve('/(app)')} class={tabItem(is('/'))} aria-current={is('/') ? 'page' : undefined}
 		><CalendarDays size={22} aria-hidden="true" />{m.nav_today()}</a

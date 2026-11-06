@@ -190,18 +190,10 @@
 				/>
 			</div>
 			<label class="flex min-h-11 items-center gap-3 text-[15px]"
-				><input
-					type="checkbox"
-					bind:checked={pregnant}
-					class="size-5 accent-accent"
-				/>{m.onb_pregnant()}</label
+				><input type="checkbox" bind:checked={pregnant} />{m.onb_pregnant()}</label
 			>
 			<label class="flex min-h-11 items-center gap-3 text-[15px]"
-				><input
-					type="checkbox"
-					bind:checked={breastfeeding}
-					class="size-5 accent-accent"
-				/>{m.onb_breastfeeding()}</label
+				><input type="checkbox" bind:checked={breastfeeding} />{m.onb_breastfeeding()}</label
 			>
 			<Button type="submit" wide disabled={busy || !detailsValid}>{m.onb_next()}</Button>
 		</form>

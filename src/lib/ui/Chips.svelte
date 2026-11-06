@@ -33,7 +33,7 @@
 					onchange?.(option.value);
 				}}
 				class={[
-					'min-h-11 rounded-full border px-4 py-1.5 text-[15px] leading-tight font-semibold disabled:opacity-40',
+					'min-h-11 rounded-input border px-4 py-1.5 text-[15px] leading-tight font-semibold disabled:opacity-40',
 					value === option.value
 						? 'border-accent bg-soft text-accent'
 						: 'border-line bg-surface2 text-text'

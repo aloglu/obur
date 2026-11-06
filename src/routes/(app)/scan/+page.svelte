@@ -262,12 +262,7 @@
 				>{/if}
 			{#if saveProblem}<Notice>{saveProblem}</Notice>{/if}
 			<label class="flex min-h-11 cursor-pointer items-center gap-3 px-1">
-				<input
-					type="checkbox"
-					bind:checked={logAfter}
-					onchange={rememberLogAfter}
-					class="size-5 shrink-0 accent-accent"
-				/>
+				<input type="checkbox" bind:checked={logAfter} onchange={rememberLogAfter} />
 				<span class="text-[15px] font-semibold">{m.scan_log_after()}</span>
 			</label>
 			<Card title={m.scan_new_food()}>

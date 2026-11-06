@@ -217,7 +217,7 @@
 			<!-- Keyed by the request too, so choosing a meal again replays the short pulse. -->
 			{#key `${preset}:${presetRequest}`}
 				<div
-					class="preset flex items-center gap-2 self-start rounded-full bg-soft py-1 pr-1 pl-3.5 text-[14px] font-semibold text-accent"
+					class="preset flex items-center gap-2 self-start rounded-menu bg-soft py-1 pr-1 pl-3.5 text-[14px] font-semibold text-accent"
 				>
 					{m.log_adding_to({ meal: mealName(preset), day: dayTitle(date, today) })}
 					<button
@@ -330,7 +330,7 @@
 				>
 				<span class="text-[15px] font-semibold">{m.log_speak()}</span>
 				{#if !onspeak}<span
-						class="rounded-full bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
+						class="rounded-menu bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
 						>{m.log_coming_soon()}</span
 					>{/if}
 			</button>
@@ -355,7 +355,7 @@
 						><ScanLine size={28} aria-hidden="true" /></span
 					>
 					<span class="text-[15px] font-semibold">{m.log_scan()}</span>
-					<span class="rounded-full bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
+					<span class="rounded-menu bg-surface px-2.5 py-0.5 text-[12px] font-semibold text-muted"
 						>{m.log_coming_soon()}</span
 					>
 				</button>

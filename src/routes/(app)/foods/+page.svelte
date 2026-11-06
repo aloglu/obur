@@ -83,7 +83,7 @@
 						</span>
 					</span>
 					<span
-						class="shrink-0 rounded-full bg-surface2 px-2.5 py-1 text-[12px] font-semibold text-muted"
+						class="shrink-0 rounded-menu bg-surface2 px-2.5 py-1 text-[12px] font-semibold text-muted"
 					>
 						{r.mine
 							? r.visibility === 'private'

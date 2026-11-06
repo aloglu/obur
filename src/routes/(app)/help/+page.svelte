@@ -58,7 +58,7 @@
 				aria-pressed={topic === t}
 				onclick={() => (topic = t)}
 				class={[
-					'min-h-11 rounded-full px-4 text-[14px] font-semibold',
+					'min-h-11 rounded-input px-4 text-[14px] font-semibold',
 					topic === t ? 'bg-fill text-on-accent' : 'bg-surface2 text-text'
 				]}>{t === 'all' ? m.help_all() : topicName(t)}</button
 			>

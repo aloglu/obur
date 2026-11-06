@@ -310,18 +310,16 @@
 					{#if card.candidates.length === 0}
 						<p class="text-[14px] text-muted">{m.entry_food_none({ text: card.text })}</p>
 					{:else}
-						<label class="flex flex-col gap-1.5">
-							<span class="text-[13px] font-[650] text-muted">{m.entry_food()}</span>
-							<Select
-								value={card.food?.id ?? ''}
-								onchange={(e) => choose(card, e.currentTarget.value)}
-								wide
-								options={card.candidates.map((c) => ({
-									value: c.id,
-									label: `${c.brand ? `${c.brand} ` : ''}${c.name}${c.kcal === null ? '' : ` · ${kcal(c.kcal)} kcal`}`
-								}))}
-							/>
-						</label>
+						<Select
+							label={m.entry_food()}
+							value={card.food?.id ?? ''}
+							onchange={(id) => choose(card, id)}
+							wide
+							options={card.candidates.map((c) => ({
+								value: c.id,
+								label: `${c.brand ? `${c.brand} ` : ''}${c.name}${c.kcal === null ? '' : ` · ${kcal(c.kcal)} kcal`}`
+							}))}
+						/>
 						{#if card.food}
 							{@const options = unitOptions(card.food, measures)}
 							<TextField

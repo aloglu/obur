@@ -302,7 +302,7 @@
 						{@const over = a.againstBudget.value > 0}
 						<span
 							class={[
-								'rounded-full px-2.5 py-1 text-[13px] font-bold',
+								'rounded-menu px-2.5 py-1 text-[13px] font-bold',
 								over ? 'bg-bad/15 text-bad' : 'bg-good/15 text-good'
 							]}
 							>{over

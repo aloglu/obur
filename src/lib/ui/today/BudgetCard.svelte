@@ -45,7 +45,7 @@
 				type="button"
 				onclick={onaddactivity}
 				aria-label={m.activity_add()}
-				class="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-soft px-3.5 text-[15px] font-bold text-accent"
+				class="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-input bg-soft px-3.5 text-[15px] font-bold text-accent"
 			>
 				<Plus size={18} aria-hidden="true" />{m.budget_activity_short()}
 			</button>

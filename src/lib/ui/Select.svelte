@@ -1,57 +1,64 @@
 <script lang="ts" generics="T extends string">
-	// A form dropdown, styled like TextField beside it (border, fill, rounding, focus ring) with our chevron in place of
-	// the browser's arrow; the native select underneath keeps the phone's own picker. Toolbar dropdowns use the tray
-	// style of progress/RangeSelect instead.
+	// A form field that opens a menu of choices, styled like TextField beside it. `wide` fills the row and its menu
+	// matches the field (Day, Meal); otherwise the field and its menu are as wide as their content (docs/ui.md).
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
-	import type { HTMLSelectAttributes } from 'svelte/elements';
+	import Menu from './Menu.svelte';
 
-	interface Props extends Omit<HTMLSelectAttributes, 'value'> {
+	interface Props {
 		value: T;
-		options: { value: T; label: string }[];
-		/** Fill the width (for long labels); otherwise as wide as the longest option. */
+		options: { value: T; label: string; hint?: string }[];
 		wide?: boolean;
-		/** A visible label above, as TextField has; without it, give the select an aria-label. */
+		/** A visible label above, as TextField has; without it, give `aria-label`. */
 		label?: string;
+		'aria-label'?: string;
+		id?: string;
+		class?: unknown;
+		disabled?: boolean;
+		onchange?: (value: T) => void;
 	}
 	let {
 		value = $bindable(),
 		options,
 		wide = false,
 		label,
+		'aria-label': ariaLabel,
 		id,
 		class: extra,
-		...rest
+		disabled,
+		onchange
 	}: Props = $props();
 	const uid = $props.id();
-	const selectId = $derived(id ?? `select-${uid}`);
+	const fieldId = $derived(id ?? `select-${uid}`);
+	const current = $derived(options.find((o) => o.value === value)?.label ?? '');
 </script>
 
 {#snippet field()}
-	<span class={['relative inline-flex', wide && 'w-full', !label && extra]}>
-		<select
+	<span class={['relative inline-flex', wide && 'w-full', !label && (extra as string)]}>
+		<Menu
 			bind:value
-			id={selectId}
-			{...rest}
+			{options}
+			id={fieldId}
+			label={ariaLabel ?? label}
+			width={wide ? 'trigger' : 'content'}
+			{disabled}
+			{onchange}
 			class={[
-				'min-h-12 cursor-pointer appearance-none rounded-input border border-line bg-surface2 py-2 pr-10 pl-3.5 text-[16px] font-semibold text-text focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-accent',
+				'flex min-h-12 min-w-0 cursor-pointer items-center justify-between gap-2 rounded-input bg-surface2 py-2 pr-3 pl-3.5 text-left text-[16px] font-semibold text-text disabled:opacity-50',
+				'focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-accent',
 				wide && 'w-full'
-			]}
+			]
+				.filter(Boolean)
+				.join(' ')}
 		>
-			{#each options as option (option.value)}<option value={option.value}>{option.label}</option
-				>{/each}
-		</select>
-		<ChevronDown
-			size={18}
-			strokeWidth={2.4}
-			aria-hidden="true"
-			class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted"
-		/>
+			<span class="min-w-0 truncate">{current}</span>
+			<ChevronDown size={18} strokeWidth={2.4} aria-hidden="true" class="shrink-0 text-muted" />
+		</Menu>
 	</span>
 {/snippet}
 
 {#if label}
-	<div class={['flex flex-col gap-1.5', wide && 'w-full', extra]}>
-		<label for={selectId} class="text-[13px] font-[650] text-muted">{label}</label>
+	<div class={['flex flex-col gap-1.5', wide && 'w-full', extra as string]}>
+		<label for={fieldId} class="text-[13px] font-[650] text-muted">{label}</label>
 		{@render field()}
 	</div>
 {:else}

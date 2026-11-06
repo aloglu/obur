@@ -134,7 +134,7 @@
 		type="button"
 		onclick={() => (adding = true)}
 		disabled={items.length >= 100}
-		class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-soft px-4 text-[15px] font-bold text-accent disabled:opacity-50"
+		class="inline-flex min-h-11 items-center justify-center gap-2 rounded-input bg-soft px-4 text-[15px] font-bold text-accent disabled:opacity-50"
 	>
 		<Plus size={18} aria-hidden="true" />{m.meal_editor_add()}
 	</button>

@@ -178,9 +178,9 @@
 	--font-display: 'Bricolage Grotesque Variable', 'Inter Variable', system-ui, sans-serif;
 
 	--radius-menu: 10px;
-	--radius-small: 12px;
+	--radius-small: 10px;
 	--radius-input: 14px;
-	--radius-button: 16px;
+	--radius-button: 14px;
 	--radius-tile: 18px;
 	--radius-card: 22px;
 	--radius-sheet: 26px;

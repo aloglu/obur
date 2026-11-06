@@ -220,7 +220,7 @@
 	}
 
 	const chip = (active: boolean) => [
-		'min-h-11 rounded-full px-2 py-1.5 text-[15px] leading-tight font-semibold border',
+		'min-h-11 rounded-input px-2 py-1.5 text-[15px] leading-tight font-semibold border',
 		active ? 'bg-soft text-accent border-accent' : 'bg-surface2 text-text border-line'
 	];
 </script>
@@ -243,7 +243,7 @@
 			{#if bad}<span class="block text-[13px] text-bad">{m.food_invalid_number()}</span>{/if}
 		</label>
 		<label class="flex min-h-11 items-center gap-1.5 text-[15px] font-semibold text-muted">
-			<input type="checkbox" bind:checked={value.lessThan} class="size-5 accent-accent" />
+			<input type="checkbox" bind:checked={value.lessThan} />
 			<span aria-hidden="true">&lt;</span><span class="sr-only">{m.food_less_than()}</span>
 		</label>
 		<input
