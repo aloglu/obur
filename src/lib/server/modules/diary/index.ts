@@ -2,6 +2,7 @@
 // as '#lib/server/modules/diary/index.ts'.
 export {
 	dayCompletions,
+	dayNotes,
 	diaryEntries,
 	purgedRecords,
 	savedMealItems,

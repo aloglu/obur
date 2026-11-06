@@ -14,7 +14,7 @@ import type {
 } from '../../../shared/diary-types.ts';
 import type { BulkEntries } from '../../../shared/diary-input.ts';
 import type { FoodDetail } from '../../../shared/food-types.ts';
-import { dayCompletions, diaryEntries, purgedRecords } from './schema.ts';
+import { dayCompletions, dayNotes, diaryEntries, purgedRecords } from './schema.ts';
 
 /** One logged day's totals for the history (see `dailyHistory`). */
 export interface DailyHistoryRow {
@@ -512,6 +512,44 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 						.delete(dayCompletions)
 						.where(and(eq(dayCompletions.userId, userId), eq(dayCompletions.localDate, localDate)));
 				}
+			});
+		},
+
+		/** The day's note, or an empty one. */
+		async dayNote(
+			userId: string,
+			localDate: string
+		): Promise<{ text: string; typedAt: string | null }> {
+			const [row] = await withUser(db, userId, (tx) =>
+				tx.select().from(dayNotes).where(eq(dayNotes.localDate, localDate))
+			);
+			return { text: row?.text ?? '', typedAt: row?.typedAt.toISOString() ?? null };
+		},
+
+		/**
+		 * Saves a note unless a later-typed version is already here (the owner's explicit exception to "no
+		 * last-write-wins", docs/design.md). A clock ahead of the server's counts as now, so a wrong clock can't
+		 * block every later edit.
+		 */
+		async saveDayNote(
+			userId: string,
+			localDate: string,
+			text: string,
+			typedAt: Date
+		): Promise<{ text: string; typedAt: string }> {
+			const now = new Date();
+			const typed = typedAt > now ? now : typedAt;
+			return withUser(db, userId, async (tx) => {
+				await tx
+					.insert(dayNotes)
+					.values({ userId, localDate, text, typedAt: typed })
+					.onConflictDoUpdate({
+						target: [dayNotes.userId, dayNotes.localDate],
+						set: { text, typedAt: typed },
+						where: sql`excluded.typed_at >= ${dayNotes.typedAt}`
+					});
+				const [row] = await tx.select().from(dayNotes).where(eq(dayNotes.localDate, localDate));
+				return { text: row.text, typedAt: row.typedAt.toISOString() };
 			});
 		},
 

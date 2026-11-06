@@ -12,13 +12,14 @@ export const load: PageServerLoad = async ({ url, locals, parent }) => {
 	if (requested !== null && (!isIsoDate(requested) || requested > today)) redirect(303, '/');
 	const date = requested ?? today;
 	const userId = locals.session!.userId;
-	const [entries, water, recentWeights, activity, target, completed] = await Promise.all([
+	const [entries, water, recentWeights, activity, target, completed, note] = await Promise.all([
 		diary.day(userId, date),
 		body.waterDay(userId, date),
 		body.recentWeights(userId, date, 7),
 		body.activityDay(userId, date),
 		goals.targetFor(userId, date),
-		diary.completedDays(userId, date, date)
+		diary.completedDays(userId, date, date),
+		diary.dayNote(userId, date)
 	]);
 	const budget = budgetForDay(target, activity.countedKcal);
 	const macros = budget && target ? macroTargetsFor(budget.budget, target) : null;
@@ -32,6 +33,7 @@ export const load: PageServerLoad = async ({ url, locals, parent }) => {
 		target,
 		budget,
 		macros,
-		complete: completed.length > 0
+		complete: completed.length > 0,
+		note
 	};
 };

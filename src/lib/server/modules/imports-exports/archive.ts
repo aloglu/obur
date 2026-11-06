@@ -285,6 +285,12 @@ export const DayCompletionRecord = v.object({
 	completedAt: Timestamp
 });
 
+export const DayNoteRecord = v.object({
+	localDate: DateString,
+	text: v.pipe(v.string(), v.maxLength(10_000)),
+	typedAt: Timestamp
+});
+
 export const AccountRecord = v.object({
 	displayName: Text(80),
 	profile: v.nullable(ProfileRecord),
@@ -304,10 +310,15 @@ const DATA_FILES = {
 	'data/activity.json': v.array(ActivityRecord),
 	'data/targets.json': v.array(TargetRecord),
 	'data/saved-meals.json': v.array(SavedMealRecord),
-	'data/recipes.json': v.array(RecipeRecord)
+	'data/recipes.json': v.array(RecipeRecord),
+	'data/day-notes.json': v.array(DayNoteRecord)
 } as const;
-/** Added to format version 1 later (2026-10-30): absent in older archives, read as empty. */
-const OPTIONAL_FILES = new Set<string>(['data/saved-meals.json', 'data/recipes.json']);
+/** Added to format version 1 later: absent in older archives, read as empty. */
+const OPTIONAL_FILES = new Set<string>([
+	'data/saved-meals.json',
+	'data/recipes.json',
+	'data/day-notes.json'
+]);
 const CSV_FILES = ['csv/diary.csv', 'csv/weight.csv', 'csv/water.csv', 'csv/activity.csv'] as const;
 
 export interface PortableData {
@@ -321,6 +332,7 @@ export interface PortableData {
 	targets: v.InferOutput<typeof TargetRecord>[];
 	savedMeals: v.InferOutput<typeof SavedMealRecord>[];
 	recipes: v.InferOutput<typeof RecipeRecord>[];
+	dayNotes: v.InferOutput<typeof DayNoteRecord>[];
 }
 
 const KEYS: Record<keyof typeof DATA_FILES, keyof PortableData> = {
@@ -333,7 +345,8 @@ const KEYS: Record<keyof typeof DATA_FILES, keyof PortableData> = {
 	'data/activity.json': 'activity',
 	'data/targets.json': 'targets',
 	'data/saved-meals.json': 'savedMeals',
-	'data/recipes.json': 'recipes'
+	'data/recipes.json': 'recipes',
+	'data/day-notes.json': 'dayNotes'
 };
 
 const Manifest = v.object({

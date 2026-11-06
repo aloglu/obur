@@ -273,7 +273,8 @@ function semantic(data: PortableData) {
 				}))
 			}))
 		),
-		completions: byText(data.dayCompletions)
+		completions: byText(data.dayCompletions),
+		notes: byText(data.dayNotes)
 	};
 }
 
@@ -420,6 +421,38 @@ describe('import', () => {
 			changed: 0,
 			skipped: 0
 		});
+	});
+
+	it('exports day notes and imports them, keeping whichever version was typed last', async () => {
+		const DAY = '2026-10-25';
+		const diary = createDiary(db);
+		await diary.saveDayNote(MEHMET, DAY, 'from the archive', new Date('2026-10-25T10:00:00Z'));
+		await diary.saveDayNote(
+			MEHMET,
+			'2026-10-24',
+			'also from the archive',
+			new Date('2026-10-24T10:00:00Z')
+		);
+		await diary.saveDayNote(MEHMET, '2026-10-23', '', new Date('2026-10-23T10:00:00Z')); // emptied: nothing to export
+		await diary.saveDayNote(
+			ZEYNEP,
+			'2026-10-24',
+			'typed later here',
+			new Date('2026-10-24T12:00:00Z')
+		);
+		const archive = fromElsewhere(await portability.exportArchive(MEHMET));
+		expect(
+			readArchive(archive)
+				.data.dayNotes.map((n) => n.localDate)
+				.sort()
+		).toEqual(['2026-10-24', DAY]);
+		expect((await portability.previewImport(ZEYNEP, archive)).counts.dayNote).toMatchObject({
+			new: 1,
+			unchanged: 1
+		});
+		await portability.applyImport(ZEYNEP, archive);
+		expect((await diary.dayNote(ZEYNEP, DAY)).text).toBe('from the archive');
+		expect((await diary.dayNote(ZEYNEP, '2026-10-24')).text).toBe('typed later here');
 	});
 
 	it('reads an archive made before saved meals were exported', async () => {
@@ -584,6 +617,7 @@ describe('account deletion', () => {
 			'goal_versions',
 			'profiles',
 			'day_completions',
+			'day_notes',
 			'credentials',
 			'sessions',
 			'reminder_settings',

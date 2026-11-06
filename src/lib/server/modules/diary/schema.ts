@@ -79,6 +79,24 @@ export const diaryEntries = pgTable(
 	]
 );
 
+// One note per person per day (docs/design.md, "Day notes"). An emptied note stays as an empty row, so that an older
+// edit sent late from another device can't bring it back: the last version typed wins, by typed_at.
+export const dayNotes = pgTable(
+	'day_notes',
+	{
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		localDate: date('local_date', { mode: 'string' }).notNull(),
+		text: text('text').notNull(),
+		typedAt: timestamp('typed_at', { withTimezone: true }).notNull()
+	},
+	(t) => [
+		primaryKey({ columns: [t.userId, t.localDate] }),
+		check('day_notes_length', sql`char_length(${t.text}) <= 10000`)
+	]
+);
+
 // Days the person marked complete (only complete days at or under budget count as "under" in the calendar).
 export const dayCompletions = pgTable(
 	'day_completions',

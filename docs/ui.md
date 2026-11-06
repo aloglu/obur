@@ -75,7 +75,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 - **Edit sheets for water and weigh-ins:** rows with Edit and Delete. **Show older** is the last thing in the list, right after the oldest row shown, and scrolls with it; it adds 20 in place and goes away when nothing older is left.
 - **Meal cards:** all four meals share one card, divided by lines. Each is one grid (icon, name, number) for its header, entries and a trailing **Add food** row; the meal total sits in the kcal column and an empty meal has no "nothing logged" text. The bookmark moves into the … menu as **Save as a meal**.
 - **Day titles:** Today, Yesterday, the weekday for days this week, then the date with the weekday under it. The year shows only for other years.
-- **Day notes (new feature):** a collapsible card above Mark the day complete, Markdown, saves itself. See `docs/design.md`.
+- **Day notes:** a card that opens in place, above Mark the day complete (right column from 760 px). Closed, it shows the note's first line. A note saves itself half a second after typing stops, and when the app goes to the background. Tapping the text edits it; **Edit** does the same for keyboards. Markdown: `#` headings, `**bold**`, `*italic*`, `` `code` ``, `[links](https://…)`, `-` and `1.` lists, `- [ ]` to-dos that tick from the note, and `>` quotes. A note never renders as HTML. Up to 10,000 characters. See `docs/design.md`.
 - **Editing an entry:** the amount sheet in edit mode (Save changes, or "No changes"; Move to…; Delete beside it; Undo toast).
 - **More → Recently deleted:** 30 days, with Restore.
 - **Hold-to-drag and select** stay as decided below, restyled.

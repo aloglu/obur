@@ -241,3 +241,23 @@ test('offline, the app stays on the page it is on, says what it cannot do, and n
 	).toBeVisible();
 	await context.setOffline(false);
 });
+
+test('a note typed offline waits on the device and arrives when the server is back', async ({
+	page,
+	context
+}) => {
+	await signedInAs(page, 'Notlu');
+	await primeCache(page);
+	await context.setOffline(true);
+
+	const note = page.getByRole('region', { name: 'Notes' });
+	await note.getByRole('button', { name: /^Notes/ }).click();
+	await note.getByLabel('Note for this day').fill('typed on the train');
+	await expect(note).toContainText('Saved on this device', { timeout: 15_000 });
+
+	await context.setOffline(false);
+	await page.evaluate(() => dispatchEvent(new Event('online')));
+	await expect(note).toContainText(/Saved \S+.*only you see your notes/, { timeout: 15_000 });
+	await page.reload();
+	await expect(note).toContainText('typed on the train');
+});

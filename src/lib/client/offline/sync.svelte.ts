@@ -233,7 +233,9 @@ export function flush(): Promise<number> {
 						offline.authRequired = true;
 						return sent;
 					}
-					await queue.put({ ...item, status: 'review', error: err.code });
+					// A note can't be reviewed the way an entry can, and a later one replaces it anyway.
+					if (item.preview.kind === 'note') await queue.remove(item.seq!);
+					else await queue.put({ ...item, status: 'review', error: err.code });
 				}
 			}
 			offline.authRequired = false;

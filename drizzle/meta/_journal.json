@@ -253,6 +253,20 @@
       "when": 1793477397438,
       "tag": "0035_achievements_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793984384046,
+      "tag": "0036_day_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793984384553,
+      "tag": "0037_day_notes_rls",
+      "breakpoints": true
     }
   ]
 }

@@ -21,7 +21,13 @@ import {
 	recipeIngredients,
 	recipes
 } from '../catalog/index.ts';
-import { dayCompletions, diaryEntries, savedMealItems, savedMeals } from '../diary/index.ts';
+import {
+	dayCompletions,
+	dayNotes,
+	diaryEntries,
+	savedMealItems,
+	savedMeals
+} from '../diary/index.ts';
 import { goalVersions, profiles } from '../goals/index.ts';
 import { reminderSettings } from '../reminders/index.ts';
 import { readArchive, sha256, writeArchive, type PortableData } from './archive.ts';
@@ -44,7 +50,7 @@ export class PortabilityError extends Error {
 }
 
 type IdKind = 'food' | 'diary' | 'weight' | 'water' | 'activity' | 'target' | 'saved_meal';
-type CountKind = IdKind | 'dayCompletion' | 'profile';
+type CountKind = IdKind | 'dayCompletion' | 'dayNote' | 'profile';
 export interface Counts {
 	new: number;
 	unchanged: number;
@@ -226,6 +232,14 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 			nutrients: e.nutrients as never,
 			...lifecycle(e)
 		})),
+		// An emptied note stays as a row for the last-typed rule; it is nothing to export.
+		dayNotes: (await tx.select().from(dayNotes).where(eq(dayNotes.userId, userId)))
+			.filter((n) => n.text.trim() !== '')
+			.map((n) => ({
+				localDate: n.localDate,
+				text: n.text,
+				typedAt: n.typedAt.toISOString()
+			})),
 		dayCompletions: (
 			await tx.select().from(dayCompletions).where(eq(dayCompletions.userId, userId))
 		).map((d) => ({
@@ -332,6 +346,7 @@ interface Plan {
 	/** The archive's reminder settings, when this account has none yet (as for the profile). */
 	importReminders: boolean;
 	newCompletions: PortableData['dayCompletions'];
+	newNotes: PortableData['dayNotes'];
 }
 
 const key = (kind: IdKind, id: string) => `${kind}:${id}`;
@@ -356,6 +371,7 @@ async function plan(
 				'target',
 				'saved_meal',
 				'dayCompletion',
+				'dayNote',
 				'profile'
 			] as const
 		).map((k) => [k, emptyCounts()])
@@ -664,6 +680,19 @@ async function plan(
 	counts.dayCompletion.new = newCompletions.length;
 	counts.dayCompletion.unchanged = data.dayCompletions.length - newCompletions.length;
 
+	// The same rule as everywhere for notes: the version typed last stays.
+	const notesHere = new Map(
+		(await tx.select().from(dayNotes).where(eq(dayNotes.userId, userId))).map((n) => [
+			n.localDate,
+			n.typedAt.getTime()
+		])
+	);
+	const newNotes = data.dayNotes.filter(
+		(n) => (notesHere.get(n.localDate) ?? -Infinity) < new Date(n.typedAt).getTime()
+	);
+	counts.dayNote.new = newNotes.length;
+	counts.dayNote.unchanged = data.dayNotes.length - newNotes.length;
+
 	const dates = [...data.diary, ...data.weight, ...data.water, ...data.activity]
 		.map((r) => r.localDate)
 		.sort();
@@ -683,7 +712,8 @@ async function plan(
 		importTargets,
 		importProfile,
 		importReminders,
-		newCompletions
+		newCompletions,
+		newNotes
 	};
 }
 
@@ -976,6 +1006,22 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 				completedAt: new Date(d.completedAt)
 			}))
 		)
+	);
+	await chunked(p.newNotes, (chunk) =>
+		tx
+			.insert(dayNotes)
+			.values(
+				chunk.map((n) => ({
+					userId,
+					localDate: n.localDate,
+					text: n.text,
+					typedAt: new Date(n.typedAt)
+				}))
+			)
+			.onConflictDoUpdate({
+				target: [dayNotes.userId, dayNotes.localDate],
+				set: { text: sql`excluded.text`, typedAt: sql`excluded.typed_at` }
+			})
 	);
 	await chunked(identities, (chunk) =>
 		tx.insert(importIdentities).values(chunk).onConflictDoNothing()

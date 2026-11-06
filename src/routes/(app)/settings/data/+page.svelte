@@ -45,6 +45,7 @@
 		'target',
 		'saved_meal',
 		'dayCompletion',
+		'dayNote',
 		'profile'
 	];
 	const kindName: Record<string, () => string> = {
@@ -56,6 +57,7 @@
 		target: m.data_kind_target,
 		saved_meal: m.data_kind_saved_meal,
 		dayCompletion: m.data_kind_dayCompletion,
+		dayNote: m.data_kind_dayNote,
 		profile: m.data_kind_profile
 	};
 	const warning: Record<string, () => string> = {

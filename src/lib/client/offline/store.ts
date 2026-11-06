@@ -11,7 +11,8 @@ export type Preview =
 			kcal: number | null;
 	  }
 	| { kind: 'water'; localDate: string; ml: number }
-	| { kind: 'weight'; localDate: string; kg: number };
+	| { kind: 'weight'; localDate: string; kg: number }
+	| { kind: 'note'; localDate: string; text: string };
 
 export interface QueuedOp {
 	/** Auto-increment key: the order in which entries were created. */

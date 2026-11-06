@@ -197,6 +197,76 @@ describe('retries', () => {
 	});
 });
 
+describe('day notes', () => {
+	const DAY = '2026-10-25';
+	const at = (time: string) => new Date(`2026-10-25T${time}:00Z`);
+
+	it('starts empty, saves, and keeps the version typed last, whatever order they arrive in', async () => {
+		expect(await diary.dayNote(MEHMET, DAY)).toEqual({ text: '', typedAt: null });
+		await diary.saveDayNote(MEHMET, DAY, 'from the phone, typed later', at('12:00'));
+		const stale = await diary.saveDayNote(MEHMET, DAY, 'from the laptop, sent late', at('11:00'));
+		expect(stale.text).toBe('from the phone, typed later');
+		expect((await diary.dayNote(MEHMET, DAY)).text).toBe('from the phone, typed later');
+		await diary.saveDayNote(MEHMET, DAY, 'newer', at('12:30'));
+		expect((await diary.dayNote(MEHMET, DAY)).text).toBe('newer');
+	});
+
+	it('an emptied note stays empty when an older edit arrives late', async () => {
+		await diary.saveDayNote(MEHMET, DAY, 'something', at('10:00'));
+		await diary.saveDayNote(MEHMET, DAY, '', at('11:00'));
+		await diary.saveDayNote(MEHMET, DAY, 'something', at('10:30'));
+		expect((await diary.dayNote(MEHMET, DAY)).text).toBe('');
+	});
+
+	it('a clock set ahead cannot block later edits', async () => {
+		await diary.saveDayNote(
+			MEHMET,
+			DAY,
+			'from the future',
+			new Date(Date.now() + 86_400_000 * 365)
+		);
+		await diary.saveDayNote(MEHMET, DAY, 'typed now', new Date());
+		expect((await diary.dayNote(MEHMET, DAY)).text).toBe('typed now');
+	});
+
+	it('is private: nobody else can read or change it, and it cannot be written for someone else', async () => {
+		await diary.saveDayNote(MEHMET, DAY, 'private', at('10:00'));
+		expect((await diary.dayNote(ZEYNEP, DAY)).text).toBe('');
+		await diary.saveDayNote(ZEYNEP, DAY, 'her own', at('11:00'));
+		expect((await diary.dayNote(MEHMET, DAY)).text).toBe('private');
+		expect(
+			await asUser(ZEYNEP, (tx) => tx`select 1 from day_notes where user_id = ${MEHMET}`)
+		).toEqual([]);
+		expect(
+			await asUser(
+				ZEYNEP,
+				(tx) => tx`update day_notes set text = 'x' where user_id = ${MEHMET} returning 1`
+			)
+		).toHaveLength(0);
+		await expect(
+			asUser(
+				ZEYNEP,
+				(tx) =>
+					tx`insert into day_notes (user_id, local_date, text, typed_at) values (${MEHMET}, '2026-10-26', 'x', now())`
+			)
+		).rejects.toThrow();
+	});
+
+	it('fails closed without an identity', async () => {
+		await diary.saveDayNote(MEHMET, DAY, 'private', at('10:00'));
+		const app = postgres(urls.app, { max: 1, ...quiet });
+		try {
+			await expect(app`select 1 from day_notes`).resolves.toHaveLength(0);
+		} finally {
+			await app.end();
+		}
+	});
+
+	it('refuses an over-long note in the database', async () => {
+		await expect(diary.saveDayNote(MEHMET, DAY, 'x'.repeat(10_001), at('10:00'))).rejects.toThrow();
+	});
+});
+
 describe('isolation', () => {
 	it('keeps diaries per person through the service', async () => {
 		const quick = await diary.quickAdd(MEHMET, ctx(), 300, null);

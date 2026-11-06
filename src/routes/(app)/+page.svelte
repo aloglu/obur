@@ -23,6 +23,7 @@
 	import SaveMealSheet from '#lib/ui/log/SaveMealSheet.svelte';
 	import BudgetCard from '#lib/ui/today/BudgetCard.svelte';
 	import BulkSheet from '#lib/ui/today/BulkSheet.svelte';
+	import DayNoteCard from '#lib/ui/today/DayNoteCard.svelte';
 	import SelectionBar from '#lib/ui/today/SelectionBar.svelte';
 	import DayHeader from '#lib/ui/today/DayHeader.svelte';
 	import MealCard from '#lib/ui/today/MealCard.svelte';
@@ -353,6 +354,9 @@
 				onchange={invalidateAll}
 			/>
 		</div>
+		<div class="o-note">
+			{#key data.date}<DayNoteCard date={data.date} saved={data.note.text} />{/key}
+		</div>
 		<div class="o-done flex flex-col gap-2.5">
 			<div class="rounded-card bg-surface px-[18px] py-1 shadow-card">
 				<button
@@ -470,8 +474,11 @@
 	.o-meals {
 		order: 4;
 	}
-	.o-done {
+	.o-note {
 		order: 5;
+	}
+	.o-done {
+		order: 6;
 	}
 	@media (min-width: 760px) {
 		.today {

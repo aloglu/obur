@@ -297,3 +297,45 @@ test('the arrow keys move between days, and leave fields alone', async ({ page }
 	await page.keyboard.press('ArrowLeft');
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 });
+
+test('a day note saves itself, shows its Markdown, and stays with its day', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Not ${testInfo.project.name}`);
+	await page.goto('/');
+	await page.waitForLoadState('networkidle');
+	const note = page.getByRole('region', { name: 'Notes' });
+	await expect(note).toContainText('Add a note for this day');
+
+	// An empty note opens ready to type.
+	await note.getByRole('button', { name: /^Notes/ }).click();
+	const field = note.getByLabel('Note for this day');
+	await expect(field).toBeFocused();
+	// The focus ring sits inside the field: the card's opening animation clips anything outside it (owner's report).
+	await expect(field).toHaveCSS('outline-offset', '-2px');
+	const saved = page.waitForResponse(/\/note$/);
+	await field.fill(
+		'Lunch at a **friend**, <b>really</b>\n- [ ] Weigh in\n[site](https://example.com)'
+	);
+	await saved;
+	await note.getByRole('button', { name: 'Done' }).click();
+
+	// Shown as Markdown; what looks like HTML stays text.
+	await expect(note.locator('b', { hasText: 'friend' })).toBeVisible();
+	await expect(note.getByText('<b>really</b>')).toBeVisible();
+	await expect(note.getByRole('link', { name: 'site' })).toHaveAttribute('rel', /noopener/);
+
+	// Ticking a to-do changes the note itself.
+	const ticked = page.waitForResponse(/\/note$/);
+	await note.getByRole('checkbox', { name: 'Weigh in' }).check();
+	await ticked;
+	await page.reload();
+	await expect(note).toContainText('Lunch at a friend');
+	await note.getByRole('button', { name: /^Notes/ }).click();
+	await expect(note.getByRole('checkbox', { name: 'Weigh in' })).toBeChecked();
+
+	// Another day has its own.
+	await page.getByRole('button', { name: 'Previous day' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Yesterday' })).toBeVisible();
+	await expect(note).toContainText('Add a note for this day');
+});
