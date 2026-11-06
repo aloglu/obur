@@ -11,7 +11,7 @@
 		tone?: 'warn' | 'bad' | 'info' | 'good';
 		title?: string;
 		/** A more specific picture than the tone's own (a mic for Speak, a cloud for offline). */
-		icon?: Component<{ size?: number; 'aria-hidden'?: 'true' }>;
+		icon?: Component<{ size?: number | string; 'aria-hidden'?: 'true' | boolean }>;
 		children?: Snippet;
 		actions?: Snippet;
 	}

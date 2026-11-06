@@ -24,3 +24,5 @@ export const logHref = (meal: Meal, date: string) =>
 
 /** The Log tab with a food's amount sheet open (nothing is logged until Save). */
 export const logFoodHref = (foodId: string) => withQuery(resolve('/(app)/log'), { food: foodId });
+
+export const newFoodHref = (name: string) => withQuery(resolve('/(app)/foods/new'), { name });

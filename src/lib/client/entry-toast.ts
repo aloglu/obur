@@ -10,6 +10,9 @@ export function showLoggedEntry(logged: LoggedEntry, refresh: () => Promise<unkn
 			logged.count === 1
 				? m.saved_logged_one()
 				: m.saved_logged_many({ count: String(logged.count) }),
+		detail: logged.skipped?.length
+			? m.entry_skipped({ names: logged.skipped.join(', ') })
+			: undefined,
 		undo: async () => {
 			for (const path of logged.undo) await api('POST', path, {});
 			await refresh();

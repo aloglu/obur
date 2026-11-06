@@ -5,6 +5,15 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Camera from '@lucide/svelte/icons/camera';
+	import CloudOff from '@lucide/svelte/icons/cloud-off';
+	import Hourglass from '@lucide/svelte/icons/hourglass';
+	import CircleAlert from '@lucide/svelte/icons/circle-alert';
+	import Table2 from '@lucide/svelte/icons/table-2';
+	import Timer from '@lucide/svelte/icons/timer';
+	import ImageOff from '@lucide/svelte/icons/image-off';
+	import Button from '#lib/ui/Button.svelte';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ImageIcon from '@lucide/svelte/icons/image';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
@@ -29,9 +38,44 @@
 
 	let photo = $state<string | null>(null);
 	let reading = $state(false);
-	let problem = $state('');
+	type Problem = { title: string; line: string; icon: typeof Camera; retake: boolean };
+	const P = {
+		noTable: () => ({
+			title: m.scan_no_table(),
+			line: m.scan_no_table_line(),
+			icon: Table2,
+			retake: true
+		}),
+		photo: () => ({
+			title: m.scan_unreadable_photo(),
+			line: m.scan_unreadable_line(),
+			icon: ImageOff,
+			retake: true
+		}),
+		busy: () => ({ title: m.scan_busy(), line: m.scan_busy_line(), icon: Hourglass, retake: true }),
+		limited: () => ({
+			title: m.scan_limited(),
+			line: m.scan_limited_line(),
+			icon: Timer,
+			retake: false
+		}),
+		unavailable: () => ({
+			title: m.scan_unavailable(),
+			line: m.scan_unavailable_line(),
+			icon: CircleAlert,
+			retake: true
+		}),
+		offline: () => ({
+			title: m.scan_offline(),
+			line: m.scan_offline_line(),
+			icon: CloudOff,
+			retake: false
+		})
+	} satisfies Record<string, () => Problem>;
+
+	let problem = $state<Problem | null>(null);
 	let proposal = $state<Proposal | null>(null);
-	let showPhoto = $state(true);
+	let showPhoto = $state(false);
 	let busy = $state(false);
 	let saveProblem = $state('');
 
@@ -71,7 +115,7 @@
 		const file = input.files?.[0];
 		input.value = '';
 		if (!file) return;
-		problem = '';
+		problem = null;
 		proposal = null;
 		reading = true;
 		try {
@@ -79,7 +123,7 @@
 			try {
 				image = await shrink(file);
 			} catch {
-				problem = m.scan_unreadable_photo();
+				problem = P.photo();
 				return;
 			}
 			if (photo) URL.revokeObjectURL(photo);
@@ -93,21 +137,32 @@
 			if (!response.ok) {
 				problem =
 					body.error === 'busy'
-						? m.scan_busy()
+						? P.busy()
 						: body.error === 'limited'
-							? m.scan_limited()
+							? P.limited()
 							: body.error === 'decode_failed'
-								? m.scan_unreadable_photo()
-								: m.scan_unavailable();
+								? P.photo()
+								: P.unavailable();
 				return;
 			}
-			proposal = body.proposal as Proposal;
-			showPhoto = true;
+			const read = body.proposal as Proposal;
+			if (read.nutrients.length === 0) {
+				problem = P.noTable();
+				return;
+			}
+			proposal = read;
+			showPhoto = false;
 		} catch {
-			problem = navigator.onLine ? m.scan_unavailable() : m.scan_offline();
+			problem = navigator.onLine ? P.unavailable() : P.offline();
 		} finally {
 			reading = false;
 		}
+	}
+
+	/** No photo to go on: the same form, empty. */
+	function byHand() {
+		problem = null;
+		proposal = { basis: '100g', portion: null, nutrients: [], layout: 'none' };
 	}
 
 	/** The proposal as the food form's starting values; the name and brand are typed by the person. */
@@ -190,38 +245,50 @@
 
 <svelte:head><title>{m.log_scan()} · {m.app_name()}</title></svelte:head>
 
+{#snippet camera(primary: boolean)}
+	<label
+		class={[
+			'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button px-2 text-[16px] font-[750]',
+			primary ? 'bg-fill text-on-accent' : 'bg-surface2'
+		]}
+	>
+		<Camera size={20} aria-hidden="true" />{proposal || problem ? m.scan_retake() : m.scan_take()}
+		<input
+			type="file"
+			accept="image/*"
+			capture="environment"
+			class="sr-only"
+			disabled={reading}
+			onchange={picked}
+		/>
+	</label>
+{/snippet}
+
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a href={resolve('/(app)/log')} class="text-[14px] font-semibold text-accent">← {m.nav_log()}</a>
-	<h1 class="text-[24px] font-[750]">{m.log_scan()}</h1>
+	<a href={resolve('/(app)/log')} class="flex items-center gap-1 self-start font-bold text-accent">
+		<ChevronLeft size={20} aria-hidden="true" />{m.nav_log()}
+	</a>
+	<h1 class="text-[24px] font-[750]">
+		{proposal?.nutrients.length
+			? m.scan_check_title()
+			: proposal
+				? m.scan_new_food()
+				: m.log_scan()}
+	</h1>
 	{#if !data.scan}
 		<Notice>{m.scan_off()}</Notice>
-	{:else}
+	{:else if !proposal}
 		<Card>
-			<!-- With a result on screen, the instructions step aside and the buttons offer another photo. -->
-			{#if !proposal}
-				<p class="text-[15px]">{m.scan_intro()}</p>
-				<ul class="flex list-disc flex-col gap-1 pl-5 text-[14px] text-muted">
-					<li>{m.scan_tip_frame()}</li>
-					<li>{m.scan_tip_light()}</li>
-					<li>{m.scan_tip_flat()}</li>
-				</ul>
-			{/if}
+			<!-- The frame says how to take the photo; the camera itself is the phone's. -->
+			<div
+				class="grid aspect-[4/3] place-items-center rounded-input border-2 border-dashed border-accent bg-soft px-6 text-center text-[15px] font-semibold text-accent"
+			>
+				{#if reading}<span role="status">{m.scan_reading()}</span>{:else}{m.scan_frame()}{/if}
+			</div>
 			<div class="grid grid-cols-2 gap-2">
+				{@render camera(true)}
 				<label
-					class="inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button bg-fill px-2 text-[16px] font-[750] whitespace-nowrap text-on-accent focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-accent"
-				>
-					<Camera size={20} aria-hidden="true" />{proposal ? m.scan_retake() : m.scan_take()}
-					<input
-						type="file"
-						accept="image/*"
-						capture="environment"
-						class="sr-only"
-						disabled={reading}
-						onchange={picked}
-					/>
-				</label>
-				<label
-					class="inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button border border-line bg-surface px-2 text-[16px] font-[750] whitespace-nowrap focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-accent"
+					class="inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button bg-surface2 px-2 text-[16px] font-[750]"
 				>
 					<ImageIcon size={20} aria-hidden="true" />{m.scan_choose()}
 					<input
@@ -233,41 +300,63 @@
 					/>
 				</label>
 			</div>
-			{#if reading}<p class="text-[15px] font-semibold" role="status">{m.scan_reading()}</p>{/if}
-			{#if problem}<Notice>{problem}</Notice>{/if}
 		</Card>
-
-		{#if proposal && initial}
+		{#if problem}
+			<Notice tone="warn" title={problem.title} icon={problem.icon}>
+				{problem.line}
+				{#snippet actions()}
+					<Button variant="ghost" wide onclick={byHand}>{m.scan_by_hand()}</Button>
+				{/snippet}
+			</Notice>
+		{/if}
+	{:else}
+		{#if proposal.nutrients.length}
 			{#if photo}
-				<Card>
+				<div class="rounded-card bg-surface px-[18px] py-1 shadow-card">
 					<button
 						type="button"
 						aria-expanded={showPhoto}
 						onclick={() => (showPhoto = !showPhoto)}
-						class="self-start text-[14px] font-semibold text-accent"
-						>{showPhoto ? m.scan_hide_photo() : m.scan_show_photo()}</button
+						class="flex min-h-14 w-full items-center justify-between gap-3 text-left text-[15px] font-[650]"
 					>
-					{#if showPhoto}<img
-							src={photo}
-							alt={m.scan_photo_alt()}
-							class="max-h-[60vh] w-full rounded-small object-contain"
-						/>{/if}
-				</Card>
+						{m.scan_your_photo()}
+						<ChevronDown
+							size={22}
+							aria-hidden="true"
+							class={[
+								'text-muted transition-transform duration-300 ease-(--ui) motion-reduce:transition-none',
+								showPhoto && 'rotate-180'
+							]}
+						/>
+					</button>
+					<div class={['collapse-row', showPhoto && 'open']}>
+						<div>
+							<img
+								src={photo}
+								alt={m.scan_photo_alt()}
+								class="mb-3.5 max-h-[60vh] w-full rounded-small object-contain"
+							/>
+						</div>
+					</div>
+				</div>
 			{/if}
-			<Notice tone="info">
-				{proposal.nutrients.length ? m.scan_check() : m.scan_nothing_read()}
-			</Notice>
+			<Notice tone="info">{m.scan_check()}</Notice>
 			<!-- The form needs a basis; when the label didn't say, it starts at per 100 g and asks to check it. -->
-			{#if proposal.nutrients.length && !proposal.basis}<Notice>{m.scan_basis_unknown()}</Notice
-				>{/if}
-			{#if saveProblem}<Notice>{saveProblem}</Notice>{/if}
-			<label class="flex min-h-11 cursor-pointer items-center gap-3 px-1">
-				<input type="checkbox" bind:checked={logAfter} onchange={rememberLogAfter} />
-				<span class="text-[15px] font-semibold">{m.scan_log_after()}</span>
-			</label>
-			<Card title={m.scan_new_food()}>
-				{#key proposal}<FoodForm {initial} {busy} onsave={save} />{/key}
-			</Card>
+			{#if !proposal.basis}<Notice>{m.scan_basis_unknown()}</Notice>{/if}
 		{/if}
+		{#if saveProblem}<Notice>{saveProblem}</Notice>{/if}
+		<label class="flex min-h-11 cursor-pointer items-center gap-3 px-1">
+			<input type="checkbox" bind:checked={logAfter} onchange={rememberLogAfter} />
+			<span class="text-[15px] font-semibold">{m.scan_log_after()}</span>
+		</label>
+		<Card>
+			{#key proposal}<FoodForm
+					{initial}
+					{busy}
+					onsave={save}
+					saveLabel={logAfter ? m.scan_save_and_amount() : undefined}
+				/>{/key}
+		</Card>
+		{@render camera(false)}
 	{/if}
 </main>

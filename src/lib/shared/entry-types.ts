@@ -56,4 +56,6 @@ export interface LoggedEntry {
 	undo: string[];
 	/** The first diary entry, to highlight. */
 	firstEntryId: string | null;
+	/** Foods nothing was found for, left out of what was logged. */
+	skipped?: string[];
 }

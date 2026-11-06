@@ -3,7 +3,12 @@
 	// transcription, handed to the same confirmation as typed text. The recording lives only in this page's memory
 	// until it is sent; the server does not keep it.
 	import { onMount } from 'svelte';
+	import CircleAlert from '@lucide/svelte/icons/circle-alert';
+	import CloudOff from '@lucide/svelte/icons/cloud-off';
+	import Hourglass from '@lucide/svelte/icons/hourglass';
 	import Mic from '@lucide/svelte/icons/mic';
+	import MicOff from '@lucide/svelte/icons/mic-off';
+	import Timer from '@lucide/svelte/icons/timer';
 	import { m } from '#lib/paraglide/messages.js';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import type { ParsedEntry } from '#lib/shared/entry-types.ts';
@@ -21,8 +26,59 @@
 
 	const MAX_SECONDS = 30;
 	type Phase = 'starting' | 'listening' | 'working' | 'failed';
+	type Problem = { title: string; line: string; tone: 'info' | 'warn' | 'bad'; icon: typeof Mic };
+	const P = {
+		offline: () => ({
+			title: m.speak_offline(),
+			line: m.speak_offline_line(),
+			tone: 'warn',
+			icon: CloudOff
+		}),
+		blocked: () => ({
+			title: m.speak_mic_blocked(),
+			line: m.speak_mic_blocked_line(),
+			tone: 'warn',
+			icon: MicOff
+		}),
+		missing: () => ({
+			title: m.speak_mic_missing(),
+			line: m.speak_mic_missing_line(),
+			tone: 'warn',
+			icon: MicOff
+		}),
+		nothing: () => ({
+			title: m.speak_nothing_heard(),
+			line: m.speak_nothing_line(),
+			tone: 'info',
+			icon: Mic
+		}),
+		long: () => ({
+			title: m.speak_too_long(),
+			line: m.speak_too_long_line(),
+			tone: 'info',
+			icon: Mic
+		}),
+		busy: () => ({
+			title: m.speak_busy(),
+			line: m.speak_busy_line(),
+			tone: 'warn',
+			icon: Hourglass
+		}),
+		limited: () => ({
+			title: m.speak_limited(),
+			line: m.speak_limited_line(),
+			tone: 'warn',
+			icon: Timer
+		}),
+		unavailable: () => ({
+			title: m.speak_unavailable(),
+			line: m.speak_unavailable_line(),
+			tone: 'bad',
+			icon: CircleAlert
+		})
+	} satisfies Record<string, () => Problem>;
 	let phase = $state<Phase>('starting');
-	let problem = $state('');
+	let problem = $state<Problem | null>(null);
 	let seconds = $state(0);
 	let recorder: MediaRecorder | undefined;
 	let stream: MediaStream | undefined;
@@ -43,15 +99,15 @@
 
 	async function start() {
 		phase = 'starting';
-		problem = '';
+		problem = null;
 		seconds = 0;
 		chunks = [];
-		if (!navigator.onLine) return fail(m.speak_offline());
+		if (!navigator.onLine) return fail(P.offline());
 		try {
 			stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 		} catch (e) {
 			const name = (e as DOMException).name;
-			return fail(name === 'NotFoundError' ? m.speak_mic_missing() : m.speak_mic_blocked());
+			return fail(name === 'NotFoundError' ? P.missing() : P.blocked());
 		}
 		const type = mimeType();
 		recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
@@ -70,7 +126,7 @@
 		stopTracks();
 	}
 
-	function fail(message: string) {
+	function fail(message: Problem) {
 		stopTracks();
 		problem = message;
 		phase = 'failed';
@@ -90,16 +146,16 @@
 				error?: string;
 			};
 			if (response.ok && body.entry) return onheard(body.entry);
-			const messages: Record<string, () => string> = {
-				nothing_heard: m.speak_nothing_heard,
-				too_long: m.speak_too_long,
-				too_large: m.speak_too_long,
-				busy: m.speak_busy,
-				limited: m.speak_limited
+			const problems: Record<string, () => Problem> = {
+				nothing_heard: P.nothing,
+				too_long: P.long,
+				too_large: P.long,
+				busy: P.busy,
+				limited: P.limited
 			};
-			fail((messages[body.error ?? ''] ?? m.speak_unavailable)());
+			fail((problems[body.error ?? ''] ?? P.unavailable)());
 		} catch {
-			fail(m.speak_unavailable());
+			fail(P.unavailable());
 		}
 	}
 
@@ -116,34 +172,39 @@
 </script>
 
 <Sheet title={m.speak_title()} {onclose}>
-	<div class="flex flex-col items-center gap-4 py-2 text-center" aria-live="polite">
-		<span
-			class={[
-				'grid size-24 place-items-center rounded-full bg-voice-bg text-voice',
-				phase === 'listening' && 'mic-pulse'
-			]}
-		>
-			<Mic size={44} aria-hidden="true" />
-		</span>
-		{#if phase === 'listening'}
-			<p class="text-[19px] font-bold">{m.speak_listening()}</p>
-			<p class="text-[14px] text-muted">{m.speak_example()}</p>
-			<p class="text-[13px] text-muted tabular-nums">
-				{m.speak_elapsed({ seconds: String(seconds) })}
-			</p>
-		{:else if phase === 'working'}
-			<p class="text-[19px] font-bold">{m.speak_working()}</p>
-		{:else if phase === 'failed'}
-			<Notice>{problem}</Notice>
-		{/if}
-	</div>
+	{#if phase === 'failed' && problem}
+		<Notice tone={problem.tone} title={problem.title} icon={problem.icon}>
+			{problem.line}
+			{#snippet actions()}
+				<div class="grid grid-cols-2 gap-2">
+					<Button onclick={start}>{m.speak_try_again()}</Button>
+					<Button variant="ghost" onclick={ontype}>{m.speak_type_instead()}</Button>
+				</div>
+			{/snippet}
+		</Notice>
+	{:else}
+		<div class="flex flex-col items-center gap-4 py-2 text-center" aria-live="polite">
+			<span
+				class={[
+					'grid size-24 place-items-center rounded-full bg-voice-bg text-voice',
+					phase === 'listening' && 'mic-pulse'
+				]}
+			>
+				<Mic size={44} aria-hidden="true" />
+			</span>
+			{#if phase === 'listening'}
+				<p class="text-[19px] font-bold">{m.speak_listening()}</p>
+				<p class="text-[14px] text-muted">{m.speak_example()}</p>
+				<p class="text-[13px] text-muted tabular-nums">
+					{m.speak_elapsed({ seconds: String(seconds) })}
+				</p>
+			{:else if phase === 'working'}
+				<p class="text-[19px] font-bold">{m.speak_working()}</p>
+			{/if}
+		</div>
+	{/if}
 	{#if phase === 'listening'}
 		<Button wide onclick={done}>{m.speak_done()}</Button>
-	{:else if phase === 'failed'}
-		<div class="flex flex-col gap-2">
-			<Button wide onclick={start}>{m.speak_try_again()}</Button>
-			<Button wide variant="ghost" onclick={ontype}>{m.speak_type_instead()}</Button>
-		</div>
 	{/if}
 </Sheet>
 

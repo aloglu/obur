@@ -38,4 +38,6 @@ export interface FoodSearchResult {
 	mine: boolean;
 	kcal: number | null;
 	icon: string | null;
+	/** Found only by typo tolerance, not by the words themselves (or an alias): worth asking about. */
+	loose?: boolean;
 }

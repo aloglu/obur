@@ -23,13 +23,17 @@
 		initial?: FoodDetail;
 		busy?: boolean;
 		onsave: (food: FoodInput) => void;
+		/** A name to start from, for a new food. */
+		startName?: string;
+		/** The save button's words, where saving also does something else. */
+		saveLabel?: string;
 	}
 
 	const UNITS: { value: 'g' | 'ml'; label: string }[] = [
 		{ value: 'g', label: 'g' },
 		{ value: 'ml', label: 'ml' }
 	];
-	let { initial, busy = false, onsave }: Props = $props();
+	let { initial, busy = false, onsave, startName = '', saveLabel }: Props = $props();
 	const start = untrack(() => initial);
 
 	type Field =
@@ -86,7 +90,7 @@
 		};
 	}
 
-	let name = $state(start?.name ?? '');
+	let name = $state(start?.name || untrack(() => startName));
 	let brand = $state(start?.brand ?? '');
 	// The chosen icon; null shows the one the name suggests (it follows the name as it is typed).
 	let icon = $state<string | null>(start?.icon ?? null);
@@ -422,7 +426,7 @@
 	</section>
 
 	<Button type="submit" wide disabled={busy || !name.trim()}
-		>{busy ? m.common_working() : m.food_save()}</Button
+		>{busy ? m.common_working() : (saveLabel ?? m.food_save())}</Button
 	>
 </form>
 

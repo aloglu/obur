@@ -88,11 +88,11 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 - **Amount sheet:** one sheet with a rolling preview, using the fields above.
 - **Type it** replaces Quick add and the search's "Log as typed" row: natural-language typing parsed into foods or calories-only items. The meal toggle follows the text ("for dinner"); removing the meal word returns to the tapped or preset meal. Only the placeholder gives an example ("two eggs and toast for breakfast"). Reading a sentence needs the server, so **Log calories only** stays: from a search that finds nothing, and from Type it when the server can't be reached. It is what can wait offline.
 - **Speak:** "I heard" rows.
-  - **Not sure:** one short line ("Not sure. Which one?"), full rows under the food name with portion and kcal, a tick on the chosen one; "Something else" has a tint so it reads as a different kind of action.
+  - **Not sure:** one short line ("Not sure. Which one?"), full rows under the food name with portion and kcal, a tick on the chosen one; "Something else" has a tint so it reads as a different kind of action. It asks only when the top match came from typo tolerance, not when the words or an alias matched, so logging stays fast.
   - **Food not found:** three stacked full-width rows: "Create it as food", "Log calories only", "Search your foods". No food name in the button, so a long name can't break it.
   - **No microphone:** amber warning, no assumption about the device.
   - **Voice off:** the normal Log layout with one dismissible **grey** information card.
-- **Scan:** the food form filled in from the photo ("Check the label"), photo one tap away, notes per decision, "Save and choose amount". The camera frame follows the theme. Failure states: no table, blurry, busy, limit, offline.
+- **Scan:** the food form filled in from the photo ("Check the label"), photo one tap away, notes per decision, "Save and choose amount". The camera frame follows the theme. Failure states: no table, blurry, busy, limit, offline. As built: a busy server offers Fill in by hand rather than a waiting line, and a blurry photo reads as no table found; notes per decision wait for the server to report its decisions.
 
 ### Journal and Progress
 

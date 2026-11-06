@@ -6,6 +6,8 @@
 	import Bookmark from '@lucide/svelte/icons/bookmark';
 	import PencilLine from '@lucide/svelte/icons/pencil-line';
 	import Mic from '@lucide/svelte/icons/mic';
+	import MicOff from '@lucide/svelte/icons/mic-off';
+	import Notice from '../Notice.svelte';
 	import ScanLine from '@lucide/svelte/icons/scan-line';
 	import FoodIcon from '../FoodIcon.svelte';
 	import Search from '@lucide/svelte/icons/search';
@@ -24,7 +26,7 @@
 		onpick: (foodId: string) => void;
 		onquick: () => void;
 		onclearpreset: () => void;
-		/** Opens Speak; the tile is enabled only when given (a speech service is configured). */
+		/** Opens Speak; without it (no speech service) the tile goes and a grey card says so. */
 		onspeak?: () => void;
 		/** Label scanning is configured: the Scan tile links to it. */
 		scan?: boolean;
@@ -58,6 +60,25 @@
 	const typing = $derived(query.trim().length > 0);
 
 	const showSuggestions = $derived(focused && !typing);
+
+	// Told once on each device that Speak is off; it stays quiet after that.
+	const VOICE_OFF_KEY = 'obur:voice-off-seen';
+	let voiceOffSeen = $state(true);
+	onMount(() => {
+		try {
+			voiceOffSeen = localStorage.getItem(VOICE_OFF_KEY) === 'yes';
+		} catch {
+			voiceOffSeen = false;
+		}
+	});
+	function dismissVoiceOff() {
+		voiceOffSeen = true;
+		try {
+			localStorage.setItem(VOICE_OFF_KEY, 'yes');
+		} catch {
+			// Not remembered; it shows again next time.
+		}
+	}
 
 	// Refreshed on every focus: logging, undo or edits elsewhere change what is recent.
 	async function loadRecent() {
@@ -284,18 +305,20 @@
 		</section>
 	{:else}
 		{#if !showSuggestions}
-			<div class="grid grid-cols-3 gap-2.5">
-				<button
-					type="button"
-					disabled={!onspeak}
-					onclick={() => onspeak?.()}
-					class={[tile, !onspeak && 'opacity-60']}
-				>
-					<span class="grid size-12 place-items-center rounded-input bg-voice-bg text-voice"
-						><Mic size={24} aria-hidden="true" /></span
-					>
-					{m.log_speak()}
-				</button>
+			<div
+				class={[
+					'grid gap-2.5',
+					onspeak && scan ? 'grid-cols-3' : onspeak || scan ? 'grid-cols-2' : 'grid-cols-1'
+				]}
+			>
+				{#if onspeak}
+					<button type="button" onclick={onspeak} class={tile}>
+						<span class="grid size-12 place-items-center rounded-input bg-voice-bg text-voice"
+							><Mic size={24} aria-hidden="true" /></span
+						>
+						{m.log_speak()}
+					</button>
+				{/if}
 				{#if scan}
 					<a href={resolve('/(app)/scan')} class={tile}>
 						<span class="grid size-12 place-items-center rounded-input bg-scan-bg text-scan"
@@ -303,13 +326,6 @@
 						>
 						{m.log_scan()}
 					</a>
-				{:else}
-					<button type="button" disabled class={[tile, 'opacity-60']}>
-						<span class="grid size-12 place-items-center rounded-input bg-scan-bg text-scan"
-							><ScanLine size={24} aria-hidden="true" /></span
-						>
-						{m.log_scan()}
-					</button>
 				{/if}
 				<button type="button" onclick={ontype} class={tile}>
 					<span class="grid size-12 place-items-center rounded-input bg-soft text-accent"
@@ -318,6 +334,19 @@
 					{m.log_type_it()}
 				</button>
 			</div>
+			{#if !onspeak && !voiceOffSeen}
+				<div class="relative">
+					<Notice tone="info" title={m.speak_off_title()} icon={MicOff}>{m.speak_off_line()}</Notice
+					>
+					<button
+						type="button"
+						onclick={dismissVoiceOff}
+						aria-label={m.speak_off_dismiss()}
+						class="absolute top-1.5 right-1.5 grid size-11 place-items-center text-muted"
+						><X size={18} aria-hidden="true" /></button
+					>
+				</div>
+			{/if}
 		{:else if savedMeals.length}
 			<!-- The five most recently changed; search finds the rest. -->
 			<div class="rounded-card bg-surface px-[18px] py-2 shadow-card">

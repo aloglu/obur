@@ -119,7 +119,7 @@
 			typedEntry = e;
 			typing = true;
 		}}
-		ontype={() => (speaking = false)}
+		ontype={() => ((speaking = false), (heard = false), (typedEntry = null), (typing = true))}
 		onclose={() => (speaking = false)}
 	/>
 {/if}

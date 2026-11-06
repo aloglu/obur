@@ -22,8 +22,11 @@ test('a typed sentence becomes items to confirm, logged together and undone toge
 		.getByLabel('You typed')
 		.fill(`kahvaltıda iki dilim tahıllı ekmek ${tag} ve iki bardak su`);
 	const bread = sheet.getByRole('region', { name: `Fırıncı Tahıllı Ekmek ${tag}` });
+	// A compact row; tapping it opens the amount and unit.
+	await expect(bread).toContainText('150'); // 2 × 30 g at 250 kcal per 100 g
+	await expect(bread).toContainText('2 dilim (30 g) · Breakfast');
+	await bread.getByRole('button', { name: /^Edit / }).click();
 	await expect(bread.getByRole('button', { name: /^Unit: dilim \(30 g\)/ })).toBeVisible();
-	await expect(bread).toContainText('150 kcal'); // 2 × 30 g at 250 kcal per 100 g
 	await expect(sheet.getByRole('region', { name: 'Water' }).getByLabel('Millilitres')).toHaveValue(
 		'400'
 	);
@@ -60,8 +63,10 @@ test('weight, calories-only and a curated food with a bare count', async ({ page
 	// Change the sentence: a curated banana and a calories-only snack.
 	await sheet.getByLabel('You typed').fill('bir muz ve 120 kcal snack');
 	const banana = sheet.getByRole('region', { name: 'Banana' });
+	await expect(banana).toContainText('105');
+	await expect(banana).not.toContainText('Which one?'); // found through its Turkish alias, so no question
+	await banana.getByRole('button', { name: /^Edit / }).click();
 	await expect(banana.getByRole('button', { name: /^Unit: medium/ })).toBeVisible();
-	await expect(banana).toContainText('105 kcal');
 	await expect(
 		sheet.getByRole('region', { name: 'Calories only' }).getByLabel('Calories (kcal)')
 	).toHaveValue('120');
@@ -154,4 +159,67 @@ test('a food with one unit has it chosen, so a count alone is enough', async ({
 	await expect(sheet.getByRole('region', { name }).getByLabel('Amount')).toHaveValue('50');
 	await expect(sheet).not.toContainText('Choose a unit');
 	await expect(sheet.getByRole('button', { name: /^Log 1 to/ })).toBeEnabled();
+});
+
+test('a loose match asks which one, and a food not found offers a way out', async ({
+	page
+}, testInfo) => {
+	const tag = testInfo.project.name.replace(/\W/g, '');
+	await signedInAs(page, `Belirsiz ${testInfo.project.name}`);
+	for (const name of [`Karpuzlu${tag}`, `Karpuzcuk${tag}`]) {
+		await createFood(page, {
+			name,
+			basis: '100g',
+			nutrients: [{ code: 'energy_kcal', value: 100, qualifier: 'reported' }]
+		});
+	}
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Type it' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
+
+	// A misspelling: the top match is only typo-tolerant, so it asks, and logging waits for the answer.
+	await sheet.getByLabel('You typed').fill(`100 g karpuzlu${tag}x for snacks`);
+	await expect(sheet).toContainText('Not sure. Which one?');
+	await expect(
+		sheet.getByRole('button', { name: 'Choose the item marked ? first' })
+	).toBeDisabled();
+	await expect(sheet.getByRole('button', { name: /Something else/ })).toBeVisible();
+	await sheet.getByRole('button', { name: new RegExp(`^Karpuzlu${tag}`) }).click();
+	await expect(sheet).not.toContainText('Not sure');
+	await expect(sheet.getByRole('button', { name: 'Log 1 to Snacks' })).toBeEnabled();
+
+	// Nothing like it: three ways out, and it doesn't hold the rest back.
+	await sheet.getByLabel('You typed').fill('qqqqzzzz ve 120 kcal snack');
+	await expect(sheet).toContainText('Not in your foods yet');
+	await expect(sheet.getByRole('button', { name: 'Create it as food' })).toBeVisible();
+	await expect(sheet.getByRole('button', { name: 'Search your foods' })).toBeVisible();
+	await sheet.getByRole('button', { name: 'Log calories only' }).click();
+	await sheet.getByLabel('Calories (kcal)').first().fill('300');
+	await expect(sheet.getByRole('button', { name: 'Log 2 to Snacks' })).toBeEnabled();
+});
+
+test('a food not found is left out when logging, and the toast says so', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Eksik ${testInfo.project.name}`);
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Type it' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
+	await sheet.getByLabel('You typed').fill('qqqqzzzz ve 120 kcal snack');
+	await sheet.getByRole('button', { name: 'Log 1 to Snacks' }).click();
+	await expect(page.getByRole('status')).toContainText('wasn’t logged'.replace('’', "'"));
+	await expect(page.getByRole('region', { name: 'Snacks' })).toContainText('120');
+});
+
+test('Create it as food starts the form with the name that was said', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Yeni ${testInfo.project.name}`);
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Type it' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
+	await sheet.getByLabel('You typed').fill('qqqqzzzz');
+	await sheet.getByRole('button', { name: 'Create it as food' }).click();
+	await expect(page).toHaveURL(/\/foods\/new\?name=/);
+	await expect(page.getByLabel('Product name')).toHaveValue('qqqqzzzz');
 });

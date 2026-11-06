@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
@@ -35,5 +36,7 @@
 	>
 	<h1 class="text-[24px] font-[750]">{m.food_new_title()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
-	<div class="rounded-card bg-surface p-[18px] shadow-card"><FoodForm {busy} onsave={save} /></div>
+	<div class="rounded-card bg-surface p-[18px] shadow-card">
+		<FoodForm {busy} onsave={save} startName={page.url.searchParams.get('name') ?? ''} />
+	</div>
 </main>

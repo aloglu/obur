@@ -360,7 +360,8 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					visibility: r.visibility,
 					mine: r.mine,
 					kcal: r.kcal,
-					icon: r.icon
+					icon: r.icon,
+					loose: !r.whole
 				}));
 			const full = await this.searchFoods(userId, text, limit, boostIds);
 			if (full[0]?.whole) return strip(full);

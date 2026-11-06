@@ -54,7 +54,7 @@ test('Speak records, sends the clip with the person’s foods as a prompt, and c
 	await expect(sheet.getByLabel('I heard')).toHaveValue(
 		'Akşam bir kutu sesli ayran ve iki bardak su içtim.'
 	);
-	await expect(sheet.getByRole('region', { name: 'Köy Sesli Ayran' })).toContainText('80 kcal');
+	await expect(sheet.getByRole('region', { name: 'Köy Sesli Ayran' })).toContainText('80');
 	await expect(sheet.getByRole('radio', { name: 'Dinner' })).toBeChecked();
 	const sent = await (await fetch(`${SPEECH_STUB}/last`)).json();
 	expect(sent.prompt).toContain('Köy');
@@ -74,16 +74,17 @@ test('Speak says when nothing was heard or the service is busy, and offers to tr
 	const speak = page.getByRole('dialog', { name: 'Speak' });
 	// Done at once: an empty recording is "nothing heard" too.
 	await speak.getByRole('button', { name: 'Done' }).click();
-	await expect(speak).toContainText('Nothing was heard.');
+	await expect(speak.getByRole('status')).toContainText("I didn't hear anything");
 	await speak.getByRole('button', { name: 'Try again' }).click();
 	await page.waitForTimeout(1000);
 	await speak.getByRole('button', { name: 'Done' }).click();
-	await expect(speak).toContainText('Nothing was heard.');
+	await expect(speak.getByRole('status')).toContainText("I didn't hear anything");
 	await nextTranscript({ error: 'busy' }, 503);
 	await speak.getByRole('button', { name: 'Try again' }).click();
 	await page.waitForTimeout(1000);
 	await speak.getByRole('button', { name: 'Done' }).click();
-	await expect(speak).toContainText('The speech service is busy.');
-	await speak.getByRole('button', { name: 'Type instead' }).click();
+	await expect(speak.getByRole('alert')).toContainText('The speech service is busy');
+	await speak.getByRole('button', { name: 'Type it instead' }).click();
 	await expect(speak).toBeHidden();
+	await expect(page.getByRole('dialog', { name: 'Type what you ate' })).toBeVisible();
 });

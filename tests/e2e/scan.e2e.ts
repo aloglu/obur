@@ -67,10 +67,14 @@ test('scan a label: the proposal fills the food form, the person checks and name
 		mimeType: 'image/png',
 		buffer: WIDE3
 	});
-	await expect(page.getByText('Check every value against the photo')).toBeVisible();
+	await expect(page.getByText('Check every value against your photo')).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Check the label' })).toBeVisible();
 	// The photo went out small and as JPEG (drawn again on the phone, which drops its location data).
 	const sent = await (await request.get(`${SPEECH_STUB}/last-ocr`)).json();
 	expect(sent).toMatchObject({ jpeg: true, width: 3 });
+	// The photo is one tap away.
+	await expect(page.getByRole('img', { name: 'Your photo of the label' })).toBeHidden();
+	await page.getByRole('button', { name: 'Your photo' }).click();
 	await expect(page.getByRole('img', { name: 'Your photo of the label' })).toBeVisible();
 
 	// Values per 100 g from the table, the bound kept, the serving offered as a portion; the name is typed.
@@ -82,7 +86,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 		page.locator('#n-salt').locator('..').getByRole('checkbox', { name: 'Less than' })
 	).toBeChecked();
 	await page.getByLabel('Product name').fill(`Fındıklı gofret ${testInfo.project.name}`);
-	await page.getByRole('button', { name: 'Save food' }).click();
+	await page.getByRole('button', { name: 'Save and choose amount' }).click();
 
 	// Saved, then straight to the amount sheet in Log; nothing is logged until Save there.
 	const sheet = page.getByRole('dialog', {
@@ -104,7 +108,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	});
 });
 
-test('a label that cannot be read says so and leaves the form empty to fill in', async ({
+test('a label that cannot be read says so and offers to fill it in by hand', async ({
 	page,
 	request
 }, testInfo) => {
@@ -118,15 +122,19 @@ test('a label that cannot be read says so and leaves the form empty to fill in',
 	await page
 		.getByLabel('Choose photo')
 		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE5 });
-	await expect(page.getByText('No nutrition table could be read.')).toBeVisible();
-	await expect(page.locator('#n-energy_kcal')).toHaveValue('');
+	await expect(page.getByRole('alert')).toContainText('No nutrition table found');
+	await expect(page.getByRole('heading', { level: 1, name: 'Scan a label' })).toBeVisible();
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
 		data: { width: 9, status: 503, body: { error: 'busy' } }
 	});
 	await page
 		.getByLabel('Choose photo')
 		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE9 });
-	await expect(page.getByText('The server is reading other labels.')).toBeVisible();
+	await expect(page.getByRole('alert')).toContainText('The server is reading other labels');
+	await page.getByRole('button', { name: 'Fill in by hand' }).click();
+	await expect(page.locator('#n-energy_kcal')).toHaveValue('');
+	await expect(page.getByRole('heading', { level: 1, name: 'New food' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Retake' })).toBeVisible();
 });
 
 test('scanning several labels in a row: saving can stay on Scan instead of opening Log', async ({
