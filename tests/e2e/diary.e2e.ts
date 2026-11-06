@@ -372,25 +372,25 @@ test('Recently deleted brings an entry back after the toast is gone', async ({
 	await expect(page.getByRole('region', { name: 'Dinner' })).toContainText('Lahmacun');
 });
 
-test('a note being edited stays above the keyboard and the tab bar', async ({ page }, testInfo) => {
+test('an empty note opens at full height at once, so iOS can scroll its field above the keyboard', async ({
+	page
+}, testInfo) => {
 	await signedInAs(page, `Klavye ${testInfo.project.name}`);
 	await page.goto('/');
 	await page.waitForLoadState('networkidle');
-	const size = page.viewportSize()!;
 	const note = page.getByRole('region', { name: 'Notes' });
 	await note.getByRole('button', { name: /^Notes/ }).click();
 	const field = note.getByLabel('Note for this day');
 	await expect(field).toBeFocused();
-	const done = note.getByRole('button', { name: 'Done' });
-	await expect(done).toBeInViewport({ ratio: 1 });
+	await expect(note.locator('.collapse-row')).toHaveCSS('transition-duration', '0s');
 
-	// The keyboard opening shrinks what can be seen; the page follows without the field being tapped again.
-	await page.setViewportSize({ width: size.width, height: Math.round(size.height * 0.55) });
-	await expect(field).toBeFocused();
-	await expect(async () => {
-		const box = (await done.boundingBox())!;
-		const bar = await page.locator('[data-tabbar]').boundingBox();
-		const limit = bar?.height ? bar.y : page.viewportSize()!.height;
-		expect(box.y + box.height).toBeLessThanOrEqual(limit);
-	}).toPass();
+	// A note with text opens with the usual animation; its field gets focus only when tapped.
+	const saved = page.waitForResponse(/\/note$/);
+	await field.fill('something');
+	await saved;
+	await note.getByRole('button', { name: 'Done' }).click();
+	await note.getByRole('button', { name: /^Notes/ }).click();
+	await note.getByRole('button', { name: /^Notes/ }).click();
+	await expect(note.locator('.collapse-row')).not.toHaveCSS('transition-duration', '0s');
+	await expect(field).toBeHidden();
 });

@@ -54,7 +54,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 - **Built:** sheets slide up and down (dialogs fade and scale from 760 px) with the scrim fading, menus fade and scale from their own corner, the tab bar's and segmented controls' highlight slides (380 ms), a new page rises 8 px (220 ms), budget and nutrient bars travel to their value (600 ms).
 - **Build with each screen; do not skip:** numbers roll digit by digit when they change (`roll` in the demos), fields and inline forms open with the `.collapse` height and fade, charts draw on, entries and rows animate in and out, toasts pop their check. Look for it in the demo's CSS and script for each screen.
 
-**A note being edited stays above the keyboard and the tab bar** (`client/keep-in-view.ts`): the browser only scrolls a field into view once, on focus, and the card is still opening then.
+**A field that gets focus must already be in place.** iOS scrolls a focused field above the keyboard smoothly by itself, but only to where it is at that moment. So an empty note, which opens straight into typing, reaches its height at once and fades in. Don't scroll the page from script to help: it fights iOS's own scroll and overshoots (owner's report, 2026-11-06).
 
 **An open sheet holds the page behind it still** (`client/scroll-lock.ts`), and returns it to the same place when it closes. Closing gives the page back at once: the sheet unmounts immediately and a lifeless copy plays the slide-out, so nothing waits for the animation.
 

@@ -211,6 +211,13 @@ main {
 		opacity 240ms 120ms,
 		visibility 0s;
 }
+/* Reaches its height at once and only fades in: for a field about to get focus (ui/today/DayNoteCard.svelte). */
+.collapse-row.instant {
+	transition: none;
+}
+.collapse-row.instant > div {
+	transition: opacity 200ms;
+}
 /* A field that replaces a button in place. */
 .field-swap {
 	animation: field-swap 260ms var(--ui);
