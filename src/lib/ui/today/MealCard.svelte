@@ -133,7 +133,7 @@
 							<span
 								class={[
 									'grid size-6 shrink-0 place-items-center rounded-full border-2',
-									on ? 'border-accent bg-accent text-on-accent' : 'border-muted bg-surface'
+									on ? 'border-accent bg-fill text-on-accent' : 'border-muted bg-surface'
 								]}
 								aria-hidden="true"
 								>{#if on}<Check size={14} strokeWidth={3} />{/if}</span

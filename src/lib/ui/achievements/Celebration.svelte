@@ -108,7 +108,7 @@
 			bind:this={done}
 			type="button"
 			onclick={closeCelebration}
-			class="done mt-2.5 min-h-[52px] min-w-[200px] rounded-tile bg-accent px-6 text-[17px] font-[750] text-on-accent"
+			class="done mt-2.5 min-h-[52px] min-w-[200px] rounded-tile bg-fill px-6 text-[17px] font-[750] text-on-accent"
 			>{m.achievement_done()}</button
 		>
 		<a

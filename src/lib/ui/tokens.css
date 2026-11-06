@@ -11,6 +11,8 @@
 	--text: #1e1a16;
 	--muted: #665d53;
 	--accent: #c2410c;
+	/* Filled buttons; a theme can set it apart from --accent, which stays the colour of links. */
+	--fill: var(--accent);
 	--on-accent: #ffffff;
 	--soft: #fdf0e7;
 	--good: #2e7d3b;
@@ -147,6 +149,7 @@
 	--color-text: var(--text);
 	--color-muted: var(--muted);
 	--color-accent: var(--accent);
+	--color-fill: var(--fill);
 	--color-on-accent: var(--on-accent);
 	--color-soft: var(--soft);
 	--color-good: var(--good);

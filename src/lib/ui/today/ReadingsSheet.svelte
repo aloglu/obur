@@ -145,7 +145,7 @@
 						<button
 							type="submit"
 							disabled={busy || !valid}
-							class="min-h-11 rounded-input bg-accent px-3 text-[14px] font-bold text-on-accent disabled:opacity-50"
+							class="min-h-11 rounded-input bg-fill px-3 text-[14px] font-bold text-on-accent disabled:opacity-50"
 							>{m.weight_save()}</button
 						>
 						<button

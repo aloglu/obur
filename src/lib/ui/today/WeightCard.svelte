@@ -132,7 +132,7 @@
 		<button
 			type="submit"
 			disabled={busy || kg === undefined || invalid}
-			class="min-h-11 rounded-input bg-accent px-4 text-[15px] font-bold text-on-accent disabled:opacity-50"
+			class="min-h-11 rounded-input bg-fill px-4 text-[15px] font-bold text-on-accent disabled:opacity-50"
 			>{m.weight_save()}</button
 		>
 	</form>

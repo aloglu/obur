@@ -28,7 +28,7 @@
 				class="toast pointer-events-auto flex max-w-[440px] min-w-0 items-center gap-3 rounded-tile bg-toast-bg py-3 pr-2 pl-3.5 text-toast-text shadow-toast"
 			>
 				<span
-					class="check grid size-7 shrink-0 place-items-center rounded-full bg-accent text-on-accent"
+					class="check grid size-7 shrink-0 place-items-center rounded-full bg-fill text-on-accent"
 					><Check size={16} strokeWidth={3} aria-hidden="true" /></span
 				>
 				<span class="min-w-0 flex-1">

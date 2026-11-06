@@ -159,7 +159,7 @@
 					aria-label={m.water_other_add()}
 					class="grid size-11 place-items-center disabled:opacity-50"
 				>
-					<span class="grid size-9 place-items-center rounded-full bg-accent text-on-accent"
+					<span class="grid size-9 place-items-center rounded-full bg-fill text-on-accent"
 						><Check size={20} aria-hidden="true" /></span
 					>
 				</button>

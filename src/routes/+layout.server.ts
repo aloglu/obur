@@ -5,6 +5,7 @@ export const load: LayoutServerLoad = ({ locals }) => {
 	return {
 		user:
 			s?.kind === 'normal' ? { id: s.userId, displayName: s.displayName, role: s.role } : undefined,
-		theme: locals.theme ?? ('system' as const)
+		theme: locals.theme ?? ('system' as const),
+		palette: locals.palette
 	};
 };

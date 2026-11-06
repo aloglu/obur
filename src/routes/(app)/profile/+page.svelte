@@ -81,7 +81,7 @@
 		{/if}
 		<a
 			href={resolve('/(app)/onboarding')}
-			class="inline-flex min-h-11 items-center self-start rounded-button bg-accent px-4 font-[750] text-on-accent"
+			class="inline-flex min-h-11 items-center self-start rounded-button bg-fill px-4 font-[750] text-on-accent"
 		>
 			{t ? m.profile_recalc() : m.profile_setup()}
 		</a>

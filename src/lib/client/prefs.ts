@@ -1,4 +1,6 @@
 // Per-device preferences kept in cookies so the server can render the right theme and day without a flash.
+import { DEFAULT_PALETTE, paletteOf, type PaletteId } from '#lib/shared/themes.ts';
+
 const YEAR = 365 * 24 * 3600;
 const secure = () => (location.protocol === 'https:' ? '; secure' : '');
 
@@ -17,6 +19,22 @@ export function setTheme(choice: ThemeChoice): void {
 		document.cookie = `obur_theme=${choice}; path=/; max-age=${YEAR}; samesite=lax${secure()}`;
 		document.documentElement.dataset.theme = choice;
 	}
+}
+
+export function setPalette(id: PaletteId): void {
+	if (id === DEFAULT_PALETTE) {
+		document.cookie = `obur_palette=; path=/; max-age=0; samesite=lax${secure()}`;
+		delete document.documentElement.dataset.palette;
+	} else {
+		document.cookie = `obur_palette=${id}; path=/; max-age=${YEAR}; samesite=lax${secure()}`;
+		document.documentElement.dataset.palette = id;
+	}
+	// The browser's own bars follow the page colour.
+	const [light, dark] = paletteOf(id).bg;
+	document
+		.querySelector('meta[name="theme-color"][media*="light"]')
+		?.setAttribute('content', light);
+	document.querySelector('meta[name="theme-color"][media*="dark"]')?.setAttribute('content', dark);
 }
 
 /** Stores the device's time zone; returns true if it changed (so the page should reload its data). */

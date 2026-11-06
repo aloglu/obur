@@ -18,7 +18,7 @@
 		'transition-[transform,opacity] duration-150 active:scale-[0.98] disabled:opacity-50',
 		'focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-accent',
 		wide && 'w-full',
-		variant === 'primary' && 'bg-accent text-on-accent',
+		variant === 'primary' && 'bg-fill text-on-accent',
 		variant === 'ghost' && 'border border-line bg-surface text-text',
 		variant === 'danger' && 'border border-line bg-surface text-bad'
 	]}

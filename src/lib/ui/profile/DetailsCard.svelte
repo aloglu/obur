@@ -228,7 +228,7 @@
 				<button
 					type="submit"
 					disabled={busy}
-					class="min-h-12 rounded-button bg-accent text-[16px] font-[750] text-on-accent disabled:opacity-50"
+					class="min-h-12 rounded-button bg-fill text-[16px] font-[750] text-on-accent disabled:opacity-50"
 					>{m.details_save()}</button
 				>
 			</div>

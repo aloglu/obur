@@ -208,7 +208,7 @@
 			{/if}
 			<div class="grid grid-cols-2 gap-2">
 				<label
-					class="inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button bg-accent px-2 text-[16px] font-[750] whitespace-nowrap text-on-accent focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-accent"
+					class="inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button bg-fill px-2 text-[16px] font-[750] whitespace-nowrap text-on-accent focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-accent"
 				>
 					<Camera size={20} aria-hidden="true" />{proposal ? m.scan_retake() : m.scan_take()}
 					<input

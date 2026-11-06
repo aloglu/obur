@@ -197,3 +197,26 @@ for (const theme of ['light', 'dark'] as const) {
 		});
 	});
 }
+
+test('a theme chosen in More sticks and repaints the page', async ({ page }, testInfo) => {
+	test.skip(
+		testInfo.project.name.includes('desktop'),
+		'More is the phone route; Settings shares it'
+	);
+	await signedInAs(page, `Tema ${testInfo.project.name}`);
+	await page.goto('/more');
+	const background = () =>
+		page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
+	expect(await background()).toBe('#f6f3ee');
+
+	await page.getByRole('radio', { name: 'Kaset' }).click();
+	await expect(page.getByRole('radio', { name: 'Kaset' })).toBeChecked();
+	expect(await background()).toBe('#6fe3d6');
+
+	// The server renders it on the next visit, so there is no flash of the default.
+	await page.reload();
+	await expect(page.locator('html')).toHaveAttribute('data-palette', 'kaset');
+
+	await page.getByRole('radio', { name: 'Pazar' }).click();
+	await expect(page.locator('html')).not.toHaveAttribute('data-palette');
+});

@@ -8,6 +8,7 @@ import { clearSessionCookie } from '#lib/server/http.ts';
 import { restorePending } from '#lib/server/restore-guard.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { isValidZone } from '#lib/shared/diary-rules.ts';
+import { DEFAULT_PALETTE, isPalette, paletteOf } from '#lib/shared/themes.ts';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -18,7 +19,17 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 					html
 						.replace('%paraglide.lang%', locale)
 						.replace('%paraglide.dir%', getTextDirection(locale))
-						.replace('%obur.theme%', event.locals.theme ? `data-theme="${event.locals.theme}"` : '')
+						.replace(
+							'%obur.theme%',
+							[
+								event.locals.theme && `data-theme="${event.locals.theme}"`,
+								event.locals.palette !== DEFAULT_PALETTE && `data-palette="${event.locals.palette}"`
+							]
+								.filter(Boolean)
+								.join(' ')
+						)
+						.replace('%obur.bg.light%', paletteOf(event.locals.palette).bg[0])
+						.replace('%obur.bg.dark%', paletteOf(event.locals.palette).bg[1])
 			}
 		);
 	});
@@ -73,6 +84,8 @@ const matches = (path: string, prefixes: string[]) =>
 const handleSession: Handle = async ({ event, resolve }) => {
 	const theme = event.cookies.get('obur_theme');
 	event.locals.theme = theme === 'light' || theme === 'dark' ? theme : undefined;
+	const palette = event.cookies.get('obur_palette');
+	event.locals.palette = isPalette(palette) ? palette : DEFAULT_PALETTE;
 	const zone = event.cookies.get('obur_zone') ?? '';
 	event.locals.zone = isValidZone(zone) ? zone : 'UTC';
 

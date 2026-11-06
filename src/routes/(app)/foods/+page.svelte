@@ -48,7 +48,7 @@
 		<h1 class="text-[24px] font-[750]">{m.foods_title()}</h1>
 		<a
 			href={resolve('/(app)/foods/new')}
-			class="inline-flex min-h-11 items-center rounded-button bg-accent px-4 font-[750] text-on-accent"
+			class="inline-flex min-h-11 items-center rounded-button bg-fill px-4 font-[750] text-on-accent"
 			>{m.foods_new()}</a
 		>
 	</div>

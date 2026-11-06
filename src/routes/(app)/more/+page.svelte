@@ -13,6 +13,7 @@
 		isAdmin={data.user?.role === 'admin'}
 		displayName={data.user?.displayName ?? ''}
 		initialTheme={data.theme}
+		initialPalette={data.palette}
 		reminders={data.pushKey !== null}
 	/>
 </main>

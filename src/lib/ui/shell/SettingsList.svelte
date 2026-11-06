@@ -8,7 +8,8 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import { clearDeviceData, flush, offline } from '#lib/client/offline/sync.svelte.ts';
-	import { setTheme, type ThemeChoice } from '#lib/client/prefs.ts';
+	import { setPalette, setTheme, type ThemeChoice } from '#lib/client/prefs.ts';
+	import { PALETTES, type PaletteId } from '#lib/shared/themes.ts';
 	import Button from '../Button.svelte';
 	import Card from '../Card.svelte';
 	import Chips from '../Chips.svelte';
@@ -17,10 +18,11 @@
 		isAdmin: boolean;
 		displayName: string;
 		initialTheme: ThemeChoice;
+		initialPalette: PaletteId;
 		/** Reminders are configured on this server. */
 		reminders: boolean;
 	}
-	let { isAdmin, displayName, initialTheme, reminders }: Props = $props();
+	let { isAdmin, displayName, initialTheme, initialPalette, reminders }: Props = $props();
 
 	async function signOut() {
 		// Try to send anything waiting; never discard unsent entries without asking (docs/design.md, offline scope).
@@ -36,6 +38,12 @@
 	}
 	// The server rendered the page with this theme (cookie); changes apply only when a chip is tapped.
 	let theme = $state<ThemeChoice>(untrack(() => initialTheme));
+	let palette = $state<PaletteId>(untrack(() => initialPalette));
+
+	function pick(id: PaletteId) {
+		palette = id;
+		setPalette(id);
+	}
 
 	const row = 'flex min-h-14 items-center justify-between gap-3 py-2 text-[15px] font-semibold';
 </script>
@@ -51,6 +59,32 @@
 			{ value: 'dark', label: m.theme_dark() }
 		]}
 	/>
+	<div class="grid grid-cols-4 gap-2" role="radiogroup" aria-label={m.more_theme()}>
+		{#each PALETTES as p (p.id)}
+			<button
+				type="button"
+				role="radio"
+				aria-checked={palette === p.id}
+				onclick={() => pick(p.id)}
+				class="flex flex-col items-center gap-1.5 text-[13px] font-semibold"
+			>
+				<span
+					class={[
+						'relative block h-11 w-full overflow-hidden rounded-menu border border-line',
+						palette === p.id && 'outline-2 outline-offset-1 outline-accent'
+					]}
+					style:background={p.swatch[1]}
+					aria-hidden="true"
+				>
+					<span
+						class="absolute right-1.5 bottom-1.5 size-4 rounded-full"
+						style:background={p.swatch[0]}
+					></span>
+				</span>
+				{p.name}
+			</button>
+		{/each}
+	</div>
 </Card>
 
 <Card>

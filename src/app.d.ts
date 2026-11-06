@@ -8,6 +8,7 @@ declare global {
 			session: SessionRecord | undefined;
 			/** Theme chosen on this device (cookie); undefined follows the system setting. */
 			theme: 'light' | 'dark' | undefined;
+			palette: import('#lib/shared/themes.ts').PaletteId;
 			/** The device's IANA time zone (cookie), used to decide which day "today" is. */
 			zone: string;
 		}

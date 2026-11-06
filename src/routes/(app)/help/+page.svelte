@@ -59,7 +59,7 @@
 				onclick={() => (topic = t)}
 				class={[
 					'min-h-11 rounded-full px-4 text-[14px] font-semibold',
-					topic === t ? 'bg-accent text-on-accent' : 'bg-surface2 text-text'
+					topic === t ? 'bg-fill text-on-accent' : 'bg-surface2 text-text'
 				]}>{t === 'all' ? m.help_all() : topicName(t)}</button
 			>
 		{/each}
