@@ -29,3 +29,14 @@ test('Help: from More, searched without Turkish letters, answers open in place',
 	await page.getByRole('searchbox', { name: 'Search help' }).fill('pizza oven');
 	await expect(page.getByText('Nothing matches “pizza oven”.')).toBeVisible();
 });
+
+test('Help explains the Journal rings with an example of each', async ({ page }) => {
+	await signedInAs(page, 'Halka');
+	await page.goto('/help');
+	await page.getByRole('searchbox', { name: 'Search help' }).fill('halka');
+	// The only match, so it is already open.
+	await expect(page.getByText('What do the rings in the Journal mean?')).toBeVisible();
+	const examples = page.getByRole('listitem').filter({ has: page.locator('svg') });
+	await expect(examples).toHaveCount(4);
+	await expect(examples.first()).toContainText('Green');
+});

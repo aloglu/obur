@@ -4,6 +4,7 @@
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Search from '@lucide/svelte/icons/search';
 	import { m } from '#lib/paraglide/messages.js';
+	import DayRing from '#lib/ui/progress/DayRing.svelte';
 	import {
 		HELP,
 		HELP_TOPICS,
@@ -12,6 +13,12 @@
 		type HelpTopic
 	} from '#lib/shared/help.ts';
 
+	const RING_EXAMPLES = [
+		{ status: 'under', fill: 0.7, label: m.help_ring_under },
+		{ status: 'over', fill: 1, label: m.help_ring_over },
+		{ status: 'incomplete', fill: 0.6, label: m.help_ring_incomplete },
+		{ status: 'unlogged', fill: 0, label: m.help_ring_unlogged }
+	] as const;
 	const messages = m as unknown as Record<string, () => string>;
 	const text = (key: string) => messages[key]();
 	const paragraphs = (h: HelpEntry) =>
@@ -99,6 +106,18 @@
 									<p>{p}</p>
 								{/if}
 							{/each}
+							{#if h.id === 'rings'}
+								<ul class="flex flex-col gap-2.5">
+									{#each RING_EXAMPLES as example (example.status)}
+										<li class="grid grid-cols-[36px_minmax(0,1fr)] items-center gap-3 text-[14px]">
+											<span class="size-9"
+												><DayRing status={example.status} fill={example.fill} /></span
+											>
+											{example.label()}
+										</li>
+									{/each}
+								</ul>
+							{/if}
 						</div>
 					</details>
 				{/each}

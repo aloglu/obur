@@ -30,6 +30,7 @@ export const HELP: HelpEntry[] = [
 	{ id: 'complete', topic: 'progress', answers: 1 },
 	{ id: 'averages', topic: 'progress', answers: 1 },
 	{ id: 'journal', topic: 'progress', answers: 1 },
+	{ id: 'rings', topic: 'progress', answers: 1 },
 	{ id: 'achievements', topic: 'progress', answers: 2 },
 	{ id: 'reminders', topic: 'reminders', answers: 1 },
 	{ id: 'private', topic: 'privacy', answers: 1 },

@@ -11,6 +11,7 @@
 	import { monthWeeks, type CalendarDay } from '#lib/shared/calendar.ts';
 	import { dayAndMonth, kcal, monthTitle } from '#lib/shared/format.ts';
 	import type { Snippet } from 'svelte';
+	import DayRing from './DayRing.svelte';
 
 	interface Props {
 		month: string;
@@ -54,13 +55,6 @@
 	const headers = $derived(
 		Array.from({ length: 7 }, (_, i) => names[(firstDayOfWeek - 1 + i) % 7]())
 	);
-
-	const R = 15;
-	const C = 2 * Math.PI * R;
-	const colour = (d: CalendarDay) =>
-		d.status === 'under' ? 'var(--good)' : d.status === 'over' ? 'var(--bad)' : 'var(--muted)';
-	// A day within budget never closes its ring, even exactly at it: a closed ring means over.
-	const fillOf = (d: CalendarDay) => (d.status === 'over' ? d.fill : Math.min(d.fill, 0.92));
 
 	function label(d: CalendarDay): string {
 		const day = dayAndMonth(d.date);
@@ -127,25 +121,6 @@
 		return () => removeEventListener('resize', refit);
 	});
 </script>
-
-{#snippet ring(d: CalendarDay)}
-	<svg viewBox="0 0 36 36" class="day-ring absolute -rotate-90" aria-hidden="true">
-		<circle cx="18" cy="18" r={R} fill="none" stroke="var(--track)" stroke-width="3.5" />
-		{#if d.status !== 'unlogged' && d.fill > 0}
-			<circle
-				cx="18"
-				cy="18"
-				r={R}
-				fill="none"
-				stroke={colour(d)}
-				stroke-width="3.5"
-				stroke-linecap={d.status === 'over' ? 'butt' : 'round'}
-				stroke-dasharray={C}
-				stroke-dashoffset={C * (1 - fillOf(d))}
-			/>
-		{/if}
-	</svg>
-{/snippet}
 
 <section
 	class="flex flex-col rounded-card bg-surface p-[18px] shadow-card"
@@ -215,7 +190,7 @@
 							onclick={() => onselect(date)}
 							class={['day', d.isToday && 'today']}
 						>
-							{@render ring(d)}
+							<span class="day-ring absolute"><DayRing status={d.status} fill={d.fill} /></span>
 							<span class="relative">{Number(date.slice(8))}</span>
 						</button>
 					{/if}
