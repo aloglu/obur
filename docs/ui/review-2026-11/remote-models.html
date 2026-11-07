@@ -120,8 +120,11 @@ textarea{width:100%;min-height:76px;border-radius:14px;border:1px solid var(--li
 .note{display:flex;gap:8px;border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.4}
 .note.amber{background:#fcefd9;color:#8a3d05;font-weight:550}.note.grey{background:#f1ebe3;color:#665d53}
 .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.tiles div{background:#fff;border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:650;font-size:14px;box-shadow:0 1px 2px rgba(60,40,20,.06)}
-.tiles div i{font-style:normal;font-size:22px}
+.tiles div{background:#fff;border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:650;font-size:14px;box-shadow:0 1px 2px rgba(60,40,20,.06);text-align:center}
+.tiles div i{width:48px;height:48px;border-radius:14px;display:grid;place-items:center}
+.tiles i svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tiles .sp{background:#e7eedd;color:#4f6e33}.tiles .sc{background:#f8e9cc;color:#8a5a00}.tiles .ty{background:#fdf0e7;color:#c2410c}
+.quiet-link{color:#c2410c;font-weight:650;font-size:14.5px;text-align:center}
 .search{height:48px;border-radius:14px;background:#fff;border:1px solid #e5ddd2;display:flex;align-items:center;padding:0 14px;color:#8b8177;font-size:15px}
 .tog{width:52px;height:32px;border-radius:32px;background:#d9cfc2;position:relative;flex:none}
 .tog::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s}
@@ -190,18 +193,19 @@ const S = [
       'After a scan, Check the label works as now. Its notes start with an amber one: “Read by OpenAI. Check each value against your photo.” The usual checks (energy against fat, carbohydrate and protein; values no food can have) still run on what came back.',
       'What you said or what was read still shows for you to confirm before anything is saved, exactly as with the server.'
     ] },
-  { id: 'fail', ch: 'Using it', t: 'When the company says no', kind: 'fail',
+  { id: 'fail2', ch: 'Using it', t: 'When the company says no', kind: 'fail', again: true,
     variants: [['refused', 'Key refused'], ['credit', 'Out of credit'], ['down', 'Not answering']],
     idea: [
-      'If the key stops working, the account runs out of credit, or the company doesn’t answer, the sheet says which, in plain words, instead of a general error.',
-      'Two ways on: Use this server instead (for this one recording or photo, only when the server has Speak or Scan) and Type it instead. obur never switches to a company by itself.',
-      'A refused key also gets a link to Speak and Scan, where you can replace it.'
+      'Redrawn after your note. The sheet says what went wrong in one card, then offers one button that fixes that problem: Replace the key (opens Speak and Scan), Record again, or Try again (the recording is kept, so you don’t have to say it twice).',
+      'Type it instead is always the second button, so there is always a way on.',
+      'Only on a server that reads recordings itself does a small link appear: “Read this one on obur’s server instead”. On a server without it, nothing mentions the server. Try both with the switch on the right.',
+      'Scan works the same way, with “Take the photo again” instead of Record again.'
     ] },
-  { id: 'noaddon', ch: 'Using it', t: 'A server without Speak or Scan', kind: 'noaddon',
+  { id: 'noaddon2', ch: 'Using it', t: 'When the server has no Speak or Scan', kind: 'noaddon', again: true,
     variants: [['log', 'Log'], ['sheet', 'Tapping Speak']],
     idea: [
       'Some servers don’t run the speech and label add-ons (they need extra memory). Today Speak and Scan then disappear from Log.',
-      'My pick: while personal keys are allowed, the two tiles stay. Tapping one explains that this server doesn’t read recordings or photos itself, and offers Add your own key or Type it instead.',
+      'My pick: while personal keys are allowed, the two tiles stay, in their usual order and colours. Tapping one says “Speak isn’t set up on this server” and offers Use my own key or Type it instead. (Title redone after your note; the tiles now match the app.)',
       'The alternative is to keep hiding them until you add a key in Settings. That’s tidier, but nobody would discover the option.'
     ] },
   { id: 'admin', ch: 'Household', t: 'The admin’s switch', kind: 'admin',
@@ -268,7 +272,7 @@ function renderStop() {
     wireNav(); return;
   }
   const x = get(s.id);
-  $('#stop').innerHTML = `<div class="eyebrow">Stop ${cur + 1} of ${reviewable.length} · ${esc(s.ch)}</div><h2>${esc(s.t)}</h2>
+  $('#stop').innerHTML = `<div class="eyebrow">Stop ${cur + 1} of ${reviewable.length} · ${esc(s.ch)}${s.again ? ' · redrawn, please look again' : ''}</div><h2>${esc(s.t)}</h2>
     <div class="lbl">The idea</div><ul>${s.idea.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
     <div class="lbl">Your verdict</div>
     <div class="verdict" role="group" aria-label="Your verdict"><button class="ok" data-v="keep" aria-pressed="${x.v === 'keep'}">✓ Keep it</button><button class="ch" data-v="change" aria-pressed="${x.v === 'change'}">Change it</button></div>
@@ -323,11 +327,11 @@ function consent(v) {
       <div class="btn">Send to OpenAI</div><div class="btn ghost">Keep it on this server</div>`);
 }
 const logInner = recent => `<span class="back">‹ Today</span><h4>Log</h4><div class="search">Search foods</div>
-    <div class="tiles"><div><i>✎</i>Type it</div><div><i>🎙</i>Speak</div><div><i>⌗</i>Scan</div></div>
+    <div class="tiles"><div><i class="sp"><svg viewBox="0 0 24 24"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg></i>Speak</div><div><i class="sc"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></i>Scan a label</div><div><i class="ty"><svg viewBox="0 0 24 24"><path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg></i>Type it</div></div>
     ${recent ? `<div class="cd"><span class="t">Recent</span><div class="row"><span><b>Menemen</b><small>2 eggs</small></span><b class="num">312</b></div><div class="row"><span><b>Ayran</b><small>1 glass</small></span><b class="num">76</b></div></div>` : ''}`;
 function use(v) {
   if (v === 'speak') return phone(logInner(false), `${hd('Speak')}
-      <p style="color:#665d53">Say what you ate, e.g. “iki yumurta ve bir dilim ekmek kahvaltıda”.</p>
+      <p style="color:#665d53">Say what you ate, e.g. “two eggs and toast for breakfast”.</p>
       <div class="mic" aria-hidden="true">●</div><div class="btn" style="margin-top:6px">Done</div>
       <span class="via">With your <b>OpenAI</b> key</span>`);
   return phone(`<span class="back">‹ Log</span><h4>Check the label</h4>
@@ -340,19 +344,22 @@ function use(v) {
       <div class="lab"><span>Protein</span><span class="v">6,5</span><span class="u">g</span></div></div>`);
 }
 function fail(v) {
-  const m = { refused: ['red', '!', 'Your OpenAI key was refused', 'It may have been revoked. Replace it in Speak and Scan.'],
-    credit: ['amber', '¢', 'Your OpenAI account is out of credit', 'Add credit on OpenAI’s website, then try again.'],
-    down: ['grey', '…', 'OpenAI isn’t answering', 'Try again in a moment.'] }[v];
+  const local = (variant.failLocal || 'no') === 'yes';
+  const m = {
+    refused: ['red', '!', 'OpenAI refused your key', 'It may have been removed or revoked on OpenAI’s website.', 'Replace the key'],
+    credit: ['amber', '!', 'Your OpenAI account is out of credit', 'Add credit on OpenAI’s website, then record again.', 'Record again'],
+    down: ['grey', '…', 'OpenAI isn’t answering', 'Your recording is still here.', 'Try again']
+  }[v];
   return phone(logInner(false), `${hd('Speak')}
       <div class="warn"><i class="${m[0]}" aria-hidden="true">${m[1]}</i><span><b>${m[2]}</b><span>${m[3]}</span></span></div>
-      <div class="btn">Use this server instead</div><div class="btn ghost">Type it instead</div>
-      ${v === 'refused' ? '<span class="btn quiet">Open Speak and Scan</span>' : ''}`);
+      <div class="btn">${m[4]}</div><div class="btn ghost">Type it instead</div>
+      ${local ? '<span class="quiet-link">Read this one on obur’s server instead</span>' : ''}`);
 }
 function noaddon(v) {
   if (v === 'log') return phone(logInner(true));
-  return phone(logInner(true), `${hd('Speak needs a reader')}
-      <p>This server doesn’t turn recordings into text itself. You can use your own OpenAI or OpenRouter key for it; you pay that company for what you use.</p>
-      <div class="btn">Add your own key</div><div class="btn ghost">Type it instead</div>`);
+  return phone(logInner(true), `${hd('Speak isn’t set up on this server')}
+      <p>You can still use Speak with your own OpenAI or OpenRouter key. You pay that company for what you use.</p>
+      <div class="btn">Use my own key</div><div class="btn ghost">Type it instead</div>`);
 }
 function admin(v) {
   const on = v === 'on';
@@ -370,8 +377,10 @@ function renderStage() {
   const v = variant[s.id] || s.variants[0][0];
   st.innerHTML = `<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>On the phone, in Pazar</h3>
     <div class="variants" role="group" aria-label="Show">${s.variants.map(([k, l]) => `<button data-var="${k}" aria-pressed="${k === v}">${esc(l)}</button>`).join('')}</div></div>
+    ${s.kind === 'fail' ? `<div class="variants" role="group" aria-label="This server reads recordings itself" style="align-self:center"><span style="align-self:center;font-size:13.5px;color:var(--muted);margin-right:4px">This server reads recordings itself:</span>${[['no', 'No'], ['yes', 'Yes']].map(([k, l]) => `<button data-loc="${k}" aria-pressed="${(variant.failLocal || 'no') === k}">${l}</button>`).join('')}</div>` : ''}
     ${DRAW[s.kind](v)}</div>`;
   $$('[data-var]').forEach(b => b.onclick = () => { variant[s.id] = b.dataset.var; renderStage(); });
+  $$('[data-loc]').forEach(b => b.onclick = () => { variant.failLocal = b.dataset.loc; renderStage(); });
 }
 
 function open(i) {
