@@ -149,10 +149,15 @@ Tested on 2026-10-25 by the owner with the throwaway probe in `spikes/phone-prob
 
 ## Gaps and evidence still needed
 
-- Full phone release→result voice latency (server time is measured; upload over mobile data is not).
-- A held-out voice set, ideally including another household member with consent, before trusting the 77% figure. All 48 Phase 0 clips were development data from one speaker.
-- A full check of the hand-read label values (owner spot-checked 5–6 labels, no errors), and more labels toward 30.
-- Cause of the failed offline launch.
+Updated 2026-11-07 (pre-release check):
+
+- Voice: a held-out set with a second speaker was recorded and scored (2026-10-30, below); the improvement round then
+  tuned on it, so the next honest number needs 10–15 fresh clips. Phone end-to-end time was checked by the owner
+  (about 2–3 s from Done to the confirmation screen), not measured over mobile data.
+- Labels: 22 photos are now development data; an honest held-out number needs about 10 new labels. One known kind of
+  unflagged wrong value remains: the OCR drops a decimal comma or digit ("2,5" → "25"); the person checks every value
+  against the photo. A full check of the hand-read values is still open (owner spot-checked 5–6 labels).
+- The failed offline launch: resolved on 2026-10-29 (Cloudflare served a stale service worker; see the design).
 
 ## Voice, held-out evaluation (Phase 2 step 8, 2026-10-30)
 
