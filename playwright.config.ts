@@ -14,6 +14,8 @@ const onE2e = (url = '') =>
 const PORT = 4173;
 /** A stand-in speech and OCR service (tests/e2e/speech-stub.ts). */
 export const SPEECH_STUB = `http://127.0.0.1:${PORT + 1}`;
+/** The same app with Speak and label scanning switched off, as an installation without those services runs. */
+export const FEATURES_OFF = `http://localhost:${PORT + 2}`;
 
 /** Environment for the app under test, also used by tests that call operator commands. */
 export const e2eEnv = {
@@ -50,6 +52,22 @@ export default defineConfig({
 				...(process.env as Record<string, string>),
 				...e2eEnv,
 				PORT: String(PORT),
+				HOST: '127.0.0.1'
+			}
+		},
+		{
+			// A second copy of the built server, started once the first is up (the build is shared).
+			command: `node tests/e2e/when-up.ts http://127.0.0.1:${PORT}/ && node server.js`,
+			port: PORT + 2,
+			reuseExistingServer: false,
+			timeout: 240_000,
+			env: {
+				...(process.env as Record<string, string>),
+				...e2eEnv,
+				SPEECH_URL: '',
+				OCR_URL: '',
+				PUBLIC_ORIGIN: FEATURES_OFF,
+				PORT: String(PORT + 2),
 				HOST: '127.0.0.1'
 			}
 		}
