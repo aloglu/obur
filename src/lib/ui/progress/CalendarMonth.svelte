@@ -169,7 +169,7 @@
 			style:--from="{direction * 14}px"
 		>
 			{#each headers as h (h)}
-				<div class="pb-1 text-center text-[0.75rem] font-semibold text-muted">{h}</div>
+				<div class="pb-1 text-center text-[min(0.75rem,15px)] font-semibold text-muted">{h}</div>
 			{/each}
 			<span bind:this={highlight} class="highlight" aria-hidden="true"></span>
 			{#each cells as date, i (i)}

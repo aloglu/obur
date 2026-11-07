@@ -160,7 +160,9 @@
 		{@render label(m.household_members(), 'people-label')}
 		<ul class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
 			{#each members as member (member.id)}
-				<li class="grid min-h-16 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 py-2">
+				<li
+					class="grid min-h-16 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 py-2 large:grid-cols-[40px_minmax(0,1fr)]"
+				>
 					<span
 						aria-hidden="true"
 						class="grid size-10 place-items-center rounded-small bg-soft font-display text-[1.0625rem] font-extrabold text-accent"
@@ -187,7 +189,7 @@
 							type="button"
 							disabled={busy}
 							onclick={() => ((deleting = member), (removeShared = 'keep'), (understood = false))}
-							class="min-h-11 text-[0.875rem] font-bold whitespace-nowrap text-bad"
+							class="min-h-11 text-[0.875rem] font-bold whitespace-nowrap text-bad large:col-start-2 large:justify-self-start"
 							>{m.household_delete_member()}</button
 						>
 					{/if}
@@ -235,7 +237,9 @@
 					<ul class="flex flex-col divide-y divide-line">
 						{#each invites as i (i.id)}
 							{@const Icon = live(i) ? Link : i.usedAt ? UserCheck : Link2Off}
-							<li class="grid min-h-16 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 py-2">
+							<li
+								class="grid min-h-16 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 py-2 large:grid-cols-[40px_minmax(0,1fr)]"
+							>
 								<span class="grid size-10 place-items-center rounded-small bg-surface2 text-muted"
 									><Icon size={18} aria-hidden="true" /></span
 								>

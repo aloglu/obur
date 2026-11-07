@@ -95,9 +95,9 @@
 </div>
 
 <div
-	class="flex items-center justify-between gap-3 rounded-card bg-surface p-[14px_18px] shadow-card"
+	class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface p-[14px_18px] shadow-card"
 >
-	<p class="min-w-0 text-[0.875rem] break-words">
+	<p class="min-w-0 flex-[1_1_12rem] text-[0.875rem] break-words">
 		{m.settings_signed_in_as({ name: displayName })}
 	</p>
 	<span class="shrink-0 whitespace-nowrap"

@@ -229,9 +229,9 @@
 			class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
 			aria-labelledby="per-serving"
 		>
-			<div class="flex items-baseline justify-between gap-3">
+			<div class="flex flex-wrap items-baseline justify-between gap-x-3">
 				<h2 id="per-serving" class="text-[1.1875rem] font-bold">{m.recipe_per_serving()}</h2>
-				<span class="text-[0.875rem] whitespace-nowrap text-muted tabular-nums"
+				<span class="text-[0.875rem] text-muted tabular-nums"
 					>{servings && cookedYieldG
 						? m.recipe_serving_weight({ g: formatDecimal(cookedYieldG / servings, ',', 0) })
 						: m.recipe_no_cooked_weight()}</span

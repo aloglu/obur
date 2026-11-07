@@ -88,7 +88,11 @@
 		/>
 	</Card>
 	<Card title={m.more_theme()}>
-		<div class="grid grid-cols-4 gap-2" role="radiogroup" aria-label={m.more_theme()}>
+		<div
+			class="grid grid-cols-4 gap-2 large:grid-cols-2"
+			role="radiogroup"
+			aria-label={m.more_theme()}
+		>
 			{#each PALETTES as p (p.id)}
 				<button
 					type="button"
@@ -116,7 +120,11 @@
 		</div>
 	</Card>
 	<Card title={m.more_app_icon()}>
-		<div class="grid grid-cols-4 gap-x-2 gap-y-3" role="radiogroup" aria-label={m.more_app_icon()}>
+		<div
+			class="grid grid-cols-4 gap-x-2 gap-y-3 large:grid-cols-2"
+			role="radiogroup"
+			aria-label={m.more_app_icon()}
+		>
 			{#each APP_ICONS as icon (icon.id)}
 				<button
 					type="button"

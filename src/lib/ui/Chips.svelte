@@ -41,7 +41,7 @@
 					onchange?.(option.value);
 				}}
 				class={[
-					'relative z-1 min-h-11 rounded-small px-2 py-1.5 text-[0.9375rem] leading-tight font-semibold transition-colors disabled:opacity-40',
+					'relative z-1 min-h-11 min-w-0 rounded-small px-2 py-1.5 text-[min(0.9375rem,20px)] leading-tight font-semibold break-words transition-colors disabled:opacity-40',
 					value === option.value ? 'text-text' : 'text-muted'
 				]}
 			>

@@ -222,7 +222,7 @@
 <div class="flex flex-col gap-3">
 	<div class="pinned-search flex items-center gap-2">
 		<label
-			class="flex min-h-12 flex-1 items-center gap-2 rounded-input bg-surface px-3.5 text-muted shadow-card focus-within:outline-2 focus-within:outline-accent"
+			class="flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-input bg-surface px-3.5 text-muted shadow-card focus-within:outline-2 focus-within:outline-accent"
 		>
 			<Search size={20} class="shrink-0" aria-hidden="true" />
 			<span class="sr-only">{m.log_search_label()}</span>

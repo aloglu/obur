@@ -17,4 +17,6 @@
 		// Unknown: the standard size.
 	}
 	root.style.fontSize = 'min(max(100%, ' + 16 * scale + 'px), 32px)';
+	// Large text: layouts that sit side by side stack (the `large:` variant in layout.css).
+	if (scale >= 1.35) root.dataset.text = 'large';
 })();

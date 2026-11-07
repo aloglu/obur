@@ -8,11 +8,11 @@
 <a
 	// eslint-disable-next-line svelte/no-navigation-without-resolve -- every caller passes resolve(...)
 	{href}
-	class="flex min-h-14 items-center justify-between gap-3 py-2 text-[0.9375rem] font-semibold"
+	class="flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-0.5 py-2 text-[0.9375rem] font-semibold"
 >
 	<span class="min-w-0">{label}</span>
 	<span
-		class="flex shrink-0 items-center gap-1 text-[0.875rem] font-medium text-muted tabular-nums"
+		class="ml-auto flex min-w-0 items-center gap-1 text-right text-[0.875rem] font-medium text-muted tabular-nums"
 	>
 		{#if value !== undefined}{value}{/if}
 		<ChevronRight size={20} aria-hidden="true" />

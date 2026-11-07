@@ -225,7 +225,7 @@
 			aria-controls="{uid}-panel"
 			onclick={() => (tab = t.id)}
 			class={[
-				'relative z-1 min-h-11 min-w-0 truncate rounded-[10px] px-1 text-[0.875rem] font-[650] transition-colors',
+				'relative z-1 min-h-11 min-w-0 truncate rounded-[10px] px-1 text-[min(0.875rem,18px)] font-[650] transition-colors',
 				tab === t.id ? 'text-text' : 'text-muted'
 			]}>{t.label()}</button
 		>

@@ -41,7 +41,7 @@
 		active ? 'bg-soft text-accent' : 'text-text hover:bg-surface2'
 	];
 	const tabItem = (active: boolean) => [
-		'relative z-1 flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-input text-[0.71875rem] font-bold transition-colors',
+		'relative z-1 flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-input text-[min(0.71875rem,14px)] font-bold transition-colors',
 		active ? 'text-accent' : 'text-muted'
 	];
 </script>

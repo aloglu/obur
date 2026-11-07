@@ -31,9 +31,9 @@
 
 <div class="flex flex-col gap-1.5 rounded-small bg-surface2 px-3.5 py-3" aria-live="polite">
 	<!-- kcal in a fixed-width column (up to four digits) with a divider, so the macros stay put as it changes. -->
-	<div class="flex items-center gap-4">
+	<div class="flex items-center gap-4 large:flex-col large:items-stretch large:gap-2">
 		<p
-			class="flex w-[7rem] shrink-0 flex-wrap content-center items-baseline gap-1 self-stretch border-r border-line pr-3"
+			class="flex w-[7rem] shrink-0 flex-wrap content-center items-baseline gap-1 self-stretch border-r border-line pr-3 large:w-auto large:border-r-0 large:border-b large:pr-0 large:pb-2"
 		>
 			<span class="font-display text-[1.625rem] leading-none font-extrabold tabular-nums"
 				><Roll
@@ -43,7 +43,7 @@
 			<span class="text-[0.8125rem] font-semibold text-muted">kcal</span>
 		</p>
 		{#if nutrients}
-			<dl class="grid min-w-0 flex-1 grid-cols-3 gap-2">
+			<dl class="grid min-w-0 flex-1 grid-cols-3 gap-2 large:grid-cols-1">
 				{#each macros as macro (macro.label)}
 					<div class="min-w-0">
 						<dt class="flex items-center gap-1.5 text-[0.75rem] font-semibold text-muted">

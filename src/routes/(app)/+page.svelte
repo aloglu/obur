@@ -438,7 +438,9 @@
 				targets={data.macros}
 			/>
 		</div>
-		<div class="o-pair grid grid-cols-2 grid-rows-[repeat(4,auto)] gap-x-3">
+		<div
+			class="o-pair grid grid-cols-2 grid-rows-[repeat(4,auto)] gap-x-3 large:grid-cols-1 large:grid-rows-[repeat(8,auto)] large:gap-y-3"
+		>
 			<WaterCard
 				date={data.date}
 				today={data.today}

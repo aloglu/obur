@@ -16,6 +16,9 @@
 	}
 }
 
+/* large: the phone's text is large (static/text-scale.js): rows stack and side-by-side cards go one per line. */
+@custom-variant large (&:where([data-text='large'] *));
+
 @layer base {
 	html {
 		background: var(--bg);

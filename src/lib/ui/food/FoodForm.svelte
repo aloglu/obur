@@ -281,11 +281,14 @@
 	{@const bad = invalid(value.text)}
 	{@const { name: rowName, unit } = parts(text)}
 	<div
-		class="grid min-h-[52px] grid-cols-[minmax(0,1fr)_36px_88px_34px] items-center gap-2 border-line not-first:border-t"
+		class="grid min-h-[52px] grid-cols-[minmax(0,1fr)_36px_88px_34px] items-center gap-2 border-line not-first:border-t large:grid-cols-[36px_minmax(0,1fr)_auto] large:py-2"
 	>
 		<label
 			for={id}
-			class={sub ? 'pl-3.5 text-[0.875rem] text-muted' : 'text-[0.9375rem] font-[550]'}
+			class={[
+				sub ? 'pl-3.5 text-[0.875rem] text-muted' : 'text-[0.9375rem] font-[550]',
+				'large:col-span-3'
+			]}
 		>
 			{rowName}<span class="sr-only"> {unit}</span>
 			{#if bad}<span class="block text-[0.8125rem] font-semibold text-bad"
@@ -311,7 +314,7 @@
 			autocomplete="off"
 			placeholder={core ? m.food_unknown() : '–'}
 			aria-invalid={bad}
-			class="h-10 w-[88px] rounded-[10px] border border-line bg-surface2 px-2.5 text-right text-[1rem] font-[650] tabular-nums placeholder:text-[0.875rem] placeholder:font-medium placeholder:text-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent aria-invalid:border-bad"
+			class="h-10 w-[88px] rounded-[10px] border border-line bg-surface2 px-2.5 text-right text-[1rem] font-[650] tabular-nums placeholder:text-[0.875rem] placeholder:font-medium placeholder:text-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent aria-invalid:border-bad large:h-auto large:min-h-10 large:w-full"
 		/>
 		<span class="text-[0.8125rem] text-muted">{unit}</span>
 	</div>
