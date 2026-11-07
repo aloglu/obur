@@ -369,7 +369,8 @@ export function createGoals(db: Database) {
 						...macroColumns(settings.macros, null)
 					};
 				} else if (request.mode === 'manual') {
-					if (request.goalWeightKg != null) await requireGoalAllowed(tx, userId, request.effectiveFrom);
+					if (request.goalWeightKg != null)
+						await requireGoalAllowed(tx, userId, request.effectiveFrom);
 					values = {
 						...base,
 						mode: 'manual',
