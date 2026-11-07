@@ -9,6 +9,7 @@ import { restorePending } from '#lib/server/restore-guard.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { isValidZone } from '#lib/shared/diary-rules.ts';
 import { DEFAULT_PALETTE, isPalette, paletteOf } from '#lib/shared/themes.ts';
+import { DEFAULT_APP_ICON, appIconFile, isAppIcon, manifestHref } from '#lib/shared/app-icons.ts';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -30,6 +31,8 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 						)
 						.replace('%obur.bg.light%', paletteOf(event.locals.palette).bg[0])
 						.replace('%obur.bg.dark%', paletteOf(event.locals.palette).bg[1])
+						.replace('%obur.manifest%', manifestHref(event.locals.appIcon))
+						.replace('%obur.touch-icon%', appIconFile(event.locals.appIcon, 'icon-180.png'))
 			}
 		);
 	});
@@ -75,7 +78,8 @@ const PUBLIC_PATHS = [
 	'/api/v1/auth/login',
 	'/api/v1/auth/setup',
 	'/api/v1/auth/join',
-	'/api/v1/auth/recovery/begin'
+	'/api/v1/auth/recovery/begin',
+	'/manifest.webmanifest'
 ];
 const RECOVERY_PATHS = ['/recover', '/api/v1/auth/recovery', '/api/v1/auth/logout'];
 const matches = (path: string, prefixes: string[]) =>
@@ -86,6 +90,8 @@ const handleSession: Handle = async ({ event, resolve }) => {
 	event.locals.theme = theme === 'light' || theme === 'dark' ? theme : undefined;
 	const palette = event.cookies.get('obur_palette');
 	event.locals.palette = isPalette(palette) ? palette : DEFAULT_PALETTE;
+	const appIcon = event.cookies.get('obur_icon');
+	event.locals.appIcon = isAppIcon(appIcon) ? appIcon : DEFAULT_APP_ICON;
 	const time = event.cookies.get('obur_time');
 	event.locals.timeFormat = time === '12' || time === '24' ? time : 'device';
 	const zone = event.cookies.get('obur_zone') ?? '';

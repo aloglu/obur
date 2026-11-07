@@ -7,6 +7,7 @@ export const load: LayoutServerLoad = ({ locals }) => {
 			s?.kind === 'normal' ? { id: s.userId, displayName: s.displayName, role: s.role } : undefined,
 		theme: locals.theme ?? ('system' as const),
 		palette: locals.palette,
+		appIcon: locals.appIcon,
 		timeFormat: locals.timeFormat
 	};
 };

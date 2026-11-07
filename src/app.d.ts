@@ -9,6 +9,7 @@ declare global {
 			/** Theme chosen on this device (cookie); undefined follows the system setting. */
 			theme: 'light' | 'dark' | undefined;
 			palette: import('#lib/shared/themes.ts').PaletteId;
+			appIcon: import('#lib/shared/app-icons.ts').AppIconId;
 			timeFormat: 'device' | '24' | '12';
 			/** The device's IANA time zone (cookie), used to decide which day "today" is. */
 			zone: string;

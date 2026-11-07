@@ -13,8 +13,11 @@ const sw = self as unknown as ServiceWorkerGlobalScope;
 const SHELL = `obur-shell-${version}`;
 const DATA = 'obur-data-v1';
 // Paths are relative to the base path; requests are compared by absolute pathname.
+// The other app icons are left out: only a Home Screen asks for them, and all of them together are megabytes.
 const SHELL_ASSETS = new Set(
-	[...immutable, ...assets].map(({ path }) => `/${path.replace(/^\//, '')}`)
+	[...immutable, ...assets]
+		.map(({ path }) => `/${path.replace(/^\//, '')}`)
+		.filter((path) => !path.startsWith('/app-icons/'))
 );
 const NETWORK_TIMEOUT_MS = 3000;
 const NO_CACHE_PAGES = /^\/(login|setup|join|recover)(\/|$)/;

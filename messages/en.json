@@ -332,6 +332,8 @@
 	"progress_title": "Progress",
 	"more_title": "More",
 	"more_appearance": "Appearance",
+	"more_app_icon": "App icon",
+	"more_app_icon_hint": "A new icon shows after you add obur to the Home Screen again.",
 	"more_theme": "Theme",
 	"common_choose": "Choose",
 	"more_mode": "Mode",

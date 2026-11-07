@@ -199,15 +199,16 @@ test('a theme chosen in More sticks and repaints the page', async ({ page }, tes
 		page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
 	expect(await background()).toBe('#f6f3ee');
 
-	await page.getByRole('radio', { name: 'Kaset' }).click();
-	await expect(page.getByRole('radio', { name: 'Kaset' })).toBeChecked();
+	const themes = page.getByRole('radiogroup', { name: 'Theme' });
+	await themes.getByRole('radio', { name: 'Kaset' }).click();
+	await expect(themes.getByRole('radio', { name: 'Kaset' })).toBeChecked();
 	expect(await background()).toBe('#6fe3d6');
 
 	// The server renders it on the next visit, so there is no flash of the default.
 	await page.reload();
 	await expect(page.locator('html')).toHaveAttribute('data-palette', 'kaset');
 
-	await page.getByRole('radio', { name: 'Pazar' }).click();
+	await themes.getByRole('radio', { name: 'Pazar', exact: true }).click();
 	await expect(page.locator('html')).not.toHaveAttribute('data-palette');
 });
 

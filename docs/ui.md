@@ -48,7 +48,7 @@ The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app an
 
 - A separate `--fill` token sets the background of filled buttons when it differs from the link colour `--accent` (Zerde, Disko, Sinyal, dark Patlıcan). Shadow tokens carry Kaset's and Sinyal's outlines.
 - Rejected as default: Sade (too cold for a food app), Warm ink, Marigold, Rosewood, Persimmon. Rejected outright: Kayısı, Defter, Lokum. The default search is closed for now.
-- Open: the app icon is Pazar's orange on every theme, and the fonts are unchanged. Neither has been reviewed against the new themes.
+- The app icon and fonts were reviewed against the themes on 2026-11-07: see "App icon" below.
 
 ### Motion
 
@@ -367,6 +367,15 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
 - Logo and browser tab icon (`static/brand/`, empty margin trimmed): the brown bowl in light, the cream bowl in dark
   (`AppLogo`; the tab icon follows the browser's scheme). The logo sits left of the wordmark on the sign-in screens
   (36 px) and the desktop sidebar (32 px).
+- **Choosing an icon (owner, 2026-11-07, review round 9):** Appearance offers nine Home Screen icons: Pazar (the
+  default, the icon above), Pazar light, and one for each other theme. Each is the same artwork with only the
+  background and the O in the theme's colours; the bowl and food never change. They are made from the SVG by
+  `./scripts/brand-icons.sh` into `static/app-icons/<id>/` (list in `shared/app-icons.ts`) and kept out of the
+  service worker's offline cache. The choice is per device, a cookie like the theme (`obur_icon`): the server writes
+  the chosen icon into the page's `apple-touch-icon` and links `/manifest.webmanifest?icon=<id>`, now a route that
+  names that icon's files. A phone reads the icon when obur is added to the Home Screen, so the card's one line says
+  a new icon shows after adding it again. The logo and browser tab icon stay the brown and cream artwork.
+- **Fonts (owner, 2026-11-07, review round 9):** Bricolage Grotesque and Inter stay in every theme.
 
 ### Achievements, Journal and Help (owner, 2026-10-31; all three built the same day)
 
