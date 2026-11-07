@@ -11,10 +11,15 @@ const quiet = { onnotice: () => {} };
 const admin = postgres(urls.admin, { max: 1, ...quiet });
 const appSql = postgres(urls.app, { max: 2, ...quiet });
 const service = createProgress(drizzle(appSql));
-// The list only; whether weight applies is checked where it matters.
+// The list only; whether weight applies is checked where it matters. The first steps (first weigh-in, day logged,
+// complete day) come with almost any record, so they are left out here and checked on their own below.
+const FIRST_STEPS = ['weigh_in', 'day_logged', 'complete_day'];
 const progress = {
 	...service,
-	sync: async (...args: Parameters<typeof service.sync>) => (await service.sync(...args)).list
+	sync: async (...args: Parameters<typeof service.sync>) =>
+		(await service.sync(...args)).list.filter(
+			(a) => !(a.kind === 'first' && FIRST_STEPS.includes(a.level as string))
+		)
 };
 
 const AYSE = randomUUID();
@@ -85,7 +90,8 @@ describe('achievements', () => {
 		await adult(AYSE, 120);
 		await weigh(AYSE, '2026-06-01', 100);
 		await weigh(AYSE, '2026-09-01', 90);
-		expect(await service.sync(AYSE, TODAY, ZONE)).toEqual({ list: [], weightAllowed: false });
+		expect((await service.sync(AYSE, TODAY, ZONE)).weightAllowed).toBe(false);
+		expect(await progress.sync(AYSE, TODAY, ZONE)).toEqual([]);
 		await admin`update goal_versions set goal_weight_kg = 80 where user_id = ${AYSE}`;
 		expect(await progress.sync(AYSE, TODAY, ZONE)).toHaveLength(5);
 		await admin`update profiles set pregnant = true where user_id = ${AYSE}`;
@@ -105,7 +111,27 @@ describe('achievements', () => {
 		expect(await progress.sync(AYSE, TODAY, ZONE)).toEqual([
 			{ kind: 'first', level: 'scan', date: '2026-10-01', seen: true },
 			{ kind: 'first', level: 'voice', date: '2026-10-15', seen: false },
+			{ kind: 'streak', level: 3, date: '2026-10-22', seen: true },
 			{ kind: 'streak', level: 7, date: '2026-10-26', seen: true }
+		]);
+	});
+
+	it('give the first steps from the records: weigh-in, a day in the diary, a complete day', async () => {
+		await weigh(AYSE, '2026-10-30', 70);
+		await admin`insert into day_completions (user_id, local_date) values (${AYSE}, '2026-10-29')`;
+		// A backfilled entry counts on its own day; a deleted one doesn't count at all.
+		await admin`insert into diary_entries (id, user_id, local_date, meal, zone, kind, nutrients, deleted_at)
+			values (${randomUUID()}, ${AYSE}, '2026-10-01', 'lunch', ${ZONE}, 'quick', '{"energy_kcal":{"value":100,"qualifier":"reported"}}', now())`;
+		await admin`insert into diary_entries (id, user_id, local_date, meal, zone, kind, nutrients)
+			values (${randomUUID()}, ${AYSE}, '2026-10-28', 'lunch', ${ZONE}, 'quick', '{"energy_kcal":{"value":100,"qualifier":"reported"}}')`;
+		// Mehmet's diary is his own.
+		await admin`insert into diary_entries (id, user_id, local_date, meal, zone, kind, nutrients)
+			values (${randomUUID()}, ${MEHMET}, '2026-09-01', 'lunch', ${ZONE}, 'quick', '{"energy_kcal":{"value":100,"qualifier":"reported"}}')`;
+		const { list } = await service.sync(AYSE, TODAY, ZONE);
+		expect(list.filter((a) => a.kind === 'first')).toEqual([
+			{ kind: 'first', level: 'day_logged', date: '2026-10-28', seen: true },
+			{ kind: 'first', level: 'complete_day', date: '2026-10-29', seen: false },
+			{ kind: 'first', level: 'weigh_in', date: '2026-10-30', seen: false }
 		]);
 	});
 

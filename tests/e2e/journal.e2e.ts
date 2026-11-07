@@ -93,10 +93,12 @@ test('the highlights follow the calendar’s month', async ({ page }, testInfo) 
 	await expect(week).toContainText('200 under');
 	await expect(week).toContainText('−0,6 kg');
 	const items = week.getByRole('listitem');
+	// The first day logged and first complete day are achievements, and lead their day.
 	await expect(items).toHaveText([
-		'New lowest weight: 89,4 kg Wed 2 Sep',
-		'Budget set to 2000 kcal Tue 1 Sep',
-		'First day logged Tue 1 Sep'
+		/New lowest weight: 89,4 kg Wed 2 Sep$/,
+		/First day logged Tue 1 Sep$/,
+		/First complete day Tue 1 Sep$/,
+		/Budget set to 2000 kcal Tue 1 Sep$/
 	]);
 	// The later weeks of September had nothing recorded.
 	await expect(page.getByRole('article')).toHaveCount(1);

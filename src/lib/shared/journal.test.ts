@@ -32,7 +32,6 @@ function input(
 		completed,
 		readings: [],
 		versions,
-		firstDay: null,
 		...over
 	};
 }
@@ -142,18 +141,20 @@ describe('journal highlights', () => {
 		expect(changes).toEqual([{ kind: 'budget', date: '2026-10-08', from: 2000, to: 1850 }]);
 	});
 
-	it('shows the first day logged and orders a week’s highlights newest first', () => {
+	it('orders a week’s highlights newest first, achievements first on the same day', () => {
+		const firstDay = { kind: 'first', level: 'day_logged', date: '2026-10-06' } as const;
 		const [week] = journal(
 			input({
 				today: '2026-10-07',
-				firstDay: '2026-10-05',
 				versions: [manual('2026-10-06', 2000)],
-				eaten: { '2026-10-05': 1800 }
+				eaten: { '2026-10-05': 1800 },
+				achievements: [firstDay]
 			})
 		);
+		// The first day logged is an achievement now, not a highlight of its own.
 		expect(week.events).toEqual([
-			{ kind: 'budget', date: '2026-10-06', from: null, to: 2000 },
-			{ kind: 'first_day', date: '2026-10-05' }
+			{ kind: 'achievement', date: '2026-10-06', achievement: firstDay },
+			{ kind: 'budget', date: '2026-10-06', from: null, to: 2000 }
 		]);
 	});
 

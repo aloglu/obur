@@ -29,6 +29,9 @@ export function achievementTitle(a: Achievement): string {
 
 export function firstName(first: Extract<Achievement, { kind: 'first' }>['level']): string {
 	return {
+		weigh_in: m.achievements_first_weigh_in,
+		day_logged: m.achievements_first_day_logged,
+		complete_day: m.achievements_first_complete_day,
 		scan: m.achievements_first_scan,
 		voice: m.achievements_first_voice,
 		recipe: m.achievements_first_recipe
@@ -48,6 +51,9 @@ export function achievementDetail(a: Achievement): string {
 			return m.achievement_streak_line();
 		case 'first':
 			return {
+				weigh_in: m.achievement_first_weigh_in_line,
+				day_logged: m.achievement_first_day_logged_line,
+				complete_day: m.achievement_first_complete_day_line,
 				scan: m.achievement_first_scan_line,
 				voice: m.achievement_first_voice_line,
 				recipe: m.achievement_first_recipe_line

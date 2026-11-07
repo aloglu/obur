@@ -99,7 +99,7 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await expect(page.getByLabel('Height')).toHaveValue('180');
 	// 182 cm and 79 kg: 10·79 + 6.25·182 − 5·30 + 5 = 1,782.5; × 1.2 = 2,139 base.
 	await page.getByLabel('Height').fill('182');
-	await page.getByLabel('Weight').fill('79');
+	await page.getByLabel('Weight', { exact: true }).fill('79');
 	await page.getByRole('button', { name: 'See my estimate' }).click();
 	await expect(page.getByText(/^Step 2 of 3/)).toBeVisible();
 	await page.getByRole('link', { name: 'Profile' }).click();

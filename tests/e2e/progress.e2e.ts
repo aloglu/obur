@@ -21,6 +21,16 @@ test('on an empty Progress, New weigh-in opens in place and starts the weight li
 	await signedInAs(page, `İlk tartı ${testInfo.project.name}`);
 	await page.goto('/progress');
 	await expect(page.getByText('Your weight line starts with your first weigh-in.')).toBeVisible();
+	// A new account sees the first achievements to reach, as outlines.
+	const firsts = page.getByRole('list', { name: 'The first ones to reach' });
+	// The names (the badges themselves are hidden from screen readers; the 3 is in its outline).
+	await expect(firsts.getByRole('listitem')).toHaveText([
+		/First weigh-in$/,
+		/First day logged$/,
+		/First complete day$/,
+		/3 days in a row$/
+	]);
+	await expect(page.getByRole('region', { name: 'Achievements' })).toContainText('0 so far');
 	await page.getByRole('button', { name: 'New weigh-in' }).click();
 	await expect(page).toHaveURL(/\/progress/);
 	const field = page.getByLabel('New weight');
@@ -34,6 +44,9 @@ test('on an empty Progress, New weigh-in opens in place and starts the weight li
 	await expect(page.getByRole('status')).toContainText('81,4');
 	await expect(page.getByText('Your weight line starts with your first weigh-in.')).toBeHidden();
 	await expect(page.getByRole('tabpanel')).toContainText('81,4');
+	// The first weigh-in is the first achievement: the outlines give way to the row to the badge page.
+	await expect(firsts).toBeHidden();
+	await expect(page.getByRole('link', { name: /^Achievements/ })).toContainText('1 so far');
 });
 
 test('history: weigh-ins and their trend, calories against budget, averages over complete days only', async ({

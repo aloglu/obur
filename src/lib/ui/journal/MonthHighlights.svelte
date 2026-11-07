@@ -33,8 +33,6 @@
 				return e.from === null
 					? m.journal_budget_set({ kcal: kcal(e.to) })
 					: m.journal_budget_changed({ kcal: kcal(e.to) });
-			case 'first_day':
-				return m.journal_first_day();
 			case 'achievement':
 				return achievementTitle(e.achievement);
 		}

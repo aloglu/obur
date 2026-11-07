@@ -9,9 +9,17 @@ export const WEIGHT_LEVELS = Array.from(
 	{ length: WEIGHT_MAX_KG / WEIGHT_STEP_KG },
 	(_, i) => (i + 1) * WEIGHT_STEP_KG
 );
-/** Streaks of complete days in a row. */
-export const STREAK_LEVELS = [7, 14, 30, 60, 100, 180, 365];
-export const FIRSTS = ['scan', 'voice', 'recipe'] as const;
+/** Streaks of complete days in a row; 3 is a first step for a new account (owner, 2026-11-07). */
+export const STREAK_LEVELS = [3, 7, 14, 30, 60, 100, 180, 365];
+/** The first steps (weigh-in, a day logged, a complete day) and the first scan, voice log and recipe. */
+export const FIRSTS = [
+	'weigh_in',
+	'day_logged',
+	'complete_day',
+	'scan',
+	'voice',
+	'recipe'
+] as const;
 export type First = (typeof FIRSTS)[number];
 
 export type Achievement =
@@ -31,8 +39,11 @@ export interface AchievementInput {
 	goals: { effectiveFrom: string; createdAt: string; goalWeightKg: number | null }[];
 	/** Days marked complete, any order. */
 	completed: string[];
-	/** The first label scan saved and the first recipe made, if any. */
-	firsts: Partial<Record<First, string>>;
+	/**
+	 * Firsts that aren't in the records above, if any: the first day with a diary entry, the first label scan saved,
+	 * the first voice log and the first recipe. The first weigh-in and complete day come from `readings` and `completed`.
+	 */
+	firsts: Partial<Record<Exclude<First, 'weigh_in' | 'complete_day'>, string>>;
 	/** Weight celebrations apply: an adult who is neither pregnant nor breastfeeding, with a goal below the start. */
 	weightAllowed: boolean;
 }
@@ -101,8 +112,13 @@ export function achievements(input: AchievementInput): Achievement[] {
 		best = Math.max(best, run);
 	}
 
+	const firsts: Partial<Record<First, string>> = {
+		...input.firsts,
+		weigh_in: input.readings[0]?.localDate,
+		complete_day: days[0]
+	};
 	for (const kind of FIRSTS) {
-		const date = input.firsts[kind];
+		const date = firsts[kind];
 		if (date) out.push({ kind: 'first', level: kind, date });
 	}
 	return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));

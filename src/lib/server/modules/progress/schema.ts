@@ -27,7 +27,7 @@ export const achievements = pgTable(
 			'achievements_level',
 			sql`(${t.kind} in ('weight', 'goal') and ${t.level} ~ '^[0-9]{1,3}(\\.[0-9]{1,2})?$')
 				or (${t.kind} = 'streak' and ${t.level} ~ '^[0-9]{1,4}$')
-				or (${t.kind} = 'first' and ${t.level} in ('scan', 'voice', 'recipe'))`
+				or (${t.kind} = 'first' and ${t.level} in ('weigh_in', 'day_logged', 'complete_day', 'scan', 'voice', 'recipe'))`
 		)
 	]
 );

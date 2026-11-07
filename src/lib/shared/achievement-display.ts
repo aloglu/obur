@@ -69,6 +69,9 @@ export const WEIGHT_PICTURES: Record<number, string> = {
 export const STREAK_PICTURE = '1F525';
 export const GOAL_PICTURE = '1F3AF';
 export const FIRST_PICTURES: Record<First, string> = {
+	weigh_in: '2696',
+	day_logged: '1F37D',
+	complete_day: '2705',
 	scan: '1F4F7',
 	voice: '1F399',
 	recipe: '1F372'
@@ -80,7 +83,14 @@ export const pictureUrl = (hex: string, dark = false) =>
 /** Badge colours (tokens `--badge-*`): streaks warm with length, each first its own, the goal teal. */
 export type BadgeHue = 'coral' | 'amber' | 'rose' | 'violet' | 'blue' | 'teal' | 'green';
 const STREAK_HUES: BadgeHue[] = ['amber', 'coral', 'rose', 'violet', 'blue', 'teal', 'green'];
-const FIRST_HUES: Record<First, BadgeHue> = { scan: 'blue', voice: 'violet', recipe: 'green' };
+const FIRST_HUES: Record<First, BadgeHue> = {
+	weigh_in: 'coral',
+	day_logged: 'amber',
+	complete_day: 'teal',
+	scan: 'blue',
+	voice: 'violet',
+	recipe: 'green'
+};
 
 export function badgeHue(a: Pick<Achievement, 'kind' | 'level'>, streakLevels: number[]): BadgeHue {
 	switch (a.kind) {
@@ -89,7 +99,10 @@ export function badgeHue(a: Pick<Achievement, 'kind' | 'level'>, streakLevels: n
 		case 'goal':
 			return 'teal';
 		case 'streak':
-			return STREAK_HUES[Math.max(0, streakLevels.indexOf(a.level as number)) % STREAK_HUES.length];
+			// 3 days shares 7's amber, so the colours settled for 7 days and up stay as they were.
+			return STREAK_HUES[
+				Math.max(0, streakLevels.indexOf(a.level as number) - 1) % STREAK_HUES.length
+			];
 		case 'first':
 			return FIRST_HUES[a.level as First];
 	}

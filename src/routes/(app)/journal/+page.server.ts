@@ -24,16 +24,14 @@ export const load: PageServerLoad = async ({ url, locals, parent }) => {
 	const [from, to] = [days[0], days.at(-1)!];
 	const profile = await goals.profile(userId);
 	const firstDayOfWeek = profile?.firstDayOfWeek ?? 1;
-	const [eaten, activity, completedDays, versions, readings, firstDay, achieved] =
-		await Promise.all([
-			diary.dailyEnergy(userId, from, to),
-			body.activityByDay(userId, from, to),
-			diary.completedDays(userId, from, to),
-			goals.history(userId),
-			body.weights(userId, EARLIEST, to),
-			diary.firstDay(userId),
-			progress.sync(userId, today, locals.zone)
-		]);
+	const [eaten, activity, completedDays, versions, readings, achieved] = await Promise.all([
+		diary.dailyEnergy(userId, from, to),
+		body.activityByDay(userId, from, to),
+		diary.completedDays(userId, from, to),
+		goals.history(userId),
+		body.weights(userId, EARLIEST, to),
+		progress.sync(userId, today, locals.zone)
+	]);
 	const completed = new Set(completedDays);
 	const calendar = calendarDays(month, today, {
 		eaten: new Map(eaten.map((d) => [d.localDate, d.kcal])),
@@ -66,7 +64,6 @@ export const load: PageServerLoad = async ({ url, locals, parent }) => {
 			completed,
 			readings: readings.map((r) => ({ localDate: r.localDate, value: r.value })),
 			versions,
-			firstDay,
 			achievements: achieved.list
 		})
 	};

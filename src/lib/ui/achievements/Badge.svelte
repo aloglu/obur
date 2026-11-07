@@ -5,6 +5,9 @@
 	import type { Achievement } from '#lib/shared/achievements.ts';
 	import { STREAK_LEVELS } from '#lib/shared/achievements.ts';
 	import { badgeHue, kiloTint } from '#lib/shared/achievement-display.ts';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import Scale from '@lucide/svelte/icons/scale';
+	import Utensils from '@lucide/svelte/icons/utensils';
 	import Picture from './Picture.svelte';
 	import { achievementPicture } from './text.ts';
 
@@ -20,6 +23,11 @@
 	const tint = $derived(kilo ? kiloTint(Number(a.level)) : { percent: 16, ink: 1 as const });
 	const hue = $derived(`var(--badge-${badgeHue(a, STREAK_LEVELS)})`);
 	const numbered = $derived(a.kind === 'weight' || (next && a.kind === 'streak'));
+	/** A first still to reach (a new account's Progress): a line icon in the outline, as in the demo. */
+	const OUTLINE_ICONS = { weigh_in: Scale, day_logged: Utensils, complete_day: CircleCheck };
+	const OutlineIcon = $derived(
+		next && a.kind === 'first' ? OUTLINE_ICONS[a.level as keyof typeof OUTLINE_ICONS] : undefined
+	);
 </script>
 
 <span
@@ -34,7 +42,9 @@
 		: `color-mix(in srgb, ${hue} ${tint.percent}%, var(--surface))`}
 	style:color={next ? 'var(--muted)' : kilo ? `var(--kilo-ink-${tint.ink})` : undefined}
 >
-	{#if numbered}
+	{#if OutlineIcon}
+		<OutlineIcon size={size === 'md' ? 26 : 18} aria-hidden="true" />
+	{:else if numbered}
 		<span
 			class={[
 				'font-display leading-none font-extrabold tracking-[-0.02em] tabular-nums',

@@ -11,8 +11,6 @@ export type JournalEvent =
 	| { kind: 'lowest'; date: string; kg: number }
 	/** The budget for an inactive day differs at the week's end from just before it (null: no budget). */
 	| { kind: 'budget'; date: string; from: number | null; to: number | null }
-	/** The first day anything was logged. */
-	| { kind: 'first_day'; date: string }
 	/** An achievement reached that day. */
 	| { kind: 'achievement'; date: string; achievement: Achievement };
 
@@ -44,8 +42,6 @@ export interface JournalInput {
 	/** Every weigh-in up to the month's end, in date order; a day's last one counts. */
 	readings: { localDate: string; value: number }[];
 	versions: TargetLike[];
-	/** The first day anything was logged, if ever. */
-	firstDay: string | null;
 	/** Achievements reached, any order. */
 	achievements?: Achievement[];
 }
@@ -98,9 +94,6 @@ export function journal(input: JournalInput): JournalWeek[] {
 				.sort()
 				.at(-1)!;
 			if (was !== now) events.push({ kind: 'budget', date, from: was, to: now });
-		}
-		if (input.firstDay && input.firstDay >= from && input.firstDay <= to) {
-			events.push({ kind: 'first_day', date: input.firstDay });
 		}
 		for (const achievement of input.achievements ?? []) {
 			if (achievement.date >= from && achievement.date <= to)

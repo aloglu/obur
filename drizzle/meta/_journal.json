@@ -267,6 +267,13 @@
       "when": 1793984384553,
       "tag": "0037_day_notes_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794052550670,
+      "tag": "0038_achievement_first_steps",
+      "breakpoints": true
     }
   ]
 }

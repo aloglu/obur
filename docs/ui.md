@@ -124,6 +124,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 
 ### Account and household
 
+- **First steps (owner, 2026-11-07):** a new account's Progress shows an Achievements card ("0 so far") with four dashed outlines to reach, as in the demo: First weigh-in, First day logged, First complete day and 3 days in a row. They are real achievements (firsts and a 3-day streak before 7), worked out from the records like the others, so imported history earns them quietly. Once one is earned, Progress shows the Achievements row again. Unreached first steps use a line icon in the outline; earned ones an OpenMoji picture (scale, plate, check). 3 days shares 7's amber, so the colours settled for longer streaks are unchanged.
 - **Empty Progress:** New weigh-in opens in place, as on Today (`today/WeighIn.svelte`), instead of going to Today (2026-11-07).
 - **Profile:** as in the demo: the budget card first, then **About you** as rows (Height, Birth date, Sex for the formula, Body fat) that open setup's first step, with "Weight comes from your weigh-ins on Today."; then **Budget settings**: the activity switch and, with a goal weight, Keep deficit / Maintain as a two-way choice. Macro targets stay in their own card below (not in the demo). Setup's first step saves the details when it moves on (`PATCH /api/v1/profile/details`), so someone who came to change one detail may stop there and a calculated budget still follows from today (2026-11-07).
 - **Passkeys:** labels sit beside the name; rows open a detail sheet with Rename and Remove.

@@ -15,7 +15,7 @@ import { addDays } from '../../../shared/diary-rules.ts';
 import { targetsAllowed } from '../../../shared/goals.ts';
 import { weightEntries } from '../body/index.ts';
 import { foods, recipes } from '../catalog/index.ts';
-import { dayCompletions } from '../diary/index.ts';
+import { dayCompletions, diaryEntries } from '../diary/index.ts';
 import { goalVersions, profiles } from '../goals/index.ts';
 import { achievements } from './schema.ts';
 
@@ -45,8 +45,8 @@ export function createProgress(db: Database) {
 			zone: string
 		): Promise<{ list: StoredAchievement[]; weightAllowed: boolean }> {
 			return withUser(db, userId, async (tx) => {
-				const [readings, completed, goals, [profile], [scan], [recipe], stored] = await Promise.all(
-					[
+				const [readings, completed, goals, [profile], [scan], [recipe], stored, [logged]] =
+					await Promise.all([
 						tx
 							.select({ localDate: weightEntries.localDate, value: weightEntries.kg })
 							.from(weightEntries)
@@ -82,9 +82,13 @@ export function createProgress(db: Database) {
 							.from(recipes)
 							.innerJoin(foods, eq(foods.id, recipes.foodId))
 							.where(eq(recipes.ownerId, userId)),
-						tx.select().from(achievements).where(eq(achievements.userId, userId))
-					]
-				);
+						tx.select().from(achievements).where(eq(achievements.userId, userId)),
+						// The first day with anything in the diary (its intended day, so a backfill counts on that day).
+						tx
+							.select({ day: sql<string | null>`min(${diaryEntries.localDate})::text` })
+							.from(diaryEntries)
+							.where(and(eq(diaryEntries.userId, userId), isNull(diaryEntries.deletedAt)))
+					]);
 
 				// Weight celebrations: an adult who is neither pregnant nor breastfeeding, losing toward a goal below
 				// the starting weight (or, without a goal weight, with a deficit). Off otherwise.
@@ -124,6 +128,7 @@ export function createProgress(db: Database) {
 					})),
 					completed: completed.map((c) => c.localDate),
 					firsts: {
+						...(logged?.day ? { day_logged: logged.day } : {}),
 						...(scan?.scan ? { scan: scan.scan } : {}),
 						...(recipe?.recipe ? { recipe: recipe.recipe } : {}),
 						...(voice ? { voice: voice.achievedOn } : {})

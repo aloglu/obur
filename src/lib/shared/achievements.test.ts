@@ -56,13 +56,14 @@ describe('weight lost', () => {
 		const list = achievements(
 			input({ readings: [r('2026-01-01', 100), r('2026-02-01', 90)], weightAllowed: false })
 		);
-		expect(list).toEqual([]);
+		// Only the first weigh-in, which celebrates weighing, not losing.
+		expect(list).toEqual([{ kind: 'first', level: 'weigh_in', date: '2026-01-01' }]);
 	});
 
 	it('withdraws an award when the weigh-in behind it is gone', () => {
 		const typo = achievements(input({ readings: [r('2026-01-01', 100), r('2026-01-02', 10)] }));
 		expect(of(typo, 'weight')).toHaveLength(45);
-		expect(achievements(input({ readings: [r('2026-01-01', 100)] }))).toEqual([]);
+		expect(of(achievements(input({ readings: [r('2026-01-01', 100)] })), 'weight')).toEqual([]);
 	});
 });
 
@@ -112,11 +113,12 @@ describe('streaks of complete days', () => {
 	it('awards a length the day the run reaches it, once ever', () => {
 		const list = achievements(
 			input({
-				// 14 in a row (across a month end), a gap, then 8 more: 7 is not awarded again.
+				// 14 in a row (across a month end), a gap, then 8 more: 3 and 7 are not awarded again.
 				completed: [...run('2026-01-25', 14), ...run('2026-02-10', 8)]
 			})
 		);
 		expect(of(list, 'streak')).toEqual([
+			[3, '2026-01-27'],
 			[7, '2026-01-31'],
 			[14, '2026-02-07']
 		]);
@@ -143,7 +145,25 @@ describe('firsts and what comes next', () => {
 		const list = achievements(
 			input({ readings: [r('2026-01-01', 100), r('2026-02-01', 95)], completed: [] })
 		);
-		expect(nextUp(list)).toEqual({ weight: 6, streak: 7 });
-		expect(nextUp([])).toEqual({ weight: 2, streak: 7 });
+		expect(nextUp(list)).toEqual({ weight: 6, streak: 3 });
+		expect(nextUp([])).toEqual({ weight: 2, streak: 3 });
+	});
+
+	it('gives a new account its first steps: the first weigh-in, day logged and complete day', () => {
+		const list = achievements(
+			input({
+				readings: [r('2026-01-03', 90), r('2026-01-05', 89.6)],
+				completed: ['2026-01-04', '2026-01-02'],
+				firsts: { day_logged: '2026-01-01' },
+				weightAllowed: false
+			})
+		);
+		expect(of(list, 'first')).toEqual([
+			['day_logged', '2026-01-01'],
+			['complete_day', '2026-01-02'],
+			['weigh_in', '2026-01-03']
+		]);
+		// Withdrawn with the records behind them.
+		expect(of(achievements(input({ weightAllowed: false })), 'first')).toEqual([]);
 	});
 });

@@ -51,9 +51,12 @@ test('a new weight mark is celebrated once; older ones arrive quietly', async ({
 		new RegExp(`2 kg lost, `)
 	]);
 	await expect(page.getByRole('region', { name: 'Streaks of complete days' })).toContainText(
-		'Next: 7 complete days in a row'
+		'Next: 3 complete days in a row'
 	);
-	await expect(page.getByRole('region', { name: 'Firsts' })).toHaveCount(0);
+	// Weighing in at all is the first of the first steps; the other firsts appear only once earned.
+	await expect(page.getByRole('region', { name: 'Firsts' }).getByRole('listitem')).toHaveText([
+		/First weigh-in/
+	]);
 
 	// The Journal shows it among the month's highlights.
 	await page.goto('/journal');
