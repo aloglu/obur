@@ -26,6 +26,8 @@
 	import Notice from '#lib/ui/Notice.svelte';
 	import { scanEdits } from '#lib/shared/scan-edits.ts';
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
+	import ScanNotes from '#lib/ui/food/ScanNotes.svelte';
+	import type { LabelNote } from '#lib/shared/label-notes.ts';
 
 	let { data } = $props();
 
@@ -34,6 +36,7 @@
 		portion: { name: string; amount: number; unit: 'g' | 'ml' } | null;
 		nutrients: NutrientValue[];
 		layout: 'table' | 'text' | 'none';
+		notes: LabelNote[];
 	}
 
 	let photo = $state<string | null>(null);
@@ -162,7 +165,7 @@
 	/** No photo to go on: the same form, empty. */
 	function byHand() {
 		problem = null;
-		proposal = { basis: '100g', portion: null, nutrients: [], layout: 'none' };
+		proposal = { basis: '100g', portion: null, nutrients: [], layout: 'none', notes: [] };
 	}
 
 	/** The proposal as the food form's starting values; the name and brand are typed by the person. */
@@ -244,6 +247,17 @@
 </script>
 
 <svelte:head><title>{m.log_scan()} · {m.app_name()}</title></svelte:head>
+
+{#snippet scanNotes()}
+	{#if proposal && initial}
+		<ScanNotes
+			notes={proposal.notes}
+			basis={initial.basis}
+			nutrients={initial.nutrients}
+			sodiumLeftOut={initial.nutrients.length < proposal.nutrients.length}
+		/>
+	{/if}
+{/snippet}
 
 {#snippet camera(primary: boolean)}
 	<label
@@ -355,6 +369,7 @@
 				onsave={save}
 				unsaved
 				saveLabel={logAfter ? m.scan_save_and_amount() : undefined}
+				valueNotes={proposal.nutrients.length && initial ? scanNotes : undefined}
 			/>{/key}
 		{@render camera(false)}
 	{/if}

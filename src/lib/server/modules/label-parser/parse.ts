@@ -3,7 +3,10 @@
 // unknown. Two layouts: a table (rows of nutrient names, columns per 100 g/ml, per serving and %RI) and running
 // text ("Energy (kJ/kcal): 153/37 - Fat: 0,5 g ..."). Plausibility warnings come from the shared food checks.
 import { foodWarnings, type FoodWarning } from '../../../shared/food-checks.ts';
+import type { LabelNote } from '../../../shared/label-notes.ts';
 import type { NutrientCode, NutrientValue } from '../../../shared/nutrients.ts';
+
+export type { LabelNote };
 
 export interface OcrLine {
 	text: string;
@@ -20,6 +23,14 @@ export interface LabelProposal {
 	nutrients: NutrientValue[];
 	layout: 'table' | 'text' | 'none';
 	warnings: FoodWarning[];
+	/** What was decided while reading, for the person checking it ("the %RI column was skipped"). */
+	notes: LabelNote[];
+}
+
+/** Choices made while reading, collected as they happen. */
+interface Seen {
+	dropped: NutrientCode[];
+	milligrams: NutrientCode[];
 }
 
 type Code = Extract<
@@ -279,9 +290,10 @@ function energy(nums: Num[], label: string): NutrientValue[] {
 }
 
 /** A row's value from one number: grams, with milligrams of salt or sodium converted (stated units only). */
-function amount(row: Code, n: Num): NutrientValue {
-	const value =
-		n.unit === 'mg' && (row === 'salt' || row === 'sodium') ? round(n.value / 1000) : n.value;
+function amount(row: Code, n: Num, seen: Seen): NutrientValue {
+	const milligrams = n.unit === 'mg' && (row === 'salt' || row === 'sodium');
+	if (milligrams) seen.milligrams.push(row);
+	const value = milligrams ? round(n.value / 1000) : n.value;
 	return { code: row, value, qualifier: n.lessThan ? 'less_than' : 'reported' };
 }
 
@@ -292,11 +304,17 @@ function possible(v: NutrientValue, per100: boolean): boolean {
 	return per100 ? v.value <= 100 : v.value <= 1000;
 }
 
-function add(out: Map<string, NutrientValue>, values: NutrientValue[], per100 = true) {
-	for (const v of values) if (!out.has(v.code) && possible(v, per100)) out.set(v.code, v);
+function add(out: Map<string, NutrientValue>, values: NutrientValue[], seen: Seen, per100 = true) {
+	for (const v of values) {
+		if (out.has(v.code)) continue;
+		if (possible(v, per100)) out.set(v.code, v);
+		else seen.dropped.push(v.code);
+	}
 }
 
-function parseTable(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined {
+type Read = Omit<LabelProposal, 'warnings' | 'notes'> & { notes: LabelNote[] };
+
+function parseTable(lines: Line[], seen: Seen): Read | undefined {
 	let labels = lines
 		.map((l) => ({ line: l, hit: NOT_A_ROW.test(l.folded) ? undefined : rowName(l.folded) }))
 		.filter((r): r is { line: Line; hit: { row: Row; end: number } } => !!r.hit)
@@ -461,8 +479,8 @@ function parseTable(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined 
 		} else nums = all.filter((n) => !n.percent).slice(0, 1);
 		if (!nums.length || r.hit.row === 'other') continue;
 		const per100 = chosen?.kind !== 'serving';
-		if (r.hit.row === 'energy') add(out, energy(nums, r.line.folded), per100);
-		else add(out, [amount(r.hit.row, nums[0])], per100);
+		if (r.hit.row === 'energy') add(out, energy(nums, r.line.folded), seen, per100);
+		else add(out, [amount(r.hit.row, nums[0], seen)], seen, per100);
 	}
 	const portion = amounts.map((c) => ('portion' in c ? c.portion : null)).find(Boolean) ?? null;
 	// No basis column: the title may say it ("Enerji ve Besin Öğeleri (100g'da)", "100 g için Besin Öğeleri").
@@ -473,20 +491,26 @@ function parseTable(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined 
 					(l) => l.cy < top && l.cy > top - rowGap * 6 && /100\s*(g|ml)\b|100(g|ml)/.test(l.folded)
 				)
 				.map((l) => (/100\s*ml/.test(l.folded) ? ('100ml' as const) : ('100g' as const)))[0];
-	return {
-		basis:
-			titled ??
-			(chosen
-				? chosen.kind === 'per100'
-					? chosen.unit === 'ml'
-						? '100ml'
-						: '100g'
-					: 'serving'
-				: null),
-		portion,
-		nutrients: [...out.values()],
-		layout: 'table'
-	};
+	const basis =
+		titled ??
+		(chosen
+			? chosen.kind === 'per100'
+				? chosen.unit === 'ml'
+					? ('100ml' as const)
+					: ('100g' as const)
+				: ('serving' as const)
+			: null);
+	const notes: LabelNote[] = [];
+	if (chosen && basis)
+		notes.push({
+			kind: 'columns',
+			used: basis,
+			skippedServing: amounts.some((c) => c !== chosen && c.kind === 'serving'),
+			skippedRi: columns.some((c) => c.kind === 'ri'),
+			portion: !!portion && basis !== 'serving'
+		});
+	if (titled) notes.push({ kind: 'basis_from_title', basis: titled });
+	return { basis, portion, nutrients: [...out.values()], layout: 'table', notes };
 }
 
 /** Where nutrient names start in a text, longest match first, without overlaps. */
@@ -504,7 +528,7 @@ function marksIn(text: string): { row: Row; at: number; end: number }[] {
 const namesIn = (text: string) => new Set(marksIn(text).map((k) => k.row)).size;
 
 /** Running text: each name takes the first number after it, up to the next name or a second basis. */
-function parseText(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined {
+function parseText(lines: Line[], seen: Seen): Read | undefined {
 	// The paragraph: lines that name nutrients, and lines starting near them (not a column off to the side).
 	const named = lines.filter((l) => marksIn(l.folded).length > 0);
 	if (!named.length) return undefined;
@@ -535,11 +559,17 @@ function parseText(lines: Line[]): Omit<LabelProposal, 'warnings'> | undefined {
 		const until = Math.min(marks[i + 1]?.at ?? stop, stop);
 		const nums = numbers(text.slice(k.end, until)).filter((n) => !n.percent);
 		if (!nums.length) continue;
-		if (k.row === 'energy') add(out, energy(nums, text.slice(k.at, until)));
-		else if (k.row !== 'other') add(out, [amount(k.row, nums[0])]);
+		if (k.row === 'energy') add(out, energy(nums, text.slice(k.at, until)), seen);
+		else if (k.row !== 'other') add(out, [amount(k.row, nums[0], seen)], seen);
 	}
 	const basis = /100\s*ml/.test(basisText) ? '100ml' : /100\s*g/.test(basisText) ? '100g' : null;
-	return { basis, portion: null, nutrients: [...out.values()], layout: 'text' };
+	return {
+		basis,
+		portion: null,
+		nutrients: [...out.values()],
+		layout: 'text',
+		notes: [{ kind: 'running_text' }]
+	};
 }
 
 /** Reads a nutrition label from OCR lines. */
@@ -547,7 +577,27 @@ export function parseLabel(ocr: OcrLine[]): LabelProposal {
 	const lines = ocr.filter((l) => l.text.trim()).map(toLine);
 	// Once a table is recognised it is never re-read as running text: that is where confident wrong numbers come
 	// from. Values the table didn't give stay unknown for the person to fill in.
-	const result = parseTable(lines) ??
-		parseText(lines) ?? { basis: null, portion: null, nutrients: [], layout: 'none' as const };
-	return { ...result, warnings: foodWarnings(result.basis ?? '100g', result.nutrients) };
+	// A table that is recognised keeps only what it saw; a failed attempt's choices are not reported.
+	let seen: Seen = { dropped: [], milligrams: [] };
+	const fresh = () => (seen = { dropped: [], milligrams: [] });
+	const result = parseTable(lines, seen) ??
+		parseText(lines, fresh()) ?? {
+			basis: null,
+			portion: null,
+			nutrients: [],
+			layout: 'none' as const,
+			notes: []
+		};
+	const kept = new Set(result.nutrients.map((n) => n.code));
+	const unique = (codes: NutrientCode[]) => [...new Set(codes)];
+	const dropped = unique(seen.dropped).filter((c) => !kept.has(c));
+	const milligrams = unique(seen.milligrams).filter((c) => kept.has(c));
+	const notes = [...result.notes];
+	if (dropped.length) notes.push({ kind: 'dropped', codes: dropped });
+	if (milligrams.length) notes.push({ kind: 'converted_mg', codes: milligrams });
+	return {
+		...result,
+		notes,
+		warnings: foodWarnings(result.basis ?? '100g', result.nutrients)
+	};
 }

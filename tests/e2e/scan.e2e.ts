@@ -69,6 +69,14 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	});
 	await expect(page.getByText('Check every value against your photo')).toBeVisible();
 	await expect(page.getByRole('heading', { level: 1, name: 'Check the label' })).toBeVisible();
+	// What was read and decided, in place of the hint on copying a label.
+	const notes = page.getByRole('list', { name: 'What was read' });
+	await expect(notes.getByRole('listitem')).toHaveText([
+		'Read per 100 g. The per-serving and %RI columns were skipped. Its serving size became a portion below.',
+		"400 kcal matches the label's 1673 kJ.",
+		"Fibre wasn't read, so it stays unknown, not zero. Type it if it's on the label."
+	]);
+	await expect(page.getByText('Copy the label.')).toBeHidden();
 	// The photo went out small and as JPEG (drawn again on the phone, which drops its location data).
 	const sent = await (await request.get(`${SPEECH_STUB}/last-ocr`)).json();
 	expect(sent).toMatchObject({ jpeg: true, width: 3 });

@@ -287,6 +287,49 @@ describe('running text', () => {
 	});
 });
 
+describe('notes on what was decided', () => {
+	it('says which column was read, what was skipped and that the serving became a portion', () => {
+		expect(parseLabel(table(ROWS)).notes).toEqual([
+			{ kind: 'columns', used: '100g', skippedServing: true, skippedRi: true, portion: true }
+		]);
+	});
+
+	it('names values left out as impossible, and not ones simply missing', () => {
+		const rows = ROWS.map((r) => [...r] as [string, string, string, string]);
+		rows[1][1] = '';
+		rows[4][1] = '55827750';
+		const p = parseLabel(table(rows).filter((l) => l.text !== ''));
+		expect(p.notes).toContainEqual({ kind: 'dropped', codes: ['sugars'] });
+	});
+
+	it('says when the basis came from the title, and when salt was written in mg', () => {
+		const p = parseLabel([
+			line("Enerji ve Besin Öğeleri (100g'da)", 100, 80, 300),
+			...[
+				['Enerji', '92 kcal'],
+				['Yağ', '1,8g'],
+				['Protein', '17g'],
+				['Tuz', '450 mg']
+			].flatMap(([name, v], i) => [line(name, 100, 120 + i * 26), line(v, 300, 120 + i * 26, 60)])
+		]);
+		expect(value(p, 'salt')?.value).toBe(0.45);
+		expect(p.notes).toEqual([
+			{ kind: 'basis_from_title', basis: '100g' },
+			{ kind: 'converted_mg', codes: ['salt'] }
+		]);
+	});
+
+	it('says when it read running text, and has nothing to say about nothing', () => {
+		const text = parseLabel([
+			line('Enerji ve Besin Öğeleri (100g)', 20, 40, 500),
+			line('Enerji (kJ/kcal): 153/37 - Yağ: 0,5 g', 20, 66, 500),
+			line('Karbonhidrat: 7 g - Şekerler: 3,6g - Protein: 1 g', 20, 92, 500)
+		]);
+		expect(text.notes).toEqual([{ kind: 'running_text' }]);
+		expect(parseLabel([line('Net Miktar: 400 g', 20, 40)]).notes).toEqual([]);
+	});
+});
+
 it('proposes nothing when there is no nutrition information', () => {
 	const p = parseLabel([line('Net Miktar: 400 g', 20, 40), line('TETT 01/06/2027', 20, 70)]);
 	expect(p).toMatchObject({ layout: 'none', basis: null, nutrients: [] });

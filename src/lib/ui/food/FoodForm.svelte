@@ -35,6 +35,8 @@
 		actions?: Snippet;
 		/** A short line under Save. */
 		note?: string;
+		/** In place of the hint on copying a label: what a label scan read and decided. */
+		valueNotes?: Snippet;
 	}
 
 	const UNITS: { value: 'g' | 'ml'; label: string }[] = [
@@ -49,7 +51,8 @@
 		saveLabel,
 		unsaved = false,
 		actions,
-		note
+		note,
+		valueNotes
 	}: Props = $props();
 	const start = untrack(() => initial);
 
@@ -378,7 +381,9 @@
 				{ value: 'us', label: m.food_label_us() }
 			]}
 		/>
-		<p class="text-[13px] text-muted">{m.food_values_hint()}</p>
+		{#if valueNotes}{@render valueNotes()}{:else}
+			<p class="text-[13px] text-muted">{m.food_values_hint()}</p>
+		{/if}
 		<div class="flex flex-col">
 			{#each FIELDS as field (field)}
 				{@render row(
