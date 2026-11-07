@@ -17,6 +17,9 @@ const WIDE5 = png(
 const WIDE9 = png(
 	'iVBORw0KGgoAAAANSUhEUgAAAAkAAAACCAAAAACvPakPAAAAEElEQVQI12NsYIACJhiDAQAJvACEagAT+QAAAABJRU5ErkJggg=='
 );
+const WIDE11 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAAAsAAAACCAIAAAABwbG5AAAAFUlEQVR4nGP8//8/A17AhF+agYEBAMYGAwEg+6h9AAAAAElFTkSuQmCC'
+);
 const line = (text: string, x: number, y: number, w = text.length * 8) => ({
 	text,
 	box: [
@@ -133,12 +136,18 @@ test('a label that cannot be read says so and offers to fill it in by hand', asy
 		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE5 });
 	await expect(page.getByRole('alert')).toContainText('No nutrition table found');
 	await expect(page.getByRole('heading', { level: 1, name: 'Scan a label' })).toBeVisible();
+	// A scanner that stays busy: it waits in line, then gives up after two minutes.
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
-		data: { width: 9, status: 503, body: { error: 'busy' } }
+		data: { width: 9, status: 503, body: { error: 'busy', ahead: 3 } }
 	});
+	await page.clock.install();
 	await page
 		.getByLabel('Choose photo')
 		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE9 });
+	const waiting = page.getByRole('status').filter({ hasText: 'Waiting for the scanner' });
+	await expect(waiting).toContainText("It's reading 3 other labels.");
+	await page.clock.fastForward(125_000);
+	await page.clock.runFor(4000);
 	await expect(page.getByRole('alert')).toContainText('The server is reading other labels');
 	await page.getByRole('button', { name: 'Fill in by hand' }).click();
 	await expect(page.locator('#n-energy_kcal')).toHaveValue('');
@@ -187,4 +196,33 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 	});
 	await page.goto('/household');
 	await expect(page.getByTestId('scan-totals')).toContainText('Labels saved');
+});
+
+test('a busy scanner keeps the photo waiting in line and reads it when there is room', async ({
+	page,
+	request
+}, testInfo) => {
+	await signedInAs(page, `Sıra ${testInfo.project.name}`);
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: {
+			width: 11,
+			status: 503,
+			body: { error: 'busy', ahead: 1 },
+			then: { status: 200, body: { lines: TABLE, ocrMs: 900, queueMs: 0 } }
+		}
+	});
+	await page.goto('/scan');
+	await page.waitForLoadState('networkidle');
+	await page
+		.getByLabel('Choose photo')
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE11 });
+	await expect(
+		page.getByRole('status').filter({ hasText: 'Waiting for the scanner' })
+	).toContainText("It's reading another label. Yours is next");
+	await expect(page.getByRole('button', { name: 'Fill in by hand' })).toBeVisible();
+	// Asked again by itself: the proposal arrives without another tap.
+	await expect(page.getByRole('heading', { level: 1, name: 'Check the label' })).toBeVisible({
+		timeout: 10_000
+	});
+	await expect(page.locator('#n-energy_kcal')).toHaveValue('400');
 });

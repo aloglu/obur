@@ -106,6 +106,14 @@ describe('RateLimiter', () => {
 		expect(limiter.attempt('ip')).toBe(true);
 	});
 
+	it('takes back a refunded attempt, never below none', () => {
+		const limiter = new RateLimiter(1, 60_000, 100, () => 0);
+		expect(limiter.attempt('scan')).toBe(true);
+		limiter.refund('scan');
+		limiter.refund('scan');
+		expect([limiter.attempt('scan'), limiter.attempt('scan')]).toEqual([true, false]);
+	});
+
 	it('stays bounded under many keys', () => {
 		const limiter = new RateLimiter(1, 60_000, 3);
 		for (let i = 0; i < 10; i++) limiter.attempt(`k${i}`);

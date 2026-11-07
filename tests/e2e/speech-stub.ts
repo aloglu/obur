@@ -10,7 +10,8 @@ let next: { status: number; body: unknown } = {
 };
 let last: { prompt: string | null; audioBytes: number } | null = null;
 // OCR answers are keyed by the photo's width, so tests running at the same time (one per browser) each get theirs.
-const nextOcr = new Map<number, { status: number; body: unknown }>();
+type OcrAnswer = { status: number; body: unknown; then?: OcrAnswer };
+const nextOcr = new Map<number, OcrAnswer>();
 let lastOcr: { imageBytes: number; jpeg: boolean; width: number } | null = null;
 
 /** A JPEG's width from its start-of-frame marker; 0 when not found. */
@@ -53,6 +54,8 @@ createServer(async (req, res) => {
 		const jpeg = image[0] === 0xff && image[1] === 0xd8;
 		lastOcr = { imageBytes: image.length, jpeg, width: jpeg ? jpegWidth(image) : 0 };
 		const answer = nextOcr.get(lastOcr.width) ?? { status: 200, body: { lines: [] } };
+		// `then`: the answer after this one (busy, then read).
+		if (answer.then) nextOcr.set(lastOcr.width, answer.then);
 		return reply(answer.status, answer.body);
 	}
 	if (req.method === 'POST' && req.url === '/transcribe') {

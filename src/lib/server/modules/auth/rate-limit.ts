@@ -28,6 +28,12 @@ export class RateLimiter {
 		return w.count <= this.max;
 	}
 
+	/** Takes back an attempt that did no work (the service was busy), so waiting in line doesn't use up the limit. */
+	refund(key: string): void {
+		const w = this.#windows.get(key);
+		if (w && w.count > 0) w.count -= 1;
+	}
+
 	#sweep(now: number): void {
 		for (const [key, w] of this.#windows) if (w.resetAt <= now) this.#windows.delete(key);
 		// Still full of live windows: drop the oldest rather than grow without bound.

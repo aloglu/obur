@@ -24,7 +24,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const result = await scanLabel(locals.session!.userId, image);
 		return json({ ...result, totalMs: Math.round(performance.now() - started) });
 	} catch (e) {
-		if (e instanceof ScanFailure) return json({ error: e.code }, { status: STATUS[e.code] });
+		if (e instanceof ScanFailure)
+			return json(e.ahead === undefined ? { error: e.code } : { error: e.code, ahead: e.ahead }, {
+				status: STATUS[e.code]
+			});
 		throw e;
 	}
 };

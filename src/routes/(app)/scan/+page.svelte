@@ -41,6 +41,12 @@
 
 	let photo = $state<string | null>(null);
 	let reading = $state(false);
+	/** Waiting in line while the scanner reads other photos: how many are ahead. */
+	let waiting = $state<number | null>(null);
+	/** Each photo's attempt; a newer photo or Fill in by hand ends the wait for an older one. */
+	let attempt = 0;
+	const RETRY_MS = 3000;
+	const GIVE_UP_MS = 120_000;
 	type Problem = { title: string; line: string; icon: typeof Camera; retake: boolean };
 	const P = {
 		noTable: () => ({
@@ -118,9 +124,11 @@
 		const file = input.files?.[0];
 		input.value = '';
 		if (!file) return;
+		const mine = ++attempt;
 		problem = null;
 		proposal = null;
 		reading = true;
+		waiting = null;
 		try {
 			let image: Blob;
 			try {
@@ -131,12 +139,24 @@
 			}
 			if (photo) URL.revokeObjectURL(photo);
 			photo = URL.createObjectURL(image);
-			const response = await fetch('/api/v1/scan', {
-				method: 'POST',
-				headers: { 'content-type': 'image/jpeg' },
-				body: image
-			});
-			const body = await response.json().catch(() => ({}));
+			// A busy scanner: wait in line and ask again, for up to two minutes.
+			const started = Date.now();
+			let response: Response;
+			let body: { error?: string; ahead?: number; proposal?: Proposal };
+			for (;;) {
+				response = await fetch('/api/v1/scan', {
+					method: 'POST',
+					headers: { 'content-type': 'image/jpeg' },
+					body: image
+				});
+				body = await response.json().catch(() => ({}));
+				if (mine !== attempt) return;
+				if (response.ok || body.error !== 'busy' || Date.now() - started > GIVE_UP_MS) break;
+				waiting = body.ahead ?? 1;
+				await new Promise((done) => setTimeout(done, RETRY_MS));
+				if (mine !== attempt) return;
+			}
+			waiting = null;
 			if (!response.ok) {
 				problem =
 					body.error === 'busy'
@@ -156,14 +176,20 @@
 			proposal = read;
 			showPhoto = false;
 		} catch {
-			problem = navigator.onLine ? P.unavailable() : P.offline();
+			if (mine === attempt) problem = navigator.onLine ? P.unavailable() : P.offline();
 		} finally {
-			reading = false;
+			if (mine === attempt) {
+				reading = false;
+				waiting = null;
+			}
 		}
 	}
 
 	/** No photo to go on: the same form, empty. */
 	function byHand() {
+		attempt++;
+		reading = false;
+		waiting = null;
 		problem = null;
 		proposal = { basis: '100g', portion: null, nutrients: [], layout: 'none', notes: [] };
 	}
@@ -297,7 +323,16 @@
 			<div
 				class="grid aspect-[4/3] place-items-center rounded-input border-2 border-dashed border-accent bg-soft px-6 text-center text-[15px] font-semibold text-accent"
 			>
-				{#if reading}<span role="status">{m.scan_reading()}</span>{:else}{m.scan_frame()}{/if}
+				{#if waiting !== null}
+					<span role="status" class="flex flex-col gap-1">
+						<span>{m.scan_waiting()}</span>
+						<span class="text-[14px] font-medium text-muted">
+							{waiting === 1
+								? m.scan_waiting_one()
+								: m.scan_waiting_many({ count: String(waiting) })}
+						</span>
+					</span>
+				{:else if reading}<span role="status">{m.scan_reading()}</span>{:else}{m.scan_frame()}{/if}
 			</div>
 			<div class="grid grid-cols-2 gap-2">
 				{@render camera(true)}
@@ -315,6 +350,9 @@
 				</label>
 			</div>
 		</Card>
+		{#if waiting !== null}
+			<Button variant="ghost" wide onclick={byHand}>{m.scan_by_hand()}</Button>
+		{/if}
 		{#if problem}
 			<Notice tone="warn" title={problem.title} icon={problem.icon}>
 				{problem.line}

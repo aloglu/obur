@@ -17,9 +17,12 @@ export type ScanError = 'off' | 'limited' | 'too_large' | 'decode_failed' | 'bus
 
 export class ScanFailure extends Error {
 	readonly code: ScanError;
-	constructor(code: ScanError) {
+	/** When busy: how many photos the service is reading or holding. */
+	readonly ahead: number | undefined;
+	constructor(code: ScanError, ahead?: number) {
 		super(code);
 		this.code = code;
+		this.ahead = ahead;
 	}
 }
 
@@ -45,11 +48,18 @@ export async function scanLabel(
 	const body = (await response.json().catch(() => ({}))) as {
 		lines?: OcrLine[];
 		error?: string;
+		ahead?: number;
 		ocrMs?: number;
 		queueMs?: number;
 	};
 	if (!response.ok) {
-		const known = ['too_large', 'decode_failed', 'busy'] as const;
+		if (body.error === 'busy') {
+			// The phone waits in line and asks again; asking again is not another scan.
+			perPerson.refund(userId);
+			const ahead = Number.isInteger(body.ahead) && body.ahead! > 0 ? body.ahead : 1;
+			throw new ScanFailure('busy', Math.min(ahead!, 20));
+		}
+		const known = ['too_large', 'decode_failed'] as const;
 		throw new ScanFailure(known.find((k) => k === body.error) ?? 'unavailable');
 	}
 	return {

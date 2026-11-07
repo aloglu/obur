@@ -4,7 +4,7 @@ internal network with no internet access; only the web container reaches it. The
 
 POST /ocr     {"image": base64 bytes (JPEG, PNG or WebP)}
   → 200 {"lines": [{"box": [[x, y] × 4], "text", "score"}], "width", "height", "queueMs", "ocrMs"}
-  → 400 {"error": "bad_request" | "decode_failed"}, 413 too large, 503 {"error": "busy"}
+  → 400 {"error": "bad_request" | "decode_failed"}, 413 too large, 503 {"error": "busy", "ahead": n}
 GET  /health  → 200 {"ok": true, "model": ...} once the models are loaded
 
 The image is decoded from memory and never written to disk. Nothing about requests is logged. One image is read at a
@@ -40,7 +40,9 @@ onnxruntime.disable_telemetry_events()
 
 
 class Busy(Exception):
-    pass
+    def __init__(self, ahead: int) -> None:
+        super().__init__("busy")
+        self.ahead = ahead
 
 
 class Reader:
@@ -64,7 +66,7 @@ class Reader:
     def run(self, data: bytes) -> dict:
         with self.count_lock:
             if self.waiting > MAX_QUEUE:
-                raise Busy()
+                raise Busy(self.waiting)
             self.waiting += 1
         queued = time.perf_counter()
         try:
@@ -114,8 +116,8 @@ def make_handler(reader: Reader):
                 return self._json(413, {"error": "too_large"})
             try:
                 result = reader.run(image)
-            except Busy:
-                return self._json(503, {"error": "busy"})
+            except Busy as busy:
+                return self._json(503, {"error": "busy", "ahead": busy.ahead})
             except Exception:  # noqa: BLE001 - an unreadable image surfaces as various library errors
                 return self._json(400, {"error": "decode_failed"})
             self._json(200, result)
