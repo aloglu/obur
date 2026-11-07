@@ -155,6 +155,13 @@ for (const theme of ['light', 'dark'] as const) {
 				{ code: 'fibre', value: 3, qualifier: 'reported' }
 			]
 		});
+		// A long Turkish name and brand, as the release check asks (docs/design.md, "Testing and definition of done").
+		const corba = await createFood(page, {
+			name: 'Kırmızı mercimek çorbası (bol limonlu, kıtır ekmekli, nane yağlı)',
+			brand: 'Anneannemin Mutfağı Şarküteri',
+			basis: '100g',
+			nutrients: [{ code: 'energy_kcal', value: 92, qualifier: 'reported' }]
+		});
 		const date = '2026-10-20';
 		const base = { date, zone: 'Europe/Istanbul' };
 		await apiAs(page, 'POST', '/api/v1/diary/entries', {
@@ -175,6 +182,14 @@ for (const theme of ['light', 'dark'] as const) {
 		});
 		await apiAs(page, 'POST', '/api/v1/diary/entries', {
 			...base,
+			kind: 'food',
+			meal: 'lunch',
+			foodId: corba,
+			amount: 300,
+			unit: { kind: 'mass', unit: 'g' }
+		});
+		await apiAs(page, 'POST', '/api/v1/diary/entries', {
+			...base,
 			kind: 'quick',
 			meal: 'snacks',
 			kcal: 300,
@@ -189,6 +204,12 @@ for (const theme of ['light', 'dark'] as const) {
 			fullPage: !isPhone(page),
 			animations: 'disabled'
 		});
+		// On a phone the meals are below the fold: the long Turkish name gets its own picture.
+		if (isPhone(page))
+			await expect(page.getByRole('region', { name: 'Lunch' })).toHaveScreenshot(
+				`lunch-long-name-${theme}.png`,
+				{ animations: 'disabled' }
+			);
 	});
 }
 
