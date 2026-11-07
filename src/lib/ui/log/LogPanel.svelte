@@ -226,7 +226,7 @@
 {/snippet}
 
 <div class="flex flex-col gap-3">
-	<div class="flex items-center gap-2">
+	<div class="pinned-search flex items-center gap-2">
 		<label
 			class="flex min-h-12 flex-1 items-center gap-2 rounded-input bg-surface px-3.5 text-muted shadow-card focus-within:outline-2 focus-within:outline-accent"
 		>

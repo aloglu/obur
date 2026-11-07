@@ -26,6 +26,7 @@ The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app an
 - **Examples and placeholders are in English,** in the English interface, although Turkish input works (including messages such as `speak_example`).
 - **Macro colours** do not follow the accent. Protein, carbs and fat change together, per theme, never protein alone.
 - **Keyboard.** An open sheet stays inside the area the on-screen keyboard leaves free, however tall its content grows (`ui/Sheet.svelte`, from `visualViewport`).
+- **A search stays in view.** Wherever a search sits above a list, the search stays while the list scrolls (owner, 2026-11-07): the title and search in Add a food and Choose an icon (`pinned` on `ui/Sheet.svelte`); the search on Log, Foods and Help (`.pinned-search`); in Type it and Speak, the search inside an item while that item is on screen.
 - **Fields never zoom the page.** iPhones zoom in on a field whose text is under 16 px, so every input, select and textarea is at least 16 px; a test checks it (`ui/field-size.test.ts`). A control that shows smaller text keeps a 16 px input unseen over it. Zooming is not disabled: people can still pinch.
 - **Empty values look like fields.** An empty value in the food form is a normal field with a quiet "Unknown" placeholder (owner, 2026-11-07: the amber fill read as a warning or plain text, not something to tap).
 - **Wide screens.** The desktop layout starts at 760 px: icon rail on mid widths, labelled sidebar from 1100 px. Sheets become centred dialogs. Today has two columns, other pages use reading widths. Keys: ←/→ for days, Enter and Esc in dialogs. Chart text keeps a fixed size rather than scaling (13.5 px on desktop).
@@ -57,6 +58,8 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 - **Build with each screen; do not skip:** numbers roll digit by digit when they change (`roll` in the demos), fields and inline forms open with the `.collapse` height and fade, charts draw on, entries and rows animate in and out, toasts pop their check. Look for it in the demo's CSS and script for each screen.
 
 **A field that gets focus must already be in place.** iOS scrolls a focused field above the keyboard smoothly by itself, but only to where it is at that moment. So an empty note, which opens straight into typing, reaches its height at once and fades in. Don't scroll the page from script to help: it fights iOS's own scroll and overshoots (owner's report, 2026-11-06).
+
+**A sheet that fills in after opening still opens small** (owner, 2026-11-07): Add a food slides up with the same motion as every sheet, then, once it has arrived, grows to fit its list (340 ms on `--ui`, the same as rows opening by height), and it follows the list's height as a search narrows it. It never opens at full height to make room for what is coming.
 
 **An open sheet holds the page behind it still** (`client/scroll-lock.ts`), and returns it to the same place when it closes. Closing gives the page back at once: the sheet unmounts immediately and a lifeless copy plays the slide-out, so nothing waits for the animation.
 

@@ -89,13 +89,15 @@
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<BackLink href={resolve('/(app)/more')} label={m.nav_more()} />
 	<h1 class="text-[24px] font-[750]">{m.foods_title()}</h1>
-	<TextField
-		label={m.foods_search()}
-		placeholder={m.foods_search_placeholder()}
-		bind:value={query}
-		type="search"
-		autocomplete="off"
-	/>
+	<div class="pinned-search">
+		<TextField
+			label={m.foods_search()}
+			placeholder={m.foods_search_placeholder()}
+			bind:value={query}
+			type="search"
+			autocomplete="off"
+		/>
+	</div>
 	<a
 		href={resolve('/(app)/foods/new')}
 		class="grid min-h-[52px] place-items-center rounded-button bg-fill px-4 text-[17px] font-[750] text-on-accent"

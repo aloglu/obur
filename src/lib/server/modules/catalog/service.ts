@@ -89,9 +89,14 @@ export async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefin
 		.from(foodServings)
 		.where(eq(foodServings.foodId, foodId))
 		.orderBy(asc(foodServings.amount));
+	return toDetail(row, nutrients as NutrientValue[], servings);
+}
+
+type FoodRow = { food: typeof foods.$inferSelect; mine: boolean; editable: boolean };
+
+function toDetail(row: FoodRow, values: NutrientValue[], servings: FoodDetail['servings']) {
 	const f = row.food;
-	const values = nutrients as NutrientValue[];
-	return {
+	const detail: FoodDetail = {
 		id: f.id,
 		name: f.name,
 		brand: f.brand,
@@ -118,6 +123,7 @@ export async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefin
 		servings,
 		warnings: foodWarnings(f.basis, values)
 	};
+	return detail;
 }
 
 export function createCatalog(db: Database, now: () => Date = () => new Date()) {
@@ -444,13 +450,47 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		async foodsById(userId: string, ids: string[]): Promise<FoodDetail[]> {
 			if (!ids.length) return [];
 			return withUser(db, userId, async (tx) => {
-				const visible = await tx.select({ id: foods.id }).from(foods).where(inArray(foods.id, ids));
-				const out: FoodDetail[] = [];
-				for (const { id } of visible) {
-					const food = await load(tx, id);
-					if (food) out.push(food);
-				}
-				return out;
+				const rows = await tx
+					.select({
+						food: foods,
+						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
+						editable: sql<boolean>`(${foods.ownerId} = app_current_user_id()
+							or (${foods.visibility} = 'shared' and app_current_user_is_admin()))`
+					})
+					.from(foods)
+					.where(inArray(foods.id, ids));
+				const nutrients = await tx
+					.select({
+						foodId: foodNutrients.foodId,
+						code: foodNutrients.code,
+						value: foodNutrients.value,
+						qualifier: foodNutrients.qualifier
+					})
+					.from(foodNutrients)
+					.where(inArray(foodNutrients.foodId, ids));
+				const servings = await tx
+					.select({
+						foodId: foodServings.foodId,
+						id: foodServings.id,
+						name: foodServings.name,
+						amount: foodServings.amount,
+						unit: foodServings.unit,
+						source: foodServings.source
+					})
+					.from(foodServings)
+					.where(inArray(foodServings.foodId, ids))
+					.orderBy(asc(foodServings.amount));
+				return rows.map((row) =>
+					toDetail(
+						row,
+						nutrients
+							.filter((n) => n.foodId === row.food.id)
+							.map(({ code, value, qualifier }) => ({ code, value, qualifier })) as NutrientValue[],
+						servings
+							.filter((s) => s.foodId === row.food.id)
+							.map(({ id, name, amount, unit, source }) => ({ id, name, amount, unit, source }))
+					)
+				);
 			});
 		}
 	};

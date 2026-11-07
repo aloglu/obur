@@ -32,7 +32,7 @@ test('foods show the icon their name suggests, or the one chosen in the picker',
 	await picker.getByRole('button', { name: 'milk' }).click();
 	await expect(page.getByText('Chosen by you')).toBeVisible();
 	await page.getByRole('button', { name: 'Save food' }).click();
-	await expect(page.getByText('Saved')).toBeVisible();
+	await expect(page.getByRole('status').getByText('Saved', { exact: true })).toBeVisible();
 
 	// Logged: the meal card shows the chosen icon (from the entry's snapshot).
 	await page.goto('/log');

@@ -477,3 +477,36 @@ describe('own foods', () => {
 		]);
 	});
 });
+
+describe('foodsById', () => {
+	it('gives each visible food its own values and portions, the same as one at a time', async () => {
+		const ayran = await catalog.createFood(
+			MEHMET,
+			food({
+				servings: [
+					{ name: 'Bottle', amount: 300, unit: 'ml', source: 'user' },
+					{ name: 'Glass', amount: 200, unit: 'ml', source: 'user' }
+				]
+			})
+		);
+		const yogurt = await catalog.createFood(
+			ZEYNEP,
+			food({
+				name: 'Yoğurt',
+				nutrients: [{ code: 'energy_kcal', value: 60, qualifier: 'reported' }]
+			})
+		);
+		const hidden = await catalog.createFood(ZEYNEP, food({ name: 'Gizli', visibility: 'private' }));
+
+		const found = await catalog.foodsById(MEHMET, [ayran, yogurt, hidden, randomUUID()]);
+
+		expect(new Map(found.map((f) => [f.id, f]))).toEqual(
+			new Map([
+				[ayran, await catalog.getFood(MEHMET, ayran)],
+				[yogurt, await catalog.getFood(MEHMET, yogurt)]
+			])
+		);
+		const ayranFound = found.find((f) => f.id === ayran)!;
+		expect(ayranFound.servings.map((s) => s.name)).toEqual(['Glass', 'Bottle']);
+	});
+});

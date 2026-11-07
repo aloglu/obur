@@ -126,6 +126,23 @@
 	}
 }
 
+/* A page's search stays in view while its list scrolls, below the status bar. As wide as the page's gutters, in the page's
+   colour, so rows pass under it; the padding is taken back, so it sits where it would without this. */
+.pinned-search {
+	position: sticky;
+	top: env(safe-area-inset-top);
+	z-index: 20;
+	margin: -8px -14px;
+	padding: 8px 14px;
+	background: var(--bg);
+}
+@media (min-width: 760px) {
+	.pinned-search {
+		margin-inline: -28px;
+		padding-inline: 28px;
+	}
+}
+
 /* One checkbox everywhere (docs/ui.md). */
 input[type='checkbox'] {
 	appearance: none;

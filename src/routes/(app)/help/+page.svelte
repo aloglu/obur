@@ -46,18 +46,20 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<h1 class="text-[24px] font-[750]">{m.help_title()}</h1>
-	<label
-		class="flex min-h-12 items-center gap-2.5 rounded-input border border-line bg-surface px-3.5 focus-within:outline-3 focus-within:outline-offset-1 focus-within:outline-accent"
-	>
-		<Search size={20} aria-hidden="true" class="shrink-0 text-muted" />
-		<input
-			type="search"
-			bind:value={query}
-			placeholder={m.help_search()}
-			aria-label={m.help_search()}
-			class="min-w-0 flex-1 bg-transparent py-2 text-[16px] outline-none"
-		/>
-	</label>
+	<div class="pinned-search">
+		<label
+			class="flex min-h-12 items-center gap-2.5 rounded-input border border-line bg-surface px-3.5 focus-within:outline-3 focus-within:outline-offset-1 focus-within:outline-accent"
+		>
+			<Search size={20} aria-hidden="true" class="shrink-0 text-muted" />
+			<input
+				type="search"
+				bind:value={query}
+				placeholder={m.help_search()}
+				aria-label={m.help_search()}
+				class="min-w-0 flex-1 bg-transparent py-2 text-[16px] outline-none"
+			/>
+		</label>
+	</div>
 	<div class="flex flex-wrap gap-2" role="group" aria-label={m.help_topics()}>
 		{#each ['all' as const, ...HELP_TOPICS] as t (t)}
 			<button

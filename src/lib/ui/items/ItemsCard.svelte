@@ -3,8 +3,10 @@
 	// amount, unit, macros and Remove. Icons and Add food share one column. Nothing is saved here.
 	import AmountField from '../AmountField.svelte';
 	import Plus from '@lucide/svelte/icons/plus';
+	import { onMount } from 'svelte';
+	import { api } from '#lib/client/api.ts';
 	import { m } from '#lib/paraglide/messages.js';
-	import type { FoodDetail } from '#lib/shared/food-types.ts';
+	import type { FoodDetail, FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { kcal } from '#lib/shared/format.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
 	import type { MeasureOption, UnitOption } from '#lib/shared/unit-options.ts';
@@ -35,6 +37,12 @@
 
 	let open = $state<string | null>(null);
 	let adding = $state(false);
+	let recent = $state<FoodSearchResult[]>([]);
+	onMount(() => {
+		void api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')
+			.then((data) => (recent = data.results))
+			.catch(() => {}); // Offline without a saved copy: the search is still there.
+	});
 
 	const computed = $derived(items.map((d) => nutrientsOf(d, measures)));
 	const total = $derived(computed.reduce((sum, n) => sum + (n?.energy_kcal?.value ?? 0), 0));
@@ -161,5 +169,5 @@
 </section>
 
 {#if adding}
-	<AddFoodSheet {allowRecipes} onadd={add} onclose={() => (adding = false)} />
+	<AddFoodSheet {allowRecipes} {recent} onadd={add} onclose={() => (adding = false)} />
 {/if}

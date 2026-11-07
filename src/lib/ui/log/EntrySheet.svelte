@@ -566,14 +566,16 @@
 
 						{#if card.kind === 'food' && card.searching}
 							<div class="flex flex-col gap-1 pb-2.5 pl-[52px]">
-								<input
-									bind:value={searchQuery}
-									oninput={searchChanged}
-									type="search"
-									aria-label={m.entry_search_foods()}
-									placeholder={m.log_search_placeholder()}
-									class="min-h-12 rounded-input bg-surface2 px-3.5 text-[16px] font-medium outline-none focus:outline-2 focus:outline-accent"
-								/>
+								<div class="sticky top-0 z-10 flex flex-col bg-surface py-1">
+									<input
+										bind:value={searchQuery}
+										oninput={searchChanged}
+										type="search"
+										aria-label={m.entry_search_foods()}
+										placeholder={m.log_search_placeholder()}
+										class="min-h-12 rounded-input bg-surface2 px-3.5 text-[16px] font-medium outline-none focus:outline-2 focus:outline-accent"
+									/>
+								</div>
 								{#each searchResults as r (r.id)}
 									<button
 										type="button"

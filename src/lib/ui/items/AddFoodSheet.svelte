@@ -21,14 +21,17 @@
 	interface Props {
 		/** False in a recipe: recipes can't be ingredients (yet). */
 		allowRecipes?: boolean;
+		/** Loaded with the editor, so they are ready when the sheet opens. */
+		recent?: FoodSearchResult[];
 		onadd: (food: FoodDetail, amount: number, option: UnitOption) => void;
 		onclose: () => void;
 	}
-	let { allowRecipes = true, onadd, onclose }: Props = $props();
+	let { allowRecipes = true, recent = [], onadd, onclose }: Props = $props();
 
 	let query = $state('');
 	let results = $state<FoodSearchResult[]>([]);
-	let recent = $state<FoodSearchResult[]>([]);
+	// The sheet slides in small, as sheets do, and then the list makes it grow.
+	let opened = $state(false);
 	let searched = $state(false);
 	let food = $state<FoodDetail | undefined>();
 	let measures = $state<MeasureOption[]>([]);
@@ -36,12 +39,7 @@
 	let amountText = $state('');
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
-	onMount(async () => {
-		void api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')
-			.then((data) => (recent = data.results))
-			.catch(() => {}); // Offline without a saved copy: the search is still there.
-		measures = await householdMeasures();
-	});
+	onMount(async () => (measures = await householdMeasures()));
 
 	$effect(() => {
 		const q = query.trim();
@@ -92,6 +90,16 @@
 	}
 </script>
 
+{#snippet search()}
+	<TextField
+		label={m.foods_search()}
+		placeholder={m.foods_search_placeholder()}
+		bind:value={query}
+		type="search"
+		autocomplete="off"
+	/>
+{/snippet}
+
 {#snippet foods(list: FoodSearchResult[])}
 	<ul class="-mx-2 flex flex-col empty:hidden">
 		{#each list as r (r.id)}
@@ -115,22 +123,18 @@
 
 <Sheet
 	title={food ? `${food.brand ? `${food.brand} ` : ''}${food.name}` : m.meal_editor_add_title()}
+	pinned={food ? undefined : search}
+	resizes
+	onopened={() => (opened = true)}
 	{onclose}
 >
 	{#if !food}
-		<TextField
-			label={m.foods_search()}
-			placeholder={m.foods_search_placeholder()}
-			bind:value={query}
-			type="search"
-			autocomplete="off"
-		/>
 		{#if searched && results.length === 0}
 			<p class="text-[14px] text-muted">{m.foods_none()}</p>
 		{/if}
 		{#if query.trim()}
 			{@render foods(results)}
-		{:else if recent.length > 0}
+		{:else if opened && recent.length > 0}
 			<section class="flex flex-col gap-1" aria-labelledby="add-food-recent">
 				<h3 id="add-food-recent" class="text-[13px] font-[650] text-muted">{m.log_recent()}</h3>
 				{@render foods(recent)}

@@ -26,7 +26,7 @@
 	});
 </script>
 
-<Sheet title={m.icon_title()} {onclose}>
+{#snippet search()}
 	<TextField
 		label={m.icon_search()}
 		placeholder={m.icon_search_placeholder()}
@@ -34,6 +34,9 @@
 		type="search"
 		autocomplete="off"
 	/>
+{/snippet}
+
+<Sheet title={m.icon_title()} pinned={search} resizes {onclose}>
 	{#if chosen}
 		<button
 			type="button"
