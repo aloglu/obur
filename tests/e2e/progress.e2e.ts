@@ -15,6 +15,27 @@ test('an old Progress link with a month opens the Journal', async ({ page }) => 
 	await expect(page.getByRole('region', { name: 'September 2026' })).toBeVisible();
 });
 
+test('on an empty Progress, New weigh-in opens in place and starts the weight line', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `İlk tartı ${testInfo.project.name}`);
+	await page.goto('/progress');
+	await expect(page.getByText('Your weight line starts with your first weigh-in.')).toBeVisible();
+	await page.getByRole('button', { name: 'New weigh-in' }).click();
+	await expect(page).toHaveURL(/\/progress/);
+	const field = page.getByLabel('New weight');
+	await expect(field).toBeFocused();
+	// A tap elsewhere closes it without saving.
+	await page.getByRole('heading', { level: 1, name: 'Progress' }).click();
+	await expect(field).toBeHidden();
+	await page.getByRole('button', { name: 'New weigh-in' }).click();
+	await page.getByLabel('New weight').fill('81,4');
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(page.getByRole('status')).toContainText('81,4');
+	await expect(page.getByText('Your weight line starts with your first weigh-in.')).toBeHidden();
+	await expect(page.getByRole('tabpanel')).toContainText('81,4');
+});
+
 test('history: weigh-ins and their trend, calories against budget, averages over complete days only', async ({
 	page
 }, testInfo) => {

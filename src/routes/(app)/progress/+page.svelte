@@ -1,13 +1,15 @@
 <script lang="ts">
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { ResolvedPathname } from '$app/types';
 	import { m } from '#lib/paraglide/messages.js';
+	import { closeInlineOnOutsideTap } from '#lib/client/inline-field.svelte.ts';
 	import HistorySection from '#lib/ui/progress/HistorySection.svelte';
 	import RangeSelect from '#lib/ui/progress/RangeSelect.svelte';
 
 	let { data } = $props();
+	$effect(() => closeInlineOnOutsideTap());
 	const setRange = (range: string) =>
 		goto(`${resolve('/(app)/progress')}?range=${range}` as ResolvedPathname, {
 			replace: true,
@@ -22,7 +24,7 @@
 		<h1 class="text-[24px] font-[750]">{m.progress_title()}</h1>
 		<RangeSelect id="range" value={data.history.range} onchange={setRange} />
 	</div>
-	<HistorySection history={data.history} />
+	<HistorySection history={data.history} today={data.today} onchange={invalidateAll} />
 	<a
 		href={resolve('/(app)/achievements')}
 		class="flex min-h-14 items-center gap-3 rounded-card bg-surface px-[18px] py-3 shadow-card"

@@ -5,21 +5,24 @@
 	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import ChartPie from '@lucide/svelte/icons/chart-pie';
 	import TrendingDown from '@lucide/svelte/icons/trending-down';
-	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { dateWithYear, dayAndMonth, kcal, shortDate } from '#lib/shared/format.ts';
 	import type { CalorieBar, ProgressHistory, WeightPoint } from '#lib/shared/history.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
 	import { onMount } from 'svelte';
 	import Roll from '../Roll.svelte';
+	import WeighIn from '../today/WeighIn.svelte';
 	import CaloriesChart from './CaloriesChart.svelte';
 	import { dayNumber } from './history-axis.ts';
 	import WeightChart from './WeightChart.svelte';
 
 	interface Props {
 		history: ProgressHistory;
+		/** For New weigh-in on an empty Weight tab. */
+		today: string;
+		onchange: () => Promise<void>;
 	}
-	let { history }: Props = $props();
+	let { history, today, onchange }: Props = $props();
 
 	type Tab = 'weight' | 'calories' | 'nutrients';
 	const TABS: { id: Tab; label: () => string }[] = [
@@ -254,11 +257,15 @@
 				history.range === 'All' ? m.history_empty_weight() : m.history_weight_none(),
 				TrendingDown
 			)}
-			<a
-				href={resolve('/(app)')}
-				class="mt-3 grid min-h-12 place-items-center rounded-input border border-line text-[15px] font-[750]"
-				>{m.history_new_weighin()}</a
-			>
+			<!-- The one action that starts the weight line, opening in place as it does on Today. -->
+			<div class="mt-3 grid">
+				<WeighIn
+					date={today}
+					key="progress-weight"
+					{onchange}
+					buttonClass="min-h-12 rounded-input border border-line text-[15px] font-[750] disabled:opacity-50"
+				/>
+			</div>
 		{/if}
 		{#if first && last}
 			<!-- The label above the weight is the switch: both names, the one shown dark, the other faint. Each keeps a 44 px
