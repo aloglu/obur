@@ -37,7 +37,7 @@ One modular TypeScript application and one PostgreSQL database. Start optional s
 
 **Distribution (owner's decision, 2026-11-07, brought forward from Phase 5).** obur is meant to be installed by others on any machine with Docker (a VPS, Unraid, TrueNAS and the like), not only on the owner's server. It ships as three published images: **`obur`**, one container with the web app, the background worker, PostgreSQL and its backups (one data folder, backups optionally on another disk; a backup before every schema upgrade); and two optional add-ons, **`obur-speech`** (speech to text for Speak) and **`obur-labels`** (label reading for Scan), kept separate because they are heavy, optional and run with no internet access. Inside `obur` the processes still run as separate users and the runtime database roles keep their restrictions; only the packaging changed. Images are built on GitHub Actions when a version is tagged, not on every push. Install guides cover a plain Docker host or VPS, Unraid and TrueNAS, with Cloudflare Tunnel, Tailscale and Caddy for HTTPS. A future PostgreSQL major upgrade has to be handled by the `obur` container itself.
 
-**Remote models (owner's decision, 2026-11-07; a point update after the first release, not part of it).** Each person may bring their own OpenAI or OpenRouter API key for Speak and Scan, used only after they explicitly allow it; local add-ons stay the default. Keys are stored encrypted, never shown again in full, and the app says which provider receives what (older backups keep a removed key until they expire). Proposals from remote models pass the same checks and confirmation as local ones. Later, an admin may optionally let members use the admin's key, with a per-person cap. No comparison test before building it (owner's choice); Groq, Mistral and Gemini direct accounts are out.
+**Remote models (owner's decision, 2026-11-07; before 1.0.0).** Each person may use their own OpenAI or OpenRouter API key for Speak and Scan, after explicitly allowing it; the local add-ons stay the default. The design is in "Remote models for Speak and Scan" below.
 
 | Component | Choice | Status |
 | --- | --- | --- |
@@ -94,9 +94,9 @@ The owner's pilot runs on a home server behind Cloudflare Tunnel, on a subdomain
 
 Changing an RP ID generally requires credential re-enrollment; treat hostname migration as a migration project, not a harmless `.env` edit. Local development uses `localhost`; real-phone tests use a separate HTTPS development origin and accounts, preferably `tailscale serve` on the development PC so the test build isn't public. Trust client-IP headers only from the configured proxy path, with direct application access blocked.
 
-No telemetry, external food/product queries, remote inference or outside error tracking. Nutrition photos, audio and transcripts are processed locally. Explicitly configured infrastructure is a separate boundary: an entry-point provider, encrypted off-site storage, and later opt-in Web Push or notification delivery can contact outside services. Document the provider and data sent; keep reminder payloads generic. Do not describe a provider-mediated deployment as making no third-party connections. Model/catalog downloads happen during setup or deliberate updates, with version and licence recorded.
+No telemetry, external food/product queries or outside error tracking. Nutrition photos, audio and transcripts are processed locally, unless a person chooses their own remote model for Speak or Scan ("Remote models for Speak and Scan"), which sends only that person's recordings or photos to the provider they confirmed. Explicitly configured infrastructure is a separate boundary: an entry-point provider, encrypted off-site storage, and later opt-in Web Push or notification delivery can contact outside services. Document the provider and data sent; keep reminder payloads generic. Do not describe a provider-mediated deployment as making no third-party connections. Model/catalog downloads happen during setup or deliberate updates, with version and licence recorded.
 
-OCR and voice are independently disabled at the UI/API/job boundaries; disabling voice also stops the speech container. Core logic does not scatter feature-flag checks. No generative vision model is planned for labels; OCR itself uses trained models. Browser OCR and Whisper fine-tuning are deferred, not promised improvements.
+OCR and voice are independently disabled at the UI/API/job boundaries; disabling voice also stops the speech container. Core logic does not scatter feature-flag checks. Labels are read by the local OCR add-on, or by a vision model only when a person chooses their own remote model; either way the parser, checks and confirmation are the same. Browser OCR and Whisper fine-tuning are deferred, not promised improvements.
 
 Publish versioned app images from CI on tagged releases. Pin supported Postgres and model/runtime versions. Dependency updates are reviewed with tests and release notes; green CI is necessary but not automatic permission to merge. Do not auto-update production containers. Structured JSON logs omit credentials, raw health records and unnecessary transcripts; configure rotation and retention. Healthchecks distinguish process health from readiness. Upgrade and rollback ordering are defined in the data-safety section.
 
@@ -437,6 +437,42 @@ Reference: [pgBackRest backup, retention and restore guide](https://pgbackrest.o
 - Screenshot comparisons cover stable core screens in light/dark modes and long Turkish text. Axe and automated checks supplement keyboard/screen-reader checks; they do not prove accessibility alone.
 - Parser/model changes rerun the relevant fixed and held-out fixtures and report counts/rates. New behaviour fixes get an appropriate regression check; documentation-only changes get consistency/link review rather than invented application tests.
 - Run type-check, lint, relevant tests and build checks for the affected code; required CI gates must pass before release. Run the broader suite when shared behaviour or risk warrants it. State exactly what ran and what remains unverified.
+
+## Remote models for Speak and Scan
+
+Status: **requirements** from the owner (2026-11-07): personal keys first, explicit consent, OpenAI and OpenRouter only, the local add-ons remain, and no comparison test before building (the owner accepts that remote results may be weaker). Everything else here is a **provisional implementation choice** (the owner delegated the design), with the screens to be reviewed by the owner before they are built.
+
+**What it is for, and nothing else.** A remote model only turns a recording into text (Speak) or a label photo into the label's printed table (Scan). It never looks up foods, estimates nutrients, chats or sees the diary. Its output goes through the same parser, checks and confirmation as the local add-ons'.
+
+**Who and where.**
+- Each person adds their own key in Settings → **Speak and Scan**, and chooses per feature: **On this server** (the local add-on, when installed) or **With my OpenAI key** / **With my OpenRouter key**. The choice is an account preference (in exports and backups); the key itself is not.
+- An admin can switch personal keys off for the whole server (Household; on by default). While off, the options are hidden and the server refuses remote requests.
+- Using an admin's key for members is a later option (with a per-person cap and the key never shown to them); not in 1.0.0.
+
+**Consent.** Choosing a remote model for a feature opens a confirmation that names the company and what it receives: for Speak, each recording and the person's recent food and brand names (as spelling hints); for Scan, each label photo. Both providers' terms then apply to that data. The person confirms with an explicit button ("Send to OpenAI"); the date is stored with the preference. Switching back to the server ends it. Nothing is sent before that, and nothing is sent for other people.
+
+**Keys.**
+- Stored per person in their own table row (forced RLS: only its owner; admins and exports never see it), encrypted with AES-256-GCM under a server key generated on first start into `/data/secrets` (`OBUR_SECRETS_KEY`; in development from `.env`). Backups hold only the encrypted key; the server key is not in backups, so a stolen backup does not reveal it. After a restore onto another server the key can't be decrypted: the person is asked to enter it again.
+- Shown afterwards only as its last four characters. Checked when added (OpenAI: list models; OpenRouter: the key's own info endpoint) and removable at any time, which deletes the row.
+- Never logged; request logs and errors redact the Authorization header. Only two fixed hosts are contacted (`api.openai.com`, `openrouter.ai`); there is no custom base URL, so a key setting can't make the server call anywhere else.
+
+**Speak.**
+- OpenAI: `POST /v1/audio/transcriptions` with `gpt-transcribe` (OpenAI retires its earlier transcription models on 2027-02-26), `languages: ["tr", "en"]`, the same vocabulary prompt as the local add-on, and the person's recent food and brand names as `keywords`.
+- OpenRouter: `POST /api/v1/audio/transcriptions` with a default transcription model, `provider: {zdr: true, data_collection: "deny"}` (only endpoints that keep nothing and don't train). OpenRouter takes no vocabulary, so brand names are likelier to need correcting.
+- The phone records MP4 (Safari) or WebM (Chromium, Firefox), which both accept. Same size and length limits as today.
+
+**Scan.**
+- The photo (already redrawn at about 1600 px as JPEG on the phone, without metadata) goes to a vision model with a fixed instruction: copy the nutrition table exactly as printed (column headers, row names, values as written, including "<" and decimal commas), mark anything unreadable as unreadable, and add nothing that isn't printed. The answer is structured (a JSON schema): columns and rows of printed strings.
+- A new pure function in `label-parser` turns that table into the usual proposal, reusing the row names, number reading, column choice (per 100 g/ml over per serving, %RI skipped), impossible-value drops, notes and plausibility warnings. The model's text is never taken as numbers directly.
+- Defaults: OpenAI `gpt-5-mini`; on OpenRouter the same model with `zdr` and `data_collection: "deny"` and `require_parameters` (so structured output is honoured). A remote reading always carries an amber note: "Read by <provider>. Check each value against your photo." The blurry check is local-only and is skipped.
+
+**Models.** Each provider has a default model per feature, set in code and changed only in a release; an advanced field lets a person name another model id from their provider (checked when saved). Defaults follow the providers' recommendations at the time of release.
+
+**Failures.** A refused key ("Your OpenAI key was refused. Check it in Settings → Speak and Scan."), an account out of credit, the provider's rate limit or an outage each get their own message; typing always remains, and when the local add-on is installed the message offers **Use this server instead** for that one request. Nothing falls back to a remote model on its own.
+
+**Limits and cost.** The per-person limits stay (40 clips and 30 scans per 10 minutes). The page shows this month's count of remote clips and scans per provider (counts only, kept with the preference, never content), so a person can relate their bill to their use.
+
+**Tests.** Unit tests of the table-to-proposal function (made-up tables, including "2,5", "<0,5", %RI and per-serving columns, unreadable cells), request building and error mapping against recorded provider responses; database tests for key isolation and encryption; browser tests with a stand-in provider (no real key in tests). A development script lets the owner try a real key on their own clips and photos; no accuracy claims are made.
 
 ## Roadmap and release gates
 
