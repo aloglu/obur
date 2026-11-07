@@ -6,13 +6,13 @@
 #       With PostgreSQL stopped and an empty data folder: restores the latest backup and all archived WAL (or a point
 #       in time with --type=time --target="2026-10-29 21:00:00+03"; use --repo=2 to restore from the off-site copy).
 #       Leaves a restore-pending mark, so the web app answers "restore in progress" until the restore is finished.
-#       Run as: docker compose run --rm --no-deps --entrypoint obur-restore db start
+#       Run through `obur restore start`, which stops obur and moves the old database aside first.
 #
 #   obur-restore finish [<account ID>[:shared][@<deletion date>] ...]
 #       With the restored database running: signs everyone out, cancels recovery links, unused invites and setup
 #       links, deletes again each account from the admin's off-server deletion list (":shared" if its shared foods
 #       were removed too), takes a full backup of the new history, and removes the mark.
-#       Run as: docker compose exec db obur-restore finish <IDs from the list>
+#       Run through `obur restore finish <IDs from the list>`.
 set -euo pipefail
 
 STATUS_DIR=${OBUR_STATUS_DIR:-/var/lib/obur-status}
@@ -32,14 +32,14 @@ start() {
 		install -d -o postgres -g postgres -m 755 "$STATUS_DIR"
 		exec gosu postgres "$0" start "$@"
 	fi
-	if pg_isready -q -h /var/run/postgresql 2>/dev/null; then fail "PostgreSQL is running; stop the stack first"; fi
+	if pg_isready -q -h /var/run/postgresql 2>/dev/null; then fail "PostgreSQL is running; use obur restore start"; fi
 	if [[ -n $(ls -A "$PGDATA" 2>/dev/null) ]]; then
-		fail "$PGDATA is not empty. Move the old data folder aside first (see docs/restore.md)."
+		fail "$PGDATA is not empty; use obur restore start, which moves it aside"
 	fi
 	jq -n --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg options "$*" '{startedAt: $at, options: $options}' >"$MARK"
 	say "restoring into $PGDATA ..."
 	obur-backup pgbackrest restore "$@"
-	say "restored. Start the database (docker compose up -d db), then run: obur-restore finish <deletions>"
+	say "restored"
 }
 
 finish() {
@@ -66,7 +66,7 @@ commit;"
 	# A restore starts a new history (timeline); back it up in full before reopening.
 	obur-backup full
 	rm -f "$MARK"
-	say "done. Start the rest of the stack (docker compose up -d) and run a restore check."
+	say "done"
 }
 
 case ${1:-} in

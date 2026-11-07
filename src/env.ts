@@ -40,7 +40,7 @@ export const variables = defineEnvVars({
 	},
 	SPEECH_URL: {
 		description:
-			'Base URL of the speech service on the internal network, e.g. http://speech:8000. Unset: Speak is off.',
+			'Base URL of the speech service (obur-speech), e.g. http://obur-speech:8000. Unset: Speak is off.',
 		schema: (value) => {
 			if (!value) return null;
 			const url = new URL(value);
@@ -49,20 +49,20 @@ export const variables = defineEnvVars({
 			return url.origin;
 		}
 	},
-	OCR_URL: {
+	LABELS_URL: {
 		description:
-			'Base URL of the OCR service on the internal network, e.g. http://ocr:8000. Unset: label scanning is off.',
+			'Base URL of the label-reading service (obur-labels), e.g. http://obur-labels:8000. Unset: label scanning is off.',
 		schema: (value) => {
 			if (!value) return null;
 			const url = new URL(value);
 			if (url.protocol !== 'http:' && url.protocol !== 'https:')
-				throw new Error('OCR_URL must be http(s)');
+				throw new Error('LABELS_URL must be http(s)');
 			return url.origin;
 		}
 	},
 	OBUR_STATUS_DIR: {
 		description:
-			'Folder with the backup status file written by the database container (read-only here).',
+			'Folder with the backup status file and the restore mark, written by the backup tools (read-only here).',
 		schema: (value) => value || null
 	}
 });

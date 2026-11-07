@@ -129,6 +129,14 @@ scheduled_type() {
 	if [[ $(date +%u) == "$FULL_DAY" ]]; then echo full; else echo diff; fi
 }
 
+# The obur container's access rules for the throwaway copy (the administrator as the postgres system user), when
+# present; a copy restored from another setup otherwise keeps its own.
+copy_access() {
+	if [[ -f /etc/obur/pg_hba.conf ]]; then
+		echo "-c hba_file=/etc/obur/pg_hba.conf -c ident_file=/etc/obur/pg_ident.conf"
+	fi
+}
+
 # Restores into a throwaway cluster from repository $1 (1 local, 2 off-site) and records the result under $2.
 restore_check_repo() {
 	local repo=$1 key=$2 dir port=5499 started detail ok=false target segment
@@ -154,7 +162,7 @@ restore_check_repo() {
 	elif ! pgbackrest --repo="$repo" restore --pg1-path="$dir" --archive-mode=off --delta >/dev/null; then
 		detail="restore failed"
 	elif ! pg_ctl -D "$dir" -w -t 600 -l "$dir/restore.log" \
-		-o "-p $port -c listen_addresses='' -c unix_socket_directories=$dir -c archive_mode=off" start >/dev/null; then
+		-o "-p $port -c listen_addresses='' -c unix_socket_directories=$dir -c archive_mode=off $(copy_access)" start >/dev/null; then
 		detail="restored copy did not start"
 	else
 		local q=(psql -X -q -t -A -h "$dir" -p "$port" -U "${PGBACKREST_PG1_USER:-postgres}")
@@ -218,7 +226,8 @@ scheduler() {
 		local backup_day='' check_day=''
 		[[ -n $last_backup ]] && backup_day=$(date -d "$last_backup" +%F)
 		[[ -n $last_check ]] && check_day=$(date -d "$last_check" +%F)
-		if ((hour >= BACKUP_HOUR)) && [[ $backup_day != "$today" ]]; then
+		# A new installation is backed up straight away rather than at night.
+		if [[ -z $last_backup ]] || { ((hour >= BACKUP_HOUR)) && [[ $backup_day != "$today" ]]; }; then
 			backup "$(scheduled_type)" || true
 		fi
 		if [[ $(date +%u) == "$CHECK_DAY" ]] && ((hour >= BACKUP_HOUR)) && [[ $check_day != "$today" ]]; then

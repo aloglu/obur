@@ -1,179 +1,61 @@
-# obur production stack: one database, the web app, the background worker, and on-demand tools.
-# Settings come from the .env file next to this one (see .env.example). Nothing here holds secrets.
-#
-# Only the web app is reachable from outside, on OBUR_PORT; put it behind HTTPS (e.g. a Cloudflare Tunnel). The speech
-# service sits on an internal network shared only with the web app, with no internet access.
-# Data lives in OBUR_DATA_DIR (database, backup status) and OBUR_BACKUP_DIR (encrypted backups).
+# obur with Docker Compose: copy this file and .env.example (as .env) into one folder, fill in .env, then run
+#   docker compose up -d
+# The guide is docs/install/docker.md. Speak and Scan are optional: remove their services (and the two URLs) to
+# leave them out.
 name: obur
 
-x-app: &app
-  image: obur-app:current
-  restart: unless-stopped
-  depends_on:
-    db:
-      condition: service_healthy
-
-x-runtime-env: &runtime-env
-  TZ: ${TZ:-UTC}
-  PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN in .env}
-  WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:?Set WEBAUTHN_RP_ID in .env}
-
-x-pgbackrest-env: &pgbackrest-env
-  TZ: ${TZ:-UTC}
-  PGBACKREST_STANZA: obur
-  PGBACKREST_PG1_PATH: /var/lib/postgresql/18/docker
-  PGBACKREST_PG1_SOCKET_PATH: /var/run/postgresql
-  PGBACKREST_PG1_USER: obur_admin
-  PGBACKREST_LOCK_PATH: /tmp/pgbackrest
-  PGBACKREST_LOG_LEVEL_CONSOLE: warn
-  PGBACKREST_LOG_LEVEL_FILE: 'off'
-  PGBACKREST_START_FAST: 'y'
-  PGBACKREST_COMPRESS_TYPE: zst
-  # Several files at once, and small files bundled into larger objects: far fewer requests to off-site storage.
-  PGBACKREST_PROCESS_MAX: ${OBUR_BACKUP_PROCESSES:-4}
-  PGBACKREST_REPO1_BUNDLE: 'y'
-  PGBACKREST_REPO1_BLOCK: 'y'
-  PGBACKREST_REPO1_PATH: /var/lib/pgbackrest
-  PGBACKREST_REPO1_CIPHER_TYPE: aes-256-cbc
-  PGBACKREST_REPO1_CIPHER_PASS: ${OBUR_BACKUP_PASSPHRASE:?Set OBUR_BACKUP_PASSPHRASE in .env}
-  PGBACKREST_REPO1_RETENTION_FULL: ${OBUR_BACKUP_KEEP_WEEKS:-5}
-  # Off-site copy: set OBUR_OFFSITE_TYPE=s3 and the other OBUR_OFFSITE_* values; leave the type empty for local
-  # backups only. obur-backup turns these into pgBackRest's repository 2 settings when the type is set.
-  OBUR_OFFSITE_TYPE: ${OBUR_OFFSITE_TYPE:-}
-  OBUR_OFFSITE_PATH: ${OBUR_OFFSITE_PATH:-/obur}
-  OBUR_OFFSITE_ENDPOINT: ${OBUR_OFFSITE_ENDPOINT:-}
-  OBUR_OFFSITE_BUCKET: ${OBUR_OFFSITE_BUCKET:-}
-  OBUR_OFFSITE_REGION: ${OBUR_OFFSITE_REGION:-auto}
-  OBUR_OFFSITE_KEY: ${OBUR_OFFSITE_KEY:-}
-  OBUR_OFFSITE_SECRET: ${OBUR_OFFSITE_SECRET:-}
-
 services:
-  db:
-    image: obur-db:current
+  obur:
+    image: ${OBUR_REGISTRY-ghcr.io/aloglu/}obur:${OBUR_VERSION:-latest}
+    container_name: obur
     restart: unless-stopped
-    init: true
-    shm_size: 256mb
+    env_file: .env
     environment:
-      <<: *pgbackrest-env
-      POSTGRES_USER: obur_admin
-      POSTGRES_PASSWORD: ${OBUR_ADMIN_DB_PASSWORD:?Set OBUR_ADMIN_DB_PASSWORD in .env}
-      POSTGRES_DB: obur
-      POSTGRES_INITDB_ARGS: --data-checksums
-      OBUR_BACKUP_HOUR: ${OBUR_BACKUP_HOUR:-2}
-      # Only for a deliberate fresh start when backups exist (docs/restore.md).
-      OBUR_ALLOW_NEW_DATABASE: ${OBUR_ALLOW_NEW_DATABASE:-}
-    command:
-      - postgres
-      - -c
-      - wal_level=replica
-      - -c
-      - archive_mode=on
-      - -c
-      - archive_command=pgbackrest-obur archive-push %p
-      # Bounds how much recent history a lost disk can take with it (seconds).
-      - -c
-      - archive_timeout=${OBUR_ARCHIVE_TIMEOUT:-300}
-    volumes:
-      - ${OBUR_DATA_DIR:-./data}/postgres:/var/lib/postgresql
-      - ${OBUR_BACKUP_DIR:-./backups}:/var/lib/pgbackrest
-      - ${OBUR_DATA_DIR:-./data}/status:/var/lib/obur-status
-    healthcheck:
-      test:
-        ['CMD', 'pg_isready', '-q', '-h', '/var/run/postgresql', '-U', 'obur_admin', '-d', 'obur']
-      interval: 10s
-      timeout: 5s
-      retries: 30
-
-  web:
-    <<: *app
-    command: web
-    environment:
-      <<: *runtime-env
-      # Behind HTTPS (e.g. a Cloudflare Tunnel) the app is reached over plain http; take the real protocol from the
-      # proxy's header so SvelteKit sees the public https origin.
-      PROTOCOL_HEADER: x-forwarded-proto
-      DATABASE_URL: postgres://obur_app:${OBUR_APP_DB_PASSWORD:?Set OBUR_APP_DB_PASSWORD in .env}@db:5432/obur
-      OBUR_STATUS_DIR: /app/status
-      # Speak: the speech service below. Set SPEECH_URL= (empty) in .env to switch Speak off.
-      SPEECH_URL: ${SPEECH_URL-http://speech:8000}
-      # Scan a label: the OCR service below. Set OCR_URL= (empty) in .env to switch scanning off.
-      OCR_URL: ${OCR_URL-http://ocr:8000}
-      # Reminders: on when the Web Push keys are set in .env (npm run push:keys); the worker sends them.
-      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY-}
-    networks: [default, speech, ocr]
-    volumes:
-      - ${OBUR_DATA_DIR:-./data}/status:/app/status:ro
+      # Speak and Scan, through the add-ons below. Empty switches them off.
+      SPEECH_URL: ${SPEECH_URL-http://obur-speech:8000}
+      LABELS_URL: ${LABELS_URL-http://obur-labels:8000}
     ports:
-      - ${OBUR_PORT:-8040}:3000
-    healthcheck:
-      test:
-        [
-          'CMD',
-          'node',
-          '-e',
-          "fetch('http://127.0.0.1:3000/login').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
-        ]
-      interval: 15s
-      timeout: 5s
-      retries: 10
+      # 127.0.0.1: only this machine (for a tunnel or reverse proxy on it). 0.0.0.0: every device that can reach it.
+      - '${OBUR_BIND_ADDRESS:-127.0.0.1}:${OBUR_PORT:-8040}:3000'
+    volumes:
+      # Everything obur keeps: the database, its backups, generated passwords. Keep this folder.
+      - ${OBUR_DATA_DIR:-./data}:/data
+      # Backups on another disk (recommended): uncomment and set OBUR_BACKUP_DIR.
+      # - ${OBUR_BACKUP_DIR}:/data/backups
+    shm_size: 256mb
+    # Room for the database to shut down cleanly.
+    stop_grace_period: 60s
+    networks: [default, addons]
 
-  worker:
-    <<: *app
-    command: worker
-    environment:
-      TZ: ${TZ:-UTC}
-      DATABASE_WORKER_URL: postgres://obur_worker:${OBUR_WORKER_DB_PASSWORD:?Set OBUR_WORKER_DB_PASSWORD in .env}@db:5432/obur
-      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-1}
-      # Reminders go out through the browsers' push services (Apple, Google, Mozilla); payloads are encrypted.
-      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY-}
-      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY-}
-      VAPID_SUBJECT: ${VAPID_SUBJECT-}
-
-  # Operator tools: `docker compose run --rm admin migrate|setup-link|recovery-link "<name>"`.
-  admin:
-    <<: *app
-    profiles: [tools]
-    restart: 'no'
-    command: migrate
-    environment:
-      <<: *runtime-env
-      DATABASE_ADMIN_URL: postgres://obur_admin:${OBUR_ADMIN_DB_PASSWORD}@db:5432/obur
-      DATABASE_MIGRATOR_URL: postgres://obur_migrator:${OBUR_MIGRATOR_DB_PASSWORD:?Set OBUR_MIGRATOR_DB_PASSWORD in .env}@db:5432/obur
-      DATABASE_URL: postgres://obur_app:${OBUR_APP_DB_PASSWORD}@db:5432/obur
-      DATABASE_WORKER_URL: postgres://obur_worker:${OBUR_WORKER_DB_PASSWORD}@db:5432/obur
-
-  # Speech to text for Speak (speech/): one clip at a time, audio in memory only, no logs of what was said. No published
-  # port and no internet: only the web app reaches it.
-  speech:
-    image: obur-speech:current
+  # Speech to text for Speak: audio in memory only, nothing logged, no internet.
+  obur-speech:
+    image: ${OBUR_REGISTRY-ghcr.io/aloglu/}obur-speech:${OBUR_VERSION:-latest}
+    container_name: obur-speech
     restart: unless-stopped
-    networks: [speech]
+    networks: [addons]
     environment:
       SPEECH_THREADS: ${SPEECH_THREADS:-4}
-      SPEECH_MAX_QUEUE: ${SPEECH_MAX_QUEUE:-3}
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: ['no-new-privileges:true']
     mem_limit: ${SPEECH_MEMORY_LIMIT:-2g}
 
-  # Label reading for Scan (ocr/): one photo at a time, held in memory only, no logs of what was read. No published port
-  # and no internet: only the web app reaches it.
-  ocr:
-    image: obur-ocr:current
+  # Label reading for Scan: photos in memory only, nothing logged, no internet.
+  obur-labels:
+    image: ${OBUR_REGISTRY-ghcr.io/aloglu/}obur-labels:${OBUR_VERSION:-latest}
+    container_name: obur-labels
     restart: unless-stopped
-    networks: [ocr]
+    networks: [addons]
     environment:
-      OCR_THREADS: ${OCR_THREADS:-4}
-      OCR_MAX_QUEUE: ${OCR_MAX_QUEUE:-3}
+      OCR_THREADS: ${LABELS_THREADS:-4}
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: ['no-new-privileges:true']
-    mem_limit: ${OCR_MEMORY_LIMIT:-1g}
+    mem_limit: ${LABELS_MEMORY_LIMIT:-1g}
 
 networks:
-  speech:
-    internal: true
-  ocr:
+  # Shared only by obur and its add-ons, with no way out to the internet.
+  addons:
     internal: true

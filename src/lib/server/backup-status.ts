@@ -1,4 +1,4 @@
-// Backup health for the admin page, from the status file the database container writes (deploy/db/obur-backup).
+// Backup health for the admin page, from the status file the backup tool writes (deploy/obur/obur-backup).
 // Problems are stated plainly: no recent backup, a failed backup or restore check, WAL archiving failing, or no
 // off-site copy (docs/design.md, "Data safety, backups and restore").
 import { readFile } from 'node:fs/promises';

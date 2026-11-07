@@ -1,0 +1,117 @@
+#!/bin/bash
+# obur's commands. The container runs `obur start`; operators run the others with `docker exec <container> obur …`:
+#
+#   obur setup-link                  a one-time link for the first account (24 hours)
+#   obur recovery-link "<name|ID>"   a one-time link for someone who lost every passkey and code (1 hour)
+#   obur backup now|info|restore-check
+#   obur restore start [options]     replace the database with one restored from the backups (docs/restore.md)
+#   obur restore finish [deletions]  sign everyone out, reapply deletions, back up, reopen
+#   obur restore cancel              put back the database that `restore start` moved aside
+set -euo pipefail
+# shellcheck source=deploy/obur/env.sh
+. /usr/local/lib/obur/env.sh
+
+usage() {
+	sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' >&2
+	exit 2
+}
+
+[[ $(id -u) == 0 ]] || obur_fail "run obur commands as root (docker exec runs as root by default)"
+
+supervised() {
+	[[ -f $OBUR_RUN/init.pid ]] && kill -0 "$(cat "$OBUR_RUN/init.pid")" 2>/dev/null ||
+		obur_fail "obur is not running in this container"
+}
+
+restore_start() {
+	supervised
+	[[ -f $OBUR_STATUS_DIR/restore-pending ]] && obur_fail "a restore is already pending: finish it, or start again with 'obur restore cancel' first"
+	local aside
+	aside=/data/postgres-before-restore-$(date +%Y%m%d-%H%M%S)
+	echo "obur: stopping obur for the restore ..."
+	touch "$OBUR_RUN/hold"
+	for _ in $(seq 120); do
+		[[ -f $OBUR_RUN/held ]] && break
+		sleep 1
+	done
+	[[ -f $OBUR_RUN/held ]] || {
+		rm -f "$OBUR_RUN/hold"
+		obur_fail "obur did not stop within two minutes; nothing was changed"
+	}
+	if [[ -d $PGDATA ]]; then
+		mv "$PGDATA" "$aside"
+		echo "obur: the current database was moved aside to $aside (kept until you delete it)"
+	fi
+	echo "$aside" >"$OBUR_RUN/aside"
+	if ! obur-restore start "$@"; then
+		echo "obur: the restore failed; obur stays stopped. Fix the cause and run 'obur restore start' again," >&2
+		echo "obur: or put the old database back with 'obur restore cancel'." >&2
+		exit 1
+	fi
+	rm -f "$OBUR_RUN/hold"
+	echo "obur: restored. obur now says it is being restored until you run:"
+	echo "      obur restore finish <every entry from Household → Deleted accounts>"
+}
+
+restore_finish() {
+	supervised
+	[[ -f $OBUR_STATUS_DIR/restore-pending ]] || obur_fail "no restore is pending"
+	for _ in $(seq 120); do
+		pg_isready -q -h "$OBUR_SOCKET" -U obur_admin -d obur && break
+		sleep 1
+	done
+	obur-restore finish "$@"
+	echo "obur: obur reopens in a few seconds. Then check Household → Backups, and run: obur backup restore-check"
+}
+
+restore_cancel() {
+	supervised
+	local aside
+	aside=$(cat "$OBUR_RUN/aside" 2>/dev/null || true)
+	[[ -n $aside && -d $aside ]] || obur_fail "there is no database moved aside by 'obur restore start' to put back"
+	touch "$OBUR_RUN/hold"
+	for _ in $(seq 120); do
+		[[ -f $OBUR_RUN/held ]] && break
+		sleep 1
+	done
+	[[ -f $OBUR_RUN/held ]] || obur_fail "obur did not stop within two minutes"
+	rm -rf "$PGDATA"
+	mv "$aside" "$PGDATA"
+	rm -f "$OBUR_STATUS_DIR/restore-pending" "$OBUR_RUN/aside" "$OBUR_RUN/hold"
+	echo "obur: the database from before the restore is back; obur starts again."
+}
+
+cmd=${1:-}
+[[ $# -gt 0 ]] && shift
+case $cmd in
+start) exec /usr/local/lib/obur/obur-init ;;
+setup-link)
+	obur_env
+	obur_node admin-setup-link.ts
+	;;
+recovery-link)
+	obur_env
+	obur_node admin-recovery-link.ts "$@"
+	;;
+backup)
+	obur_env
+	case ${1:-} in
+	now) exec gosu postgres obur-backup run ;;
+	info) exec gosu postgres obur-backup info ;;
+	restore-check) exec gosu postgres obur-backup restore-check ;;
+	*) usage ;;
+	esac
+	;;
+restore)
+	obur_env
+	sub=${1:-}
+	[[ $# -gt 0 ]] && shift
+	case $sub in
+	start) restore_start "$@" ;;
+	finish) restore_finish "$@" ;;
+	cancel) restore_cancel ;;
+	*) usage ;;
+	esac
+	;;
+*) usage ;;
+esac

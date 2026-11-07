@@ -24,7 +24,7 @@ export const e2eEnv = {
 	DATABASE_MIGRATOR_URL: onE2e(process.env.DATABASE_MIGRATOR_URL),
 	PUBLIC_ORIGIN: `http://localhost:${PORT}`,
 	SPEECH_URL: SPEECH_STUB,
-	OCR_URL: SPEECH_STUB,
+	LABELS_URL: SPEECH_STUB,
 	WEBAUTHN_RP_ID: 'localhost',
 	// A throwaway Web Push public key so the Reminders page is offered; no worker sends anything in tests.
 	VAPID_PUBLIC_KEY:
@@ -65,7 +65,7 @@ export default defineConfig({
 				...(process.env as Record<string, string>),
 				...e2eEnv,
 				SPEECH_URL: '',
-				OCR_URL: '',
+				LABELS_URL: '',
 				PUBLIC_ORIGIN: FEATURES_OFF,
 				PORT: String(PORT + 2),
 				HOST: '127.0.0.1'

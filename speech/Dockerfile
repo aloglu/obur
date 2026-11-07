@@ -1,4 +1,4 @@
-# obur speech service image: faster-whisper small with the model files baked in (pinned revision, checksums checked).
+# obur-speech image (speech to text for Speak): faster-whisper small with the model files baked in (pinned revision, checksums checked).
 FROM python:3.12-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
 	HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 \

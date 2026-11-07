@@ -1,7 +1,7 @@
 // A stand-in for the speech and OCR services in browser tests: answers /transcribe with whatever the test set through
 // /next and /ocr with what it set through /next-ocr, and remembers what the app sent (/last, /last-ocr) so tests can
 // check the prompt and that the audio or photo arrived. Test-only; the app talks to it through the ordinary
-// SPEECH_URL and OCR_URL settings.
+// SPEECH_URL and LABELS_URL settings.
 import { createServer, type IncomingMessage } from 'node:http';
 
 let next: { status: number; body: unknown } = {

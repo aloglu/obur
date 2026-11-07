@@ -1,6 +1,6 @@
 // Server configuration derived from validated environment variables (src/env.ts).
 import {
-	OCR_URL,
+	LABELS_URL,
 	PUBLIC_ORIGIN,
 	SPEECH_URL,
 	VAPID_PUBLIC_KEY,
@@ -38,7 +38,7 @@ function load(): ServerConfig {
 		rpName: WEBAUTHN_RP_NAME ?? 'obur',
 		secureCookies: new URL(PUBLIC_ORIGIN).protocol === 'https:',
 		speechUrl: SPEECH_URL ?? null,
-		ocrUrl: OCR_URL ?? null,
+		ocrUrl: LABELS_URL ?? null,
 		pushKey: VAPID_PUBLIC_KEY ?? null
 	};
 }

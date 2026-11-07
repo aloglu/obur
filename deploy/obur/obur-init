@@ -1,0 +1,209 @@
+#!/bin/bash
+# The obur container's main process (under tini): PostgreSQL, the backup scheduler, the web app and the worker, each
+# as its own user. Start-up applies upgrades (with a backup first when there is history to protect), and a stop shuts
+# everything down in order. Anything that dies unexpectedly stops the container, so Docker's restart policy restarts
+# it whole. `obur restore start` asks for a hold (everything stopped) through $OBUR_RUN/hold; while a restore is
+# pending (the mark in /data/status) only the database and the web app's "being restored" page run.
+set -euo pipefail
+# shellcheck source=deploy/obur/env.sh
+. /usr/local/lib/obur/env.sh
+
+log() { printf '%s obur: %s\n' "$(date -Iseconds)" "$*"; }
+
+obur_env
+install -d -m 755 "$OBUR_RUN"
+echo $$ >"$OBUR_RUN/init.pid"
+rm -f "$OBUR_RUN/hold" "$OBUR_RUN/held"
+
+if ! mountpoint -q /data; then
+	log "WARNING: /data is not a mounted folder. Your data lives inside this container and is lost when it is removed."
+fi
+install -d -o postgres -g postgres -m 700 /data/postgres /data/backups
+install -d -o postgres -g postgres -m 755 "$OBUR_STATUS_DIR"
+chown postgres:postgres /data/backups
+
+PG_ARGS=(postgres
+	-c listen_addresses=127.0.0.1
+	-c hba_file=/etc/obur/pg_hba.conf
+	-c ident_file=/etc/obur/pg_ident.conf
+	-c wal_level=replica
+	-c archive_mode=on
+	-c 'archive_command=pgbackrest-obur archive-push %p'
+	-c "archive_timeout=${OBUR_ARCHIVE_TIMEOUT:-300}")
+
+pg_pid='' sched_pid='' web_pid='' worker_pid='' migrated=0 stopping=0
+
+alive() { [[ -n ${1:-} ]] && kill -0 "$1" 2>/dev/null; }
+
+stop_proc() {
+	local pid=$1 name=$2
+	alive "$pid" || return 0
+	kill -TERM "$pid" 2>/dev/null || true
+	for _ in $(seq 100); do
+		alive "$pid" || {
+			wait "$pid" 2>/dev/null || true
+			return 0
+		}
+		sleep 0.1
+	done
+	log "$name did not stop in 10 s; stopping it hard"
+	kill -KILL "$pid" 2>/dev/null || true
+	wait "$pid" 2>/dev/null || true
+}
+
+stop_app() {
+	stop_proc "$worker_pid" worker
+	stop_proc "$web_pid" web
+	worker_pid='' web_pid=''
+}
+
+stop_all() {
+	stop_app
+	stop_proc "$sched_pid" 'backup scheduler'
+	sched_pid=''
+	if alive "$pg_pid"; then
+		gosu postgres pg_ctl -D "$PGDATA" stop -m fast -w -t 60 >/dev/null || stop_proc "$pg_pid" PostgreSQL
+		wait "$pg_pid" 2>/dev/null || true
+	fi
+	pg_pid=''
+}
+
+fatal() {
+	log "$*; stopping"
+	stop_all
+	exit 1
+}
+
+start_pg() {
+	# Never create a new, empty database where one should be restored (docs/restore.md).
+	if [[ ! -s $PGDATA/PG_VERSION && ${OBUR_ALLOW_NEW_DATABASE:-} != 1 ]]; then
+		[[ -f $OBUR_STATUS_DIR/restore-pending ]] &&
+			fatal "a restore is pending but the database folder is empty: run 'obur restore start' again"
+		[[ -f /data/backups/backup/obur/backup.info ]] &&
+			fatal "the database folder is empty but backups exist; restore them (docs/restore.md) or set OBUR_ALLOW_NEW_DATABASE=1 to start a new database"
+	fi
+	install -d -o postgres -g postgres -m 700 "$(dirname "$PGDATA")"
+	local created=0
+	if [[ ! -s $PGDATA/PG_VERSION ]]; then
+		log "creating a new database"
+		gosu postgres initdb -D "$PGDATA" -U obur_admin --data-checksums --auth-local=peer \
+			--auth-host=scram-sha-256 >/dev/null || fatal "creating the database failed"
+		created=1
+	fi
+	gosu postgres "${PG_ARGS[@]}" &
+	pg_pid=$!
+	# Recovery after a restore can take a while.
+	for _ in $(seq 1200); do
+		alive "$pg_pid" || fatal "PostgreSQL did not start"
+		pg_isready -q -h 127.0.0.1 -U obur_app -d obur && break
+		sleep 0.5
+	done
+	pg_isready -q -h 127.0.0.1 -U obur_app -d obur || fatal "PostgreSQL did not become ready"
+	if ((created)); then
+		gosu postgres psql -X -q -v ON_ERROR_STOP=1 -h "$OBUR_SOCKET" -U obur_admin -d postgres \
+			-c 'create database obur' || fatal "creating the database failed"
+	fi
+	# This installation's own administrator password (also after a restore or a move from another setup).
+	obur_psql >/dev/null <<<"alter role obur_admin password '$OBUR_ADMIN_DB_PASSWORD'"
+	log "database ready"
+}
+
+start_scheduler() {
+	gosu postgres env TZ="${TZ:-UTC}" OBUR_BACKUP_HOUR="${OBUR_BACKUP_HOUR:-2}" obur-backup scheduler &
+	sched_pid=$!
+}
+
+upgrade() {
+	local known applied
+	known=$(jq '.entries | length' /app/drizzle/meta/_journal.json)
+	applied=-1
+	if [[ $(obur_psql -c "select to_regclass('public.schema_migrations') is not null") == t ]]; then
+		applied=$(obur_psql -c 'select count(*) from schema_migrations')
+	fi
+	if ((applied >= 0 && applied < known)); then
+		if [[ -f /data/backups/backup/obur/backup.info ]]; then
+			log "upgrading the database ($((known - applied)) step(s)); taking a backup first"
+			gosu postgres obur-backup pre-upgrade || fatal "the backup before the upgrade failed, so nothing was changed"
+		fi
+	fi
+	# As the database's own system user, through the socket: the only way the administrator may sign in.
+	(cd /app && env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp DATABASE_ADMIN_SOCKET="$OBUR_SOCKET" \
+		DATABASE_ADMIN_URL=postgres://obur_admin@localhost/obur DATABASE_MIGRATOR_URL="$OBUR_MIGRATOR_URL" \
+		DATABASE_URL="$OBUR_APP_URL" DATABASE_WORKER_URL="$OBUR_WORKER_URL" \
+		gosu postgres node scripts/db-bootstrap.ts >/dev/null) || fatal "setting up database roles failed"
+	obur_node migrate.ts || fatal "the database upgrade failed (it was rolled back)"
+	TZ=${TZ:-UTC} obur_node jobs-setup.ts >/dev/null || fatal "setting up background jobs failed"
+	obur_node curated-load.ts >/dev/null || fatal "loading the curated foods failed"
+	if [[ $(obur_psql -c 'select count(*) from users') == 0 ]]; then
+		log "no account exists yet. Open this link on the device you will use first (valid for 24 hours, works once):"
+		obur_node admin-setup-link.ts | tail -1
+		log "a new link: docker exec <container> obur setup-link"
+	fi
+}
+
+app_env() {
+	exec env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp TZ="${TZ:-UTC}" NODE_ENV=production "$@"
+}
+
+start_web() {
+	(cd /app && app_env PORT=3000 BODY_SIZE_LIMIT=21M PROTOCOL_HEADER="${PROTOCOL_HEADER:-x-forwarded-proto}" \
+		PUBLIC_ORIGIN="$PUBLIC_ORIGIN" WEBAUTHN_RP_ID="$WEBAUTHN_RP_ID" DATABASE_URL="$OBUR_APP_URL" \
+		OBUR_STATUS_DIR="$OBUR_STATUS_DIR" SPEECH_URL="${SPEECH_URL:-}" LABELS_URL="${LABELS_URL:-}" \
+		VAPID_PUBLIC_KEY="$VAPID_PUBLIC_KEY" gosu node node server.js) &
+	web_pid=$!
+}
+
+start_worker() {
+	(cd /app && app_env DATABASE_WORKER_URL="$OBUR_WORKER_URL" WORKER_CONCURRENCY="${WORKER_CONCURRENCY:-1}" \
+		VAPID_PUBLIC_KEY="$VAPID_PUBLIC_KEY" VAPID_PRIVATE_KEY="$VAPID_PRIVATE_KEY" VAPID_SUBJECT="$VAPID_SUBJECT" \
+		gosu node node scripts/worker.ts) &
+	worker_pid=$!
+}
+
+trap 'stopping=1' TERM INT
+
+log "starting (data in /data)"
+while :; do
+	if ((stopping)); then
+		log "stopping"
+		stop_all
+		exit 0
+	fi
+	if [[ -f $OBUR_RUN/hold ]]; then
+		# A restore asked for everything to stop.
+		if [[ -n $pg_pid$web_pid$worker_pid$sched_pid ]]; then
+			log "stopping for a restore"
+			stop_all
+			migrated=0
+		fi
+		touch "$OBUR_RUN/held"
+	else
+		rm -f "$OBUR_RUN/held"
+		if [[ -z $pg_pid ]]; then
+			start_pg
+			start_scheduler
+		fi
+		alive "$pg_pid" || fatal "PostgreSQL stopped unexpectedly"
+		alive "$sched_pid" || start_scheduler
+		if [[ -f $OBUR_STATUS_DIR/restore-pending ]]; then
+			# Only the page that says a restore is in progress, until `obur restore finish`.
+			if [[ -n $worker_pid ]]; then
+				stop_proc "$worker_pid" worker
+				worker_pid=''
+			fi
+			migrated=0
+			[[ -n $web_pid ]] || start_web
+		elif ((!migrated)); then
+			stop_app
+			upgrade
+			migrated=1
+			start_web
+			start_worker
+			log "ready on port 3000 for $PUBLIC_ORIGIN"
+		fi
+		if [[ -n $web_pid ]] && ! alive "$web_pid"; then fatal "the web app stopped unexpectedly"; fi
+		if [[ -n $worker_pid ]] && ! alive "$worker_pid"; then fatal "the worker stopped unexpectedly"; fi
+	fi
+	sleep 1 &
+	wait $! || true
+done

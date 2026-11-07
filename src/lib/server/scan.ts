@@ -1,4 +1,4 @@
-// Label scanning: a photo through the OCR service (ocr/service.py), then the pure label parser. The photo is held in
+// Label scanning: a photo through the label-reading service (labels/service.py), then the pure label parser. The photo is held in
 // memory for the one request and never stored or logged (docs/design.md, "OCR and barcode capture").
 import { RateLimiter } from '#lib/server/modules/auth/index.ts';
 import {
