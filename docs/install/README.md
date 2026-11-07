@@ -20,6 +20,10 @@ Two processor cores are enough; Speak answers faster with more.
 you need. `obur-speech` (speaking an entry) and `obur-labels` (photographing a nutrition label) are optional
 add-ons. They never reach the internet: audio and photos stay on your server, in memory only.
 
+**Without the add-ons**, each person can still use Speak and Scan with their own OpenAI or OpenRouter key (More →
+Speak and Scan), after allowing that company to receive their recordings or photos. They pay that company for what
+they use. An admin can switch this off for everyone on Household.
+
 ## 2. Give it an https address
 
 Passkeys, the way everyone signs in, work only over https. [Remote access](remote-access.md) shows three ways:

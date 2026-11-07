@@ -308,7 +308,20 @@ export const AccountRecord = v.object({
 	displayName: Text(80),
 	profile: v.nullable(ProfileRecord),
 	// Added to format version 1 later (2026-10-31): absent in older archives. Push subscriptions are never exported.
-	reminders: v.optional(v.nullable(ReminderSettingsInput), null)
+	reminders: v.optional(v.nullable(ReminderSettingsInput), null),
+	// Added 2026-11-08: what reads Speak and Scan, and when a company was allowed. The keys themselves never leave the
+	// server; an import onto another server asks for them again.
+	modelChoices: v.optional(
+		v.nullable(
+			v.object({
+				speak: v.picklist(['server', 'openai', 'openrouter']),
+				scan: v.picklist(['server', 'openai', 'openrouter']),
+				speakAllowedAt: v.nullable(Timestamp),
+				scanAllowedAt: v.nullable(Timestamp)
+			})
+		),
+		null
+	)
 });
 
 // Files -----------------------------------------------------------------------------------------------------------

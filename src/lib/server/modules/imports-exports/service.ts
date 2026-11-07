@@ -32,6 +32,7 @@ import {
 } from '../diary/index.ts';
 import { goalVersions, profiles } from '../goals/index.ts';
 import { reminderSettings } from '../reminders/index.ts';
+import { modelChoices } from '../remote-models/index.ts';
 import { readArchive, sha256, writeArchive, type PortableData } from './archive.ts';
 import { readLoseItArchive } from './loseit.ts';
 import {
@@ -98,6 +99,7 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 		.select()
 		.from(reminderSettings)
 		.where(eq(reminderSettings.userId, userId));
+	const [choice] = await tx.select().from(modelChoices).where(eq(modelChoices.userId, userId));
 	const diary = await tx.select().from(diaryEntries).where(eq(diaryEntries.userId, userId));
 	const meals = await tx.select().from(savedMeals).where(eq(savedMeals.userId, userId));
 	const mealItems = await tx
@@ -192,6 +194,14 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 						},
 						quietStart: hhmm(reminder.quietStart)!,
 						quietEnd: hhmm(reminder.quietEnd)!
+					}
+				: null,
+			modelChoices: choice
+				? {
+						speak: choice.speak,
+						scan: choice.scan,
+						speakAllowedAt: iso(choice.speakAllowedAt),
+						scanAllowedAt: iso(choice.scanAllowedAt)
 					}
 				: null
 		},
@@ -358,6 +368,8 @@ interface Plan {
 	importProfile: boolean;
 	/** The archive's reminder settings, when this account has none yet (as for the profile). */
 	importReminders: boolean;
+	/** The archive's Speak and Scan choices, likewise. */
+	importModelChoices: boolean;
 	newCompletions: PortableData['dayCompletions'];
 	newNotes: PortableData['dayNotes'];
 }
@@ -664,6 +676,11 @@ async function plan(
 		.from(reminderSettings)
 		.where(eq(reminderSettings.userId, userId));
 	const importReminders = !!data.account.reminders && !currentReminders;
+	const [currentChoices] = await tx
+		.select({ userId: modelChoices.userId })
+		.from(modelChoices)
+		.where(eq(modelChoices.userId, userId));
+	const importModelChoices = !!data.account.modelChoices && !currentChoices;
 	const [currentProfile] = await tx.select().from(profiles).where(eq(profiles.userId, userId));
 	const incoming = data.account.profile;
 	let importProfile = false;
@@ -725,6 +742,7 @@ async function plan(
 		importTargets,
 		importProfile,
 		importReminders,
+		importModelChoices,
 		newCompletions,
 		newNotes
 	};
@@ -999,6 +1017,17 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 			userId,
 			...profile,
 			preferencesSavedAt: profile.themeMode !== undefined ? now : null,
+			updatedAt: now
+		});
+	}
+	const mc = data.account.modelChoices;
+	if (p.importModelChoices && mc) {
+		await tx.insert(modelChoices).values({
+			userId,
+			speak: mc.speak,
+			scan: mc.scan,
+			speakAllowedAt: mc.speakAllowedAt ? new Date(mc.speakAllowedAt) : null,
+			scanAllowedAt: mc.scanAllowedAt ? new Date(mc.scanAllowedAt) : null,
 			updatedAt: now
 		});
 	}

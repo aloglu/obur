@@ -11,6 +11,7 @@ import { createCatalog, createRecipes } from '../catalog/index.ts';
 import { createDiary, createSavedMeals } from '../diary/index.ts';
 import { createGoals } from '../goals/index.ts';
 import { createReminders } from '../reminders/index.ts';
+import { createRemoteModels } from '../remote-models/index.ts';
 import { ArchiveError, readArchive, sha256, type PortableData } from './archive.ts';
 import { createPortability, PortabilityError } from './service.ts';
 
@@ -27,6 +28,8 @@ const savedMeals = createSavedMeals(db);
 const recipes = createRecipes(db);
 const portability = createPortability(db);
 const reminders = createReminders(db);
+const remoteModels = createRemoteModels(db, Buffer.alloc(32, 7));
+const MEHMET_KEY = 'sk-portability-test-key-0123456789';
 
 const AYSE = randomUUID(); // admin
 const MEHMET = randomUUID();
@@ -64,6 +67,10 @@ async function buildHistory() {
 		endpoint: 'https://push.example/mehmet-phone',
 		keys: { p256dh: 'secret-key', auth: 'secret-auth' }
 	});
+	// His choice for Speak travels with the account; his own key never does.
+	await remoteModels.saveKey(MEHMET, 'openai', MEHMET_KEY);
+	await remoteModels.choose(MEHMET, 'speak', 'openai', true);
+	await remoteModels.countUse(MEHMET, 'openai', 'speak');
 	const ekmek = await catalog.createFood(
 		AYSE,
 		food({
@@ -207,6 +214,7 @@ function semantic(data: PortableData) {
 	return {
 		profile: data.account.profile,
 		reminders: data.account.reminders,
+		modelChoices: data.account.modelChoices,
 		foods: byText(
 			data.foods.map((f) => ({
 				name: f.name,
@@ -316,6 +324,10 @@ describe('export', () => {
 		expect(data.account).toMatchObject({ displayName: 'Mehmet', profile: { heightCm: 180 } });
 		expect(data.account.reminders).toMatchObject({ times: { lunch: '14:00', weigh_in: '08:30' } });
 		expect(JSON.stringify(data)).not.toContain('push.example');
+		expect(data.account.modelChoices).toMatchObject({ speak: 'openai', scan: 'server' });
+		expect(data.account.modelChoices?.speakAllowedAt).toEqual(expect.any(String));
+		expect(JSON.stringify(data)).not.toContain(MEHMET_KEY);
+		expect(JSON.stringify(data)).not.toContain('5678');
 
 		const names = Object.fromEntries(
 			data.foods.map((f) => [f.name + (f.mine ? '' : ' (shared)'), f])
@@ -627,7 +639,10 @@ describe('account deletion', () => {
 			'credentials',
 			'sessions',
 			'reminder_settings',
-			'push_subscriptions'
+			'push_subscriptions',
+			'model_keys',
+			'model_choices',
+			'model_usage'
 		])
 			expect(await count(table, MEHMET)).toBe(0);
 		expect(await admin`select 1 from users where id = ${MEHMET}`).toHaveLength(0);
