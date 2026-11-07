@@ -105,3 +105,27 @@ test('the serving size and its unit line up, with the hint under both', async ({
 	const unit = await page.getByRole('button', { name: 'Unit' }).boundingBox();
 	expect(Math.abs(field!.y + field!.height - (unit!.y + unit!.height))).toBeLessThan(1);
 });
+
+test('opening a sheet does not put focus on its close button; Tab reaches it, Escape closes', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Odak ${testInfo.project.name}`);
+	await page.goto('/recipes');
+	await page.getByRole('link', { name: 'New recipe' }).click();
+	await page.getByRole('button', { name: 'Add food' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Add a food' });
+	await expect(sheet).toBeFocused();
+	const close = sheet.getByRole('button', { name: 'Close' });
+	await expect(close).not.toBeFocused();
+	await page.keyboard.press('Tab');
+	await expect(close).toBeFocused();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	// A sheet that opens straight into typing keeps its field focused.
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Type it' }).click();
+	await expect(
+		page.getByRole('dialog', { name: 'Type what you ate' }).getByLabel('You typed')
+	).toBeFocused();
+});

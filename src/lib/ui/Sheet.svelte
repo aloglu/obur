@@ -24,6 +24,7 @@
 	let { title, head, pinned, resizes = false, onopened, onclose, children }: Props = $props();
 	let dialog: HTMLDialogElement;
 	let content: HTMLDivElement;
+	let closeButton: HTMLButtonElement;
 	let scrolled = 0;
 	let settledHeight = 0;
 	let resizing: Animation | undefined;
@@ -35,6 +36,9 @@
 		const onkey = () => (usedKeys = true);
 		window.addEventListener('keydown', onkey, { capture: true });
 		dialog.showModal();
+		// Opening moves focus to the first button, the close button, which phones then draw a ring around as if it were
+		// chosen. The sheet itself takes it instead: its name is still read out, and Tab still reaches the close button.
+		if (document.activeElement === closeButton) dialog.focus({ preventScroll: true });
 		const stopFitting = fitAboveKeyboard();
 		const stopResizing = untrack(() => resizes) ? followContentHeight() : undefined;
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) untrack(() => onopened?.());
@@ -155,6 +159,7 @@
 	<div class="flex items-center justify-between gap-3">
 		{#if head}{@render head()}{:else}<h2 class="text-[21px] font-[750]">{title}</h2>{/if}
 		<button
+			bind:this={closeButton}
 			type="button"
 			onclick={onclose}
 			class="grid size-11 place-items-center rounded-full bg-surface2 text-muted"
@@ -165,6 +170,7 @@
 
 <dialog
 	bind:this={dialog}
+	tabindex="-1"
 	aria-label={title}
 	{onclose}
 	onscroll={() => (scrolled = dialog.scrollTop)}
@@ -176,7 +182,7 @@
 	onanimationend={(e) => {
 		if (e.target === dialog && !e.pseudoElement) onopened?.();
 	}}
-	class="sheet m-0 mt-auto w-full max-w-none overflow-y-auto overscroll-contain rounded-t-sheet bg-surface p-0 text-text shadow-sheet backdrop:bg-scrim desk:m-auto desk:w-[480px] desk:rounded-sheet"
+	class="sheet m-0 mt-auto w-full max-w-none overflow-y-auto overscroll-contain rounded-t-sheet bg-surface p-0 text-text shadow-sheet outline-none backdrop:bg-scrim desk:m-auto desk:w-[480px] desk:rounded-sheet"
 >
 	<div
 		bind:this={content}
