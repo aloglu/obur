@@ -212,17 +212,37 @@ test('a food not found is left out when logging, and the toast says so', async (
 	await expect(page.getByRole('region', { name: 'Snacks' })).toContainText('120');
 });
 
-test('Create it as food starts the form with the name that was said', async ({
+test('Create it as food makes the food on top, then logs it with everything else kept', async ({
 	page
 }, testInfo) => {
 	await signedInAs(page, `Yeni ${testInfo.project.name}`);
+	// A made-up word per browser, kept to this account, so no other test can find it.
+	const word = testInfo.project.name === 'phone-webkit' ? 'jjwwkkvv' : 'jjwwkkdd';
 	await page.goto('/log');
 	await page.getByRole('button', { name: 'Type it' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
-	await sheet.getByLabel('You typed').fill('qqqqzzzz');
+	await sheet.getByLabel('You typed').fill(`200 g ${word} ve 120 kcal snack`);
+	await expect(sheet).toContainText('Not in your foods yet');
 	await sheet.getByRole('button', { name: 'Create it as food' }).click();
-	await expect(page).toHaveURL(/\/foods\/new\?name=/);
-	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('qqqqzzzz');
+
+	// The form opens over the sheet with the name that was said; the page stays where it was.
+	const form = page.getByRole('dialog', { name: 'New food' });
+	await expect(form.getByLabel('Name', { exact: true })).toHaveValue(word);
+	await expect(page).toHaveURL(/\/log/);
+	await form.getByRole('textbox', { name: /^Energy kcal/ }).fill('150');
+	await form.getByRole('radio', { name: 'Only me' }).click();
+	await form.getByRole('button', { name: 'Save food' }).click();
+	await expect(form).toBeHidden();
+
+	// Back in the sheet: the typed text, the calories-only item and the 200 g are all still there.
+	await expect(sheet.getByLabel('You typed')).toHaveValue(`200 g ${word} ve 120 kcal snack`);
+	await expect(sheet).not.toContainText('Not in your foods yet');
+	await expect(sheet.getByRole('button', { name: 'Log 2 to Snacks' })).toBeEnabled();
+	await sheet.getByRole('button', { name: 'Log 2 to Snacks' }).click();
+	const snacks = page.getByRole('region', { name: 'Snacks' });
+	await expect(snacks).toContainText(word);
+	await expect(snacks).toContainText('300'); // 200 g at 150 kcal per 100 g
+	await expect(snacks).toContainText('120');
 });
 
 test('a match that ignores some of the words asks, so a food cannot drop out unnoticed', async ({

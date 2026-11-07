@@ -59,7 +59,11 @@
 						once: true
 					});
 				}
-				opener.focus({ preventScroll: true });
+				// The button that opened it may be gone (Create it as food): the sheet below takes focus instead.
+				const target = opener.isConnected
+					? opener
+					: document.querySelector<HTMLDialogElement>('dialog[open]');
+				target?.focus({ preventScroll: true });
 			}
 			slideAway(copy, scrolled);
 		};

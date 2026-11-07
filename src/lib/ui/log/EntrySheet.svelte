@@ -12,8 +12,7 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
-	import { goto } from '$app/navigation';
-	import { newFoodHref } from '#lib/client/links.ts';
+	import NewFoodSheet from '../food/NewFoodSheet.svelte';
 	import { foldForSearch } from '#lib/shared/search-text.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import FoodIcon from '../FoodIcon.svelte';
@@ -295,9 +294,11 @@
 		if (c.kind !== 'food') return;
 		cards[i] = { kind: 'quick', id: c.id, kcalText: '', description: c.text, open: true };
 	}
+	// Made in a sheet on top, so everything else here stays as it is; the new food is then this item's food.
+	let creating = $state<Extract<Card, { kind: 'food' }> | null>(null);
 	function createFood(c: Card) {
 		if (c.kind !== 'food') return;
-		void goto(newFoodHref(c.text));
+		creating = c;
 	}
 
 	let searchQuery = $state('');
@@ -705,3 +706,15 @@
 		</Button>
 	</form>
 </Sheet>
+
+{#if creating}
+	<NewFoodSheet
+		name={creating.text}
+		oncreated={(id) => {
+			const card = creating!;
+			creating = null;
+			void choose(card, id);
+		}}
+		onclose={() => (creating = null)}
+	/>
+{/if}

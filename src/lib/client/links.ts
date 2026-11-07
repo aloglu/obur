@@ -28,5 +28,3 @@ export const logFoodHref = (foodId: string) => withQuery(resolve('/(app)/log'), 
 /** The Journal, opened on a day when coming from one in the past. */
 export const journalHref = (day: string | null) =>
 	day ? withQuery(resolve('/(app)/journal'), { day }) : resolve('/(app)/journal');
-
-export const newFoodHref = (name: string) => withQuery(resolve('/(app)/foods/new'), { name });
