@@ -1,6 +1,7 @@
 # Unraid: restricted deploy access
 
-How an operator lets someone (or an assistant) build and run obur on an Unraid server without giving them a shell.
+How an operator lets someone (or an assistant) build and run test builds of obur on an Unraid server without giving
+them a shell. Ordinary installations don't need this: they use the published images (docs/install/).
 Example names are used throughout; the real hostname belongs only in your own configuration.
 
 ## The model
@@ -8,8 +9,8 @@ Example names are used throughout; the real hostname belongs only in your own co
 - The deploy key in root's `authorized_keys` is tied to one program, `obur-ctl`, with `command="…"` and `restrict`
   (no shell, no terminal, no forwarding). Whatever is typed after `ssh` is passed to `obur-ctl`, which accepts a fixed
   list of actions (`obur-ctl help`) and refuses everything else.
-- `obur-ctl` acts only on Docker images named `obur-app`/`obur-db` and the Compose project `obur`. It has no action
-  that deletes data, opens a database console or reads files.
+- `obur-ctl` acts only on Docker images named `obur`, `obur-speech` and `obur-labels` and the Compose project
+  `obur`. It has no action that deletes data, opens a database console or reads files.
 - What the containers may mount is decided by `compose.yaml` in `/mnt/user/appdata/obur`. That folder and
   `obur-ctl` itself stay root-owned and out of the deploy key's reach; review any change to either before copying it
   to the server.
@@ -64,6 +65,26 @@ uploaded source is in `/mnt/user/appdata/obur-lab/deploy/source`; on the Unraid 
 4. Deploy again (`./deploy/pilot.sh` from the development machine): the new `obur-ctl` builds every image the new
    `compose.yaml` needs before switching.
 
-The speech service (added 2026-10-30) is the first change made this way: it adds the `obur-speech` image to `obur-ctl`
-and the `speech` service and internal network to `compose.yaml`. The OCR service for Scan (added 2026-10-30) is the
-second: the `obur-ocr` image, and the `ocr` service and internal network. Until both files are copied, Scan stays off. Reminders (added 2026-10-31) change only `compose.yaml`: it passes `VAPID_PUBLIC_KEY` to the web app and all three `VAPID_*` settings to the worker; until it is copied, keys in `.env` have no effect.
+Earlier changes made this way: the speech service and the OCR service (2026-10-30), reminders (2026-10-31).
+
+## Moving to the single obur container (2026-11-07)
+
+The database, web app and worker moved into one `obur` container, and the add-ons became `obur-speech` and
+`obur-labels`. The data folder keeps its layout (`postgres/`, `status/`), so the new container opens the same
+database and continues the same backups; it adds `secrets/` with passwords it generates itself, so the four
+`OBUR_*_DB_PASSWORD` lines in `.env` are no longer used. On the Unraid host, as root, after the source has been
+uploaded:
+
+1. Keep the old files: `cp /boot/config/obur/obur-ctl /boot/config/obur/obur-ctl.before-obur` and
+   `cp /mnt/user/appdata/obur/compose.yaml /mnt/user/appdata/obur/compose.yaml.before-obur`.
+2. Review and copy both files as above (`obur-ctl` first).
+3. In `.env`, make sure `OBUR_DATA_DIR` and `OBUR_BACKUP_DIR` point where they did, and add
+   `OBUR_BIND_ADDRESS=0.0.0.0` if the tunnel reaches obur from outside this host's loopback (another container or
+   machine): the new default listens on 127.0.0.1 only.
+4. Deploy (`./deploy/pilot.sh`). `deploy` takes a backup from the old database, stops every old container before the
+   new one starts (two databases must never open the same files), then starts `obur`, `obur-speech` and
+   `obur-labels`.
+
+Going back, if needed: put both `.before-obur` files back and run `docker compose -p obur -f
+/mnt/user/appdata/obur/compose.yaml --env-file /mnt/user/appdata/obur/.env up -d --remove-orphans`; the old images
+are still tagged `obur-app:current` and `obur-db:current`.

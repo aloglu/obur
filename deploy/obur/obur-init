@@ -18,6 +18,8 @@ rm -f "$OBUR_RUN/hold" "$OBUR_RUN/held"
 if ! mountpoint -q /data; then
 	log "WARNING: /data is not a mounted folder. Your data lives inside this container and is lost when it is removed."
 fi
+# The database and the web app run as their own users, who must be able to pass through /data to their folders.
+chmod a+x /data
 install -d -o postgres -g postgres -m 700 /data/postgres /data/backups
 install -d -o postgres -g postgres -m 755 "$OBUR_STATUS_DIR"
 chown postgres:postgres /data/backups
@@ -31,7 +33,7 @@ PG_ARGS=(postgres
 	-c 'archive_command=pgbackrest-obur archive-push %p'
 	-c "archive_timeout=${OBUR_ARCHIVE_TIMEOUT:-300}")
 
-pg_pid='' sched_pid='' web_pid='' worker_pid='' migrated=0 stopping=0
+pg_pid='' sched_pid='' web_pid='' worker_pid='' migrated=0 stopping=0 reason=''
 
 alive() { [[ -n ${1:-} ]] && kill -0 "$1" 2>/dev/null; }
 
@@ -74,14 +76,19 @@ fatal() {
 	exit 1
 }
 
-start_pg() {
-	# Never create a new, empty database where one should be restored (docs/restore.md).
-	if [[ ! -s $PGDATA/PG_VERSION && ${OBUR_ALLOW_NEW_DATABASE:-} != 1 ]]; then
-		[[ -f $OBUR_STATUS_DIR/restore-pending ]] &&
-			fatal "a restore is pending but the database folder is empty: run 'obur restore start' again"
-		[[ -f /data/backups/backup/obur/backup.info ]] &&
-			fatal "the database folder is empty but backups exist; restore them (docs/restore.md) or set OBUR_ALLOW_NEW_DATABASE=1 to start a new database"
+# Why obur must not create a new, empty database here, if it must not (docs/restore.md): it waits for a restore.
+needs_restore() {
+	[[ ! -s $PGDATA/PG_VERSION && ${OBUR_ALLOW_NEW_DATABASE:-} != 1 ]] || return 1
+	if [[ -f $OBUR_STATUS_DIR/restore-pending ]]; then
+		echo "a restore is pending but the database folder is empty: run 'obur restore start' again"
+	elif [[ -f /data/backups/backup/obur/backup.info ]]; then
+		echo "the database folder is empty but backups exist: restore them with 'obur restore start' (docs/restore.md), or set OBUR_ALLOW_NEW_DATABASE=1 to start a new database"
+	else
+		return 1
 	fi
+}
+
+start_pg() {
 	install -d -o postgres -g postgres -m 700 "$(dirname "$PGDATA")"
 	local created=0
 	if [[ ! -s $PGDATA/PG_VERSION ]]; then
@@ -119,6 +126,11 @@ upgrade() {
 	applied=-1
 	if [[ $(obur_psql -c "select to_regclass('public.schema_migrations') is not null") == t ]]; then
 		applied=$(obur_psql -c 'select count(*) from schema_migrations')
+	fi
+	if ((applied > known)); then
+		# An older obur than the database (a rollback): run it on the database as it is, changing nothing.
+		log "this obur is older than its database (rolled back?): starting without changing the database"
+		return
 	fi
 	if ((applied >= 0 && applied < known)); then
 		if [[ -f /data/backups/backup/obur/backup.info ]]; then
@@ -176,6 +188,10 @@ while :; do
 			stop_all
 			migrated=0
 		fi
+		touch "$OBUR_RUN/held"
+	elif [[ -z $pg_pid ]] && reason=$(needs_restore); then
+		# Nothing runs; `obur restore start` can begin straight away.
+		[[ -f $OBUR_RUN/held ]] || log "waiting: $reason"
 		touch "$OBUR_RUN/held"
 	else
 		rm -f "$OBUR_RUN/held"

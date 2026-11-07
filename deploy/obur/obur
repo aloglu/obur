@@ -3,7 +3,7 @@
 #
 #   obur setup-link                  a one-time link for the first account (24 hours)
 #   obur recovery-link "<name|ID>"   a one-time link for someone who lost every passkey and code (1 hour)
-#   obur backup now|info|restore-check
+#   obur backup now|pre-upgrade|info|restore-check
 #   obur restore start [options]     replace the database with one restored from the backups (docs/restore.md)
 #   obur restore finish [deletions]  sign everyone out, reapply deletions, back up, reopen
 #   obur restore cancel              put back the database that `restore start` moved aside
@@ -97,6 +97,7 @@ backup)
 	obur_env
 	case ${1:-} in
 	now) exec gosu postgres obur-backup run ;;
+	pre-upgrade) exec gosu postgres obur-backup pre-upgrade ;;
 	info) exec gosu postgres obur-backup info ;;
 	restore-check) exec gosu postgres obur-backup restore-check ;;
 	*) usage ;;

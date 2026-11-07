@@ -3,9 +3,9 @@
 # this script (command="..."), so whatever the caller types arrives here as SSH_ORIGINAL_COMMAND and is checked
 # against the fixed list of actions below. There is no shell, file access, database console or delete action.
 #
-# What the actions can touch: Docker images named obur-app/obur-db/obur-speech/obur-ocr and the containers of the Compose
-# project
-# "obur", defined by $OBUR_DIR/compose.yaml. That file decides what the containers may mount; keep it and this
+# What the actions can touch: Docker images named obur, obur-speech and obur-labels (built here from the uploaded
+# source and tagged candidate, current and previous) and the containers of the Compose project "obur", defined by
+# $OBUR_DIR/compose.yaml. That file decides what the containers may mount; keep it and this
 # script where the deploy key cannot write (both are root-owned, outside obur-lab), and review changes to either.
 set -euo pipefail
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -17,12 +17,13 @@ OBUR_DIR=/mnt/user/appdata/obur
 # The settings file with secrets. It may live elsewhere, e.g. /boot/config/obur/.env, if your appdata backups go
 # somewhere you would not want the backup passphrase and storage keys.
 OBUR_ENV_FILE="$OBUR_DIR/.env"
+export OBUR_ENV_FILE
 # Where the assistant uploads the source to build (inside obur-lab's own folder).
 OBUR_SOURCE=/mnt/user/appdata/obur-lab/deploy/source
 # ------------------------------------------------------------------------------------------------------------------
 
-SERVICES='web|worker|db|speech|ocr'
-IMAGES='obur-app obur-db obur-speech obur-ocr'
+SERVICES='obur|obur-speech|obur-labels'
+IMAGES='obur obur-speech obur-labels'
 
 say() { printf '%s\n' "$*"; }
 fail() {
@@ -33,11 +34,11 @@ usage() {
 	cat <<'USAGE'
 obur-ctl actions:
   status                    containers and obur images
-  logs <web|worker|db|speech|ocr> [n]  last n log lines (default 200, at most 2000)
-  build                     build obur-app, obur-db, obur-speech and obur-ocr candidates from the uploaded source
-  deploy                    back up, switch to the candidate images, migrate, start
-  rollback                  switch back to the images before the last deploy and start (schema stays)
-  restart <web|worker|db|speech|ocr>   restart one service
+  logs <obur|obur-speech|obur-labels> [n]  last n log lines (default 200, at most 2000)
+  build                     build obur, obur-speech and obur-labels candidates from the uploaded source
+  deploy                    back up, switch to the candidate images and start (the obur container upgrades itself)
+  rollback                  switch back to the images before the last deploy and start (the database stays as is)
+  restart <obur|obur-speech|obur-labels>   restart one container
   stop                      stop the containers (data is kept)
   backup                    run a backup now
   backup-info               list backups
@@ -45,19 +46,34 @@ obur-ctl actions:
 USAGE
 }
 
+# Locally built images (obur:current …) rather than the published ones.
 compose() {
-	docker compose --project-name obur --project-directory "$OBUR_DIR" \
+	OBUR_REGISTRY='' OBUR_VERSION=current \
+		docker compose --project-name obur --project-directory "$OBUR_DIR" \
 		-f "$OBUR_DIR/compose.yaml" --env-file "$OBUR_ENV_FILE" "$@"
 }
 
 has_image() { docker image inspect "$1" >/dev/null 2>&1; }
+
+running() { [[ $(docker inspect -f '{{.State.Running}}' "$1" 2>/dev/null) == true ]]; }
+
+# Containers of the project that the current compose.yaml no longer defines (the layout before the single obur
+# container: db, web, worker, speech, ocr). They are stopped before anything starts, so two databases never run on
+# the same files.
+stop_old_layout() {
+	local id service
+	for id in $(docker ps -q --filter label=com.docker.compose.project=obur); do
+		service=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.service"}}' "$id")
+		[[ $service =~ ^($SERVICES)$ ]] || docker stop -t 60 "$id" >/dev/null
+	done
+}
 
 source_dir() {
 	[[ -d $OBUR_SOURCE && ! -L $OBUR_SOURCE ]] || fail "no source at $OBUR_SOURCE"
 	local real
 	real=$(realpath -e "$OBUR_SOURCE")
 	[[ $real == /mnt/user/appdata/obur-lab/deploy/* ]] || fail "source resolves outside obur-lab: $real"
-	[[ -f $real/Dockerfile && -f $real/deploy/db/Dockerfile && -f $real/speech/Dockerfile && -f $real/ocr/Dockerfile ]] ||
+	[[ -f $real/Dockerfile && -f $real/speech/Dockerfile && -f $real/labels/Dockerfile ]] ||
 		fail "source has no Dockerfiles"
 	printf '%s' "$real"
 }
@@ -83,7 +99,7 @@ help) usage ;;
 status)
 	compose ps
 	docker image ls --format '{{.Repository}}:{{.Tag}}  {{.ID}}  {{.CreatedSince}}' |
-		grep -E '^obur-(app|db|speech|ocr):' || true
+		grep -E '^obur(-speech|-labels)?:' || true
 	;;
 logs)
 	service=${args[1]:-}
@@ -94,33 +110,33 @@ logs)
 	;;
 build)
 	src=$(source_dir)
-	docker build --pull -t obur-app:candidate "$src"
-	docker build --pull -t obur-db:candidate "$src/deploy/db"
+	docker build --pull -t obur:candidate "$src"
 	docker build --pull -t obur-speech:candidate "$src/speech"
-	docker build --pull -t obur-ocr:candidate "$src/ocr"
+	docker build --pull -t obur-labels:candidate "$src/labels"
 	;;
 deploy)
 	for image in $IMAGES; do has_image "$image:candidate" || fail "build first"; done
-	# A backup before any upgrade (skipped only on the very first start, when there is nothing to back up).
-	if [[ -n $(compose ps -q db 2>/dev/null) ]]; then
-		compose exec -T db gosu postgres obur-backup pre-upgrade
+	# A backup before any switch, from whichever layout is running (none on the very first start).
+	if running obur; then
+		docker exec obur obur backup pre-upgrade
+	elif running obur-db-1; then
+		docker exec obur-db-1 gosu postgres obur-backup pre-upgrade
 	fi
 	for image in $IMAGES; do
 		if has_image "$image:current"; then docker tag "$image:current" "$image:previous"; fi
 		docker tag "$image:candidate" "$image:current"
 	done
-	compose up -d --wait db
-	compose --profile tools run --rm admin migrate
-	compose up -d --wait --remove-orphans
+	stop_old_layout
+	compose up -d --wait --wait-timeout 600 --remove-orphans
 	compose ps
 	;;
 rollback)
-	has_image obur-app:previous && has_image obur-db:previous || fail "nothing to roll back to"
+	has_image obur:previous || fail "nothing to roll back to"
 	for image in $IMAGES; do
-		# A service image may have no previous version yet (first deploy with it): keep the current one.
+		# An image may have no previous version yet (first deploy with it): keep the current one.
 		if has_image "$image:previous"; then docker tag "$image:previous" "$image:current"; fi
 	done
-	compose up -d --wait --remove-orphans
+	compose up -d --wait --wait-timeout 600 --remove-orphans
 	compose ps
 	;;
 restart)
@@ -129,9 +145,9 @@ restart)
 	compose restart "$service"
 	;;
 stop) compose stop ;;
-backup) compose exec -T db gosu postgres obur-backup run ;;
-backup-info) compose exec -T db gosu postgres obur-backup info ;;
-restore-check) compose exec -T db gosu postgres obur-backup restore-check ;;
+backup) docker exec obur obur backup now ;;
+backup-info) docker exec obur obur backup info ;;
+restore-check) docker exec obur obur backup restore-check ;;
 *)
 	usage >&2
 	fail "unknown action: $action"

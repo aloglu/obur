@@ -9,7 +9,7 @@ services:
     image: ${OBUR_REGISTRY-ghcr.io/aloglu/}obur:${OBUR_VERSION:-latest}
     container_name: obur
     restart: unless-stopped
-    env_file: .env
+    env_file: ${OBUR_ENV_FILE:-.env}
     environment:
       # Speak and Scan, through the add-ons below. Empty switches them off.
       SPEECH_URL: ${SPEECH_URL-http://obur-speech:8000}
@@ -18,10 +18,11 @@ services:
       # 127.0.0.1: only this machine (for a tunnel or reverse proxy on it). 0.0.0.0: every device that can reach it.
       - '${OBUR_BIND_ADDRESS:-127.0.0.1}:${OBUR_PORT:-8040}:3000'
     volumes:
-      # Everything obur keeps: the database, its backups, generated passwords. Keep this folder.
+      # Everything obur keeps: the database, generated passwords, backup health. Keep this folder.
       - ${OBUR_DATA_DIR:-./data}:/data
-      # Backups on another disk (recommended): uncomment and set OBUR_BACKUP_DIR.
-      # - ${OBUR_BACKUP_DIR}:/data/backups
+      # The encrypted backups: inside the data folder unless OBUR_BACKUP_DIR puts them elsewhere (another disk is
+      # better: a failing disk then takes only one of the two).
+      - ${OBUR_BACKUP_DIR:-./data/backups}:/data/backups
     shm_size: 256mb
     # Room for the database to shut down cleanly.
     stop_grace_period: 60s

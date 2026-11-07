@@ -29,8 +29,11 @@ beforeEach(() => {
 				'#!/bin/bash',
 				`echo "${tool} $*" >> ${calls}`,
 				`[[ "${tool} $1 $2" == "docker image inspect" && ! -f ${root}/images ]] && exit 1`,
-				// A running database once images exist, so deploy takes its pre-upgrade backup.
-				`[[ "$*" == *"ps -q db" && -f ${root}/images ]] && echo 1234`,
+				// A running obur container once images exist, so deploy takes its pre-upgrade backup.
+				`[[ "$*" == "inspect -f {{.State.Running}} obur" && -f ${root}/images ]] && echo true`,
+				// The containers of the layout before the single obur container, still running.
+				`[[ "$*" == "ps -q --filter label=com.docker.compose.project=obur" ]] && echo old-db`,
+				`[[ "$*" == *"com.docker.compose.service"*" old-db" ]] && echo db`,
 				'exit 0',
 				''
 			].join('\n')
@@ -68,14 +71,15 @@ describe('obur-ctl', () => {
 	it.each([
 		'ls /',
 		'status; rm -rf /',
-		'logs web $(id)',
+		'logs obur $(id)',
 		'logs ../../etc',
 		'logs postgres',
-		'logs web 99999',
+		'logs obur 99999',
+		'logs web 10',
 		'restart all',
 		'down',
-		'exec db psql',
-		'logs web 10 extra',
+		'exec obur psql',
+		'logs obur 10 extra',
 		'Status'
 	])('refuses %j without running Docker', (command) => {
 		const r = run(command);
@@ -84,35 +88,37 @@ describe('obur-ctl', () => {
 	});
 
 	it('runs the allowed actions against the obur project only', () => {
-		const r = run('logs web 50');
+		const r = run('logs obur 50');
 		expect(r.status).toBe(0);
 		expect(r.docker).toMatch(
-			/^docker compose --project-name obur .* logs --no-color --tail 50 web$/
+			/^docker compose --project-name obur .* logs --no-color --tail 50 obur$/
 		);
 	});
 
-	it('refuses to deploy without candidate images, and backs up before switching when running', () => {
+	it('refuses to deploy without candidate images; backs up, stops the old layout, then starts', () => {
 		expect(run('deploy').status).not.toBe(0);
 		writeFileSync(path.join(root, 'images'), '');
 		const r = run('deploy');
 		expect(r.status).toBe(0);
 		const steps = r.docker.split('\n');
-		const backup = steps.findIndex((s) => s.includes('obur-backup pre-upgrade'));
-		const tag = steps.findIndex((s) => s.startsWith('docker tag obur-app:candidate'));
-		const migrate = steps.findIndex((s) => s.includes('run --rm admin migrate'));
+		const backup = steps.indexOf('docker exec obur obur backup pre-upgrade');
+		const tag = steps.indexOf('docker tag obur:candidate obur:current');
+		const stopOld = steps.indexOf('docker stop -t 60 old-db');
+		const up = steps.findIndex((s) => s.includes(' up -d --wait'));
 		expect(backup).toBeGreaterThan(-1);
 		expect(backup).toBeLessThan(tag);
-		expect(tag).toBeLessThan(migrate);
-		// All four images switch together.
-		for (const image of ['obur-app', 'obur-db', 'obur-speech', 'obur-ocr'])
+		expect(tag).toBeLessThan(stopOld);
+		expect(stopOld).toBeLessThan(up);
+		// All three images switch together.
+		for (const image of ['obur', 'obur-speech', 'obur-labels'])
 			expect(steps).toContain(`docker tag ${image}:candidate ${image}:current`);
 	});
 
-	it('allows the speech and OCR services in logs and restart', () => {
-		expect(run('logs speech 20').status).toBe(0);
-		expect(run('restart speech').status).toBe(0);
-		expect(run('logs ocr 20').status).toBe(0);
-		expect(run('restart ocr').status).toBe(0);
+	it('allows the add-ons in logs and restart', () => {
+		expect(run('logs obur-speech 20').status).toBe(0);
+		expect(run('restart obur-speech').status).toBe(0);
+		expect(run('logs obur-labels 20').status).toBe(0);
+		expect(run('restart obur-labels').status).toBe(0);
 	});
 
 	it('builds only from the obur-lab upload folder', () => {
