@@ -371,9 +371,12 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
   default, the icon above), Pazar light, and one for each other theme. Each is the same artwork with only the
   background and the O in the theme's colours; the bowl and food never change. They are made from the SVG by
   `./scripts/brand-icons.sh` into `static/app-icons/<id>/` (list in `shared/app-icons.ts`) and kept out of the
-  service worker's offline cache. The choice is per device, a cookie like the theme (`obur_icon`): the server writes
-  the chosen icon into the page's `apple-touch-icon` and links `/manifest.webmanifest?icon=<id>`, now a route that
-  names that icon's files. A phone reads the icon when obur is added to the Home Screen, so the card's one line says
+  service worker's offline cache. The choice is kept with the account (`profiles.app_icon`, null for the default),
+  not the device: an iPhone's Home Screen app keeps its own cookies apart from Safari's, so a choice made in the app
+  was lost when the owner removed it and added obur again from Safari (owner's report, 2026-11-07). Signed in, the
+  server writes the account's icon into the page's `apple-touch-icon` and links `/manifest.webmanifest?icon=<id>`,
+  a route that names that icon's files; an `obur_icon` cookie covers pages before signing in. It is in the export
+  with the other profile settings. A phone reads the icon when obur is added to the Home Screen, so the card's one line says
   a new icon shows after adding it again. The logo and browser tab icon stay the brown and cream artwork.
 - **Fonts (owner, 2026-11-07, review round 9):** Bricolage Grotesque and Inter stay in every theme.
 

@@ -1,5 +1,6 @@
 // Profiles and versioned targets (docs/design.md, "Targets, profile and activity"). Targets are estimates; minors,
 // pregnancy and breastfeeding get no calculated targets, but a professional's target can be entered by hand.
+import { DEFAULT_APP_ICON, isAppIcon, type AppIconId } from '../../../shared/app-icons.ts';
 import { desc, eq, lte } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import {
@@ -64,7 +65,8 @@ const toProfile = (r: ProfileRow): Profile => ({
 	pregnant: r.pregnant,
 	breastfeeding: r.breastfeeding,
 	decimalMark: r.decimalMark,
-	firstDayOfWeek: r.firstDayOfWeek
+	firstDayOfWeek: r.firstDayOfWeek,
+	appIcon: isAppIcon(r.appIcon) ? r.appIcon : null
 });
 
 const toVersion = (r: VersionRow): TargetVersion => ({
@@ -236,6 +238,17 @@ export function createGoals(db: Database) {
 					.returning()
 			);
 			return toProfile(row);
+		},
+
+		/** The Home Screen icon chosen on Appearance, kept with the account; the default is stored as null. */
+		async setAppIcon(userId: string, icon: AppIconId): Promise<void> {
+			const appIcon = icon === DEFAULT_APP_ICON ? null : icon;
+			await withUser(db, userId, (tx) =>
+				tx
+					.insert(profiles)
+					.values({ userId, appIcon, updatedAt: new Date() })
+					.onConflictDoUpdate({ target: profiles.userId, set: { appIcon, updatedAt: new Date() } })
+			);
 		},
 
 		/** The target in force on a day: the newest version among those effective on or before it. */

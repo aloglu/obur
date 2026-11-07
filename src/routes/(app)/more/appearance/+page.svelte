@@ -6,6 +6,8 @@
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { m } from '#lib/paraglide/messages.js';
 	import { setAppIcon, setPalette, setTheme, type ThemeChoice } from '#lib/client/prefs.ts';
+	import { api } from '#lib/client/api.ts';
+	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { APP_ICONS, appIconFile, type AppIconId } from '#lib/shared/app-icons.ts';
 	import { PALETTES, type PaletteId } from '#lib/shared/themes.ts';
 	import Card from '#lib/ui/Card.svelte';
@@ -15,6 +17,20 @@
 	let theme = $state<ThemeChoice>(untrack(() => data.theme));
 	let palette = $state<PaletteId>(untrack(() => data.palette));
 	let appIcon = $state<AppIconId>(untrack(() => data.appIcon));
+
+	// Kept with the account, so the icon is the same wherever obur is added from (Safari, on an iPhone).
+	async function chooseIcon(id: AppIconId) {
+		const before = appIcon;
+		appIcon = id;
+		setAppIcon(id);
+		try {
+			await api('PUT', '/api/v1/profile/app-icon', { icon: id });
+		} catch {
+			appIcon = before;
+			setAppIcon(before);
+			showToast({ message: m.more_app_icon_failed() });
+		}
+	}
 
 	function pick(id: PaletteId) {
 		palette = id;
@@ -76,10 +92,7 @@
 					type="button"
 					role="radio"
 					aria-checked={appIcon === icon.id}
-					onclick={() => {
-						appIcon = icon.id;
-						setAppIcon(icon.id);
-					}}
+					onclick={() => chooseIcon(icon.id)}
 					class="flex min-w-0 flex-col items-center gap-1.5 text-center text-[13px] leading-tight font-semibold"
 				>
 					<img

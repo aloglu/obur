@@ -36,6 +36,9 @@ export const profiles = pgTable(
 			.default(','),
 		// ISO weekday: 1 = Monday, 7 = Sunday.
 		firstDayOfWeek: smallint('first_day_of_week').notNull().default(1),
+		/** The Home Screen icon chosen on Appearance (shared/app-icons.ts); null is the default. Per account, because an
+		 * iPhone's Home Screen app keeps its own cookies apart from Safari's (owner's report, 2026-11-07). */
+		appIcon: text('app_icon'),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
@@ -46,6 +49,10 @@ export const profiles = pgTable(
 		),
 		check('profiles_waist_range', sql`${t.waistCm} is null or ${t.waistCm} between 30 and 250`),
 		check('profiles_sex_valid', sql`${t.sex} is null or ${t.sex} in ('female', 'male')`),
+		check(
+			'profiles_app_icon_valid',
+			sql`${t.appIcon} is null or ${t.appIcon} in ('pazar', 'pazar-light', 'sade', 'zerde', 'patlican', 'zeytin', 'disko', 'kaset', 'sinyal')`
+		),
 		check(
 			'profiles_birth_date_range',
 			sql`${t.birthDate} is null or ${t.birthDate} between '1900-01-01' and '2100-01-01'`

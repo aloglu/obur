@@ -38,6 +38,22 @@ export async function signedInAs(
 	return userId;
 }
 
+/** A new session for an existing person, as when they sign in again in another browser (test setup only). */
+export async function signedInAgain(page: Page, userId: string): Promise<void> {
+	const token = randomBytes(32).toString('base64url');
+	await sql`insert into sessions (user_id, token_hash, expires_at)
+		values (${userId}, ${createHash('sha256').update(token).digest('hex')}, now() + interval '1 day')`;
+	await page.context().addCookies([
+		{
+			name: 'obur_session',
+			value: token,
+			url: e2eEnv.PUBLIC_ORIGIN,
+			httpOnly: true,
+			sameSite: 'Lax'
+		}
+	]);
+}
+
 /** Calls the app's API as the signed-in browser user, with the Origin header the CSRF check requires. */
 export async function apiAs<T>(
 	page: Page,

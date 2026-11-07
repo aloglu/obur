@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { signedInAs } from './fixtures.ts';
+import { signedInAgain, signedInAs } from './fixtures.ts';
 
 test('the app icon chosen on Appearance is what the Home Screen and the manifest get', async ({
 	page,
+	browser,
 	playwright
 }, testInfo) => {
-	await signedInAs(page, `Simge ${testInfo.project.name}`);
+	const userId = await signedInAs(page, `Simge ${testInfo.project.name}`);
 	// Chromium reports these links' href to Playwright with the origin in front: the path, with or without it.
 	const at = (path: string) =>
 		new RegExp(`^(https?://[^/]+)?${path.replace(/[.?]/g, (c) => `\\${c}`)}$`);
@@ -27,12 +28,31 @@ test('the app icon chosen on Appearance is what the Home Screen and the manifest
 	).toBeVisible();
 
 	// Chosen: the page's links change at once, and stay after a reload.
-	await icons.getByRole('radio', { name: 'Zerde' }).click();
+	// Saved to the account before going on.
+	await Promise.all([
+		page.waitForResponse((r) => r.url().endsWith('/api/v1/profile/app-icon') && r.ok()),
+		icons.getByRole('radio', { name: 'Zerde' }).click()
+	]);
 	await expect(touch).toHaveAttribute('href', at('/app-icons/zerde/icon-180.png'));
 	await page.reload();
 	await expect(touch).toHaveAttribute('href', at('/app-icons/zerde/icon-180.png'));
 	await expect(manifest).toHaveAttribute('href', at('/manifest.webmanifest?icon=zerde'));
 	await expect(icons.getByRole('radio', { name: 'Zerde' })).toHaveAttribute('aria-checked', 'true');
+
+	// Kept with the account: another browser signed in as the same person (Safari, beside the Home Screen app,
+	// which keeps its own cookies) gets the same icon without ever choosing it there.
+	const safari = await browser.newPage();
+	await signedInAgain(safari, userId);
+	await safari.goto('/');
+	await expect(safari.locator('link[rel="apple-touch-icon"]')).toHaveAttribute(
+		'href',
+		at('/app-icons/zerde/icon-180.png')
+	);
+	await expect(safari.locator('link[rel="manifest"]')).toHaveAttribute(
+		'href',
+		at('/manifest.webmanifest?icon=zerde')
+	);
+	await safari.close();
 
 	// The manifest is fetched without a session, and names that icon's files, which exist.
 	const anonymous = await playwright.request.newContext({ baseURL: new URL(page.url()).origin });
@@ -52,7 +72,11 @@ test('the app icon chosen on Appearance is what the Home Screen and the manifest
 	await anonymous.dispose();
 
 	// Back to Pazar.
-	await icons.getByRole('radio', { name: 'Pazar', exact: true }).click();
+	// Saved to the account before going on.
+	await Promise.all([
+		page.waitForResponse((r) => r.url().endsWith('/api/v1/profile/app-icon') && r.ok()),
+		icons.getByRole('radio', { name: 'Pazar', exact: true }).click()
+	]);
 	await page.reload();
 	await expect(touch).toHaveAttribute('href', at('/icon-180.png'));
 });

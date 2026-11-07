@@ -43,7 +43,10 @@ export function setPalette(id: PaletteId): void {
 	document.querySelector('meta[name="theme-color"][media*="dark"]')?.setAttribute('content', dark);
 }
 
-/** The Home Screen icon: read when obur is added to the Home Screen, so the page's links change at once. */
+/**
+ * The Home Screen icon: read when obur is added to the Home Screen, so the page's links change at once. Kept with the
+ * account by the caller (PUT /api/v1/profile/app-icon); the cookie covers pages before signing in.
+ */
 export function setAppIcon(id: AppIconId): void {
 	document.cookie =
 		id === DEFAULT_APP_ICON

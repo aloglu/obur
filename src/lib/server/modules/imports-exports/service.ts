@@ -8,6 +8,7 @@
 // the current version (shown in the preview). Everything else is new and gets a new ID, so repeated identical meals
 // stay separate entries. Imported foods are private. Target versions are added only to an account without targets of
 // its own, and a profile only to an account without one, so imported history never changes existing budgets.
+import { DEFAULT_APP_ICON, isAppIcon } from '../../../shared/app-icons.ts';
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
@@ -164,7 +165,11 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 						pregnant: profile.pregnant,
 						breastfeeding: profile.breastfeeding,
 						decimalMark: profile.decimalMark,
-						firstDayOfWeek: profile.firstDayOfWeek
+						firstDayOfWeek: profile.firstDayOfWeek,
+						appIcon:
+							isAppIcon(profile.appIcon) && profile.appIcon !== DEFAULT_APP_ICON
+								? profile.appIcon
+								: null
 					}
 				: null,
 			reminders: reminder

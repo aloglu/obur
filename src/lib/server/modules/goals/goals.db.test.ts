@@ -255,6 +255,19 @@ describe('following the latest weight', () => {
 	});
 });
 
+describe('app icon', () => {
+	it('is kept with the account, the default as none, untouched by other profile saves, and private', async () => {
+		await goals.setAppIcon(MEHMET, 'zerde');
+		expect((await goals.profile(MEHMET))?.appIcon).toBe('zerde');
+		// Saving the rest of the profile keeps it.
+		await goals.saveProfile(MEHMET, adult);
+		expect((await goals.profile(MEHMET))?.appIcon).toBe('zerde');
+		expect(await goals.profile(AYSE)).toBeNull();
+		await goals.setAppIcon(MEHMET, 'pazar');
+		expect((await goals.profile(MEHMET))?.appIcon).toBeNull();
+	});
+});
+
 describe('editing details on Profile', () => {
 	const calc = {
 		mode: 'calculated' as const,

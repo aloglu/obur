@@ -1,4 +1,5 @@
 // Profile and target shapes shared by the server and the interface.
+import type { AppIconId } from './app-icons.ts';
 import * as v from 'valibot';
 import { isIsoDate } from './diary-rules.ts';
 
@@ -12,6 +13,8 @@ export interface Profile {
 	breastfeeding: boolean;
 	decimalMark: ',' | '.';
 	firstDayOfWeek: number;
+	/** The chosen Home Screen icon; null is the default. */
+	appIcon: AppIconId | null;
 }
 
 export interface TargetVersion {

@@ -1,0 +1,2 @@
+ALTER TABLE "profiles" ADD COLUMN "app_icon" text;--> statement-breakpoint
+ALTER TABLE "profiles" ADD CONSTRAINT "profiles_app_icon_valid" CHECK ("profiles"."app_icon" is null or "profiles"."app_icon" in ('pazar', 'pazar-light', 'sade', 'zerde', 'patlican', 'zeytin', 'disko', 'kaset', 'sinyal'));

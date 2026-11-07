@@ -2,6 +2,7 @@
 // data/, convenient CSV views under csv/ and a manifest with the format version, units, row counts and SHA-256 of
 // every file. Reading validates paths, sizes, checksums and every record before anything is written. Checksums
 // detect damage; they do not make an archive trustworthy, so the content is validated as untrusted input.
+import { APP_ICONS } from '../../../shared/app-icons.ts';
 import { createHash } from 'node:crypto';
 import { strFromU8, strToU8, unzipSync, zipSync, type Unzipped } from 'fflate';
 import * as v from 'valibot';
@@ -276,7 +277,11 @@ export const ProfileRecord = v.object({
 	pregnant: v.boolean(),
 	breastfeeding: v.boolean(),
 	decimalMark: v.picklist([',', '.']),
-	firstDayOfWeek: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7))
+	firstDayOfWeek: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7)),
+	/** Added 2026-11-07; older archives have none. */
+	appIcon: v.optional(
+		v.nullable(v.picklist(APP_ICONS.map((i) => i.id).filter((id) => id !== 'pazar')))
+	)
 });
 
 export const DayCompletionRecord = v.object({
