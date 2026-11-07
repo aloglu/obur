@@ -1,6 +1,7 @@
 // What the label parser decided while reading a photo (server/modules/label-parser), shown as notes on Check the
 // label (ui/food/ScanNotes.svelte). Shared so the page can type them; the parser is the only producer.
 import type { NutrientCode } from './nutrients.ts';
+import type { Provider } from './remote-models.ts';
 
 export type LabelNote =
 	/** Which column the values come from, and what was passed over. */
@@ -20,5 +21,7 @@ export type LabelNote =
 	| { kind: 'dropped'; codes: NutrientCode[] }
 	/** Salt or sodium written in milligrams, given in grams. */
 	| { kind: 'converted_mg'; codes: NutrientCode[] }
+	/** Read by a company's vision model with the person's own key. */
+	| { kind: 'read_by'; provider: Provider }
 	/** Values whose numbers were hard to read in the photo. */
 	| { kind: 'unclear'; codes: NutrientCode[] };

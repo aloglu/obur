@@ -11,12 +11,18 @@ const STATUS = {
 	decode_failed: 422,
 	busy: 503,
 	unavailable: 503,
+	key_missing: 409,
+	key_refused: 502,
+	no_credit: 502,
+	provider_busy: 503,
+	provider_unavailable: 503,
 	nothing_heard: 422
 } as const;
 
 /**
  * POST /api/v1/speech?date=YYYY-MM-DD&zone=Area/City with the recorded clip as the body (audio/*). Returns what was
- * heard as an entry to confirm; writes nothing. The audio is not kept.
+ * heard as an entry to confirm; writes nothing. The audio is not kept. `&via=server`: this recording goes to the
+ * server's own add-on even when the person chose their key.
  */
 export const POST: RequestHandler = async ({ request, url, locals }) => {
 	const date = url.searchParams.get('date') ?? '';
@@ -27,7 +33,14 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
 	const audio = new Uint8Array(await request.arrayBuffer());
 	try {
 		const started = performance.now();
-		const result = await understandSpeech(locals.session!.userId, audio, date, zone);
+		const result = await understandSpeech(
+			locals.session!.userId,
+			audio,
+			date,
+			zone,
+			request.headers.get('content-type') ?? 'audio/mp4',
+			url.searchParams.get('via') === 'server'
+		);
 		return json({ ...result, totalMs: Math.round(performance.now() - started) });
 	} catch (e) {
 		if (e instanceof SpeechFailure) return json({ error: e.code }, { status: STATUS[e.code] });
