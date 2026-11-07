@@ -147,6 +147,12 @@ test('under-18s get no calculated target but can enter a professional’s number
 	await budget.getByRole('button', { name: /^Budget/ }).click();
 	await expect(budget.locator('#budget-breakdown')).toContainText('Your own target');
 
+	// No goal weight for someone under 18, even with a budget set by hand.
+	await page.goto('/more/goal');
+	await expect(page.getByText('obur doesn’t offer a goal weight under 18')).toBeVisible();
+	await expect(page.getByRole('button', { name: /Goal weight/ })).toHaveCount(0);
+
+	await page.goto('/');
 	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
 	await apiAs(page, 'POST', '/api/v1/diary/entries', {
 		kind: 'quick',
@@ -252,4 +258,27 @@ test('first day: the welcome offers a budget once, and "Just log" leaves no ment
 	await expect(page.getByRole('link', { name: /budget/i })).toHaveCount(0);
 	await page.goto('/profile');
 	await expect(page.getByText('Optional. A budget shows what')).toBeVisible();
+});
+
+test('a budget set by hand takes a goal weight, which leaves the budget as it is', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Hedef ${testInfo.project.name}`);
+	await page.goto('/');
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	await apiAs(page, 'POST', '/api/v1/targets', {
+		mode: 'manual',
+		effectiveFrom: date,
+		budgetKcal: 2100
+	});
+	await page.goto('/more/goal');
+	await page.getByRole('button', { name: /Goal weight/ }).click();
+	await page.getByLabel('New goal weight').fill('78,5');
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('button', { name: /Goal weight/ })).toContainText('78,5 kg');
+	await expect(page.getByText('Your budget stays as you set it.')).toBeVisible();
+	// No pace or worked-out budget for a budget set by hand.
+	await expect(page.getByText('Pace')).toHaveCount(0);
+	await page.goto('/');
+	await expect(page.getByRole('region', { name: 'Budget' })).toContainText('2100 kcal');
 });

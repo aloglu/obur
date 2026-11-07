@@ -102,7 +102,8 @@ export const TargetInput = v.variant('mode', [
 	v.object({
 		mode: v.literal('manual'),
 		effectiveFrom: Day,
-		budgetKcal: v.pipe(v.number(), v.finite(), v.minValue(500), v.maxValue(10_000))
+		budgetKcal: v.pipe(v.number(), v.finite(), v.minValue(500), v.maxValue(10_000)),
+		goalWeightKg: optionalNumber(20, 700)
 	}),
 	v.object({ mode: v.literal('none'), effectiveFrom: Day })
 ]);

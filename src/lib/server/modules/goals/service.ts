@@ -19,7 +19,8 @@ import {
 	dailyDeficit,
 	maxRate,
 	SEDENTARY_FACTOR,
-	targetsAllowed
+	targetsAllowed,
+	goalWeightAllowed
 } from '../../../shared/goals.ts';
 import * as v from 'valibot';
 import {
@@ -56,7 +57,13 @@ export type TargetRequest =
 			proteinGPerKg?: number | null;
 			fatShare?: number | null;
 	  } & Partial<BudgetSettings>)
-	| ({ mode: 'manual'; effectiveFrom: string; budgetKcal: number } & Partial<BudgetSettings>)
+	| ({
+			mode: 'manual';
+			effectiveFrom: string;
+			budgetKcal: number;
+			/** For the weight chart and achievements only: a budget set by hand never follows it. */
+			goalWeightKg?: number | null;
+	  } & Partial<BudgetSettings>)
 	| { mode: 'none'; effectiveFrom: string };
 
 type ProfileRow = typeof profiles.$inferSelect;
@@ -145,6 +152,12 @@ function settingsOf(r: VersionRow | undefined): BudgetSettings {
 }
 
 type CalculatedRequest = Extract<TargetRequest, { mode: 'calculated' }>;
+
+/** A goal weight beside a budget set by hand: refused for minors, pregnancy and breastfeeding (goalWeightAllowed). */
+async function requireGoalAllowed(tx: Tx, userId: string, onDate: string) {
+	const [p] = await tx.select().from(profiles).where(eq(profiles.userId, userId));
+	if (!goalWeightAllowed(p, onDate)) throw new GoalError('targets_not_allowed');
+}
 
 /** The row for a calculated target; refuses when the profile is incomplete or targets are not allowed. */
 async function calculatedValues(
@@ -356,10 +369,12 @@ export function createGoals(db: Database) {
 						...macroColumns(settings.macros, null)
 					};
 				} else if (request.mode === 'manual') {
+					if (request.goalWeightKg != null) await requireGoalAllowed(tx, userId, request.effectiveFrom);
 					values = {
 						...base,
 						mode: 'manual',
 						baseBurnKcal: Math.round(request.budgetKcal),
+						goalWeightKg: request.goalWeightKg ?? null,
 						inputs: { source: 'manual' },
 						// The balanced default needs body weight, so a hand-set budget only has own percentages.
 						...macroColumns(settings.macros, null)
@@ -396,6 +411,8 @@ export function createGoals(db: Database) {
 					atGoal: change.atGoal ?? kept.atGoal,
 					macros: change.macros ?? kept.macros
 				};
+				if (current.mode === 'manual' && change.goalWeightKg != null)
+					await requireGoalAllowed(tx, userId, today);
 				const values: typeof goalVersions.$inferInsert =
 					current.mode === 'calculated'
 						? await calculatedValues(
@@ -420,6 +437,12 @@ export function createGoals(db: Database) {
 								baseBurnKcal: current.baseBurnKcal,
 								deficitKcal: current.deficitKcal,
 								floorKcal: current.floorKcal,
+								// A goal weight next to a budget set by hand (owner, 2026-11-08): it changes nothing in
+								// the budget, only the weight chart's goal line and the weight achievements.
+								goalWeightKg:
+									current.mode === 'manual' && change.goalWeightKg !== undefined
+										? change.goalWeightKg
+										: current.goalWeightKg,
 								inputs: current.inputs,
 								calculationVersion: current.calculationVersion,
 								countActivity: settings.countActivity,

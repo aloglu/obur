@@ -117,6 +117,48 @@ describe('calculated targets', () => {
 			null
 		);
 		expect(manual).toMatchObject({ mode: 'manual', baseBurnKcal: 2300, deficitKcal: 0 });
+		// …but without a goal weight, whose achievements would celebrate weight loss.
+		expect(
+			await errorCode(
+				goals.setTarget(
+					AYSE,
+					{ mode: 'manual', effectiveFrom: '2026-06-02', budgetKcal: 2300, goalWeightKg: 60 },
+					null
+				)
+			)
+		).toBe('targets_not_allowed');
+		expect(
+			await errorCode(goals.changeSettings(AYSE, '2026-06-03', 70, { goalWeightKg: 60 }))
+		).toBe('targets_not_allowed');
+	});
+});
+
+describe('a goal weight with a budget set by hand', () => {
+	it('is kept beside the budget, changes nothing in it, and survives other settings', async () => {
+		await goals.setTarget(
+			MEHMET,
+			{ mode: 'manual', effectiveFrom: '2026-06-01', budgetKcal: 2100, goalWeightKg: 82 },
+			null
+		);
+		expect(await goals.targetFor(MEHMET, '2026-06-01')).toMatchObject({
+			mode: 'manual',
+			baseBurnKcal: 2100,
+			deficitKcal: 0,
+			goalWeightKg: 82
+		});
+		const changed = await goals.changeSettings(MEHMET, '2026-06-10', 90, { goalWeightKg: 80 });
+		expect(changed).toMatchObject({
+			mode: 'manual',
+			baseBurnKcal: 2100,
+			deficitKcal: 0,
+			goalWeightKg: 80
+		});
+		// Other settings keep it; earlier days keep theirs.
+		const later = await goals.changeSettings(MEHMET, '2026-06-20', 89, { countActivity: false });
+		expect(later).toMatchObject({ goalWeightKg: 80, baseBurnKcal: 2100, countActivity: false });
+		expect((await goals.targetFor(MEHMET, '2026-06-05'))?.goalWeightKg).toBe(82);
+		const cleared = await goals.changeSettings(MEHMET, '2026-06-21', 89, { goalWeightKg: null });
+		expect(cleared.goalWeightKg).toBeNull();
 	});
 });
 

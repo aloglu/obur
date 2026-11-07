@@ -74,6 +74,19 @@ export function targetsAllowed(
 	return ageOn(p.birthDate, onDate) >= ADULT_AGE && !p.pregnant && !p.breastfeeding;
 }
 
+/**
+ * Whether a goal weight may sit next to a budget set by hand: not for someone the profile says is under 18, pregnant
+ * or breastfeeding, whose weight achievements would celebrate weight loss. Unknown facts don't block it.
+ */
+export function goalWeightAllowed(
+	p: { birthDate: string | null; pregnant: boolean; breastfeeding: boolean } | null | undefined,
+	onDate: string
+): boolean {
+	if (!p) return true;
+	if (p.pregnant || p.breastfeeding) return false;
+	return !p.birthDate || ageOn(p.birthDate, onDate) >= ADULT_AGE;
+}
+
 export function baseBurn(
 	p: ProfileFacts,
 	onDate: string

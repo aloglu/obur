@@ -1,7 +1,8 @@
 <script lang="ts">
 	// docs/ui.md "More and settings": goal weight, and pace as a row opening a menu; the budget it comes to, on an inactive
-	// day, follows along. A change makes a new budget version from today; past days keep theirs. A goal belongs to a
-	// calculated budget, so anyone else gets the way to set one up.
+	// day, follows along. A change makes a new budget version from today; past days keep theirs. A budget set by hand
+	// takes a goal weight too (owner, 2026-11-08), for the weight chart and achievements only; without a budget, the way
+	// to set one up.
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { invalidateAll } from '$app/navigation';
@@ -22,6 +23,7 @@
 	let { data } = $props();
 	const t = $derived(data.target);
 	const calculated = $derived(t?.mode === 'calculated');
+	const manual = $derived(t?.mode === 'manual');
 	const inactive = $derived(budgetForDay(t, 0)?.budget ?? null);
 	const requested = $derived.by(() => {
 		const asked = t?.inputs.requestedRateKgPerWeek;
@@ -72,7 +74,9 @@
 	</a>
 	<h1 class="text-[1.5rem] font-[750]">{m.more_goal()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
-	{#if calculated && t}
+	{#if manual && !data.goalAllowed}
+		<Notice tone="info">{m.goal_not_offered()}</Notice>
+	{:else if (calculated || manual) && t}
 		<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
 			<div>
 				<button
@@ -113,20 +117,24 @@
 					</div>
 				</div>
 			</div>
-			<MenuRow
-				label={m.onb_rate_short()}
-				value={String(requested)}
-				onchange={(v) => change({ rateKgPerWeek: Number(v) })}
-				{options}
-			/>
-			<div class="flex min-h-14 items-center justify-between gap-3 text-[0.9375rem]">
-				<span class="font-semibold">{m.goal_inactive()}</span>
-				<span class="whitespace-nowrap text-muted"
-					><b class="font-bold text-text tabular-nums"><Roll value={kcal(inactive ?? 0)} /></b> kcal</span
-				>
-			</div>
+			{#if calculated}
+				<MenuRow
+					label={m.onb_rate_short()}
+					value={String(requested)}
+					onchange={(v) => change({ rateKgPerWeek: Number(v) })}
+					{options}
+				/>
+				<div class="flex min-h-14 items-center justify-between gap-3 text-[0.9375rem]">
+					<span class="font-semibold">{m.goal_inactive()}</span>
+					<span class="whitespace-nowrap text-muted"
+						><b class="font-bold text-text tabular-nums"><Roll value={kcal(inactive ?? 0)} /></b> kcal</span
+					>
+				</div>
+			{/if}
 		</div>
-		<p class="px-1 text-[0.8125rem] text-muted">{m.goal_note()}</p>
+		<p class="px-1 text-[0.8125rem] text-muted">
+			{calculated ? m.goal_note() : m.goal_manual_note()}
+		</p>
 	{:else}
 		<div class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
 			<p class="text-[0.9375rem]">{m.goal_needs_budget()}</p>
