@@ -124,6 +124,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 
 ### Account and household
 
+- **Profile:** as in the demo: the budget card first, then **About you** as rows (Height, Birth date, Sex for the formula, Body fat) that open setup's first step, with "Weight comes from your weigh-ins on Today."; then **Budget settings**: the activity switch and, with a goal weight, Keep deficit / Maintain as a two-way choice. Macro targets stay in their own card below (not in the demo). Setup's first step saves the details when it moves on (`PATCH /api/v1/profile/details`), so someone who came to change one detail may stop there and a calculated budget still follows from today (2026-11-07).
 - **Passkeys:** labels sit beside the name; rows open a detail sheet with Rename and Remove.
 - **Household:** "Backups are working" is one larger line with a bigger mark. Sections have small labels above their cards: People, Invite someone, Backups, Label scans, Deleted accounts. Deleting someone needs the "I understand" tick as well as a passkey. Deleted accounts list opaque IDs, not the demo's names: names are not kept after deletion. The off-site row says whether a copy is set up, not when it last ran, because the backup report only has that.
 - **Your data, LoseIt import:** the chosen file replaces the picker (name, source, dates, size in one row); one "To add" list with numbers on the right, deleted entries as the last grey row; weight unit and sharing as two settings rows; even spacing throughout.

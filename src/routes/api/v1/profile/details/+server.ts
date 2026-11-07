@@ -7,8 +7,9 @@ import { ProfileDetailsInput } from '#lib/shared/goal-types.ts';
 import type { RequestHandler } from './$types';
 
 /**
- * PATCH { heightCm, birthDate, sex, goalWeightKg? }: saves the details Profile edits; a calculated budget follows
- * them from today on (the reply's `outcome` says how). A new weight is a weigh-in, saved through the body routes.
+ * PATCH { heightCm, birthDate, sex, goalWeightKg?, bodyFatPct?, waistCm?, pregnant?, breastfeeding? }: saves the
+ * details from setup's "About you" (also reached from Profile's rows); a calculated budget follows them from today on
+ * (the reply's `outcome` says how). A new weight is a weigh-in, saved through the body routes.
  */
 export const PATCH: RequestHandler = ({ request, locals }) =>
 	respondGoals(async () => {

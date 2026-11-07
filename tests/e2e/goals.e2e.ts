@@ -89,22 +89,21 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 		await expect(page.getByRole('definition').filter({ hasText: value })).toBeVisible();
 	await expect(page.getByText('Updates from the day you log a new weight.')).toBeVisible();
 
-	// Your details: shown as rows, edited in place; the calculated budget follows from today.
-	const details = page.getByRole('region', { name: 'Your details' });
-	await expect(details).toContainText('180 cm');
-	await expect(details).toContainText('80 kg · Today');
-	await details.getByRole('button', { name: 'Edit your details' }).click();
-	await details.getByLabel('Height').fill('20');
-	await details.getByRole('button', { name: 'Save details' }).click();
-	await expect(details).toContainText('Check the highlighted values');
+	// About you: rows that open setup's first step. Saving that step is enough: the calculated budget follows from
+	// today even when setup goes no further.
+	const about = page.getByRole('region', { name: 'About you' });
+	await expect(about.getByRole('link', { name: /^Height/ })).toContainText('180 cm');
+	await expect(about.getByRole('link', { name: /^Body fat/ })).toContainText('Not set');
+	await expect(page.getByText('Weight comes from your weigh-ins on Today.')).toBeVisible();
+	await about.getByRole('link', { name: /^Height/ }).click();
+	await expect(page.getByLabel('Height')).toHaveValue('180');
 	// 182 cm and 79 kg: 10·79 + 6.25·182 − 5·30 + 5 = 1,782.5; × 1.2 = 2,139 base.
-	await details.getByLabel('Height').fill('182');
-	await details.getByLabel('Weight').fill('79');
-	await details.getByRole('button', { name: 'Save details' }).click();
-	await expect(page.getByRole('status')).toContainText('Details saved');
-	await expect(page.getByRole('status')).toContainText('Budget now 1589 kcal (was 1586)');
-	await expect(details).toContainText('182 cm');
-	await expect(details).toContainText('79 kg · Today');
+	await page.getByLabel('Height').fill('182');
+	await page.getByLabel('Weight').fill('79');
+	await page.getByRole('button', { name: 'See my estimate' }).click();
+	await expect(page.getByText(/^Step 2 of 3/)).toBeVisible();
+	await page.getByRole('link', { name: 'Profile' }).click();
+	await expect(about.getByRole('link', { name: /^Height/ })).toContainText('182 cm');
 	await expect(page.getByRole('definition').filter({ hasText: '2139 kcal' })).toBeVisible();
 
 	// Goal: the goal weight in place, the pace from a menu; each is a new budget version from today.
@@ -204,10 +203,16 @@ test('day totals replace each other, and the budget settings apply from today', 
 
 	// Turning activity off: kept and shown, but not added.
 	await page.goto('/profile');
-	await page.getByLabel('Add calories I burn to my budget').uncheck();
+	const activity = page.getByRole('switch', { name: 'Add calories I burn to my budget' });
+	await expect(activity).toHaveAttribute('aria-checked', 'true');
+	await activity.click();
 	await expect(page.getByRole('status')).toContainText('Budget settings saved');
-	await choose(page, /: Keep deficit$/, 'Maintain');
-	await expect(page.getByRole('button', { name: /: Maintain$/ })).toBeVisible();
+	await expect(activity).toHaveAttribute('aria-checked', 'false');
+	await page.getByRole('radio', { name: 'Maintain' }).click();
+	await expect(page.getByRole('radio', { name: 'Maintain' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
 	// Own macro percentages: they start from the balanced split, must add up to 100 %, and apply from today.
 	await page.getByRole('radio', { name: 'My own %' }).click();
 	const protein = page.getByLabel('Protein', { exact: true });

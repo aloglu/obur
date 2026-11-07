@@ -118,7 +118,12 @@ export const ProfileDetailsInput = v.object({
 	sex: v.picklist(['female', 'male']),
 	goalWeightKg: v.optional(
 		v.nullable(v.pipe(v.number(), v.finite(), v.minValue(20), v.maxValue(700)))
-	)
+	),
+	// The rest of setup's "About you"; left out, each stays as it was.
+	bodyFatPct: v.optional(v.nullable(v.pipe(v.number(), v.finite(), v.minValue(2), v.maxValue(75)))),
+	waistCm: v.optional(v.nullable(v.pipe(v.number(), v.finite(), v.minValue(30), v.maxValue(250)))),
+	pregnant: v.optional(v.boolean()),
+	breastfeeding: v.optional(v.boolean())
 });
 export type ProfileDetailsInput = v.InferOutput<typeof ProfileDetailsInput>;
 

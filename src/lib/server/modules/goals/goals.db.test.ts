@@ -287,6 +287,29 @@ describe('editing details on Profile', () => {
 		expect((await goals.targetFor(MEHMET, '2026-06-09'))?.id).toBe(first.id);
 	});
 
+	it('takes the rest of the setup details: body fat moves the budget, and details left out stay', async () => {
+		await goals.saveProfile(MEHMET, { ...adult, waistCm: 90, bodyFatPct: 20 });
+		await goals.setTarget(MEHMET, calc, 80);
+		const before = await goals.targetFor(MEHMET, '2026-06-10');
+		const { profile, outcome } = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
+			...adult,
+			bodyFatPct: 15
+		});
+		expect(profile).toMatchObject({ bodyFatPct: 15, waistCm: 90, pregnant: false });
+		expect(outcome.kind).toBe('recalculated');
+		expect((await goals.targetFor(MEHMET, '2026-06-10'))!.baseBurnKcal).not.toBe(
+			before!.baseBurnKcal
+		);
+		// Pregnant: no new calculation, and the budget in force stays.
+		const pregnant = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
+			...adult,
+			sex: 'female',
+			pregnant: true
+		});
+		expect(pregnant.outcome).toEqual({ kind: 'not_recalculated', reason: 'targets_not_allowed' });
+		expect(pregnant.profile).toMatchObject({ pregnant: true, bodyFatPct: 15 });
+	});
+
 	it('records nothing when nothing changes, and keeps the goal when it is not sent', async () => {
 		await goals.saveProfile(MEHMET, adult);
 		const first = await goals.setTarget(MEHMET, calc, 80);

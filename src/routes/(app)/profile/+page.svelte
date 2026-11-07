@@ -1,16 +1,20 @@
 <script lang="ts">
+	// Profile (docs/ui.md, review demo account.html): the budget and where it comes from, then what feeds it. About you
+	// is rows that open setup's first step; the budget settings apply from today.
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { BudgetSettings } from '#lib/shared/goal-types.ts';
-	import MenuRow from '#lib/ui/MenuRow.svelte';
+	import Chips from '#lib/ui/Chips.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
-	import { dayTitle, kcal } from '#lib/shared/format.ts';
+	import NavRow from '#lib/ui/shell/NavRow.svelte';
+	import Switch from '#lib/ui/Switch.svelte';
+	import { dateWithYear, dayTitle, kcal } from '#lib/shared/format.ts';
 	import { budgetForDay } from '#lib/shared/goals.ts';
+	import { formatDecimal } from '#lib/shared/numbers.ts';
 	import Card from '#lib/ui/Card.svelte';
-	import DetailsCard from '#lib/ui/profile/DetailsCard.svelte';
 	import MacroSettings from '#lib/ui/profile/MacroSettings.svelte';
 
 	let { data } = $props();
@@ -20,6 +24,21 @@
 	let problem = $state('');
 	// Follows the saved setting, but a tap shows at once (re-rendering must not put back the old value).
 	let activityOn = $derived(t?.countActivity ?? true);
+	let atGoal = $derived(t?.atGoal ?? 'keep');
+
+	const p = $derived(data.profile);
+	const setupHref = `${resolve('/(app)/onboarding')}?from=profile`;
+	const notSet = m.details_not_set();
+	const about = $derived([
+		[m.details_height(), p?.heightCm ? `${formatDecimal(p.heightCm, ',', 1)} cm` : notSet],
+		[m.details_birth(), p?.birthDate ? dateWithYear(p.birthDate) : notSet],
+		[
+			m.details_sex(),
+			p?.sex === 'female' ? m.onb_female() : p?.sex === 'male' ? m.onb_male() : notSet
+		],
+		[m.details_body_fat(), p?.bodyFatPct ? `${formatDecimal(p.bodyFatPct, ',', 1)} %` : notSet]
+	]);
+	const group = 'flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card';
 
 	// Applies from today: a new budget version with the same choices (docs/design.md, targets).
 	async function change(settings: Partial<BudgetSettings>) {
@@ -41,12 +60,6 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<h1 class="text-[24px] font-[750]">{m.profile_title()}</h1>
-	<DetailsCard
-		profile={data.profile}
-		latestWeight={data.latestWeight}
-		target={t}
-		today={data.today}
-	/>
 	{#if t && day}
 		<Card title={m.profile_target()}>
 			<!-- A headline and labelled rows, so nothing wraps mid-sentence (owner review 2026-10-30). -->
@@ -95,41 +108,54 @@
 			</a>
 		</Card>
 	{/if}
+	<section aria-labelledby="about-label">
+		<h2 id="about-label" class="mb-1.5 px-1 text-[13px] font-[650] text-muted">
+			{m.profile_about()}
+		</h2>
+		<div class={group}>
+			{#each about as [label, value] (label)}
+				<NavRow href={setupHref} {label} {value} />
+			{/each}
+		</div>
+		<p class="mt-1.5 px-1 text-[13px] text-muted">{m.details_weight_from_today()}</p>
+	</section>
 	{#if t && t.mode !== 'none'}
-		<Card title={m.profile_settings()}>
-			<label class="flex min-h-11 cursor-pointer items-start gap-3">
-				<input
-					type="checkbox"
+		<section aria-labelledby="settings-label">
+			<h2 id="settings-label" class="mb-1.5 px-1 text-[13px] font-[650] text-muted">
+				{m.profile_settings()}
+			</h2>
+			<div class={group}>
+				<Switch
+					label={m.profile_settings_activity()}
 					bind:checked={activityOn}
-					disabled={busy}
-					onchange={() => change({ countActivity: activityOn })}
-					class="mt-0.5 size-5 shrink-0 accent-accent"
+					onchange={(on) => change({ countActivity: on })}
 				/>
-				<span class="flex flex-col gap-0.5">
-					<span class="text-[15px] font-semibold">{m.profile_settings_activity()}</span>
-					<span class="text-[13px] text-muted">{m.profile_settings_activity_hint()}</span>
-				</span>
-			</label>
-			{#if t.mode === 'calculated' && t.goalWeightKg !== null}
-				<MenuRow
-					label={m.profile_settings_goal()}
-					value={t.atGoal}
-					onchange={(atGoal) => change({ atGoal: atGoal as BudgetSettings['atGoal'] })}
-					options={[
-						{ value: 'keep', label: m.profile_settings_goal_keep() },
-						{ value: 'maintain', label: m.profile_settings_goal_maintain() }
-					]}
-				/>
-			{/if}
-			{#if day}
+				{#if t.mode === 'calculated' && t.goalWeightKg !== null}
+					<div class="py-3.5">
+						<Chips
+							label={m.profile_settings_goal()}
+							bind:value={atGoal}
+							onchange={(v) => change({ atGoal: v as BudgetSettings['atGoal'] })}
+							options={[
+								{ value: 'keep', label: m.profile_settings_goal_keep() },
+								{ value: 'maintain', label: m.profile_settings_goal_maintain() }
+							]}
+						/>
+					</div>
+				{/if}
+			</div>
+			<p class="mt-1.5 px-1 text-[13px] text-muted">{m.profile_settings_hint()}</p>
+		</section>
+		{#if day}
+			<Card>
 				<MacroSettings
 					target={t}
 					budgetKcal={day.budget}
 					{busy}
 					onsave={(macros) => change({ macros })}
 				/>
-			{/if}
-			{#if problem}<Notice>{problem}</Notice>{/if}
-		</Card>
+			</Card>
+		{/if}
+		{#if problem}<Notice>{problem}</Notice>{/if}
 	{/if}
 </main>

@@ -392,7 +392,11 @@ export function createGoals(db: Database) {
 			latestWeightKg: number | null,
 			raw: v.InferInput<typeof ProfileDetailsInput>
 		): Promise<{ profile: Profile; outcome: DetailsOutcome; target: TargetVersion | null }> {
-			const { goalWeightKg, ...facts } = v.parse(ProfileDetailsInput, raw);
+			const { goalWeightKg, ...given } = v.parse(ProfileDetailsInput, raw);
+			// Details left out stay as they are.
+			const facts = Object.fromEntries(
+				Object.entries(given).filter(([, value]) => value !== undefined)
+			) as typeof given;
 			return withUser(db, userId, async (tx) => {
 				const set = { ...facts, updatedAt: new Date() };
 				const [profileRow] = await tx
@@ -431,7 +435,9 @@ export function createGoals(db: Database) {
 					values.deficitKcal === current.deficitKcal &&
 					values.proteinBasisKg === current.proteinBasisKg &&
 					values.goalWeightKg === current.goalWeightKg &&
-					(['weightKg', 'heightCm', 'age', 'sex'] as const).every((k) => inputs[k] === before[k]);
+					(['weightKg', 'heightCm', 'age', 'sex', 'bodyFatPct'] as const).every(
+						(k) => inputs[k] === before[k]
+					);
 				if (same) return done({ kind: 'unchanged' });
 				values.inputs = { ...inputs, source: 'details' };
 				const [row] = await tx.insert(goalVersions).values(values).returning();

@@ -123,16 +123,7 @@
 		busy = true;
 		problem = '';
 		try {
-			await api('PUT', '/api/v1/profile', {
-				heightCm: h,
-				birthDate,
-				sex,
-				bodyFatPct: bf ?? null,
-				waistCm: waistCm ?? null,
-				pregnant: expecting,
-				breastfeeding: nursing
-			});
-			// A new or changed weight is a genuine reading for today.
+			// A new or changed weight is a genuine reading for today; saved first, so the details below use it.
 			if (w !== start.latestWeight?.value) {
 				await api('POST', '/api/v1/body/weight', {
 					id: crypto.randomUUID(),
@@ -141,6 +132,17 @@
 					value: w
 				});
 			}
+			// Saved now, not at the end: someone who came from Profile to change one detail may stop here, and a
+			// calculated budget follows the details from today on all the same.
+			await api('PATCH', '/api/v1/profile/details', {
+				heightCm: h,
+				birthDate,
+				sex,
+				bodyFatPct: bf ?? null,
+				waistCm: waistCm ?? null,
+				pregnant: expecting,
+				breastfeeding: nursing
+			});
 			if (!floorText && sex) floorText = String(DEFAULT_FLOOR[sex]);
 			go(2);
 		} catch {
