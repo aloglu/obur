@@ -9,6 +9,12 @@ import {
 import { config } from './config.ts';
 
 export const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+/**
+ * Below this the photo is called blurry (the OCR service's edge sharpness). On the owner's 22 labels, real photos
+ * measured 0.26 and up; copies blurred until reading failed, 0.14 and below; reading was often still right between.
+ * Provisional: measured on artificially blurred copies (docs/feasibility.md).
+ */
+export const BLURRY_BELOW = 0.16;
 const TIMEOUT_MS = 30_000;
 /** Scans per person per 10 minutes: plenty for a shopping bag, a bound on a stuck client. */
 const perPerson = new RateLimiter(30, 10 * 60_000);
@@ -29,7 +35,7 @@ export class ScanFailure extends Error {
 export async function scanLabel(
 	userId: string,
 	image: Uint8Array
-): Promise<{ proposal: LabelProposal; ocrMs: number; queueMs: number }> {
+): Promise<{ proposal: LabelProposal; blurry: boolean; ocrMs: number; queueMs: number }> {
 	if (!config.ocrUrl) throw new ScanFailure('off');
 	if (image.length === 0) throw new ScanFailure('decode_failed');
 	if (image.length > MAX_IMAGE_BYTES) throw new ScanFailure('too_large');
@@ -49,6 +55,7 @@ export async function scanLabel(
 		lines?: OcrLine[];
 		error?: string;
 		ahead?: number;
+		sharpness?: number | null;
 		ocrMs?: number;
 		queueMs?: number;
 	};
@@ -64,6 +71,7 @@ export async function scanLabel(
 	}
 	return {
 		proposal: parseLabel(Array.isArray(body.lines) ? body.lines : []),
+		blurry: typeof body.sharpness === 'number' && body.sharpness < BLURRY_BELOW,
 		ocrMs: body.ocrMs ?? 0,
 		queueMs: body.queueMs ?? 0
 	};

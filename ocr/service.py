@@ -3,7 +3,7 @@ Runtime (RapidOCR), at the settings measured in Phase 0 (docs/feasibility.md). R
 internal network with no internet access; only the web container reaches it. The label parser runs in the app.
 
 POST /ocr     {"image": base64 bytes (JPEG, PNG or WebP)}
-  → 200 {"lines": [{"box": [[x, y] × 4], "text", "score"}], "width", "height", "queueMs", "ocrMs"}
+  → 200 {"lines": [{"box": [[x, y] × 4], "text", "score"}], "width", "height", "sharpness", "queueMs", "ocrMs"}
   → 400 {"error": "bad_request" | "decode_failed"}, 413 too large, 503 {"error": "busy", "ahead": n}
 GET  /health  → 200 {"ok": true, "model": ...} once the models are loaded
 
@@ -37,6 +37,21 @@ Image.MAX_IMAGE_PIXELS = 50_000_000
 
 # ONNX Runtime ships a telemetry component; it stays off (no outbound network is reachable either way).
 onnxruntime.disable_telemetry_events()
+
+
+def sharpness(gray: np.ndarray) -> float | None:
+    """How crisp the strongest edges are: the Laplacian against the gradient at the top 1 % of edges. Contrast does not
+    change it; blur lowers it. Measured on the owner's labels (docs/feasibility.md): sharp photos 0.26 and up, copies
+    blurred until the OCR stops reading them 0.14 and below. None for a photo with no edges at all."""
+    g = gray.astype(np.float32)
+    lap = g[:-2, 1:-1] + g[2:, 1:-1] + g[1:-1, :-2] + g[1:-1, 2:] - 4 * g[1:-1, 1:-1]
+    gx = g[1:-1, 2:] - g[1:-1, :-2]
+    gy = g[2:, 1:-1] - g[:-2, 1:-1]
+    mag = np.sqrt(gx * gx + gy * gy)
+    strong = mag > np.percentile(mag, 99)
+    if not strong.any():
+        return None
+    return round(float(np.abs(lap)[strong].mean() / mag[strong].mean()), 3)
 
 
 class Busy(Exception):
@@ -77,13 +92,14 @@ class Reader:
                         raise ValueError("decode_failed")
                     im = ImageOps.exif_transpose(im).convert("RGB")
                     im.thumbnail((MAX_SIDE, MAX_SIDE))
+                    sharp = sharpness(np.asarray(im.convert("L")))
                     pixels = np.asarray(im)[:, :, ::-1].copy()  # RGB -> BGR, as RapidOCR expects
                 result = self.engine(pixels)
                 boxes = [] if result.boxes is None else result.boxes.tolist()
                 lines = [{"box": [[round(x, 1), round(y, 1)] for x, y in b], "text": t, "score": round(float(s), 3)}
                          for b, t, s in zip(boxes, result.txts or [], result.scores or [])]
                 done = time.perf_counter()
-                return {"lines": lines, "width": pixels.shape[1], "height": pixels.shape[0],
+                return {"lines": lines, "width": pixels.shape[1], "height": pixels.shape[0], "sharpness": sharp,
                         "queueMs": round((started - queued) * 1000), "ocrMs": round((done - started) * 1000)}
         finally:
             with self.count_lock:

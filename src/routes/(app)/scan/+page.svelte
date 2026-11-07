@@ -11,6 +11,7 @@
 	import Table2 from '@lucide/svelte/icons/table-2';
 	import Timer from '@lucide/svelte/icons/timer';
 	import ImageOff from '@lucide/svelte/icons/image-off';
+	import Focus from '@lucide/svelte/icons/focus';
 	import Button from '#lib/ui/Button.svelte';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
@@ -55,6 +56,12 @@
 			icon: Table2,
 			retake: true
 		}),
+		blurry: () => ({
+			title: m.scan_blurry(),
+			line: m.scan_blurry_line(),
+			icon: Focus,
+			retake: true
+		}),
 		photo: () => ({
 			title: m.scan_unreadable_photo(),
 			line: m.scan_unreadable_line(),
@@ -84,6 +91,8 @@
 
 	let problem = $state<Problem | null>(null);
 	let proposal = $state<Proposal | null>(null);
+	/** The photo looked blurry: values it read may be misread. */
+	let blurry = $state(false);
 	let showPhoto = $state(false);
 	let busy = $state(false);
 	let saveProblem = $state('');
@@ -142,7 +151,7 @@
 			// A busy scanner: wait in line and ask again, for up to two minutes.
 			const started = Date.now();
 			let response: Response;
-			let body: { error?: string; ahead?: number; proposal?: Proposal };
+			let body: { error?: string; ahead?: number; proposal?: Proposal; blurry?: boolean };
 			for (;;) {
 				response = await fetch('/api/v1/scan', {
 					method: 'POST',
@@ -170,9 +179,10 @@
 			}
 			const read = body.proposal as Proposal;
 			if (read.nutrients.length === 0) {
-				problem = P.noTable();
+				problem = body.blurry ? P.blurry() : P.noTable();
 				return;
 			}
+			blurry = body.blurry === true;
 			proposal = read;
 			showPhoto = false;
 		} catch {
@@ -188,6 +198,7 @@
 	/** No photo to go on: the same form, empty. */
 	function byHand() {
 		attempt++;
+		blurry = false;
 		reading = false;
 		waiting = null;
 		problem = null;
@@ -281,6 +292,7 @@
 			basis={initial.basis}
 			nutrients={initial.nutrients}
 			sodiumLeftOut={initial.nutrients.length < proposal.nutrients.length}
+			{blurry}
 		/>
 	{/if}
 {/snippet}

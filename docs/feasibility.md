@@ -272,6 +272,25 @@ values (21 on the new photos) are mostly very small or pale print the OCR did no
 held-out number now needs new photos (the owner has few new products: options are counting edits in real use, a
 friend's kitchen, or new purchases over time).
 
+## Blurry label photos (2026-11-07)
+
+Question: can the OCR service tell a photo too blurry to read from a sharp one, without calling sharp photos blurry?
+
+Method: the owner's 22 label photos (10 development, 12 held-out), each redrawn at 1600 px as the phone does, then blurred with a Gaussian of radius 0, 1, 1.5, 2, 3 and 4 px (132 images), read by the deployed OCR configuration (PP-OCRv6 small, 1280 px) on the desktop, parsed, and scored against the hand-read values (seven fields). Sharpness: at the 1 % strongest edges of the service's 1280 px copy, the mean absolute Laplacian over the mean gradient (unchanged by contrast, lowered by blur).
+
+| Blur radius | Sharpness range | Labels read with at least 5 of 7 right | Labels with a wrong value |
+| --- | --- | --- | --- |
+| none (real photos) | 0.26–0.53 | 17 of 22 | 4 |
+| 1 px | 0.15–0.32 | 17 | 3 |
+| 1.5 px | 0.11–0.20 | 15 | 4 |
+| 2 px | 0.09–0.14 | 3 | 4 |
+| 3 px | 0.07–0.10 | 1 | 0 |
+| 4 px | 0.07–0.11 | 0 | 0 |
+
+Findings: no real photo measured below 0.26; from 2 px, where reading mostly fails, every copy measured 0.14 or below. Between 0.15 and 0.20 some copies were still read correctly, so the measure cannot predict a failed read on its own. Blurred copies that were read gave wrong values more often (up to 4 of 7 on one label).
+
+Decision (provisional): below 0.16 a photo is called blurry. With nothing read, the scan page says the photo is blurry instead of "no table found"; with values read, Check the label opens with a note that values may be misread. Limits: the blur was artificial (a Gaussian), not camera shake or a missed focus; 22 labels; one OCR configuration. Revisit with real blurry photos if the message appears wrongly or not at all.
+
 ## Weight trend, development evaluation (Phase 4, 2026-10-31)
 
 Question: how far a smoothed weight is from what the scale says. Data: the owner's 150 LoseIt weigh-ins (266 days,

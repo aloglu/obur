@@ -20,6 +20,12 @@ const WIDE9 = png(
 const WIDE11 = png(
 	'iVBORw0KGgoAAAANSUhEUgAAAAsAAAACCAIAAAABwbG5AAAAFUlEQVR4nGP8//8/A17AhF+agYEBAMYGAwEg+6h9AAAAAElFTkSuQmCC'
 );
+const WIDE13 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAAA0AAAACCAIAAAAM38H+AAAAFUlEQVR4nGP8//8/AxGAiRhFDAwMAOoGAwGBrJxEAAAAAElFTkSuQmCC'
+);
+const WIDE15 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAAA8AAAACCAIAAAAIKhHDAAAAFUlEQVR4nGP8//8/A9GAiXilDAwMAA4VAwEw52YlAAAAAElFTkSuQmCC'
+);
 const line = (text: string, x: number, y: number, w = text.length * 8) => ({
 	text,
 	box: [
@@ -225,4 +231,32 @@ test('a busy scanner keeps the photo waiting in line and reads it when there is 
 		timeout: 10_000
 	});
 	await expect(page.locator('#n-energy_kcal')).toHaveValue('400');
+});
+
+test('a blurry photo says so: instead of "no table" when nothing was read, as a note when something was', async ({
+	page,
+	request
+}, testInfo) => {
+	await signedInAs(page, `Bulanık ${testInfo.project.name}`);
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: { width: 13, status: 200, body: { lines: [], sharpness: 0.11, ocrMs: 1 } }
+	});
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: { width: 15, status: 200, body: { lines: TABLE, sharpness: 0.12, ocrMs: 1 } }
+	});
+	await page.goto('/scan');
+	await page.waitForLoadState('networkidle');
+	await page
+		.getByLabel('Choose photo')
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE13 });
+	await expect(page.getByRole('alert')).toContainText('The photo is blurry');
+	await expect(page.getByRole('alert')).not.toContainText('No nutrition table found');
+
+	await page
+		.getByLabel('Choose photo')
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE15 });
+	const notes = page.getByRole('list', { name: 'What was read' });
+	await expect(notes.getByRole('listitem').first()).toHaveText(
+		'The photo looks blurry, so some values may be misread. Check each one against the label.'
+	);
 });

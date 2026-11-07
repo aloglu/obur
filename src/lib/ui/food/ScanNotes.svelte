@@ -18,8 +18,10 @@
 		nutrients: NutrientValue[];
 		/** A sodium value the form leaves out because salt is there too. */
 		sodiumLeftOut: boolean;
+		/** The photo looked blurry. */
+		blurry?: boolean;
 	}
-	let { notes, basis, nutrients, sodiumLeftOut }: Props = $props();
+	let { notes, basis, nutrients, sodiumLeftOut, blurry = false }: Props = $props();
 
 	const NAME: Partial<Record<NutrientCode, () => string>> = {
 		energy_kcal: m.nutrient_energy_kcal,
@@ -63,6 +65,8 @@
 
 	const lines = $derived.by(() => {
 		const out: { check: boolean; text: string }[] = [];
+		// First: on a blurry photo, values that were read are the likeliest to be wrong.
+		if (blurry) out.push({ check: true, text: m.scan_note_blurry() });
 		const has = (code: NutrientCode) => nutrients.find((n) => n.code === code);
 		for (const note of notes) {
 			if (note.kind === 'columns') {
