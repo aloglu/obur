@@ -13,7 +13,7 @@ const RETRY_MS = 30_000;
 const UNREACHABLE_HOLD_MS = 60_000;
 let unreachableUntil = 0;
 /** Refreshes the page after queued entries arrive (set by startSync). */
-let sentHandler: (() => void) | undefined;
+let sentHandler: ((sent: number) => void) | undefined;
 
 export const offline = $state<{
 	ownerId: string | null;
@@ -106,7 +106,7 @@ async function refresh() {
 }
 
 /** Opens this account's queue and starts sending. Call once the signed-in person is known. */
-export function startSync(ownerId: string, onSent: () => void): Promise<void> {
+export function startSync(ownerId: string, onSent: (sent: number) => void): Promise<void> {
 	if (offline.ownerId === ownerId && ready) return ready;
 	stopSync();
 	offline.ownerId = ownerId;
@@ -123,7 +123,7 @@ export function startSync(ownerId: string, onSent: () => void): Promise<void> {
 			void flush().then(async (sent) => {
 				if (sent > 0 || (offline.cachedCopy && (await serverReachable()))) {
 					await networkIsBack();
-					onSent();
+					onSent(sent);
 				}
 			});
 		const onVisible = () => document.visibilityState === 'visible' && kick();
@@ -197,7 +197,7 @@ export async function submit<T>(
 		void flush().then(async (sent) => {
 			if (sent === 0) return;
 			await networkIsBack();
-			sentHandler?.();
+			sentHandler?.(sent);
 		});
 	return { status: 'queued' };
 }
@@ -247,6 +247,12 @@ export function flush(): Promise<number> {
 		}
 	})();
 	return flushing;
+}
+
+/** Puts back an entry that was just discarded (Undo); it keeps its place in creation order. */
+export async function restore(op: QueuedOp): Promise<void> {
+	await queue?.put($state.snapshot(op) as QueuedOp);
+	await refresh();
 }
 
 /** Drops a local, unsent entry. */

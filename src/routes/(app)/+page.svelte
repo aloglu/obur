@@ -7,7 +7,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import { closeInlineOnOutsideTap } from '#lib/client/inline-field.svelte.ts';
-	import { dayHref, logHref } from '#lib/client/links.ts';
+	import { dayHref, logHref, logSearchHref } from '#lib/client/links.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { addDays, carbohydrateDay } from '#lib/shared/diary-rules.ts';
@@ -18,7 +18,9 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import X from '@lucide/svelte/icons/x';
 	import Swap from '#lib/ui/Swap.svelte';
-	import { discard, offline } from '#lib/client/offline/sync.svelte.ts';
+	import { discard, offline, restore, submit } from '#lib/client/offline/sync.svelte.ts';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import type { QueuedOp } from '#lib/client/offline/store.ts';
 	import ActivitySheet from '#lib/ui/log/ActivitySheet.svelte';
 	import PendingSheet from '#lib/ui/log/PendingSheet.svelte';
@@ -54,6 +56,67 @@
 
 	let addingActivity = $state(false);
 	let pendingOpen = $state<QueuedOp | null>(null);
+	// Entries the server refused after they waited offline: kept on this phone until the person decides (docs/ui.md,
+	// "Offline refused entry"), whatever day they were for.
+	const refused = $derived(
+		offline.items.filter((i) => i.status === 'review' && i.preview.kind === 'diary')
+	);
+
+	/** Keeps a refused entry's calories as a calories-only entry for the same day and meal. */
+	async function keepCalories(op: QueuedOp) {
+		const p = op.preview;
+		if (p.kind !== 'diary' || p.kcal === null) return;
+		pendingOpen = null;
+		await discard(op.seq!);
+		const id = crypto.randomUUID();
+		const zone = typeof op.body.zone === 'string' ? op.body.zone : deviceZone();
+		const result = await submit<DiaryEntry>(
+			'/api/v1/diary/entries',
+			{
+				id,
+				kind: 'quick',
+				date: p.localDate,
+				meal: p.meal,
+				zone,
+				kcal: p.kcal,
+				description: p.name
+			},
+			{ ...p, quantity: m.entry_kind_quick() }
+		);
+		await invalidateAll();
+		showToast({
+			message: m.offline_refused_kept(),
+			detail: `${p.name} · ${kcal(p.kcal)} kcal · ${mealName(p.meal)}`,
+			undo: async () => {
+				if (result.status === 'sent')
+					await api('POST', `/api/v1/diary/entries/${id}?action=delete`, {});
+				else {
+					const queued = offline.items.find((i) => i.body.id === id);
+					if (queued) await discard(queued.seq!);
+				}
+				await restore(op);
+				await invalidateAll();
+			}
+		});
+	}
+	/** Discards a waiting or refused entry, with Undo. */
+	async function discardOp(op: QueuedOp) {
+		pendingOpen = null;
+		await discard(op.seq!);
+		if (op.status !== 'review' || op.preview.kind !== 'diary') return;
+		showToast({
+			message: m.offline_refused_discarded(),
+			detail: op.preview.name,
+			undo: () => restore(op)
+		});
+	}
+	/** Drops the refused entry and looks for the food again on Log, for the same day and meal. */
+	async function chooseOther(op: QueuedOp) {
+		const p = op.preview;
+		if (p.kind !== 'diary') return;
+		await discardOp(op);
+		await goto(logSearchHref(p.meal, p.localDate, p.name));
+	}
 	let savingMeal = $state<Meal | null>(null);
 	const pendingFor = (meal: Meal) =>
 		offline.items.filter(
@@ -287,6 +350,26 @@
 
 <main class="today mx-auto max-w-[1064px] px-3.5 py-3 desk:px-7 desk:py-5">
 	<DayHeader date={data.date} today={data.today} onmove={move} />
+	{#if refused.length}
+		<button
+			type="button"
+			onclick={() => (pendingOpen = refused[0])}
+			class="mb-3 grid w-full grid-cols-[40px_minmax(0,1fr)_20px] items-center gap-3 rounded-input border border-line bg-surface p-3.5 text-left"
+		>
+			<span class="tile-warn grid size-10 place-items-center rounded-small"
+				><TriangleAlert size={20} aria-hidden="true" /></span
+			>
+			<span class="flex min-w-0 flex-col gap-0.5">
+				<b class="text-[16px] leading-snug font-bold"
+					>{refused.length === 1
+						? m.offline_refused_one()
+						: m.offline_refused_many({ count: String(refused.length) })}</b
+				>
+				<span class="text-[14px] leading-snug text-muted">{m.offline_refused_line()}</span>
+			</span>
+			<ChevronRight size={20} aria-hidden="true" class="text-muted" />
+		</button>
+	{/if}
 	{#if data.date === data.today && !data.target}
 		<div transition:slide={{ duration: 260 }}>
 			<WelcomeCard name={data.user?.displayName ?? ''} busy={skipping} onskip={justLog} />
@@ -458,12 +541,12 @@
 	/>
 {/if}
 {#if pendingOpen}
+	{@const op = pendingOpen}
 	<PendingSheet
-		op={pendingOpen}
-		ondiscard={async () => {
-			await discard(pendingOpen!.seq!);
-			pendingOpen = null;
-		}}
+		{op}
+		ondiscard={() => discardOp(op)}
+		oncalories={() => keepCalories(op)}
+		onother={() => chooseOther(op)}
 		onclose={() => (pendingOpen = null)}
 	/>
 {/if}

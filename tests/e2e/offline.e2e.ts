@@ -1,7 +1,7 @@
 // The bounded offline scope (docs/design.md): queued new entries with ordered, retry-safe sending, visible pending
 // state, cached viewing, and sign-out that never silently drops unsent entries.
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, signedInAs, openCaloriesOnly } from './fixtures.ts';
+import { apiAs, createFood, makePrivate, signedInAs, openCaloriesOnly } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
@@ -35,7 +35,7 @@ async function quickAdd(page: Page, kcal: string, description: string) {
 	await sheet.getByLabel('Calories (kcal)').fill(kcal);
 	await sheet.getByLabel('What was it? (optional)').fill(description);
 	await sheet.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('status')).toContainText('Saved on this device');
+	await expect(page.getByRole('status').filter({ hasText: 'Saved on this device' })).toBeVisible();
 	if (isPhone(page))
 		await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 }
@@ -65,10 +65,13 @@ test('entries made offline wait visibly, then arrive once and in order', async (
 	await context.setOffline(false);
 	await page.evaluate(() => dispatchEvent(new Event('online')));
 	await expect(snacks.getByText('Waiting to sync')).toHaveCount(0);
+	// The warning card says so, and how many went.
+	const back = page.getByRole('status').filter({ hasText: /Back online/ });
+	await expect(back).toContainText('3 waiting entries were sent.');
 	// One reconnect is enough: the sent entries appear as saved at once, and the saved-copy note goes (owner's iPhone
 	// check, 2026-10-30: they vanished until the next navigation, because the refresh met the saved copy).
 	await expect(snacks).toContainText('Simit');
-	await expect(page.getByText('Showing the copy saved on this device')).toHaveCount(0);
+	await expect(page.getByText("You're offline")).toHaveCount(0);
 	await expect(snacks).toContainText('Çay');
 	await expect(page.getByRole('region', { name: 'Water' })).toContainText('250 ml');
 
@@ -93,6 +96,10 @@ test('entries made offline wait visibly, then arrive once and in order', async (
 	await page.reload();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(snacks).toContainText('Simit');
+	// Offline, a grey card says what is shown and what happens to new entries.
+	await expect(page.getByRole('status').filter({ hasText: /You're offline/ })).toContainText(
+		"New entries wait here and are sent when you're back."
+	);
 	await context.setOffline(false);
 });
 
@@ -149,7 +156,7 @@ test('the Log tab opens offline without a visit online, and a quick add there co
 	await sheet.getByRole('button', { name: 'Save' }).click();
 	// The sheet closes, so the confirmation is visible rather than hidden behind it.
 	await expect(sheet).toHaveCount(0);
-	await expect(page.getByRole('status')).toContainText('Saved on this device');
+	await expect(page.getByRole('status').filter({ hasText: 'Saved on this device' })).toBeVisible();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(page.getByText('Waiting to sync')).toHaveCount(1);
 	await context.setOffline(false);
@@ -260,4 +267,111 @@ test('a note typed offline waits on the device and arrives when the server is ba
 	await expect(note).toContainText(/Saved \S+.*only you see your notes/, { timeout: 15_000 });
 	await page.reload();
 	await expect(note).toContainText('typed on the train');
+});
+
+test('an entry the server refused after waiting offline stays until the person chooses: calories, another food or discard', async ({
+	page,
+	browser
+}, testInfo) => {
+	const tag = testInfo.project.name;
+	// Mehmet shares a food; Ayşe logs it while offline; Mehmet then makes it private.
+	const mehmet = await browser.newPage();
+	await signedInAs(mehmet, `Paylaşan ${tag}`);
+	const name = `Mercimek çorbası ${tag}`;
+	const foodId = await createFood(mehmet, {
+		name,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 180, qualifier: 'reported' }]
+	});
+	await mehmet.close();
+	const userId = await signedInAs(page, `Çevrimdışı ${tag}`);
+	await page.goto('/');
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	// The entry as the app keeps it on the phone while offline (client/offline/store.ts).
+	await page.evaluate(
+		async ({ userId, foodId, name, date }) => {
+			const db = await new Promise<IDBDatabase>((resolve, reject) => {
+				const req = indexedDB.open(`obur-queue-${userId}`, 1);
+				req.onupgradeneeded = () =>
+					req.result.createObjectStore('ops', { keyPath: 'seq', autoIncrement: true });
+				req.onsuccess = () => resolve(req.result);
+				req.onerror = () => reject(req.error);
+			});
+			const id = crypto.randomUUID();
+			await new Promise((resolve, reject) => {
+				const req = db
+					.transaction('ops', 'readwrite')
+					.objectStore('ops')
+					.add({
+						id,
+						ownerId: userId,
+						path: '/api/v1/diary/entries',
+						body: {
+							id,
+							kind: 'food',
+							foodId,
+							amount: 100,
+							unit: { kind: 'mass', unit: 'g' },
+							date,
+							meal: 'lunch',
+							zone: 'Europe/Istanbul'
+						},
+						preview: {
+							kind: 'diary',
+							localDate: date,
+							meal: 'lunch',
+							name,
+							quantity: '100 g',
+							kcal: 180
+						},
+						createdAt: new Date().toISOString(),
+						attempts: 0,
+						status: 'pending'
+					});
+				req.onsuccess = resolve;
+				req.onerror = () => reject(req.error);
+			});
+			db.close();
+		},
+		{ userId, foodId, name, date }
+	);
+	await makePrivate(foodId);
+	await page.reload();
+
+	// The server refuses it; the phone keeps it and says so at the top of Today.
+	const card = page.getByRole('button', { name: /1 entry couldn't be saved/ });
+	await expect(card).toBeVisible();
+	await expect(card).toContainText("It's kept on this phone until you choose what to do.");
+	await card.click();
+	const sheet = page.getByRole('dialog', { name: "Couldn't save this entry" });
+	await expect(sheet).toContainText(name);
+	await expect(sheet).toContainText('100 g · 180 kcal · Lunch');
+	await expect(sheet).toContainText('made private by the person who added it');
+
+	// Calories only, then Undo puts the refused entry back.
+	await sheet.getByRole('button', { name: 'Keep it as 180 kcal, calories only' }).click();
+	const toast = page.getByRole('status').filter({ hasText: 'Saved as calories only' });
+	await expect(toast).toContainText(`${name} · 180 kcal · Lunch`);
+	const lunch = page.getByRole('region', { name: 'Lunch' });
+	await expect(lunch).toContainText(name);
+	await expect(lunch).toContainText('180');
+	await expect(lunch).not.toContainText("Couldn't be saved");
+	await expect(card).toBeHidden();
+	await toast.getByRole('button', { name: 'Undo' }).click();
+	await expect(card).toBeVisible();
+	await expect(lunch).toContainText("Couldn't be saved · tap to choose");
+
+	// Discard, and Undo.
+	await card.click();
+	await sheet.getByRole('button', { name: 'Discard this entry' }).click();
+	const gone = page.getByRole('status').filter({ hasText: 'Entry discarded' });
+	await expect(card).toBeHidden();
+	await gone.getByRole('button', { name: 'Undo' }).click();
+	await expect(card).toBeVisible();
+
+	// Another food: Log opens for that day and meal with the name searched.
+	await card.click();
+	await sheet.getByRole('button', { name: 'Choose another food' }).click();
+	await expect(page).toHaveURL(/\/log\?/);
+	await expect(page.getByRole('searchbox').first()).toHaveValue(name);
 });

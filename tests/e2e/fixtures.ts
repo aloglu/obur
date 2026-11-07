@@ -54,6 +54,11 @@ export async function signedInAgain(page: Page, userId: string): Promise<void> {
 	]);
 }
 
+/** Makes a food private to its owner, as if they changed it while someone else was offline (test setup only). */
+export async function makePrivate(foodId: string): Promise<void> {
+	await sql`update foods set visibility = 'private' where id = ${foodId}`;
+}
+
 /** Calls the app's API as the signed-in browser user, with the Origin header the CSRF check requires. */
 export async function apiAs<T>(
 	page: Page,

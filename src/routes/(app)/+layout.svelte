@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Cloud from '@lucide/svelte/icons/cloud';
+	import CloudOff from '@lucide/svelte/icons/cloud-off';
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -20,7 +22,17 @@
 		// The server decides which day "today" is from the device's time zone; refresh if it changed.
 		if (syncZoneCookie()) invalidateAll();
 		// Send anything this account queued while offline; refresh the page when something arrives.
-		if (data.user) startSync(data.user.id, () => invalidateAll());
+		if (data.user)
+			startSync(data.user.id, (sent) => {
+				// Back after being offline: say so, and how many waiting entries went (docs/ui.md, one warning style).
+				if (sent > 0 || wasOffline) {
+					backOnline = sent;
+					clearTimeout(backTimer);
+					backTimer = setTimeout(() => (backOnline = null), 6000);
+				}
+				wasOffline = false;
+				void invalidateAll();
+			});
 		// Keep a copy of every main tab on this device, so each one opens without a connection, not only the
 		// pages visited while online. Done once per app start, after the current page has settled.
 		const warm = setTimeout(() => {
@@ -59,6 +71,14 @@
 	});
 
 	const waiting = $derived(offline.items.filter((i) => i.status === 'pending').length);
+	// Offline means the page is the saved copy (the queue's own test of reachability, never navigator.onLine).
+	let wasOffline = false;
+	$effect(() => {
+		if (offline.cachedCopy) wasOffline = true;
+	});
+	/** How many waiting entries arrived when the connection came back; null when there is nothing to say. */
+	let backOnline = $state<number | null>(null);
+	let backTimer: ReturnType<typeof setTimeout> | undefined;
 	// So the sign-in page can say whose entries are waiting if the session ends.
 	$effect(() => {
 		if (data.user && offline.ownerId === data.user.id)
@@ -76,9 +96,17 @@
 		</div>
 	{/if}
 	{#if offline.cachedCopy}
-		<p class="mx-auto max-w-[1064px] px-3.5 pt-3 text-[13px] text-muted desk:px-7">
-			{m.offline_cached_copy()}
-		</p>
+		<div class="mx-auto max-w-[1064px] px-3.5 pt-3 desk:px-7">
+			<Notice tone="info" icon={CloudOff} title={m.offline_now()}>{m.offline_now_line()}</Notice>
+		</div>
+	{:else if backOnline !== null}
+		<div class="mx-auto max-w-[1064px] px-3.5 pt-3 desk:px-7">
+			<Notice tone="good" icon={Cloud} title={m.offline_back()}>
+				{#if backOnline > 0}{backOnline === 1
+						? m.offline_back_sent_one()
+						: m.offline_back_sent_many({ count: String(backOnline) })}{/if}
+			</Notice>
+		</div>
 	{/if}
 	{@render children()}
 </AppShell>

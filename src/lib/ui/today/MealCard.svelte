@@ -150,7 +150,7 @@
 									{op.preview.quantity}
 									<span
 										class="rounded-menu bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn"
-										>{op.status === 'review' ? m.offline_review() : m.entry_pending()}</span
+										>{op.status === 'review' ? m.offline_review_row() : m.entry_pending()}</span
 									>
 								</span>
 							</span>

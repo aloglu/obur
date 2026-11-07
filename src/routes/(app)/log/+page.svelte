@@ -87,6 +87,7 @@
 		ontype={() => ((heard = false), (typedEntry = null), (typing = true))}
 		onspeak={data.speech ? () => (speaking = true) : undefined}
 		scan={data.scan}
+		initialQuery={params.get('q') ?? ''}
 	/>
 </main>
 

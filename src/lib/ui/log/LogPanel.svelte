@@ -36,6 +36,8 @@
 		ontype: () => void;
 		/** Opens a saved meal; saved meals are listed only when given. */
 		onpickmeal?: (savedMealId: string) => void;
+		/** A search to start with (Choose another food, for an entry the server refused). */
+		initialQuery?: string;
 	}
 	let {
 		date,
@@ -47,10 +49,11 @@
 		onpickmeal,
 		ontype,
 		scan = false,
-		onspeak
+		onspeak,
+		initialQuery = ''
 	}: Props = $props();
 
-	let query = $state('');
+	let query = $state(untrack(() => initialQuery));
 	let focused = $state(false);
 	let recent = $state<FoodSearchResult[] | undefined>();
 	let results = $state<FoodSearchResult[]>([]);
