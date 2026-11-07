@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Bottom sheet on phones, a centred dialog from 760 px (docs/ui.md). A native <dialog> provides the focus trap and an
 	// inert background; the page behind is held still while it is open. It slides in and out, with the scrim fading.
+	// It stays inside the part of the screen the keyboard leaves free, however tall its content grows.
 	import type { Snippet } from 'svelte';
 	import X from '@lucide/svelte/icons/x';
 	import { lockPageScroll } from '#lib/client/scroll-lock.ts';
@@ -24,7 +25,9 @@
 		const onkey = () => (usedKeys = true);
 		window.addEventListener('keydown', onkey, { capture: true });
 		dialog.showModal();
+		const stopFitting = fitAboveKeyboard();
 		return () => {
+			stopFitting();
 			// The sheet itself goes at once, so the page is usable straight away and opening it again gets a fresh one. What
 			// slides off the screen is a lifeless copy.
 			const copy = dialog.cloneNode(true) as HTMLDialogElement;
@@ -45,6 +48,30 @@
 		};
 	});
 
+	// The keyboard doesn't resize the page on iPhones: it covers the bottom, and the phone moves the whole page up to keep
+	// the field in view. A sheet that then grows goes off the top, so it is placed by what is actually visible.
+	function fitAboveKeyboard() {
+		const view = window.visualViewport;
+		if (!view) return () => {};
+		const { style } = dialog;
+		const fit = () => {
+			// Zooming in shrinks the visible area too, but the sheet should zoom along with the page.
+			const zoomed = view.scale > 1.01;
+			const set = (name: string, px: number) =>
+				zoomed ? style.removeProperty(name) : style.setProperty(name, `${px}px`);
+			set('--view-top', view.offsetTop);
+			set('--view-bottom', Math.max(0, window.innerHeight - view.height - view.offsetTop));
+			set('--view-height', view.height);
+		};
+		fit();
+		view.addEventListener('resize', fit);
+		view.addEventListener('scroll', fit);
+		return () => {
+			view.removeEventListener('resize', fit);
+			view.removeEventListener('scroll', fit);
+		};
+	}
+
 	function slideAway(copy: HTMLDialogElement, top: number) {
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		const wide = matchMedia('(min-width: 760px)').matches;
@@ -53,7 +80,7 @@
 		copy.setAttribute('aria-hidden', 'true');
 		Object.assign(copy.style, {
 			position: 'fixed',
-			inset: '0',
+			inset: 'var(--view-top, 0px) 0 var(--view-bottom, 0px)',
 			zIndex: '60',
 			pointerEvents: 'none',
 			animation: 'none'
@@ -92,7 +119,7 @@
 		onclose();
 	}}
 	onclick={(e) => e.target === dialog && onclose()}
-	class="sheet m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-sheet bg-surface p-0 text-text shadow-sheet backdrop:bg-scrim desk:m-auto desk:max-h-[86dvh] desk:w-[480px] desk:rounded-sheet"
+	class="sheet m-0 mt-auto w-full max-w-none overflow-y-auto overscroll-contain rounded-t-sheet bg-surface p-0 text-text shadow-sheet backdrop:bg-scrim desk:m-auto desk:w-[480px] desk:rounded-sheet"
 >
 	<div class="flex flex-col gap-4 p-[18px] pb-[max(18px,env(safe-area-inset-bottom))]">
 		<div class="flex items-center justify-between gap-3">
@@ -109,6 +136,17 @@
 </dialog>
 
 <style>
+	.sheet {
+		--tallest: 92dvh;
+		top: var(--view-top, 0px);
+		bottom: var(--view-bottom, 0px);
+		max-height: min(var(--tallest), var(--view-height, 100dvh) - 12px);
+	}
+	@media (min-width: 760px) {
+		.sheet {
+			--tallest: 86dvh;
+		}
+	}
 	.sheet[open] {
 		animation: sheet-in 360ms var(--ui);
 	}

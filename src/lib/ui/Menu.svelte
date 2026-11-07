@@ -47,7 +47,8 @@
 		if (!trigger || !list) return;
 		const box = trigger.getBoundingClientRect();
 		const view = window.visualViewport;
-		const viewHeight = view?.height ?? window.innerHeight;
+		const viewTop = view?.offsetTop ?? 0;
+		const viewBottom = viewTop + (view?.height ?? window.innerHeight);
 		const viewWidth = document.documentElement.clientWidth;
 		const s = list.style;
 		s.maxHeight = '';
@@ -60,8 +61,8 @@
 			s.maxWidth = `${viewWidth - 2 * EDGE}px`;
 			s.right = `${Math.max(EDGE, viewWidth - box.right)}px`;
 		}
-		const below = viewHeight - box.bottom - GAP - EDGE;
-		const above = box.top - GAP - EDGE;
+		const below = viewBottom - box.bottom - GAP - EDGE;
+		const above = box.top - viewTop - GAP - EDGE;
 		// The closed list can't measure itself; rows are 44 px, or 62 with a hint, inside 6 px of padding.
 		const needed = 12 + options.reduce((sum, o) => sum + (o.hint ? 62 : 44), 0);
 		const side = width === 'trigger' ? 'left' : 'right';

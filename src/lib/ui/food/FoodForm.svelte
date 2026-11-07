@@ -275,7 +275,6 @@
 	bound: boolean,
 	sub = false
 )}
-	{@const empty = value.text.trim() === ''}
 	{@const bad = invalid(value.text)}
 	{@const { name: rowName, unit } = parts(text)}
 	<div
@@ -306,12 +305,7 @@
 			autocomplete="off"
 			placeholder={core ? m.food_unknown() : '–'}
 			aria-invalid={bad}
-			class={[
-				'h-10 w-[88px] rounded-[10px] px-2.5 text-right text-[15px] font-[650] tabular-nums',
-				empty && core
-					? 'bg-warn-soft placeholder:font-semibold placeholder:text-warn'
-					: 'bg-surface2'
-			]}
+			class="h-10 w-[88px] rounded-[10px] border border-line bg-surface2 px-2.5 text-right text-[16px] font-[650] tabular-nums placeholder:text-[14px] placeholder:font-medium placeholder:text-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent aria-invalid:border-bad"
 		/>
 		<span class="text-[13px] text-muted">{unit}</span>
 	</div>
@@ -358,22 +352,22 @@
 				maxlength={60}
 				aria-invalid={showErrors && !servingLabel.trim()}
 			/>
-			<div class="flex items-end gap-2">
-				<div class="flex-1">
-					<TextField
-						label={m.food_serving_size()}
-						hint={m.food_serving_size_hint()}
-						bind:value={servingSizeText}
-						inputmode="decimal"
-						aria-invalid={invalid(servingSizeText)}
-					/>
+			<div class="flex flex-col gap-1.5">
+				<div class="flex items-end gap-2">
+					<div class="min-w-0 flex-1">
+						<TextField
+							label={m.food_serving_size()}
+							bind:value={servingSizeText}
+							inputmode="decimal"
+							aria-describedby="food-serving-size-hint"
+							aria-invalid={invalid(servingSizeText)}
+						/>
+					</div>
+					<Select bind:value={servingSizeUnit} aria-label={m.food_unit()} options={UNITS} />
 				</div>
-				<Select
-					bind:value={servingSizeUnit}
-					aria-label={m.food_unit()}
-					options={UNITS}
-					class="mb-[26px]"
-				/>
+				<p id="food-serving-size-hint" class="text-[13px] text-muted">
+					{m.food_serving_size_hint()}
+				</p>
 			</div>
 		{/if}
 		<Chips

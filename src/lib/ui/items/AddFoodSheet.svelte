@@ -1,5 +1,6 @@
 <script lang="ts">
-	// Adds a food in the saved meal and recipe editors: search, then the amount and unit with the live preview.
+	// Adds a food in the saved meal and recipe editors: search, or Recent before typing, then the amount and unit with the
+	// live preview.
 	// Nothing is saved here; the editor's Save sends everything.
 	import AmountField from '../AmountField.svelte';
 	import { onMount } from 'svelte';
@@ -27,6 +28,7 @@
 
 	let query = $state('');
 	let results = $state<FoodSearchResult[]>([]);
+	let recent = $state<FoodSearchResult[]>([]);
 	let searched = $state(false);
 	let food = $state<FoodDetail | undefined>();
 	let measures = $state<MeasureOption[]>([]);
@@ -34,7 +36,12 @@
 	let amountText = $state('');
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
-	onMount(async () => (measures = await householdMeasures()));
+	onMount(async () => {
+		void api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')
+			.then((data) => (recent = data.results))
+			.catch(() => {}); // Offline without a saved copy: the search is still there.
+		measures = await householdMeasures();
+	});
 
 	$effect(() => {
 		const q = query.trim();
@@ -85,6 +92,27 @@
 	}
 </script>
 
+{#snippet foods(list: FoodSearchResult[])}
+	<ul class="-mx-2 flex flex-col empty:hidden">
+		{#each list as r (r.id)}
+			<li>
+				<button
+					type="button"
+					onclick={() => pick(r.id)}
+					class="flex min-h-14 w-full items-center justify-between gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
+				>
+					<span class="line-clamp-2 min-w-0 text-[15px] font-semibold break-words"
+						>{r.brand ? `${r.brand} ` : ''}{r.name}</span
+					>
+					<span class="shrink-0 text-[13px] text-muted tabular-nums"
+						>{r.kcal === null ? '?' : kcal(r.kcal)} kcal</span
+					>
+				</button>
+			</li>
+		{/each}
+	</ul>
+{/snippet}
+
 <Sheet
 	title={food ? `${food.brand ? `${food.brand} ` : ''}${food.name}` : m.meal_editor_add_title()}
 	{onclose}
@@ -100,24 +128,14 @@
 		{#if searched && results.length === 0}
 			<p class="text-[14px] text-muted">{m.foods_none()}</p>
 		{/if}
-		<ul class="-mx-2 flex flex-col empty:hidden">
-			{#each results as r (r.id)}
-				<li>
-					<button
-						type="button"
-						onclick={() => pick(r.id)}
-						class="flex min-h-14 w-full items-center justify-between gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
-					>
-						<span class="line-clamp-2 min-w-0 text-[15px] font-semibold break-words"
-							>{r.brand ? `${r.brand} ` : ''}{r.name}</span
-						>
-						<span class="shrink-0 text-[13px] text-muted tabular-nums"
-							>{r.kcal === null ? '?' : kcal(r.kcal)} kcal</span
-						>
-					</button>
-				</li>
-			{/each}
-		</ul>
+		{#if query.trim()}
+			{@render foods(results)}
+		{:else if recent.length > 0}
+			<section class="flex flex-col gap-1" aria-labelledby="add-food-recent">
+				<h3 id="add-food-recent" class="text-[13px] font-[650] text-muted">{m.log_recent()}</h3>
+				{@render foods(recent)}
+			</section>
+		{/if}
 	{:else}
 		<form class="flex flex-col gap-4" onsubmit={add}>
 			<AmountField

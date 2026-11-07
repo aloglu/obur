@@ -25,7 +25,9 @@ The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app an
 - **Inline fields** (Other amount, New weigh-in and so on): a tap on any non-interactive area closes them without saving, and so does opening another one. Only one is open at a time.
 - **Examples and placeholders are in English,** in the English interface, although Turkish input works (including messages such as `speak_example`).
 - **Macro colours** do not follow the accent. Protein, carbs and fat change together, per theme, never protein alone.
-- **Keyboard.** An open sheet sits on top of the on-screen keyboard (`visualViewport` inset).
+- **Keyboard.** An open sheet stays inside the area the on-screen keyboard leaves free, however tall its content grows (`ui/Sheet.svelte`, from `visualViewport`).
+- **Fields never zoom the page.** iPhones zoom in on a field whose text is under 16 px, so every input, select and textarea is at least 16 px; a test checks it (`ui/field-size.test.ts`). A control that shows smaller text keeps a 16 px input unseen over it. Zooming is not disabled: people can still pinch.
+- **Empty values look like fields.** An empty value in the food form is a normal field with a quiet "Unknown" placeholder (owner, 2026-11-07: the amber fill read as a warning or plain text, not something to tap).
 - **Wide screens.** The desktop layout starts at 760 px: icon rail on mid widths, labelled sidebar from 1100 px. Sheets become centred dialogs. Today has two columns, other pages use reading widths. Keys: ←/→ for days, Enter and Esc in dialogs. Chart text keeps a fixed size rather than scaling (13.5 px on desktop).
 
 ### Themes
@@ -114,7 +116,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
   - Cooked weight is empty with the placeholder "Optional", never prefilled, and its label has no tag.
   - Beside "Per serving": "300 g a serving", or "No cooked weight", on one line.
   - Ingredient icons and Add food share one column.
-  - **Food form:** one card each for name and icon, Nutrition, Portions and Who can find it, then the variant and archive rows, Save (on only after a change, except for a scanned label), and a line saying the diary keeps what was logged. Kept against the demo: the kJ row, because a label may give only kJ and the kcal check needs it (empty kJ stays quiet rather than amber), and the Label type choice, because US and EU carbohydrate are different values.
+  - **Food form:** one card each for name and icon, Nutrition, Portions and Who can find it, then the variant and archive rows, Save (on only after a change, except for a scanned label), and a line saying the diary keeps what was logged. Kept against the demo: the kJ row, because a label may give only kJ and the kcal check needs it (empty kJ shows a dash rather than Unknown), and the Label type choice, because US and EU carbohydrate are different values.
   - **Lists:** Foods, Recipes and Saved meals are one card each with a small head ("Your recipes", "kcal a serving"), rows with an icon, a detail line and the number at the right, and their counts on More's rows. New recipe and New meal sit under the list. On Foods, the search stays and New food sits above the list, because an import can bring hundreds of foods (2026-11-07, my call against the demo, which had a short list and no search). Archived foods and recipes stay in their lists, faded and last, so they can be restored.
 
 ### Account and household
@@ -178,7 +180,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
   2. A "Reading the nutrition table…" state that says it runs on your own server.
   3. The product name field, typed by the user since the name is never read from the label.
   4. Basis chips: per 100 g / per 100 ml / per serving.
-  5. An editable row for each value. Missing values are empty, highlighted in the warning colour and labelled "unknown".
+  5. An editable row for each value. Missing values are empty fields with a quiet "Unknown" placeholder.
   6. Notes, for example "Fibre isn't on this label…" and "Energy matches the label's kJ value; %RI column ignored".
   7. "Save food and choose amount" leads to the normal amount sheet. "Retake photo" goes back to the camera.
 - **Quick add calories:** kcal, an optional description, day and meal. The note says the other nutrients stay unknown. It is the fallback for food known only by its calories (a bakery simit, a meal at a friend's).
@@ -273,7 +275,7 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 | soft | `#FDF0E7` | `#3D2619` | accent-tinted backgrounds (active tab, + buttons, preset pill, just-logged row) |
 | good (success) | `#2E7D3B` | `#6CCB7A` | complete days at or under budget in the calendar |
 | bad (over budget) | `#C62F3A` | `#FF6B6B` | over-budget ring and number; over days in the calendar |
-| warn (warning) | `#8A4B00` | `#F2B65A` | "Waiting to sync", unknown scan values |
+| warn (warning) | `#8A4B00` | `#F2B65A` | "Waiting to sync" |
 | warnSoft | `#FCEFD9` | `#3A2C14` | warning backgrounds |
 | track | `#EFE6DB` | `#342D26` | empty part of rings and bars |
 | protein | `#C2410C` | `#FF8F55` | protein bar |

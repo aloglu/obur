@@ -41,6 +41,6 @@
 		onchange={(e) => {
 			if (e.currentTarget.value) onchange(e.currentTarget.value.slice(0, 5));
 		}}
-		class="absolute inset-0 size-full cursor-pointer opacity-0"
+		class="absolute inset-0 size-full cursor-pointer text-[16px] opacity-0"
 	/>
 </span>
