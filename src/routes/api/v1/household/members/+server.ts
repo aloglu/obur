@@ -22,6 +22,8 @@ export const DELETE: RequestHandler = ({ request, locals }) =>
 	respondPortability(async () => {
 		const session = locals.session!;
 		auth.requireAdmin(session);
+		// Sensitive: a fresh passkey check, enforced here and not only by the page (CLAUDE.md).
+		auth.requireRecent(session);
 		const body = await readJson(
 			request,
 			v.object({ id: v.pipe(v.string(), v.uuid()), removeSharedFoods: v.boolean() })

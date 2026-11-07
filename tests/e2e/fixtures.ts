@@ -54,6 +54,11 @@ export async function signedInAgain(page: Page, userId: string): Promise<void> {
 	]);
 }
 
+/** Makes every session of a person's look as if their last passkey check was long ago (test setup only). */
+export async function staleSessions(userId: string): Promise<void> {
+	await sql`update sessions set verified_at = now() - interval '1 day' where user_id = ${userId}`;
+}
+
 /** Makes a food private to its owner, as if they changed it while someone else was offline (test setup only). */
 export async function makePrivate(foodId: string): Promise<void> {
 	await sql`update foods set visibility = 'private' where id = ${foodId}`;
