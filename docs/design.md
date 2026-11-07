@@ -453,7 +453,7 @@ This roadmap is not authorization to build every phase at once. Once a feature/p
 | Source nutrient mapping | Typed source definitions and qualified conversions | Dataset-specific nutrient IDs, units and edge-case fixtures before catalog import |
 | Speech/OCR model and speed | faster-whisper `small` and PP-OCRv6 small chosen from Phase 0 measurements on the target server | Measured with a second speaker and 22 labels; both later tuned on that data, so neither has a held-out number after tuning (owner accepted this for release, 2026-11-07). Still open: voice latency over mobile data and correction rates from real use |
 | Phone support | Mobile PWA with real-device acceptance | Supported phone/OS versions, permission/recovery/queue checks |
-| Backup configuration and recovery objectives | Encrypted local backups plus weekly restore; optional off-site (R2 for the owner); targets provisional | Supported retention schedule, storage capacity and measured rehearsal, including an R2 restore |
+| Backup configuration and recovery objectives | Encrypted local backups plus weekly restore; optional off-site (R2 for the owner); targets provisional | Supported retention schedule and storage capacity. Rehearsed: restore checks from local and R2, and a full live-stack restore on the owner's server (2026-11-07, `docs/restore.md`) |
 | Imported activity credit | Manual activity counts toward the budget; imported values recorded only | Meaning of LoseIt's exercise values, from the real export |
 | Full offline editing | Deferred; new-record queue only initially | Conflict, tombstone, resync and maximum-offline-age contract before implementation |
 
