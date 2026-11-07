@@ -33,7 +33,11 @@ The first release must make an ordinary day easy: find or create a food, choose 
 
 ## Architecture and stack
 
-One modular TypeScript application and one PostgreSQL database, shipped through Docker Compose. The application image can run web/API and background-worker commands. Start optional services only when the corresponding feature is enabled.
+One modular TypeScript application and one PostgreSQL database. Start optional services only when the corresponding feature is enabled.
+
+**Distribution (owner's decision, 2026-11-07, brought forward from Phase 5).** obur is meant to be installed by others on any machine with Docker (a VPS, Unraid, TrueNAS and the like), not only on the owner's server. It ships as three published images: **`obur`**, one container with the web app, the background worker, PostgreSQL and its backups (one data folder, backups optionally on another disk; a backup before every schema upgrade); and two optional add-ons, **`obur-speech`** (speech to text for Speak) and **`obur-labels`** (label reading for Scan), kept separate because they are heavy, optional and run with no internet access. Inside `obur` the processes still run as separate users and the runtime database roles keep their restrictions; only the packaging changed. Images are built on GitHub Actions when a version is tagged, not on every push. Install guides cover a plain Docker host or VPS, Unraid and TrueNAS, with Cloudflare Tunnel, Tailscale and Caddy for HTTPS. A future PostgreSQL major upgrade has to be handled by the `obur` container itself.
+
+**Remote models (owner's decision, 2026-11-07; a point update after the first release, not part of it).** Each person may bring their own OpenAI or OpenRouter API key for Speak and Scan, used only after they explicitly allow it; local add-ons stay the default. Keys are stored encrypted, never shown again in full, and the app says which provider receives what (older backups keep a removed key until they expire). Proposals from remote models pass the same checks and confirmation as local ones. Later, an admin may optionally let members use the admin's key, with a per-person cap. No comparison test before building it (owner's choice); Groq, Mistral and Gemini direct accounts are out.
 
 | Component | Choice | Status |
 | --- | --- | --- |
@@ -441,7 +445,7 @@ Reference: [pgBackRest backup, retention and restore guide](https://pgbackrest.o
 - **Phase 2 — LoseIt replacement and early voice.** Implement the verified importer, reconcile the owner's history, add a useful curated generic-food subset/aliases and saved meals. Deliver a narrow typed/voice path for real favourite foods and expand only with regression evidence. Historical migration and daily-use acceptance are required before retiring LoseIt; failed voice experiments do not block manual use.
 - **Phase 3 — Recipes and label capture.** Add serving-count/measured-yield recipes, barcode discovery and production OCR only when source-aware parsing and end-to-end evaluation pass. Continue expanding voice intents, including weight/water/activity, against the same confirmation rules.
 - **Phase 4 — Optional capability and polish.** Activity credit for imported or automatic sources once their meaning is mapped; richer charts/timeline, achievements including one per kilo lost, reminders, bulk actions and drag-and-drop. Full offline editing requires its own synchronization design and tests.
-- **Phase 5 — Distribution and exchange.** Add the other entry-point profiles, an Unraid template and catalog exchange when actual installations need them. Native companions, Health integration, model fine-tuning and browser OCR remain separate future decisions.
+- **Phase 5 — Distribution and exchange.** Distribution (published images, install guides, entry-point options) was brought forward on 2026-11-07, before the first release (see "Distribution"). Catalog exchange follows when actual installations need it. Native companions, Health integration, model fine-tuning and browser OCR remain separate future decisions.
 
 This roadmap is not authorization to build every phase at once. Once a feature/phase is requested, carry it through within its agreed scope; routine details do not require repeated permission. Surface consequential scope changes with evidence and update this document when decisions change.
 

@@ -31,7 +31,7 @@
 ## Architecture and stack
 
 - Keep the selected stack: SvelteKit/Svelte 5, strict TypeScript, Tailwind, Drizzle, Valibot, PostgreSQL, pg-boss, SimpleWebAuthn, and LayerChart when charts are built. Do not replace it without a concrete reason and approval for that change.
-- One modular application, one database, one app image with web and worker commands. Speech inference is a separate service; do not introduce microservices or Redis.
+- One modular application, one database. One published `obur` image holds the web app, the worker and PostgreSQL with its backups; speech (`obur-speech`) and label reading (`obur-labels`) are separate optional images (owner's decision, 2026-11-07). Do not introduce microservices or Redis.
 - Keep business logic under `src/lib/server/modules/`, with thin routes and public module entry points. Follow the ownership and transaction boundaries in the design; use lint rules to prevent accidental internal imports.
 - Keep `label-parser` and `nl-parser` pure TypeScript with no database, SvelteKit or I/O dependencies. Resolve catalogs and perform writes outside them.
 - Use PaddleOCR PP-OCRv6 small via ONNX Runtime for OCR and faster-whisper `small` for speech, as selected by the Phase 0 measurements in `docs/feasibility.md`. Change models only with new measured evidence on the target server.
