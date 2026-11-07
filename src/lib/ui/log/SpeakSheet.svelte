@@ -1,8 +1,12 @@
 <script lang="ts">
-	// docs/ui.md "Speak": a pulsing mic with "Listening… say what you ate", an example and Done; then the server's
-	// transcription, handed to the same confirmation as typed text. The recording lives only in this page's memory
-	// until it is sent; the server does not keep it.
+	// docs/ui.md "Speak": a pulsing mic with "Listening… say what you ate", an example and Done; then the transcription
+	// (the server's add-on or the person's own key), handed to the same confirmation as typed text. The recording lives
+	// only in this page's memory until it is sent, and is kept there for Try again; the server does not keep it.
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { PROVIDER_NAME, type RemoteError, type Source } from '#lib/shared/remote-models.ts';
+	import { REMOTE_ERRORS, remoteProblem, type RemoteProblem } from '../remote-problem.ts';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 	import CloudOff from '@lucide/svelte/icons/cloud-off';
 	import Hourglass from '@lucide/svelte/icons/hourglass';
@@ -18,11 +22,15 @@
 
 	interface Props {
 		date: string;
+		/** What reads the recording: the server's add-on or the person's own key. */
+		source: Source;
+		/** The server has its own add-on, for "Read this one on obur's server instead". */
+		local: boolean;
 		onheard: (entry: ParsedEntry) => void;
 		ontype: () => void;
 		onclose: () => void;
 	}
-	let { date, onheard, ontype, onclose }: Props = $props();
+	let { date, source, local, onheard, ontype, onclose }: Props = $props();
 
 	const MAX_SECONDS = 30;
 	type Phase = 'starting' | 'listening' | 'working' | 'failed';
@@ -79,6 +87,10 @@
 	} satisfies Record<string, () => Problem>;
 	let phase = $state<Phase>('starting');
 	let problem = $state<Problem | null>(null);
+	/** A company's model gave no answer: its own card and fix. */
+	let remote = $state<RemoteProblem | null>(null);
+	/** The last recording, until it is understood: Try again sends it again. */
+	let lastAudio: Blob | null = null;
 	let seconds = $state(0);
 	let recorder: MediaRecorder | undefined;
 	let stream: MediaStream | undefined;
@@ -100,6 +112,8 @@
 	async function start() {
 		phase = 'starting';
 		problem = null;
+		remote = null;
+		lastAudio = null;
 		seconds = 0;
 		chunks = [];
 		if (!navigator.onLine) return fail(P.offline());
@@ -112,7 +126,7 @@
 		const type = mimeType();
 		recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
 		recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-		recorder.onstop = send;
+		recorder.onstop = () => send();
 		recorder.start();
 		phase = 'listening';
 		ticker = setInterval(() => {
@@ -132,13 +146,19 @@
 		phase = 'failed';
 	}
 
-	async function send() {
+	/** The recording just made, or the kept one again (`viaServer`: this once on the server's add-on). */
+	async function send(again = false, viaServer = false) {
 		phase = 'working';
-		const audio = new Blob(chunks, { type: recorder?.mimeType || 'audio/mp4' });
-		chunks = [];
+		problem = null;
+		remote = null;
+		if (!again) {
+			lastAudio = new Blob(chunks, { type: recorder?.mimeType || 'audio/mp4' });
+			chunks = [];
+		}
+		const audio = lastAudio!;
 		try {
 			const response = await fetch(
-				`/api/v1/speech?date=${date}&zone=${encodeURIComponent(deviceZone())}`,
+				`/api/v1/speech?date=${date}&zone=${encodeURIComponent(deviceZone())}${viaServer ? '&via=server' : ''}`,
 				{ method: 'POST', headers: { 'content-type': audio.type }, body: audio }
 			);
 			const body = (await response.json().catch(() => ({}))) as {
@@ -146,6 +166,11 @@
 				error?: string;
 			};
 			if (response.ok && body.entry) return onheard(body.entry);
+			if (source !== 'server' && !viaServer && REMOTE_ERRORS.includes(body.error ?? '')) {
+				remote = remoteProblem(body.error as RemoteError, source, 'speak');
+				phase = 'failed';
+				return;
+			}
 			const problems: Record<string, () => Problem> = {
 				nothing_heard: P.nothing,
 				too_long: P.long,
@@ -157,6 +182,13 @@
 		} catch {
 			fail(P.unavailable());
 		}
+	}
+
+	function fix() {
+		if (!remote) return;
+		if (remote.fix === 'settings') goto(resolve('/(app)/more/speak-and-scan'));
+		else if (remote.fix === 'retry') send(true);
+		else start();
 	}
 
 	onMount(() => {
@@ -172,7 +204,25 @@
 </script>
 
 <Sheet title={m.speak_title()} {onclose}>
-	{#if phase === 'failed' && problem}
+	{#if phase === 'failed' && remote}
+		<Notice tone={remote.tone} title={remote.title}>
+			{remote.line}
+			{#snippet actions()}
+				<div class="flex flex-col gap-2">
+					<Button wide onclick={fix}>{remote!.fixLabel}</Button>
+					<Button wide variant="ghost" onclick={ontype}>{m.speak_type_instead()}</Button>
+					{#if local}
+						<button
+							type="button"
+							onclick={() => send(true, true)}
+							class="min-h-11 text-[0.9375rem] font-[650] text-accent"
+							>{m.remote_via_server()}</button
+						>
+					{/if}
+				</div>
+			{/snippet}
+		</Notice>
+	{:else if phase === 'failed' && problem}
 		<Notice tone={problem.tone} title={problem.title} icon={problem.icon}>
 			{problem.line}
 			{#snippet actions()}
@@ -205,6 +255,11 @@
 	{/if}
 	{#if phase === 'listening'}
 		<Button wide onclick={done}>{m.speak_done()}</Button>
+		{#if source !== 'server'}
+			<p class="text-center text-[0.8125rem] text-muted">
+				{m.speak_via({ provider: PROVIDER_NAME[source] })}
+			</p>
+		{/if}
 	{/if}
 </Sheet>
 

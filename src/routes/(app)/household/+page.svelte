@@ -17,7 +17,10 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { BackupProblem, BackupReport } from '#lib/shared/backup-health.ts';
 	import Notice from '#lib/ui/Notice.svelte';
+	import Switch from '#lib/ui/Switch.svelte';
 	import TextField from '#lib/ui/TextField.svelte';
+	import { untrack } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	interface Invite {
 		id: string;
@@ -41,6 +44,16 @@
 	}
 
 	let { data } = $props();
+	let personalKeys = $state(untrack(() => data.personalKeys));
+	async function savePersonalKeys(allow: boolean) {
+		try {
+			await api('PUT', '/api/v1/household/personal-keys', { allow });
+			await invalidateAll();
+		} catch {
+			personalKeys = !allow;
+			showToast({ message: m.settings_save_failed() });
+		}
+	}
 	let invites = $state<Invite[]>([]);
 	let members = $state<Member[]>([]);
 	let deletions = $state<Deletion[]>([]);
@@ -300,6 +313,21 @@
 			</div>
 		</section>
 	{/if}
+
+	<section aria-labelledby="keys-label">
+		{@render label(m.household_personal_keys(), 'keys-label')}
+		<div class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
+			<Switch
+				label={m.household_personal_keys()}
+				detail={m.household_personal_keys_line()}
+				bind:checked={personalKeys}
+				onchange={savePersonalKeys}
+			/>
+			{#if !personalKeys}
+				<p class="text-[0.8125rem] leading-snug text-muted">{m.household_personal_keys_off()}</p>
+			{/if}
+		</div>
+	</section>
 
 	<section aria-labelledby="scans-label">
 		{@render label(m.household_scans(), 'scans-label')}

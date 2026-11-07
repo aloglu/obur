@@ -7,6 +7,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { ENERGY_PARTS, energyCheckable, foodWarnings } from '#lib/shared/food-checks.ts';
 	import type { LabelNote } from '#lib/shared/label-notes.ts';
+	import { PROVIDER_NAME } from '#lib/shared/remote-models.ts';
 	import type { NutrientCode, NutrientValue } from '#lib/shared/nutrients.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
 	import type { Basis } from '#lib/shared/quantity.ts';
@@ -65,7 +66,14 @@
 
 	const lines = $derived.by(() => {
 		const out: { check: boolean; text: string }[] = [];
-		// First: on a blurry photo, values that were read are the likeliest to be wrong.
+		// First: a company's model read it (always checked against the photo), or a blurry photo.
+		for (const note of notes) {
+			if (note.kind === 'read_by')
+				out.push({
+					check: true,
+					text: m.scan_note_read_by({ provider: PROVIDER_NAME[note.provider] })
+				});
+		}
 		if (blurry) out.push({ check: true, text: m.scan_note_blurry() });
 		const has = (code: NutrientCode) => nutrients.find((n) => n.code === code);
 		// Numbers the OCR wasn't sure of: where a dropped decimal comma ("2,5" read as "25") is likeliest.

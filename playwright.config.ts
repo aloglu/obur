@@ -16,6 +16,8 @@ const PORT = 4173;
 export const SPEECH_STUB = `http://127.0.0.1:${PORT + 1}`;
 /** The same app with Speak and label scanning switched off, as an installation without those services runs. */
 export const FEATURES_OFF = `http://localhost:${PORT + 2}`;
+/** No Speak or Scan add-ons, but people may use their own key (the tiles stay and explain). */
+export const NO_ADDONS = `http://localhost:${PORT + 3}`;
 
 /** Environment for the app under test, also used by tests that call operator commands. */
 export const e2eEnv = {
@@ -25,6 +27,9 @@ export const e2eEnv = {
 	PUBLIC_ORIGIN: `http://localhost:${PORT}`,
 	SPEECH_URL: SPEECH_STUB,
 	LABELS_URL: SPEECH_STUB,
+	// People's own keys: encrypted with a test key, and OpenAI and OpenRouter played by the stand-in.
+	OBUR_SECRETS_KEY: 'a1'.repeat(32),
+	AI_PROVIDER_TEST_URL: SPEECH_STUB,
 	WEBAUTHN_RP_ID: 'localhost',
 	// A throwaway Web Push public key so the Reminders page is offered; no worker sends anything in tests.
 	VAPID_PUBLIC_KEY:
@@ -66,8 +71,24 @@ export default defineConfig({
 				...e2eEnv,
 				SPEECH_URL: '',
 				LABELS_URL: '',
+				OBUR_SECRETS_KEY: '',
 				PUBLIC_ORIGIN: FEATURES_OFF,
 				PORT: String(PORT + 2),
+				HOST: '127.0.0.1'
+			}
+		},
+		{
+			command: `node tests/e2e/when-up.ts http://127.0.0.1:${PORT}/ && node server.js`,
+			port: PORT + 3,
+			reuseExistingServer: false,
+			timeout: 240_000,
+			env: {
+				...(process.env as Record<string, string>),
+				...e2eEnv,
+				SPEECH_URL: '',
+				LABELS_URL: '',
+				PUBLIC_ORIGIN: NO_ADDONS,
+				PORT: String(PORT + 3),
 				HOST: '127.0.0.1'
 			}
 		}

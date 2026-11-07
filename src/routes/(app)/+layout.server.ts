@@ -1,4 +1,7 @@
 import { config } from '#lib/server/config.ts';
+import { effectiveSource } from '#lib/server/model-source.ts';
+import { remoteModels } from '#lib/server/remote-models.ts';
+import type { Source } from '#lib/shared/remote-models.ts';
 import { progress } from '#lib/server/progress.ts';
 import { localDate } from '#lib/shared/diary-rules.ts';
 import type { StoredAchievement } from '#lib/server/modules/progress/index.ts';
@@ -19,12 +22,30 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 			console.error('achievements: sync failed', (e as Error).message);
 		}
 	}
+	// What reads this person's recordings and photos: their own key, the server's add-on, or nothing yet.
+	let speakSource: Source | null = config.speechUrl !== null ? 'server' : null;
+	let scanSource: Source | null = config.ocrUrl !== null ? 'server' : null;
+	let keysAllowed = false;
+	if (locals.session) {
+		const userId = locals.session.userId;
+		[speakSource, scanSource, keysAllowed] = await Promise.all([
+			effectiveSource(userId, 'speak'),
+			effectiveSource(userId, 'scan'),
+			remoteModels.allowed(userId)
+		]);
+	}
 	return {
 		zone: locals.zone,
 		today,
-		/** Speak is offered only when a speech service is configured. */
-		speech: config.speechUrl !== null,
-		scan: config.ocrUrl !== null,
+		speakSource,
+		scanSource,
+		/** People may bring their own key here: Speak and Scan stay on Log even without the add-ons. */
+		keysAllowed,
+		/** The server's own add-ons, for "Read this one on obur's server instead". */
+		local: { speak: config.speechUrl !== null, scan: config.ocrUrl !== null },
+		/** The Speak and Scan tiles show when something can read them, or a key could. */
+		speech: speakSource !== null || keysAllowed,
+		scan: scanSource !== null || keysAllowed,
 		/** Reminders are offered only with Web Push keys; the public key lets this device subscribe. */
 		pushKey: config.pushKey,
 		celebrate

@@ -31,6 +31,8 @@
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
 	import ScanNotes from '#lib/ui/food/ScanNotes.svelte';
 	import type { LabelNote } from '#lib/shared/label-notes.ts';
+	import { PROVIDER_NAME, type RemoteError } from '#lib/shared/remote-models.ts';
+	import { REMOTE_ERRORS, remoteProblem, type RemoteProblem } from '#lib/ui/remote-problem.ts';
 
 	let { data } = $props();
 
@@ -92,6 +94,11 @@
 	} satisfies Record<string, () => Problem>;
 
 	let problem = $state<Problem | null>(null);
+	/** A company's model gave no answer: its own card and fix. */
+	let remote = $state<RemoteProblem | null>(null);
+	/** The last photo, kept on the phone for Try again; the server never keeps it. */
+	let lastImage: Blob | null = null;
+	const source = $derived(data.scanSource);
 	let proposal = $state<Proposal | null>(null);
 	/** The photo looked blurry: values it read may be misread. */
 	let blurry = $state(false);
@@ -127,25 +134,43 @@
 		if (!file) return;
 		const mine = ++attempt;
 		problem = null;
+		remote = null;
 		proposal = null;
 		reading = true;
 		waiting = null;
+		let image: Blob;
 		try {
-			let image: Blob;
-			try {
-				image = await shrink(file);
-			} catch {
+			image = await shrink(file);
+		} catch {
+			if (mine === attempt) {
 				problem = P.photo();
-				return;
+				reading = false;
 			}
-			if (photo) URL.revokeObjectURL(photo);
-			photo = URL.createObjectURL(image);
+			return;
+		}
+		if (photo) URL.revokeObjectURL(photo);
+		photo = URL.createObjectURL(image);
+		lastImage = image;
+		await send(image, mine);
+	}
+
+	/** The kept photo again (`viaServer`: this once on the server's add-on). */
+	function again(viaServer = false) {
+		if (!lastImage) return;
+		problem = null;
+		remote = null;
+		reading = true;
+		send(lastImage, ++attempt, viaServer);
+	}
+
+	async function send(image: Blob, mine: number, viaServer = false) {
+		try {
 			// A busy scanner: wait in line and ask again, for up to two minutes.
 			const started = Date.now();
 			let response: Response;
 			let body: { error?: string; ahead?: number; proposal?: Proposal; blurry?: boolean };
 			for (;;) {
-				response = await fetch('/api/v1/scan', {
+				response = await fetch(`/api/v1/scan${viaServer ? '?via=server' : ''}`, {
 					method: 'POST',
 					headers: { 'content-type': 'image/jpeg' },
 					body: image
@@ -159,6 +184,15 @@
 			}
 			waiting = null;
 			if (!response.ok) {
+				if (
+					source &&
+					source !== 'server' &&
+					!viaServer &&
+					REMOTE_ERRORS.includes(body.error ?? '')
+				) {
+					remote = remoteProblem(body.error as RemoteError, source, 'scan');
+					return;
+				}
 				problem =
 					body.error === 'busy'
 						? P.busy()
@@ -174,6 +208,7 @@
 				problem = body.blurry ? P.blurry() : P.noTable();
 				return;
 			}
+			lastImage = null;
 			blurry = body.blurry === true;
 			proposal = read;
 			showPhoto = false;
@@ -194,6 +229,7 @@
 		reading = false;
 		waiting = null;
 		problem = null;
+		remote = null;
 		proposal = { basis: '100g', portion: null, nutrients: [], layout: 'none', notes: [] };
 	}
 
@@ -289,14 +325,15 @@
 	{/if}
 {/snippet}
 
-{#snippet camera(primary: boolean)}
+{#snippet camera(primary: boolean, label?: string)}
 	<label
 		class={[
 			'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button px-2 text-[1rem] font-[750]',
 			primary ? 'bg-fill text-on-accent' : 'bg-surface2'
 		]}
 	>
-		<Camera size={20} aria-hidden="true" />{proposal || problem ? m.scan_retake() : m.scan_take()}
+		<Camera size={20} aria-hidden="true" />{label ??
+			(proposal || problem ? m.scan_retake() : m.scan_take())}
 		<input
 			type="file"
 			accept="image/*"
@@ -321,6 +358,18 @@
 	</h1>
 	{#if !data.scan}
 		<Notice>{m.scan_off()}</Notice>
+	{:else if source === null && !proposal}
+		<Notice tone="info" title={m.scan_not_set_up()}>
+			{m.scan_not_set_up_line()}
+			{#snippet actions()}
+				<div class="flex flex-col gap-2">
+					<Button wide onclick={() => goto(resolve('/(app)/more/speak-and-scan'))}
+						>{m.use_own_key()}</Button
+					>
+					<Button variant="ghost" wide onclick={byHand}>{m.scan_by_hand()}</Button>
+				</div>
+			{/snippet}
+		</Notice>
 	{:else if !proposal}
 		<Card>
 			<!-- The frame says how to take the photo; the camera itself is the phone's. -->
@@ -354,8 +403,42 @@
 				</label>
 			</div>
 		</Card>
+		{#if source && source !== 'server'}
+			<p class="text-center text-[0.8125rem] text-muted">
+				{m.speak_via({ provider: PROVIDER_NAME[source] })}
+			</p>
+		{/if}
 		{#if waiting !== null}
 			<Button variant="ghost" wide onclick={byHand}>{m.scan_by_hand()}</Button>
+		{/if}
+		{#if remote}
+			<Notice tone={remote.tone} title={remote.title}>
+				{remote.line}
+				{#snippet actions()}
+					<div class="flex flex-col gap-2">
+						{#if remote!.fix === 'again'}
+							{@render camera(true, remote!.fixLabel)}
+						{:else}
+							<Button
+								wide
+								onclick={() =>
+									remote!.fix === 'settings'
+										? goto(resolve('/(app)/more/speak-and-scan'))
+										: again()}>{remote!.fixLabel}</Button
+							>
+						{/if}
+						<Button variant="ghost" wide onclick={byHand}>{m.scan_by_hand()}</Button>
+						{#if data.local.scan}
+							<button
+								type="button"
+								onclick={() => again(true)}
+								class="min-h-11 text-[0.9375rem] font-[650] text-accent"
+								>{m.remote_via_server()}</button
+							>
+						{/if}
+					</div>
+				{/snippet}
+			</Notice>
 		{/if}
 		{#if problem}
 			<Notice tone="warn" title={problem.title} icon={problem.icon}>

@@ -19,6 +19,7 @@
 	import { showLoggedEntry } from '#lib/client/entry-toast.ts';
 	import EntrySheet from '#lib/ui/log/EntrySheet.svelte';
 	import SpeakSheet from '#lib/ui/log/SpeakSheet.svelte';
+	import NotSetUpSheet from '#lib/ui/log/NotSetUpSheet.svelte';
 	import type { ParsedEntry } from '#lib/shared/entry-types.ts';
 
 	let { data } = $props();
@@ -112,17 +113,27 @@
 {/if}
 
 {#if speaking}
-	<SpeakSheet
-		{date}
-		onheard={(e) => {
-			speaking = false;
-			heard = true;
-			typedEntry = e;
-			typing = true;
-		}}
-		ontype={() => ((speaking = false), (heard = false), (typedEntry = null), (typing = true))}
-		onclose={() => (speaking = false)}
-	/>
+	{#if data.speakSource === null}
+		<NotSetUpSheet
+			feature="speak"
+			ontype={() => ((speaking = false), (heard = false), (typedEntry = null), (typing = true))}
+			onclose={() => (speaking = false)}
+		/>
+	{:else}
+		<SpeakSheet
+			{date}
+			source={data.speakSource}
+			local={data.local.speak}
+			onheard={(e) => {
+				speaking = false;
+				heard = true;
+				typedEntry = e;
+				typing = true;
+			}}
+			ontype={() => ((speaking = false), (heard = false), (typedEntry = null), (typing = true))}
+			onclose={() => (speaking = false)}
+		/>
+	{/if}
 {/if}
 {#if typing}
 	<EntrySheet

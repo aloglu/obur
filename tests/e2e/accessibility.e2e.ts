@@ -41,6 +41,7 @@ test('every page passes the automated accessibility checks in light and dark', a
 		'/more',
 		'/more/appearance',
 		'/more/units',
+		'/more/speak-and-scan',
 		'/more/goal',
 		'/more/deleted',
 		'/profile',

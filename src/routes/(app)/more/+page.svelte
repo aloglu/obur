@@ -2,8 +2,15 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { paceLabel } from '#lib/ui/goal-pace.ts';
 	import SettingsList from '#lib/ui/shell/SettingsList.svelte';
+	import { PROVIDER_NAME } from '#lib/shared/remote-models.ts';
 
 	let { data } = $props();
+	// The company a person's own key sends to, if any; otherwise the server.
+	const speakScan = $derived.by(() => {
+		if (!data.keysAllowed) return null;
+		const chosen = [data.speakSource, data.scanSource].find((x) => x && x !== 'server');
+		return chosen && chosen !== 'server' ? PROVIDER_NAME[chosen] : m.models_server();
+	});
 </script>
 
 <svelte:head><title>{m.more_title()} · {m.app_name()}</title></svelte:head>
@@ -22,5 +29,6 @@
 		mealCount={data.mealCount}
 		goal={data.goal === null ? null : paceLabel(data.goal)}
 		reminders={data.pushKey !== null}
+		{speakScan}
 	/>
 </main>

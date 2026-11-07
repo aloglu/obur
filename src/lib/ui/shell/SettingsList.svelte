@@ -25,6 +25,8 @@
 		goal: string | null;
 		/** Reminders are configured on this server. */
 		reminders: boolean;
+		/** The Speak and Scan row's value, when people may use their own key here. */
+		speakScan?: string | null;
 	}
 	let {
 		isAdmin,
@@ -37,7 +39,8 @@
 		recipeCount,
 		mealCount,
 		goal,
-		reminders
+		reminders,
+		speakScan = null
 	}: Props = $props();
 
 	const mode = $derived(
@@ -73,6 +76,13 @@
 	<NavRow href={resolve('/(app)/more/units')} label={m.more_units()} value="kg · {time}" />
 	{#if reminders}
 		<NavRow href={resolve('/(app)/settings/reminders')} label={m.reminders_title()} />
+	{/if}
+	{#if speakScan !== null}
+		<NavRow
+			href={resolve('/(app)/more/speak-and-scan')}
+			label={m.more_speak_scan()}
+			value={speakScan}
+		/>
 	{/if}
 </div>
 
