@@ -21,7 +21,7 @@ const meal = (page: Page, name: string) => page.getByRole('region', { name });
 
 async function openLogFor(page: Page, mealName: string) {
 	await meal(page, mealName)
-		.getByRole('button', { name: `Add to ${mealName}` })
+		.getByRole('button', { name: `Add food to ${mealName}` })
 		.click();
 	await expect(page).toHaveURL(/\/log\?meal=/);
 	await expect(page.getByText(`Adding to ${mealName} · Today`)).toBeVisible();

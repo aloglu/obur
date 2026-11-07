@@ -253,7 +253,7 @@
 	"meal_lunch": "Lunch",
 	"meal_dinner": "Dinner",
 	"meal_snacks": "Snacks",
-	"meal_add": "Add to {meal}",
+	"meal_add": "Add food to {meal}",
 	"meal_empty": "Nothing logged yet.",
 	"entry_quick": "Quick add",
 	"entry_macros_unknown": "Macros unknown",

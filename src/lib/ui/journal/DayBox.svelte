@@ -32,8 +32,8 @@
 			>{/key}
 		<a
 			href={dayHref(day.date)}
-			class="-mr-1 inline-flex min-h-11 items-center gap-0.5 text-[0.875rem] font-[650] text-accent"
-			>{m.journal_open()}<ChevronRight size={18} aria-hidden="true" /></a
+			class="-mr-1 inline-flex min-h-11 items-center gap-0.5 text-[0.875rem] font-[650] text-text"
+			>{m.journal_open()}<ChevronRight size={18} aria-hidden="true" class="text-accent" /></a
 		>
 	</div>
 	{#if empty}

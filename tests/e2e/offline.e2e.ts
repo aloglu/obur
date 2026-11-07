@@ -28,7 +28,7 @@ async function primeCache(page: Page) {
 async function quickAdd(page: Page, kcal: string, description: string) {
 	await page
 		.getByRole('region', { name: 'Snacks' })
-		.getByRole('button', { name: 'Add to Snacks' })
+		.getByRole('button', { name: 'Add food to Snacks' })
 		.click();
 	await openCaloriesOnly(page);
 	const sheet = page.getByRole('dialog', { name: 'Log calories only' });

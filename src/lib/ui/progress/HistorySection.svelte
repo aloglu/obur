@@ -274,7 +274,7 @@
 						onclick={() => setView(v)}
 						class={[
 							'min-h-11 px-2 transition-[color,opacity]',
-							view === v ? 'text-text' : 'text-muted opacity-65 hover:opacity-100'
+							view === v ? 'text-text' : 'text-muted hover:text-text'
 						]}>{v === 'trend' ? m.history_smoothed_short() : m.history_latest()}</button
 					>
 				{/each}
