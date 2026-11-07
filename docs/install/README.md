@@ -36,3 +36,4 @@ start: it becomes the passkeys' home, and moving it later means everyone enrols 
 - [Backups and restoring](../restore.md)
 - [Updating](updating.md)
 - [Troubleshooting](troubleshooting.md)
+- [For an AI assistant installing or maintaining obur](for-ai-agents.md)

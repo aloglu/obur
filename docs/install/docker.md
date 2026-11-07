@@ -43,6 +43,9 @@ OBUR_BACKUP_PASSPHRASE=a-long-phrase-only-you-know
 
 Everything else has a sensible default; the file explains each line.
 
+**A test release** (a version with a hyphen, such as `1.0.0-beta.2`) is not published as `latest`: add
+`OBUR_VERSION=1.0.0-beta.2` to `.env` to install it.
+
 **Without Speak and Scan:** open `compose.yaml` and delete the `obur-speech` and `obur-labels` sections, and in
 `.env` add `SPEECH_URL=` and `LABELS_URL=` (empty). obur then needs about 1 GB of memory instead of 2.5 GB.
 

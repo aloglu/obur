@@ -5,7 +5,8 @@ control (a VPS, Unraid, TrueNAS or any machine with Docker) and you use it on yo
 app. Sign-in with passkeys, invite-only accounts and automatic encrypted backups. Nothing leaves your server unless
 someone chooses to use their own OpenAI or OpenRouter key for Speak and Scan. Weights are in kilograms for now.
 
-**Install:** [`docs/install/`](docs/install/README.md)
+**Install:** [`docs/install/`](docs/install/README.md). Installing with an AI assistant? Point it at
+[`docs/install/for-ai-agents.md`](docs/install/for-ai-agents.md).
 
 For developers:
 
