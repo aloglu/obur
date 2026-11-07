@@ -21,8 +21,8 @@
 	} from '#lib/shared/remote-models.ts';
 	import Card from '#lib/ui/Card.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
-	import AddKeySheet from '#lib/ui/models/AddKeySheet.svelte';
-	import ConsentSheet from '#lib/ui/models/ConsentSheet.svelte';
+	import AddKeySheet from '#lib/ui/own-key/AddKeySheet.svelte';
+	import ConsentSheet from '#lib/ui/own-key/ConsentSheet.svelte';
 
 	let { data } = $props();
 	const s = untrack(() => data.settings);
