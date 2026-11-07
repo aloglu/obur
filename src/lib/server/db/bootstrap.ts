@@ -29,9 +29,14 @@ export async function bootstrapDatabase(
 			${role}::text, ${passwords[key]}::text) as stmt`;
 		await admin.unsafe(stmt);
 	}
-	// Runtime roles must never be able to act as the schema owner.
+	// Runtime roles must never be able to act as the schema owner. Revoked only where a membership exists: revoking one
+	// that was never granted logs a warning on every start, which would hide real ones.
 	for (const runtime of [ROLES.app, ROLES.worker]) {
-		await admin.unsafe(`revoke ${ROLES.migrator} from ${runtime}`);
+		const [{ member }] = await admin`select exists(
+			select 1 from pg_auth_members m
+			join pg_roles r on r.oid = m.roleid join pg_roles u on u.oid = m.member
+			where r.rolname = ${ROLES.migrator} and u.rolname = ${runtime}) as member`;
+		if (member) await admin.unsafe(`revoke ${ROLES.migrator} from ${runtime}`);
 	}
 
 	const db = `"${database.replace(/"/g, '""')}"`;

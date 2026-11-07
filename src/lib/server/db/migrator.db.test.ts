@@ -106,3 +106,37 @@ describe('migrate', () => {
 		expect(await exists(sql, 'schema_migrations')).toBe(false);
 	});
 });
+
+describe('bootstrap', () => {
+	it('takes the schema owner away from the runtime roles, and starts without warnings', async () => {
+		const notices: string[] = [];
+		const admin = postgres(at(urls.admin), {
+			max: 1,
+			onnotice: (n) => notices.push(String(n.message))
+		});
+		const member = async (role: string) =>
+			(
+				await admin`select exists(select 1 from pg_auth_members m
+					join pg_roles r on r.oid = m.roleid join pg_roles u on u.oid = m.member
+					where r.rolname = 'obur_migrator' and u.rolname = ${role}) as m`
+			)[0].m as boolean;
+		const passwords = {
+			migrator: passwordFromUrl(urls.migrator),
+			app: passwordFromUrl(urls.app),
+			worker: passwordFromUrl(urls.worker)
+		};
+		try {
+			// A membership granted by mistake is removed…
+			await admin.unsafe('grant obur_migrator to obur_app');
+			expect(await member('obur_app')).toBe(true);
+			await bootstrapDatabase(admin, scratch, passwords);
+			expect(await member('obur_app')).toBe(false);
+			// …and an ordinary start, with nothing to remove, warns about nothing.
+			notices.length = 0;
+			await bootstrapDatabase(admin, scratch, passwords);
+			expect(notices.filter((n) => /granted membership/.test(n))).toEqual([]);
+		} finally {
+			await admin.end();
+		}
+	});
+});
