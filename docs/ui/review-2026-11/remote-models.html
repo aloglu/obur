@@ -1,0 +1,396 @@
+<title>obur Design Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,750;12..96,800&family=Inter:wght@400;500;600;650;700&display=swap">
+<style>
+:root{
+  --bg:#f6f5f4;--surface:#fff;--surface2:#efeeec;--line:#e4e3e1;--text:#262628;--muted:#68686d;
+  --accent:#2563eb;--on-accent:#fff;--soft:#e9effd;--good:#15803d;--warn:#a14a07;--warn-soft:#fcf1e2;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.05);
+  --wall-a:#cfd8e6;--wall-b:#efe9df;--wall-text:#1d1d1f;
+  --display:'Bricolage Grotesque',ui-rounded,system-ui,sans-serif;--sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111113;--surface:#1a1a1d;--surface2:#26262a;--line:#2f2f34;--text:#ececee;--muted:#a1a1a6;
+  --accent:#6ea2ff;--on-accent:#0a1a36;--soft:#1b2640;--good:#4ade80;--warn:#fbbf24;--warn-soft:#2c2412;
+  --shadow:0 0 0 1px rgba(255,255,255,.04);--wall-a:#1c2230;--wall-b:#2c2630;--wall-text:#f5f5f7;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111113;--surface:#1a1a1d;--surface2:#26262a;--line:#2f2f34;--text:#ececee;--muted:#a1a1a6;
+  --accent:#6ea2ff;--on-accent:#0a1a36;--soft:#1b2640;--good:#4ade80;--warn:#fbbf24;--warn-soft:#2c2412;
+  --shadow:0 0 0 1px rgba(255,255,255,.04);--wall-a:#1c2230;--wall-b:#2c2630;--wall-text:#f5f5f7;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 32px}
+button,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+.head{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-bottom:14px}
+.head h1{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.01em;margin:0;flex:none}
+.head h1 .rnd{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--accent);background:var(--soft);padding:4px 8px;border-radius:8px;vertical-align:4px;margin-left:6px}
+.prog{display:flex;align-items:center;gap:10px;flex:1;min-width:200px;font-size:14px;color:var(--muted)}
+.prog .bar{width:140px;height:8px;border-radius:8px;background:var(--surface2);overflow:hidden}
+.prog .bar i{display:block;height:100%;background:var(--good);transition:width .4s}
+.prog b{color:var(--text)}
+
+.layout{display:grid;grid-template-columns:380px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+@media (min-width:981px){.side{position:sticky;top:12px}}
+.stop{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:18px 18px 16px;display:flex;flex-direction:column;gap:12px}
+.eyebrow{font-size:13px;font-weight:650;color:var(--muted)}
+.stop h2{font-family:var(--display);font-weight:750;font-size:22px;line-height:1.2;margin:0;text-wrap:balance}
+.stop ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14.5px;line-height:1.45}
+.stop p{margin:0;font-size:14.5px;line-height:1.45}
+.lbl{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:-4px}
+.calls div{font-size:14px;line-height:1.45;padding:10px 12px;border-radius:12px;background:var(--warn-soft)}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.verdict button,.kd button{height:46px;border-radius:14px;background:var(--surface2);font-weight:700;font-size:15px}
+.verdict .ok[aria-pressed=true],.kd .k[aria-pressed=true]{background:var(--good);color:#fff}
+.verdict .ch[aria-pressed=true],.kd .d[aria-pressed=true]{background:var(--warn);color:#fff}
+:root[data-theme="dark"] :is(.verdict,.kd) button[aria-pressed=true]{color:#111}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) :is(.verdict,.kd) button[aria-pressed=true]{color:#111}}
+textarea{width:100%;min-height:76px;border-radius:14px;border:1px solid var(--line);background:var(--bg);padding:10px 12px;font-size:14.5px;line-height:1.45;resize:vertical}
+.nav{display:flex;gap:8px;align-items:center}
+.nav .prev{height:44px;padding:0 14px;border-radius:14px;background:var(--surface2);font-weight:650}
+.nav .next{flex:1;height:44px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:700;padding:0 10px}
+.saved{font-size:12.5px;color:var(--muted)}
+
+.list{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:8px}
+.item{display:grid;grid-template-columns:22px minmax(0,1fr) 16px;gap:8px;align-items:center;width:100%;min-height:40px;padding:4px 10px;border-radius:10px;text-align:left;font-size:14px}
+.item:hover{background:var(--surface2)}
+.item[aria-current=true]{background:var(--soft);font-weight:650}
+.item .n{font-size:12.5px;color:var(--muted);text-align:right}
+.mark{width:16px;height:16px;border-radius:50%;border:2px solid var(--line)}
+.mark.ok{border:0;background:var(--good)}.mark.ch{border:0;background:var(--warn)}
+
+.panel{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel h3{margin:0;font-size:13px;font-weight:700;color:var(--muted)}
+.panel h3{margin:0;font-size:13px;font-weight:700;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* Phone mocks in Pazar (light), the theme everyone starts with. */
+.ph{width:min(390px,100%);margin:0 auto;border-radius:36px;border:8px solid #1e1a16;background:#f6f3ee;color:#1e1a16;padding:20px 14px 24px;display:flex;flex-direction:column;gap:12px;font-family:var(--sans);position:relative;overflow:hidden;min-height:560px}
+.ph .back{color:#c2410c;font-weight:700;font-size:15px}
+.ph h4{font-family:var(--display);font-weight:750;font-size:26px;margin:0;letter-spacing:-.01em}
+.ph .sub{font-size:14px;color:#665d53;line-height:1.4;margin:-4px 0 0}
+.cd{background:#fff;border-radius:22px;padding:16px;box-shadow:0 1px 2px rgba(60,40,20,.06),0 8px 24px rgba(60,40,20,.08);display:flex;flex-direction:column;gap:10px}
+.cd .t{font-family:var(--display);font-weight:700;font-size:19px}
+.cd .ln{font-size:13.5px;color:#665d53;line-height:1.4}
+.opt{display:grid;grid-template-columns:minmax(0,1fr) 22px;gap:10px;align-items:center;min-height:52px;padding:6px 0;text-align:left;width:100%}
+.opt+.opt{border-top:1px solid #efe8de}
+.opt b{display:block;font-weight:650;font-size:15px}
+.opt small{display:block;color:#665d53;font-size:13px;margin-top:2px}
+.opt .dot{width:22px;height:22px;border-radius:50%;border:2px solid #d9cfc2}
+.opt[aria-checked=true] .dot{border:7px solid #c2410c}
+.opt[disabled]{opacity:.45}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;flex-wrap:wrap}
+.row+.row{border-top:1px solid #efe8de}
+.row b{font-weight:650;font-size:15px}
+.row small{display:block;color:#665d53;font-size:13px}
+.lnk{color:#c2410c;font-weight:700;font-size:15px}
+.btn{height:50px;border-radius:16px;background:#c2410c;color:#fff;font-weight:750;font-size:16px;display:grid;place-items:center;width:100%}
+.btn.ghost{background:#f1ebe3;color:#1e1a16}
+.btn.quiet{background:none;color:#c2410c;height:40px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#f1ebe3;border-radius:14px;padding:4px}
+.seg span{height:40px;display:grid;place-items:center;border-radius:10px;font-weight:650;font-size:15px;color:#665d53}
+.seg span.on{background:#fff;color:#1e1a16;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:650;color:#665d53}
+.field .in{height:50px;border-radius:14px;border:1px solid #e5ddd2;background:#fff;display:flex;align-items:center;padding:0 14px;font-size:16px;font-family:ui-monospace,Menlo,monospace;color:#1e1a16;overflow:hidden;white-space:nowrap}
+.field .in.err{border-color:#b42318}
+.field .hint{font-size:13px;color:#665d53;line-height:1.4}
+.field .hint.err{color:#b42318;font-weight:600}
+.scrim{position:absolute;inset:0;background:rgba(30,26,22,.36)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;padding:10px 16px 22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 30px rgba(0,0,0,.12)}
+.sheet .grab{width:38px;height:5px;border-radius:5px;background:#e5ddd2;margin:0 auto 2px}
+.sheet .hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.sheet .hd b{font-family:var(--display);font-weight:750;font-size:21px;line-height:1.2}
+.sheet .x{width:34px;height:34px;border-radius:50%;background:#f1ebe3;display:grid;place-items:center;font-size:16px;color:#665d53;flex:none}
+.sheet p{margin:0;font-size:14.5px;line-height:1.45}
+.sheet ul{margin:0;padding-left:18px;font-size:14.5px;line-height:1.45;display:flex;flex-direction:column;gap:4px}
+.warn{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start;background:#fff;border-radius:18px;padding:14px;box-shadow:0 1px 2px rgba(60,40,20,.06),0 6px 18px rgba(60,40,20,.06)}
+.warn i{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:18px}
+.warn i.amber{background:#fcefd9;color:#a14a07}.warn i.grey{background:#f1ebe3;color:#665d53}.warn i.red{background:#fde4e1;color:#b42318}
+.warn b{display:block;font-weight:700;font-size:15px}
+.warn>span{color:#1e1a16}
+.warn span span{display:block;font-size:13.5px;color:#665d53;line-height:1.4;margin-top:2px}
+.note{display:flex;gap:8px;border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.4}
+.note.amber{background:#fcefd9;color:#8a3d05;font-weight:550}.note.grey{background:#f1ebe3;color:#665d53}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tiles div{background:#fff;border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:650;font-size:14px;box-shadow:0 1px 2px rgba(60,40,20,.06)}
+.tiles div i{font-style:normal;font-size:22px}
+.search{height:48px;border-radius:14px;background:#fff;border:1px solid #e5ddd2;display:flex;align-items:center;padding:0 14px;color:#8b8177;font-size:15px}
+.tog{width:52px;height:32px;border-radius:32px;background:#d9cfc2;position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s}
+.tog.on{background:#3f7d3a}.tog.on::after{left:23px}
+.mic{width:76px;height:76px;border-radius:50%;background:#c2410c;margin:6px auto 0;display:grid;place-items:center;color:#fff;font-size:30px}
+.via{font-size:13px;color:#665d53;text-align:center}
+.via b{color:#1e1a16}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 90px 72px;gap:6px;align-items:center;font-size:14.5px}
+.lab .v{height:40px;border-radius:12px;border:1px solid #e5ddd2;display:flex;align-items:center;padding:0 10px;font-variant-numeric:tabular-nums}
+.lab .u{color:#665d53;font-size:13px}
+.variants{display:flex;flex-wrap:wrap;gap:6px}
+.variants button{height:36px;padding:0 12px;border-radius:10px;background:var(--surface2);font-weight:650;font-size:13.5px;color:var(--muted)}
+.variants button[aria-pressed=true]{background:var(--soft);color:var(--accent)}
+.sumlist{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.sumlist div{padding:8px 10px;border-radius:10px;background:var(--surface2)}
+.sumlist small{display:block;color:var(--muted);margin-top:2px;white-space:pre-wrap}
+.stage-note{font-size:14px;color:var(--muted);line-height:1.45;margin:0}
+</style>
+
+<div class="head">
+  <h1>obur design review <span class="rnd">your own AI key</span></h1>
+  <div class="prog" id="prog"></div>
+</div>
+<div class="layout">
+  <div class="side">
+    <section class="stop" id="stop" aria-live="polite"></section>
+    <nav class="list" id="list" aria-label="All stops"></nav>
+  </div>
+  <div class="stage" id="stageEl"></div>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const COLL = 'review10';
+
+// Each stop: what it is, the idea in plain words, and variants to look at on the right.
+const S = [
+  { id: 'page', ch: 'Settings', t: 'Where you choose it', kind: 'page',
+    variants: [['none', 'No key yet'], ['key', 'With an OpenAI key']],
+    idea: [
+      'More gets a new row, Speak and Scan, that opens this page. Today Speak and Scan simply use the server; nothing is set.',
+      'The page has a card for Speak and one for Scan. Each says what reads your recordings or label photos: this server (the default), or your own OpenAI or OpenRouter key once you add one.',
+      'Below them, Your keys: each key shows only its last four characters, when it was checked, and Remove. A line counts this month’s clips and labels sent with each key, so a bill makes sense.',
+      'Everything here is yours only: nobody else in the household sees your keys or your choice, admins included.'
+    ] },
+  { id: 'add', ch: 'Settings', t: 'Adding a key', kind: 'add',
+    variants: [['empty', 'Pasting it'], ['checking', 'Checking'], ['refused', 'Refused']],
+    idea: [
+      'Add a key opens a sheet: OpenAI or OpenRouter, then the key itself, pasted from that company’s website. A line says where to find it.',
+      'Check and save asks the company once whether the key works, before anything is stored. A key that doesn’t work is never saved, and the sheet says why.',
+      'Adding a key changes nothing yet: Speak and Scan keep using the server until you choose the key for them (next stop).'
+    ] },
+  { id: 'consent', ch: 'Settings', t: 'Allowing a company to receive your data', kind: 'consent',
+    variants: [['speak', 'For Speak'], ['scan', 'For Scan']],
+    idea: [
+      'Choosing your key for Speak or Scan opens this confirmation first. It names the company and exactly what it will receive from then on.',
+      'For Speak: each recording, and the names of foods and brands you log often, which help it spell them. For Scan: each label photo. Nothing else, and never anyone else’s.',
+      'Only the orange button sends anything. Keep it on this server leaves everything as it was. Switching back later stops it at once.'
+    ] },
+  { id: 'use', ch: 'Using it', t: 'Speak and Scan with your key', kind: 'use',
+    variants: [['speak', 'Speak'], ['scan', 'Check the label']],
+    idea: [
+      'Speak looks as it does now, with one quiet line under the button: “With your OpenAI key”. You always know where the recording goes.',
+      'After a scan, Check the label works as now. Its notes start with an amber one: “Read by OpenAI. Check each value against your photo.” The usual checks (energy against fat, carbohydrate and protein; values no food can have) still run on what came back.',
+      'What you said or what was read still shows for you to confirm before anything is saved, exactly as with the server.'
+    ] },
+  { id: 'fail', ch: 'Using it', t: 'When the company says no', kind: 'fail',
+    variants: [['refused', 'Key refused'], ['credit', 'Out of credit'], ['down', 'Not answering']],
+    idea: [
+      'If the key stops working, the account runs out of credit, or the company doesn’t answer, the sheet says which, in plain words, instead of a general error.',
+      'Two ways on: Use this server instead (for this one recording or photo, only when the server has Speak or Scan) and Type it instead. obur never switches to a company by itself.',
+      'A refused key also gets a link to Speak and Scan, where you can replace it.'
+    ] },
+  { id: 'noaddon', ch: 'Using it', t: 'A server without Speak or Scan', kind: 'noaddon',
+    variants: [['log', 'Log'], ['sheet', 'Tapping Speak']],
+    idea: [
+      'Some servers don’t run the speech and label add-ons (they need extra memory). Today Speak and Scan then disappear from Log.',
+      'My pick: while personal keys are allowed, the two tiles stay. Tapping one explains that this server doesn’t read recordings or photos itself, and offers Add your own key or Type it instead.',
+      'The alternative is to keep hiding them until you add a key in Settings. That’s tidier, but nobody would discover the option.'
+    ] },
+  { id: 'admin', ch: 'Household', t: 'The admin’s switch', kind: 'admin',
+    variants: [['on', 'Allowed'], ['off', 'Not allowed']],
+    idea: [
+      'Household (admins only) gets one switch: Personal AI keys. It’s on by default.',
+      'Off hides the choice from everyone, and the server refuses anything sent with a key, so a household that wants nothing to leave the server can be sure of it. Keys already added stay saved but unused, and their owners see why.',
+      'Later, a second option could let members use the admin’s own key, with a limit per person. That is not part of 1.0.0.'
+    ] },
+  { id: 'sum', ch: 'Finish', t: 'Your choices', summary: true }
+];
+
+let V = {}, db = null, cur = 0, variant = {};
+try { V = JSON.parse(localStorage.getItem('obur-rv10') || '{}'); } catch (e) {}
+try { cur = Math.min(S.length - 1, +localStorage.getItem('obur-rv10-cur') || 0); } catch (e) {}
+const get = id => (V[id] = V[id] || {});
+const reviewable = S.filter(s => !s.summary);
+const done = s => !!get(s.id).v;
+
+function counts() {
+  const n = reviewable.filter(done).length;
+  $('#prog').innerHTML = `<span class="bar"><i style="width:${n / reviewable.length * 100}%"></i></span><span><b class="num">${n}</b> of ${reviewable.length} done</span>`;
+}
+let saveT = {};
+function save(id) {
+  try { localStorage.setItem('obur-rv10', JSON.stringify(V)); } catch (e) {}
+  counts(); renderList();
+  if (!db) return;
+  clearTimeout(saveT[id]);
+  saveT[id] = setTimeout(async () => {
+    const s = S.find(x => x.id === id), x = get(id);
+    const doc = { n: S.indexOf(s) + 1, chapter: s.ch, title: s.t, verdict: x.v || null, note: x.n || '', updatedAt: new Date().toISOString() };
+    try { await db.doc(`${COLL}/${id}`).set(doc); const m = $('#saved'); if (m) m.textContent = 'Saved for Claude to read.'; }
+    catch (e) { const m = $('#saved'); if (m) m.textContent = 'Couldn’t save just now; kept in this browser.'; }
+  }, 500);
+}
+
+function renderList() {
+  let last = '', h = '';
+  S.forEach((s, i) => {
+    if (s.ch !== last) { h += `<div class="eyebrow" style="padding:10px 10px 4px">${esc(s.ch)}</div>`; last = s.ch; }
+    const v = get(s.id).v;
+    const cls = s.summary ? '' : v === 'change' ? 'ch' : v ? 'ok' : '';
+    h += `<button class="item" data-i="${i}" aria-current="${i === cur}"><span class="n num">${s.summary ? '' : i + 1}</span><span>${esc(s.t)}</span>${s.summary ? '<span></span>' : `<span class="mark ${cls}" aria-label="${v ? 'done' : 'not done'}"></span>`}</button>`;
+  });
+  $('#list').innerHTML = h;
+}
+$('#list').onclick = e => { const b = e.target.closest('[data-i]'); if (b) open(+b.dataset.i); };
+
+const navHtml = () => `<div class="nav"><button class="prev" id="prev" ${cur ? '' : 'disabled style="opacity:.4"'}>Back</button>${S[cur + 1] ? `<button class="next" id="next">Next: ${esc(S[cur + 1].t)}</button>` : ''}</div>`;
+function wireNav() { $('#prev').onclick = () => cur && open(cur - 1); const n = $('#next'); if (n) n.onclick = () => open(cur + 1); }
+const savedLine = () => `<span class="saved" id="saved">${db ? 'Your choices are saved for Claude to read.' : 'Kept in this browser.'}</span>`;
+
+function renderStop() {
+  const s = S[cur];
+  if (s.summary) {
+    const open1 = reviewable.filter(r => !done(r));
+    $('#stop').innerHTML = `<div class="eyebrow">Finish</div><h2>${esc(s.t)}</h2>
+      <ul>${reviewable.map(r => `<li>${esc(r.t)}: ${({ keep: 'keep it', change: 'change it' })[get(r.id).v] || 'no verdict yet'}.</li>`).join('')}</ul>
+      ${open1.length ? `<p>Still open: ${open1.map(r => `<a href="#" data-jump="${S.indexOf(r)}">${S.indexOf(r) + 1}. ${esc(r.t)}</a>`).join(', ')}</p>` : '<p>All done. I’ll build it from these choices.</p>'}
+      <div class="sumlist">${reviewable.filter(r => get(r.id).n).map(r => `<div><b>${esc(r.t)}</b><small>${esc(get(r.id).n)}</small></div>`).join('')}</div>
+      ${navHtml()}`;
+    $$('[data-jump]').forEach(a => a.onclick = e => { e.preventDefault(); open(+a.dataset.jump); });
+    wireNav(); return;
+  }
+  const x = get(s.id);
+  $('#stop').innerHTML = `<div class="eyebrow">Stop ${cur + 1} of ${reviewable.length} · ${esc(s.ch)}</div><h2>${esc(s.t)}</h2>
+    <div class="lbl">The idea</div><ul>${s.idea.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+    <div class="lbl">Your verdict</div>
+    <div class="verdict" role="group" aria-label="Your verdict"><button class="ok" data-v="keep" aria-pressed="${x.v === 'keep'}">✓ Keep it</button><button class="ch" data-v="change" aria-pressed="${x.v === 'change'}">Change it</button></div>
+    <textarea id="note" placeholder="${x.v === 'change' ? 'What should change?' : 'Anything to add (optional)'}" aria-label="Your note">${esc(x.n)}</textarea>
+    ${savedLine()}${navHtml()}`;
+  $$('.verdict button').forEach(b => b.onclick = () => {
+    const o = get(s.id); o.v = o.v === b.dataset.v ? null : b.dataset.v;
+    $$('.verdict button').forEach(z => z.setAttribute('aria-pressed', o.v === z.dataset.v));
+    $('#note').placeholder = o.v === 'change' ? 'What should change?' : 'Anything to add (optional)';
+    if (o.v === 'change') $('#note').focus();
+    save(s.id);
+  });
+  $('#note').oninput = e => { get(s.id).n = e.target.value; save(s.id); };
+  wireNav();
+}
+
+/* ---------- the phone mocks ---------- */
+// Each screen is the inside of one phone; an open sheet is drawn over it with the scrim.
+const phone = (inner, sheet) => `<div class="ph">${inner}${sheet ? `<div class="scrim"></div><div class="sheet"><span class="grab"></span>${sheet}</div>` : ''}</div>`;
+const hd = t => `<div class="hd"><b>${t}</b><span class="x" aria-hidden="true">✕</span></div>`;
+const opt = (title, small, on, dis) => `<div class="opt" role="radio" aria-checked="${!!on}" ${dis ? 'disabled' : ''}><span><b>${title}</b>${small ? `<small>${small}</small>` : ''}</span><span class="dot"></span></div>`;
+function pageInner(key) {
+  const card = (name, what, goes) => `<div class="cd"><span class="t">${name}</span><span class="ln">${what}</span>
+    ${opt('On this server', 'Nothing leaves your server', true)}
+    ${key ? opt('With my OpenAI key', goes) : opt('With my own key', 'Add a key below first', false, true)}</div>`;
+  return `<span class="back">‹ More</span><h4>Speak and Scan</h4>
+    <p class="sub">What reads your recordings and label photos. Only you see the choices and keys on this page.</p>
+    ${card('Speak', 'Turning what you say into an entry.', 'Recordings go to OpenAI')}
+    ${card('Scan', 'Reading the nutrition table on a label photo.', 'Photos go to OpenAI')}
+    <div class="cd"><span class="t">Your keys</span>
+      ${key ? `<div class="row"><span><b>OpenAI</b><small>···· a1F9 · checked today</small></span><span class="lnk">Remove</span></div>
+               <div class="row"><span class="ln">This month: 12 recordings, 3 labels.</span></div>` : `<span class="ln">Use your own OpenAI or OpenRouter account for Speak and Scan. You pay that company for what you use.</span>`}
+      <span class="lnk">${key ? 'Add another key' : 'Add a key'}</span></div>`;
+}
+const page = v => phone(pageInner(v === 'key'));
+function addSheet(v) {
+  const field = v === 'empty' ? 'sk-proj-…' : 'sk-proj-•••••••••••••••a1F9';
+  return phone(pageInner(false), `${hd('Add a key')}
+      <div class="seg"><span class="on">OpenAI</span><span>OpenRouter</span></div>
+      <div class="field"><label>API key</label><span class="in${v === 'refused' ? ' err' : ''}">${field}</span>
+        ${v === 'refused' ? '<span class="hint err">OpenAI refused this key. Check that you copied all of it and that it isn’t revoked.</span>'
+          : '<span class="hint">Find it on platform.openai.com → API keys → Create new secret key.</span>'}</div>
+      <div class="btn">${v === 'checking' ? 'Checking with OpenAI…' : 'Check and save'}</div>
+      <span class="ln" style="font-size:13px;color:#665d53">Stored encrypted on this server. Only you can use it, and only its last four characters are shown again.</span>`);
+}
+function consent(v) {
+  const speak = v === 'speak';
+  return phone(pageInner(true), `${hd(speak ? 'Send your recordings to OpenAI?' : 'Send your label photos to OpenAI?')}
+      <p>From now on, ${speak ? 'Speak' : 'Scan'} sends OpenAI:</p>
+      <ul>${speak ? '<li>each recording</li><li>the names of foods and brands you log often, to help it spell them</li>' : '<li>each label photo</li>'}</ul>
+      <p>OpenAI’s own terms apply to what it receives. obur sends nothing else, and nothing from anyone else in your household. Switch back here at any time.</p>
+      <div class="btn">Send to OpenAI</div><div class="btn ghost">Keep it on this server</div>`);
+}
+const logInner = recent => `<span class="back">‹ Today</span><h4>Log</h4><div class="search">Search foods</div>
+    <div class="tiles"><div><i>✎</i>Type it</div><div><i>🎙</i>Speak</div><div><i>⌗</i>Scan</div></div>
+    ${recent ? `<div class="cd"><span class="t">Recent</span><div class="row"><span><b>Menemen</b><small>2 eggs</small></span><b class="num">312</b></div><div class="row"><span><b>Ayran</b><small>1 glass</small></span><b class="num">76</b></div></div>` : ''}`;
+function use(v) {
+  if (v === 'speak') return phone(logInner(false), `${hd('Speak')}
+      <p style="color:#665d53">Say what you ate, e.g. “iki yumurta ve bir dilim ekmek kahvaltıda”.</p>
+      <div class="mic" aria-hidden="true">●</div><div class="btn" style="margin-top:6px">Done</div>
+      <span class="via">With your <b>OpenAI</b> key</span>`);
+  return phone(`<span class="back">‹ Log</span><h4>Check the label</h4>
+    <div class="cd"><span class="t">Nutrition</span>
+      <div class="note amber">⚠&nbsp; Read by OpenAI. Check each value against your photo.</div>
+      <div class="note grey">✓&nbsp; Read per 100 g. The per-serving and %RI columns were skipped.</div>
+      <div class="lab"><span>Energy</span><span class="v">400</span><span class="u">kcal</span></div>
+      <div class="lab"><span>Fat</span><span class="v">18</span><span class="u">g</span></div>
+      <div class="lab"><span>Carbohydrate</span><span class="v">52</span><span class="u">g</span></div>
+      <div class="lab"><span>Protein</span><span class="v">6,5</span><span class="u">g</span></div></div>`);
+}
+function fail(v) {
+  const m = { refused: ['red', '!', 'Your OpenAI key was refused', 'It may have been revoked. Replace it in Speak and Scan.'],
+    credit: ['amber', '¢', 'Your OpenAI account is out of credit', 'Add credit on OpenAI’s website, then try again.'],
+    down: ['grey', '…', 'OpenAI isn’t answering', 'Try again in a moment.'] }[v];
+  return phone(logInner(false), `${hd('Speak')}
+      <div class="warn"><i class="${m[0]}" aria-hidden="true">${m[1]}</i><span><b>${m[2]}</b><span>${m[3]}</span></span></div>
+      <div class="btn">Use this server instead</div><div class="btn ghost">Type it instead</div>
+      ${v === 'refused' ? '<span class="btn quiet">Open Speak and Scan</span>' : ''}`);
+}
+function noaddon(v) {
+  if (v === 'log') return phone(logInner(true));
+  return phone(logInner(true), `${hd('Speak needs a reader')}
+      <p>This server doesn’t turn recordings into text itself. You can use your own OpenAI or OpenRouter key for it; you pay that company for what you use.</p>
+      <div class="btn">Add your own key</div><div class="btn ghost">Type it instead</div>`);
+}
+function admin(v) {
+  const on = v === 'on';
+  return phone(`<span class="back">‹ More</span><h4>Household</h4>
+    <div class="cd"><span class="t">People</span><div class="row"><span><b>Abdullah</b><small>Admin</small></span></div><div class="row"><span><b>Göksu</b><small>Member</small></span></div><span class="lnk">Invite someone</span></div>
+    <div class="cd"><div class="row" style="min-height:0;flex-wrap:nowrap"><span style="flex:1;min-width:0"><b>Personal AI keys</b><small>People may use their own OpenAI or OpenRouter key for Speak and Scan.</small></span><span class="tog${on ? ' on' : ''}" aria-hidden="true"></span></div>
+      ${on ? '' : '<div class="note grey">Off: Speak and Scan only use this server. Keys people added stay saved but unused, and they see why.</div>'}</div>
+    <div class="cd"><span class="t">Backups</span><span class="ln">Last backup today 02:00 · restore check passed Sunday</span></div>`);
+}
+const DRAW = { page, add: addSheet, consent, use, fail, noaddon, admin };
+
+function renderStage() {
+  const s = S[cur], st = $('#stageEl');
+  if (s.summary) { st.innerHTML = `<div class="panel"><h3>Summary</h3><p class="stage-note">Your verdicts and notes are on the left. Anything marked Change it, I’ll redesign and show you again before building.</p></div>`; return; }
+  const v = variant[s.id] || s.variants[0][0];
+  st.innerHTML = `<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>On the phone, in Pazar</h3>
+    <div class="variants" role="group" aria-label="Show">${s.variants.map(([k, l]) => `<button data-var="${k}" aria-pressed="${k === v}">${esc(l)}</button>`).join('')}</div></div>
+    ${DRAW[s.kind](v)}</div>`;
+  $$('[data-var]').forEach(b => b.onclick = () => { variant[s.id] = b.dataset.var; renderStage(); });
+}
+
+function open(i) {
+  cur = Math.max(0, Math.min(S.length - 1, i));
+  try { localStorage.setItem('obur-rv10-cur', cur); } catch (e) {}
+  renderStop(); renderList(); renderStage();
+  const it = $('#list [aria-current=true]'); if (it) it.scrollIntoView({ block: 'nearest' });
+}
+
+counts(); open(cur);
+(async () => {
+  try {
+    const c = window.claude; if (!c || !c.use) return;
+    const d = await c.use('db'); if (!d) return; db = d;
+    const snap = await db.collection(COLL).get();
+    snap.docs.forEach(doc => { const x = doc.data(); if (!x) return; const o = get(doc.id); o.v = x.verdict || null; o.n = x.note || ''; });
+    try { localStorage.setItem('obur-rv10', JSON.stringify(V)); } catch (e) {}
+    counts(); renderList(); renderStop();
+  } catch (e) {}
+})();
+})();
+</script>
