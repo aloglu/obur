@@ -168,7 +168,7 @@
 		>
 			<span class="min-w-0">
 				<span class="block">{option.label}</span>
-				{#if option.hint}<small class="block text-[12.5px] font-medium text-muted"
+				{#if option.hint}<small class="block text-[0.78125rem] font-medium text-muted"
 						>{option.hint}</small
 					>{/if}
 			</span>
@@ -224,7 +224,7 @@
 		min-height: 44px;
 		padding: 6px 12px;
 		border-radius: var(--radius-menu);
-		font-size: 15px;
+		font-size: 0.9375rem;
 		font-weight: 600;
 		text-align: left;
 		white-space: nowrap;

@@ -37,11 +37,11 @@
 	);
 
 	const sideItem = (active: boolean) => [
-		'flex min-h-12 items-center justify-center gap-3 rounded-input px-3 text-[16px] font-semibold wide:justify-start',
+		'flex min-h-12 items-center justify-center gap-3 rounded-input px-3 text-[1rem] font-semibold wide:justify-start',
 		active ? 'bg-soft text-accent' : 'text-text hover:bg-surface2'
 	];
 	const tabItem = (active: boolean) => [
-		'relative z-1 flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-input text-[11.5px] font-bold transition-colors',
+		'relative z-1 flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-input text-[0.71875rem] font-bold transition-colors',
 		active ? 'text-accent' : 'text-muted'
 	];
 </script>
@@ -54,7 +54,7 @@
 		<nav aria-label={m.nav_main()} class="sticky top-0 flex h-dvh flex-col gap-1 p-3">
 			<a
 				href={resolve('/(app)')}
-				class="flex items-center justify-center gap-2.5 pt-2 pb-6 font-display text-[30px] font-extrabold tracking-[-0.02em] text-accent wide:justify-start wide:px-3"
+				class="flex items-center justify-center gap-2.5 pt-2 pb-6 font-display text-[1.875rem] font-extrabold tracking-[-0.02em] text-accent wide:justify-start wide:px-3"
 				><AppLogo size={32} /><span class="sr-only wide:not-sr-only">{m.app_name()}</span></a
 			>
 			<a

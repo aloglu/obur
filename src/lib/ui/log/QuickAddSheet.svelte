@@ -83,7 +83,7 @@
 			bind:value={description}
 			maxlength={200}
 		/>
-		<p class="text-[13px] text-muted">{m.quick_note()}</p>
+		<p class="text-[0.8125rem] text-muted">{m.quick_note()}</p>
 		<DayMealFields
 			bind:day
 			days={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}

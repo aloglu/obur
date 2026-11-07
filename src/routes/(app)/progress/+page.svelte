@@ -32,7 +32,7 @@
 
 <main class="mx-auto flex max-w-[920px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<div class="flex items-center justify-between gap-3">
-		<h1 class="text-[24px] font-[750]">{m.progress_title()}</h1>
+		<h1 class="text-[1.5rem] font-[750]">{m.progress_title()}</h1>
 		<RangeSelect id="range" value={data.history.range} onchange={setRange} />
 	</div>
 	<HistorySection history={data.history} today={data.today} onchange={invalidateAll} />
@@ -42,8 +42,8 @@
 			aria-labelledby="achievements-title"
 		>
 			<div class="flex items-baseline justify-between gap-3">
-				<h2 id="achievements-title" class="text-[17px] font-bold">{m.achievements_row()}</h2>
-				<span class="text-[13px] text-muted">{m.achievements_row_count({ count: '0' })}</span>
+				<h2 id="achievements-title" class="text-[1.0625rem] font-bold">{m.achievements_row()}</h2>
+				<span class="text-[0.8125rem] text-muted">{m.achievements_row_count({ count: '0' })}</span>
 			</div>
 			<ul
 				class="grid grid-cols-[repeat(4,minmax(0,1fr))] gap-x-2 gap-y-4"
@@ -52,7 +52,7 @@
 				{#each FIRST_STEPS as a (`${a.kind}:${a.level}`)}
 					<li class="flex min-w-0 flex-col items-center gap-1.5 text-center">
 						<Badge achievement={a} next />
-						<span class="text-[13px] leading-tight font-[650] break-words"
+						<span class="text-[0.8125rem] leading-tight font-[650] break-words"
 							>{a.kind === 'streak'
 								? m.achievements_streak_short({ days: String(a.level) })
 								: achievementTitle(a)}</span
@@ -66,8 +66,8 @@
 			href={resolve('/(app)/achievements')}
 			class="flex min-h-14 items-center gap-3 rounded-card bg-surface px-[18px] py-3 shadow-card"
 		>
-			<span class="flex-1 text-[17px] font-bold">{m.achievements_row()}</span>
-			<span class="text-[14px] text-muted"
+			<span class="flex-1 text-[1.0625rem] font-bold">{m.achievements_row()}</span>
+			<span class="text-[0.875rem] text-muted"
 				>{m.achievements_row_count({ count: String(data.achievements) })}</span
 			>
 			<ChevronRight size={20} aria-hidden="true" class="text-muted" />

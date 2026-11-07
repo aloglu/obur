@@ -71,17 +71,17 @@
 		</div>
 		{#if day === 'other'}
 			<label class="flex flex-col gap-1.5">
-				<span class="text-[13px] font-[650] text-muted">{m.bulk_date()}</span>
+				<span class="text-[0.8125rem] font-[650] text-muted">{m.bulk_date()}</span>
 				<input
 					type="date"
 					bind:value={other}
 					max={today}
-					class="min-h-12 rounded-input border border-line bg-bg px-3 text-[16px]"
+					class="min-h-12 rounded-input border border-line bg-bg px-3 text-[1rem]"
 				/>
 			</label>
 		{/if}
-		{#if mode === 'copy'}<p class="text-[13px] text-muted">{m.bulk_copy_note()}</p>{/if}
-		{#if already}<p class="text-[13px] text-muted">{m.bulk_already_there()}</p>{/if}
+		{#if mode === 'copy'}<p class="text-[0.8125rem] text-muted">{m.bulk_copy_note()}</p>{/if}
+		{#if already}<p class="text-[0.8125rem] text-muted">{m.bulk_already_there()}</p>{/if}
 		<Button
 			wide
 			disabled={!meal || !dateOk || already || busy}

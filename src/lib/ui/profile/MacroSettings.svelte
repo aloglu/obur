@@ -94,7 +94,7 @@
 		]}
 	/>
 	{#if mode === 'balanced'}
-		<p class="text-[13px] text-muted">
+		<p class="text-[0.8125rem] text-muted">
 			{balancedAvailable ? m.macros_balanced_hint() : m.macros_none_hint()}
 		</p>
 	{:else}
@@ -104,7 +104,7 @@
 					<div class="flex min-w-0 flex-col gap-1">
 						<label
 							for={field.id}
-							class="flex items-center gap-1.5 text-[13px] font-[650] text-muted"
+							class="flex items-center gap-1.5 text-[0.8125rem] font-[650] text-muted"
 						>
 							<span class="size-2 shrink-0 rounded-full" style:background={field.color}></span>
 							{field.label}
@@ -117,18 +117,18 @@
 								bind:value={pct[i]}
 								inputmode="numeric"
 								autocomplete="off"
-								class="w-full min-w-0 bg-transparent text-[16px] font-semibold tabular-nums outline-none"
+								class="w-full min-w-0 bg-transparent text-[1rem] font-semibold tabular-nums outline-none"
 							/>
-							<span class="text-[15px] font-semibold text-muted" aria-hidden="true">%</span>
+							<span class="text-[0.9375rem] font-semibold text-muted" aria-hidden="true">%</span>
 						</div>
-						<p class="text-[13px] text-muted tabular-nums">
+						<p class="text-[0.8125rem] text-muted tabular-nums">
 							{grams ? `${grams[i]} g` : ' '}
 						</p>
 					</div>
 				{/each}
 			</div>
 			<p
-				class={['text-[13px] font-semibold', valid ? 'text-muted' : 'text-bad']}
+				class={['text-[0.8125rem] font-semibold', valid ? 'text-muted' : 'text-bad']}
 				aria-live="polite"
 			>
 				{valid
@@ -138,7 +138,7 @@
 			<button
 				type="submit"
 				disabled={busy || !valid || saved}
-				class="min-h-12 rounded-button bg-fill text-[16px] font-[750] text-on-accent disabled:opacity-50"
+				class="min-h-12 rounded-button bg-fill text-[1rem] font-[750] text-on-accent disabled:opacity-50"
 				>{saved ? m.macros_saved() : m.macros_save()}</button
 			>
 		</form>

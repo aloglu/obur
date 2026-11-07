@@ -89,7 +89,7 @@
 	{#each main as n (n.code)}
 		{@const s = shown(totalFor(n.code))}
 		<div>
-			<div class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2.5 text-[14px]">
+			<div class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2.5 text-[0.875rem]">
 				<span>{n.label()}</span>
 				<div class="h-2 overflow-hidden rounded-full bg-track" aria-hidden="true">
 					<div
@@ -104,14 +104,14 @@
 						>{/if}</span
 				>
 			</div>
-			{#if s.note}<p class="mt-0.5 text-right text-[12.5px] text-muted">{s.note}</p>{/if}
+			{#if s.note}<p class="mt-0.5 text-right text-[0.78125rem] text-muted">{s.note}</p>{/if}
 			{#if n.code === 'carbohydrate_excl_fibre' && carbNote}
-				<p class="mt-0.5 text-right text-[12.5px] text-muted">{carbNote}</p>
+				<p class="mt-0.5 text-right text-[0.78125rem] text-muted">{carbNote}</p>
 			{/if}
 		</div>
 	{/each}
 	<dl
-		class="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-3 text-[13.5px] text-muted tabular-nums"
+		class="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-3 text-[0.84375rem] text-muted tabular-nums"
 	>
 		{#each minor as n (n.code)}
 			{@const s = shown(totals[n.code])}

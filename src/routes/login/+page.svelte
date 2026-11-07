@@ -43,7 +43,7 @@
 	<div class="spacer" aria-hidden="true"></div>
 	<div class="hero relative flex flex-col items-center gap-4">
 		<img src="/icon-512.png" alt="" width="112" height="112" class="rounded-[26px] shadow-card" />
-		<p class="font-display text-[44px] leading-none font-extrabold tracking-[-0.03em]">
+		<p class="font-display text-[2.75rem] leading-none font-extrabold tracking-[-0.03em]">
 			{m.app_name()}
 		</p>
 	</div>
@@ -66,7 +66,7 @@
 			{busy ? m.common_working() : m.login_button()}
 		</Button>
 		<a
-			class="inline-flex min-h-11 items-center justify-center text-center text-[15px] font-[650] text-accent"
+			class="inline-flex min-h-11 items-center justify-center text-center text-[0.9375rem] font-[650] text-accent"
 			href={resolve('/recover')}>{m.login_lost()}</a
 		>
 	</div>

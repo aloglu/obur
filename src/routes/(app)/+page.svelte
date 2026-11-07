@@ -360,12 +360,12 @@
 				><TriangleAlert size={20} aria-hidden="true" /></span
 			>
 			<span class="flex min-w-0 flex-col gap-0.5">
-				<b class="text-[16px] leading-snug font-bold"
+				<b class="text-[1rem] leading-snug font-bold"
 					>{refused.length === 1
 						? m.offline_refused_one()
 						: m.offline_refused_many({ count: String(refused.length) })}</b
 				>
-				<span class="text-[14px] leading-snug text-muted">{m.offline_refused_line()}</span>
+				<span class="text-[0.875rem] leading-snug text-muted">{m.offline_refused_line()}</span>
 			</span>
 			<ChevronRight size={20} aria-hidden="true" class="text-muted" />
 		</button>
@@ -388,7 +388,7 @@
 		<div class="o-meals flex flex-col gap-3">
 			{#if !hintSeen && data.entries.length > 0}
 				<p
-					class="flex items-center gap-2 rounded-input bg-soft py-1 pr-1 pl-3.5 text-[14px] text-text"
+					class="flex items-center gap-2 rounded-input bg-soft py-1 pr-1 pl-3.5 text-[0.875rem] text-text"
 					role="note"
 				>
 					<span class="flex-1">{m.hold_hint()}</span>
@@ -482,7 +482,7 @@
 					>
 				</button>
 			</div>
-			<p class="px-1 text-[13px] text-muted">{m.day_complete_hint()}</p>
+			<p class="px-1 text-[0.8125rem] text-muted">{m.day_complete_hint()}</p>
 		</div>
 	</div>
 </main>

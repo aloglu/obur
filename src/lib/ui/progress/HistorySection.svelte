@@ -163,17 +163,17 @@
 	]);
 
 	const big =
-		'font-display text-[40px] leading-none font-extrabold tracking-[-0.03em] tabular-nums';
-	const unit = 'text-[15px] font-[650] text-muted';
-	const sub = 'mt-1 min-h-5 text-[14px] text-muted tabular-nums';
-	const rows = 'flex flex-col divide-y divide-line text-[14px] text-muted';
+		'font-display text-[2.5rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums';
+	const unit = 'text-[0.9375rem] font-[650] text-muted';
+	const sub = 'mt-1 min-h-5 text-[0.875rem] text-muted tabular-nums';
+	const rows = 'flex flex-col divide-y divide-line text-[0.875rem] text-muted';
 	const row = 'flex justify-between gap-3 py-2.5';
 	const value = 'font-[650] text-text tabular-nums';
 </script>
 
 {#snippet empty(text: string, Icon: typeof ChartPie)}
 	<div
-		class="mt-3 flex h-[150px] flex-col items-center justify-center gap-1.5 rounded-input border-2 border-dashed border-line px-4 text-center text-[14px] text-muted"
+		class="mt-3 flex h-[150px] flex-col items-center justify-center gap-1.5 rounded-input border-2 border-dashed border-line px-4 text-center text-[0.875rem] text-muted"
 	>
 		<Icon size={22} aria-hidden="true" />{text}
 	</div>
@@ -225,7 +225,7 @@
 			aria-controls="{uid}-panel"
 			onclick={() => (tab = t.id)}
 			class={[
-				'relative z-1 min-h-11 min-w-0 truncate rounded-[10px] px-1 text-[14px] font-[650] transition-colors',
+				'relative z-1 min-h-11 min-w-0 truncate rounded-[10px] px-1 text-[0.875rem] font-[650] transition-colors',
 				tab === t.id ? 'text-text' : 'text-muted'
 			]}>{t.label()}</button
 		>
@@ -241,7 +241,7 @@
 	{#if tab === 'weight'}
 		<h2 class="sr-only">{m.history_tab_weight()}</h2>
 		{#if !first}
-			<p class="text-[13px] font-[650] text-muted">{m.history_latest()}</p>
+			<p class="text-[0.8125rem] font-[650] text-muted">{m.history_latest()}</p>
 			<p class="mt-2 {big}">–</p>
 			{@render empty(
 				history.range === 'All' ? m.history_empty_weight() : m.history_weight_none(),
@@ -253,7 +253,7 @@
 					date={today}
 					key="progress-weight"
 					{onchange}
-					buttonClass="min-h-12 rounded-input border border-line text-[15px] font-[750] disabled:opacity-50"
+					buttonClass="min-h-12 rounded-input border border-line text-[0.9375rem] font-[750] disabled:opacity-50"
 				/>
 			</div>
 		{/if}
@@ -263,7 +263,7 @@
 			<div
 				role="radiogroup"
 				aria-label={m.history_view()}
-				class="-mx-2 -my-3 flex items-center gap-0.5 self-start text-[13px] font-[650]"
+				class="-mx-2 -my-3 flex items-center gap-0.5 self-start text-[0.8125rem] font-[650]"
 			>
 				{#each VIEWS as v, i (v)}
 					{#if i > 0}<span class="h-3.5 w-px bg-line" aria-hidden="true"></span>{/if}
@@ -312,7 +312,7 @@
 		{/if}
 	{:else if tab === 'calories'}
 		<h2 class="sr-only">{m.history_tab_calories()}</h2>
-		<p class="text-[13px] font-[650] text-muted">{calorieLabel}</p>
+		<p class="text-[0.8125rem] font-[650] text-muted">{calorieLabel}</p>
 		<p class="mt-2 flex items-baseline gap-1.5">
 			<span class={big}><Roll value={calorieValue} /></span><span class={unit}>kcal</span>
 		</p>
@@ -351,14 +351,16 @@
 		{/if}
 	{:else}
 		<h2 class="sr-only">{m.history_tab_nutrients()}</h2>
-		<p class="text-[13px] font-[650] text-muted">{m.history_average_complete()}</p>
+		<p class="text-[0.8125rem] font-[650] text-muted">{m.history_average_complete()}</p>
 		{#if noBars && history.range === 'All'}
 			{@render empty(m.history_empty_nutrients(), ChartPie)}
 		{:else}
 			<div class="mt-3.5 flex flex-col gap-3">
 				{#each macroRows as r (r.key)}
 					{@const amount = r.avg.value}
-					<div class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2.5 text-[14px]">
+					<div
+						class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2.5 text-[0.875rem]"
+					>
 						<span class="truncate">{r.name}</span>
 						<span
 							class={['h-2 overflow-hidden rounded-full', r.target && 'bg-track']}
@@ -382,8 +384,8 @@
 					</div>
 				{/each}
 			</div>
-			{#each coverage as note (note)}<p class="mt-3 text-[13px] text-muted">{note}</p>{/each}
-			<p class="mt-3 text-[13px] text-muted">
+			{#each coverage as note (note)}<p class="mt-3 text-[0.8125rem] text-muted">{note}</p>{/each}
+			<p class="mt-3 text-[0.8125rem] text-muted">
 				{a.completeDays
 					? m.history_basis({ days: completeDays(a.completeDays) })
 					: m.history_basis_none()}

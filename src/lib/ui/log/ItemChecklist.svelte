@@ -20,17 +20,19 @@
 </script>
 
 <fieldset class="flex flex-col">
-	<legend class="mb-1 text-[13px] font-[650] text-muted">{label}</legend>
+	<legend class="mb-1 text-[0.8125rem] font-[650] text-muted">{label}</legend>
 	{#each items as item (item.id)}
 		<label
 			class="flex min-h-14 cursor-pointer items-center gap-3 rounded-input px-1 py-2 hover:bg-surface2"
 		>
 			<input type="checkbox" value={item.id} bind:group={chosen} />
 			<span class="min-w-0 flex-1">
-				<span class="line-clamp-2 text-[15px] font-semibold break-words">{entryName(item)}</span>
-				<span class="text-[13px] text-muted">{entryQuantity(item)}</span>
+				<span class="line-clamp-2 text-[0.9375rem] font-semibold break-words"
+					>{entryName(item)}</span
+				>
+				<span class="text-[0.8125rem] text-muted">{entryQuantity(item)}</span>
 			</span>
-			<span class="shrink-0 text-[15px] font-semibold tabular-nums"
+			<span class="shrink-0 text-[0.9375rem] font-semibold tabular-nums"
 				>{item.nutrients.energy_kcal ? kcal(item.nutrients.energy_kcal.value) : '?'}</span
 			>
 		</label>

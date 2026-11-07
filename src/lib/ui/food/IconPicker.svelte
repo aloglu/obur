@@ -41,7 +41,7 @@
 		<button
 			type="button"
 			onclick={() => onchoose(null)}
-			class="flex min-h-12 items-center gap-3 rounded-input bg-surface2 px-3 text-left text-[15px] font-semibold"
+			class="flex min-h-12 items-center gap-3 rounded-input bg-surface2 px-3 text-left text-[0.9375rem] font-semibold"
 		>
 			<span class="grid size-10 place-items-center rounded-small bg-icon-tile" aria-hidden="true"
 				><IconImage hex={suggested ?? GENERIC_ICON} size={28} /></span
@@ -50,7 +50,7 @@
 		</button>
 	{/if}
 	{#if shown.length === 0}
-		<p class="text-[14px] text-muted">{m.icon_none()}</p>
+		<p class="text-[0.875rem] text-muted">{m.icon_none()}</p>
 	{/if}
 	<ul class="grid grid-cols-[repeat(auto-fill,minmax(56px,1fr))] gap-2" aria-label={m.icon_title()}>
 		{#each shown as icon (icon.hex)}

@@ -140,7 +140,7 @@
 			onclick={ontoday}
 			aria-label={away ? m.journal_back_to_today({ month: monthTitle(month) }) : undefined}
 			class={[
-				'inline-flex min-h-11 items-center justify-center gap-1.5 justify-self-center px-2 font-display text-[19px] font-bold transition-colors',
+				'inline-flex min-h-11 items-center justify-center gap-1.5 justify-self-center px-2 font-display text-[1.1875rem] font-bold transition-colors',
 				away ? 'text-accent' : 'text-text'
 			]}
 		>
@@ -169,7 +169,7 @@
 			style:--from="{direction * 14}px"
 		>
 			{#each headers as h (h)}
-				<div class="pb-1 text-center text-[12px] font-semibold text-muted">{h}</div>
+				<div class="pb-1 text-center text-[0.75rem] font-semibold text-muted">{h}</div>
 			{/each}
 			<span bind:this={highlight} class="highlight" aria-hidden="true"></span>
 			{#each cells as date, i (i)}
@@ -232,7 +232,7 @@
 		display: grid;
 		place-items: center;
 		height: 46px;
-		font-size: 13px;
+		font-size: 0.8125rem;
 		font-weight: 650;
 		font-variant-numeric: tabular-nums;
 	}
@@ -257,7 +257,7 @@
 		}
 		.day {
 			height: 68px;
-			font-size: 15px;
+			font-size: 0.9375rem;
 		}
 		.day-ring {
 			width: 54px;

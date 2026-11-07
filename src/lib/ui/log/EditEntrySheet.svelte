@@ -165,7 +165,7 @@
 		/>
 		{#if start.kind !== 'quick'}
 			<MacroPreview nutrients={preview} />
-			<p class="-mt-1 text-[13px] text-muted">{m.edit_only_this()}</p>
+			<p class="-mt-1 text-[0.8125rem] text-muted">{m.edit_only_this()}</p>
 		{/if}
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<div class="grid grid-cols-[auto_minmax(0,1fr)] gap-2">
@@ -173,7 +173,7 @@
 				type="button"
 				disabled={busy}
 				onclick={remove}
-				class="inline-flex min-h-[52px] items-center gap-1.5 rounded-button bg-surface2 px-4 text-[15px] font-bold text-bad disabled:opacity-50"
+				class="inline-flex min-h-[52px] items-center gap-1.5 rounded-button bg-surface2 px-4 text-[0.9375rem] font-bold text-bad disabled:opacity-50"
 			>
 				<Trash2 size={18} aria-hidden="true" />{m.edit_delete()}
 			</button>

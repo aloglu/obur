@@ -19,7 +19,8 @@
 </script>
 
 <fieldset class="flex flex-col gap-1.5">
-	<legend class={hideLabel ? 'sr-only' : 'mb-1.5 text-[13px] font-[650] text-muted'}>{label}</legend
+	<legend class={hideLabel ? 'sr-only' : 'mb-1.5 text-[0.8125rem] font-[650] text-muted'}
+		>{label}</legend
 	>
 	<div
 		class="tray relative grid auto-cols-[minmax(0,1fr)] grid-flow-col rounded-input bg-surface2 p-1"
@@ -40,7 +41,7 @@
 					onchange?.(option.value);
 				}}
 				class={[
-					'relative z-1 min-h-11 rounded-small px-2 py-1.5 text-[15px] leading-tight font-semibold transition-colors disabled:opacity-40',
+					'relative z-1 min-h-11 rounded-small px-2 py-1.5 text-[0.9375rem] leading-tight font-semibold transition-colors disabled:opacity-40',
 					value === option.value ? 'text-text' : 'text-muted'
 				]}
 			>

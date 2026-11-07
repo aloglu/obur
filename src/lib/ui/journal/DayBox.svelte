@@ -28,25 +28,26 @@
 	aria-live="polite"
 >
 	<div class="flex items-center justify-between gap-3">
-		{#key title}<span class="title-in text-[15px] font-bold whitespace-nowrap">{title}</span>{/key}
+		{#key title}<span class="title-in text-[0.9375rem] font-bold whitespace-nowrap">{title}</span
+			>{/key}
 		<a
 			href={dayHref(day.date)}
-			class="-mr-1 inline-flex min-h-11 items-center gap-0.5 text-[14px] font-[650] text-accent"
+			class="-mr-1 inline-flex min-h-11 items-center gap-0.5 text-[0.875rem] font-[650] text-accent"
 			>{m.journal_open()}<ChevronRight size={18} aria-hidden="true" /></a
 		>
 	</div>
 	{#if empty}
-		<p class="grid place-items-center text-[14px] leading-none font-medium text-muted">
+		<p class="grid place-items-center text-[0.875rem] leading-none font-medium text-muted">
 			{m.journal_nothing_logged()}
 		</p>
 	{:else}
 		<div
-			class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-3 text-[14px] whitespace-nowrap tabular-nums"
+			class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-3 text-[0.875rem] whitespace-nowrap tabular-nums"
 		>
 			<span class="truncate">
 				{#if logged}
 					<b class="font-bold"><Roll value={kcal(day.eatenKcal)} /></b>
-					<small class="text-[13px] text-muted"
+					<small class="text-[0.8125rem] text-muted"
 						>{day.budgetKcal === null
 							? 'kcal'
 							: m.journal_of_budget({ budget: kcal(day.budgetKcal) })}</small

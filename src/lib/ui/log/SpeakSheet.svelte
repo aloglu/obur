@@ -193,13 +193,13 @@
 				<Mic size={44} aria-hidden="true" />
 			</span>
 			{#if phase === 'listening'}
-				<p class="text-[19px] font-bold">{m.speak_listening()}</p>
-				<p class="text-[14px] text-muted">{m.speak_example()}</p>
-				<p class="text-[13px] text-muted tabular-nums">
+				<p class="text-[1.1875rem] font-bold">{m.speak_listening()}</p>
+				<p class="text-[0.875rem] text-muted">{m.speak_example()}</p>
+				<p class="text-[0.8125rem] text-muted tabular-nums">
 					{m.speak_elapsed({ seconds: String(seconds) })}
 				</p>
 			{:else if phase === 'working'}
-				<p class="text-[19px] font-bold">{m.speak_working()}</p>
+				<p class="text-[1.1875rem] font-bold">{m.speak_working()}</p>
 			{/if}
 		</div>
 	{/if}

@@ -68,16 +68,16 @@
 				{ value: 'day_total', label: m.activity_kind_total() }
 			]}
 		/>
-		<p class="text-[14px] text-muted">
+		<p class="text-[0.875rem] text-muted">
 			{kind === 'extra' ? m.activity_meaning() : m.activity_total_meaning()}
 		</p>
 		{#if kind === 'extra'}
-			<p class="-mt-2 text-[14px] text-muted tabular-nums">
+			<p class="-mt-2 text-[0.875rem] text-muted tabular-nums">
 				{counted ? m.activity_counted({ kcal: kcal(counted) }) : m.activity_counted_none()}
 			</p>
 		{/if}
 		{#if kind === 'day_total' && watchTotal}
-			<p class="text-[14px] font-semibold tabular-nums">
+			<p class="text-[0.875rem] font-semibold tabular-nums">
 				{m.activity_total_current({ kcal: kcal(watchTotal) })}
 			</p>
 		{/if}
@@ -96,7 +96,7 @@
 						onclick={() => (kcalText = String(amount))}
 						aria-pressed={kcalText === String(amount)}
 						class={[
-							'min-h-11 rounded-input text-[15px] font-bold tabular-nums transition-colors',
+							'min-h-11 rounded-input text-[0.9375rem] font-bold tabular-nums transition-colors',
 							kcalText === String(amount) ? 'bg-soft text-accent' : 'bg-surface2'
 						]}>{amount}</button
 					>

@@ -97,7 +97,7 @@
 				</Svg>
 			</Chart>
 		</div>
-		<div class="flex flex-wrap gap-x-3.5 gap-y-1.5 text-[12.5px] text-muted" aria-hidden="true">
+		<div class="flex flex-wrap gap-x-3.5 gap-y-1.5 text-[0.78125rem] text-muted" aria-hidden="true">
 			<span class="inline-flex items-center gap-1.5"
 				><i class="{swatch} bg-good"></i>{m.history_legend_under()}</span
 			>

@@ -292,7 +292,7 @@
 {#snippet camera(primary: boolean)}
 	<label
 		class={[
-			'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button px-2 text-[16px] font-[750]',
+			'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button px-2 text-[1rem] font-[750]',
 			primary ? 'bg-fill text-on-accent' : 'bg-surface2'
 		]}
 	>
@@ -312,7 +312,7 @@
 	<a href={resolve('/(app)/log')} class="flex items-center gap-1 self-start font-bold text-accent">
 		<ChevronLeft size={20} aria-hidden="true" />{m.nav_log()}
 	</a>
-	<h1 class="text-[24px] font-[750]">
+	<h1 class="text-[1.5rem] font-[750]">
 		{proposal?.nutrients.length
 			? m.scan_check_title()
 			: proposal
@@ -325,12 +325,12 @@
 		<Card>
 			<!-- The frame says how to take the photo; the camera itself is the phone's. -->
 			<div
-				class="grid aspect-[4/3] place-items-center rounded-input border-2 border-dashed border-accent bg-soft px-6 text-center text-[15px] font-semibold text-accent"
+				class="grid aspect-[4/3] place-items-center rounded-input border-2 border-dashed border-accent bg-soft px-6 text-center text-[0.9375rem] font-semibold text-accent"
 			>
 				{#if waiting !== null}
 					<span role="status" class="flex flex-col gap-1">
 						<span>{m.scan_waiting()}</span>
-						<span class="text-[14px] font-medium text-muted">
+						<span class="text-[0.875rem] font-medium text-muted">
 							{waiting === 1
 								? m.scan_waiting_one()
 								: m.scan_waiting_many({ count: String(waiting) })}
@@ -341,7 +341,7 @@
 			<div class="grid grid-cols-2 gap-2">
 				{@render camera(true)}
 				<label
-					class="inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button bg-surface2 px-2 text-[16px] font-[750]"
+					class="inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button bg-surface2 px-2 text-[1rem] font-[750]"
 				>
 					<ImageIcon size={20} aria-hidden="true" />{m.scan_choose()}
 					<input
@@ -373,7 +373,7 @@
 						type="button"
 						aria-expanded={showPhoto}
 						onclick={() => (showPhoto = !showPhoto)}
-						class="flex min-h-14 w-full items-center justify-between gap-3 text-left text-[15px] font-[650]"
+						class="flex min-h-14 w-full items-center justify-between gap-3 text-left text-[0.9375rem] font-[650]"
 					>
 						{m.scan_your_photo()}
 						<ChevronDown
@@ -403,7 +403,7 @@
 		{#if saveProblem}<Notice>{saveProblem}</Notice>{/if}
 		<label class="flex min-h-11 cursor-pointer items-center gap-3 px-1">
 			<input type="checkbox" bind:checked={logAfter} onchange={rememberLogAfter} />
-			<span class="text-[15px] font-semibold">{m.scan_log_after()}</span>
+			<span class="text-[0.9375rem] font-semibold">{m.scan_log_after()}</span>
 		</label>
 		{#key proposal}<FoodForm
 				{initial}

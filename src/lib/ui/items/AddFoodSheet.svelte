@@ -109,10 +109,10 @@
 					onclick={() => pick(r.id)}
 					class="flex min-h-14 w-full items-center justify-between gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
 				>
-					<span class="line-clamp-2 min-w-0 text-[15px] font-semibold break-words"
+					<span class="line-clamp-2 min-w-0 text-[0.9375rem] font-semibold break-words"
 						>{r.brand ? `${r.brand} ` : ''}{r.name}</span
 					>
-					<span class="shrink-0 text-[13px] text-muted tabular-nums"
+					<span class="shrink-0 text-[0.8125rem] text-muted tabular-nums"
 						>{r.kcal === null ? '?' : kcal(r.kcal)} kcal</span
 					>
 				</button>
@@ -130,13 +130,15 @@
 >
 	{#if !food}
 		{#if searched && results.length === 0}
-			<p class="text-[14px] text-muted">{m.foods_none()}</p>
+			<p class="text-[0.875rem] text-muted">{m.foods_none()}</p>
 		{/if}
 		{#if query.trim()}
 			{@render foods(results)}
 		{:else if opened && recent.length > 0}
 			<section class="flex flex-col gap-1" aria-labelledby="add-food-recent">
-				<h3 id="add-food-recent" class="text-[13px] font-[650] text-muted">{m.log_recent()}</h3>
+				<h3 id="add-food-recent" class="text-[0.8125rem] font-[650] text-muted">
+					{m.log_recent()}
+				</h3>
 				{@render foods(recent)}
 			</section>
 		{/if}

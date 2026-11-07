@@ -119,7 +119,7 @@
 	{#each lines as line, i (i)}
 		<li
 			class={[
-				'flex gap-2 rounded-[12px] px-3 py-2.5 text-[13.5px] leading-snug',
+				'flex gap-2 rounded-[12px] px-3 py-2.5 text-[0.84375rem] leading-snug',
 				line.check ? 'bg-warn-soft font-[550] text-warn' : 'bg-surface2 text-muted'
 			]}
 		>

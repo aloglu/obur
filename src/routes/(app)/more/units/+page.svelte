@@ -32,10 +32,10 @@
 	<a href={resolve('/(app)/more')} class="flex items-center gap-1 self-start font-bold text-accent">
 		<ChevronLeft size={20} aria-hidden="true" />{m.nav_more()}
 	</a>
-	<h1 class="text-[24px] font-[750]">{m.more_units()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.more_units()}</h1>
 	<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
-		<div class="flex min-h-14 items-center justify-between gap-3 text-[15px] font-semibold">
-			{m.units_weight()}<span class="text-[14px] font-medium text-muted">kg</span>
+		<div class="flex min-h-14 items-center justify-between gap-3 text-[0.9375rem] font-semibold">
+			{m.units_weight()}<span class="text-[0.875rem] font-medium text-muted">kg</span>
 		</div>
 		<MenuRow
 			label={m.units_time()}

@@ -268,11 +268,11 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<BackLink href={resolve('/(app)/more')} label={m.nav_more()} />
-	<h1 class="text-[24px] font-[750]">{m.data_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.data_title()}</h1>
 	{#if problem && !confirming}<Notice>{problem}</Notice>{/if}
 
 	<Card title={m.data_export_title()}>
-		<p class="text-[13px] text-muted">{m.data_export_body()}</p>
+		<p class="text-[0.8125rem] text-muted">{m.data_export_body()}</p>
 		<Button disabled={busy} onclick={download}>
 			{#if exporting}{m.data_export_busy()}{:else}<Download
 					size={18}
@@ -282,7 +282,7 @@
 	</Card>
 
 	<Card title={m.data_import_title()}>
-		<p class="text-[13px] text-muted">{m.data_import_body()}</p>
+		<p class="text-[0.8125rem] text-muted">{m.data_import_body()}</p>
 		<label
 			class={[
 				'flex min-h-16 cursor-pointer items-center gap-3 rounded-input border-line px-3.5 py-2.5 focus-within:outline-3 focus-within:outline-accent',
@@ -298,7 +298,7 @@
 			<span class="min-w-0">
 				<span class="block font-[650] break-words">{file ? file.name : m.data_import_choose()}</span
 				>
-				<small class="block text-[13px] text-muted">{fileDetail}</small>
+				<small class="block text-[0.8125rem] text-muted">{fileDetail}</small>
 			</span>
 			<input
 				type="file"
@@ -309,11 +309,11 @@
 			/>
 		</label>
 		{#if finished}
-			<p class="flex items-start gap-2 text-[14px] font-semibold text-good">
+			<p class="flex items-start gap-2 text-[0.875rem] font-semibold text-good">
 				<CircleCheck size={18} aria-hidden="true" class="mt-px shrink-0" />
 				{m.data_import_finished({ count: String(finished.count) })}
 			</p>
-			{#if finished.from}<p class="text-[13.5px] text-muted">
+			{#if finished.from}<p class="text-[0.84375rem] text-muted">
 					{m.data_import_goes_back({ day: shortDate(finished.from) })}
 				</p>{/if}
 		{/if}
@@ -321,7 +321,7 @@
 			{@const check = summary.reconciliation}
 			<div class="flex flex-col gap-3" data-testid="import-preview">
 				{#if check && check.mismatched.length === 0}
-					<p class="flex items-start gap-2 text-[14px] font-semibold text-good">
+					<p class="flex items-start gap-2 text-[0.875rem] font-semibold text-good">
 						<CircleCheck size={18} aria-hidden="true" class="mt-px shrink-0" />
 						{m.data_import_loseit_check_ok({ days: String(check.days) })}
 					</p>
@@ -336,8 +336,8 @@
 				{#if summary.alreadyImported}
 					<Notice title={m.data_warn_already_imported()}>{m.data_already_detail()}</Notice>
 				{:else}
-					<table class="w-full text-left text-[14.5px]">
-						<thead class="text-[12.5px] text-muted">
+					<table class="w-full text-left text-[0.90625rem]">
+						<thead class="text-[0.78125rem] text-muted">
 							<tr>
 								<th scope="col" class="pb-1.5 font-[650]">{m.data_import_to_add()}</th>
 								<th scope="col" class="pb-1.5 text-right font-[650]">{m.data_import_records()}</th>
@@ -354,7 +354,7 @@
 								<tr>
 									<th scope="row" class="py-2.5 font-normal">
 										{kindName[r.kind]()}
-										{#if others.length}<small class="block text-[12.5px] text-muted"
+										{#if others.length}<small class="block text-[0.78125rem] text-muted"
 												>{others.join(' · ')}</small
 											>{/if}
 									</th>
@@ -365,7 +365,7 @@
 								<tr class="text-muted">
 									<th scope="row" class="py-2.5 font-normal">
 										{m.data_row_deleted()}
-										<small class="block text-[12.5px]">{m.data_row_left_out()}</small>
+										<small class="block text-[0.78125rem]">{m.data_row_left_out()}</small>
 									</th>
 									<td class="py-2.5 text-right align-baseline font-[650] tabular-nums"
 										>{summary.deletedInLoseIt}</td
@@ -377,10 +377,10 @@
 					{#if summary.source === 'loseit'}
 						<div class="flex flex-col divide-y divide-line border-y border-line">
 							<div class="flex min-h-[60px] items-center justify-between gap-3 py-1.5">
-								<span class="min-w-0 text-[15px] font-semibold">
+								<span class="min-w-0 text-[0.9375rem] font-semibold">
 									{m.data_import_weight_unit()}
 									{#if summary.firstWeight != null}<small
-											class="block text-[13px] font-normal text-muted"
+											class="block text-[0.8125rem] font-normal text-muted"
 											>{m.data_first_weight({
 												value: formatDecimal(summary.firstWeight, ',', 1),
 												unit: weightUnit
@@ -418,7 +418,7 @@
 						<Notice tone="info">{warning[w]?.() ?? w}</Notice>
 					{/each}
 					{#if nothingNew}
-						<p class="text-[14px] text-muted">{m.data_import_nothing()}</p>
+						<p class="text-[0.875rem] text-muted">{m.data_import_nothing()}</p>
 					{:else}
 						<Button disabled={busy} onclick={apply}>
 							{importing
@@ -434,7 +434,7 @@
 	</Card>
 
 	<Card title={m.data_delete_title()}>
-		<p class="text-[13px] text-muted">{m.data_delete_body()}</p>
+		<p class="text-[0.8125rem] text-muted">{m.data_delete_body()}</p>
 		<Chips
 			label={m.data_delete_shared()}
 			bind:value={removeShared}
@@ -443,13 +443,13 @@
 				{ value: 'remove', label: m.data_delete_remove() }
 			]}
 		/>
-		<p class="text-[13px] text-muted">{m.data_delete_shared_note()}</p>
-		<p class="text-[13px] text-muted">{m.data_delete_backups()}</p>
+		<p class="text-[0.8125rem] text-muted">{m.data_delete_shared_note()}</p>
+		<p class="text-[0.8125rem] text-muted">{m.data_delete_backups()}</p>
 		<button
 			type="button"
 			disabled={busy}
 			onclick={() => ((confirming = true), (understood = false), (problem = ''))}
-			class="min-h-[52px] rounded-button bg-surface2 px-5 text-[17px] font-[750] text-bad disabled:opacity-50"
+			class="min-h-[52px] rounded-button bg-surface2 px-5 text-[1.0625rem] font-[750] text-bad disabled:opacity-50"
 			>{m.data_delete_button()}</button
 		>
 	</Card>
@@ -457,12 +457,12 @@
 
 {#if confirming}
 	<Sheet title={m.data_delete_confirm_title()} onclose={() => (confirming = false)}>
-		<p class="text-[15px]">
+		<p class="text-[0.9375rem]">
 			{m.data_delete_confirm_body()}
 			{removeShared === 'keep' ? m.data_delete_confirm_keep() : m.data_delete_confirm_remove()}
 		</p>
 		{#if problem}<Notice>{problem}</Notice>{/if}
-		<label class="flex min-h-11 items-center gap-3 text-[15px] font-semibold">
+		<label class="flex min-h-11 items-center gap-3 text-[0.9375rem] font-semibold">
 			<input type="checkbox" bind:checked={understood} class="size-5 accent-[var(--bad)]" />
 			{m.data_delete_confirm_check()}
 		</label>

@@ -109,7 +109,7 @@
 		<!-- Managing a meal is separate from logging it (owner review 2026-10-30). -->
 		<a
 			href={resolve('/(app)/saved-meals/[id]', { id: savedMealId })}
-			class="inline-flex min-h-11 items-center justify-center self-center px-3 text-[15px] font-semibold text-accent"
+			class="inline-flex min-h-11 items-center justify-center self-center px-3 text-[0.9375rem] font-semibold text-accent"
 			>{m.saved_edit()}</a
 		>
 	{/if}

@@ -109,16 +109,16 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<BackLink href={resolve('/(app)/more')} label={m.nav_more()} />
-	<h1 class="text-[24px] font-[750]">{m.reminders_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.reminders_title()}</h1>
 
 	{#if device === 'install'}
 		<Card title={m.reminders_install_title()}>
-			<p class="text-[13px] text-muted">{m.reminders_install_why()}</p>
+			<p class="text-[0.8125rem] text-muted">{m.reminders_install_why()}</p>
 			<ol class="flex flex-col gap-2.5">
 				{#each [m.reminders_install_share(), m.reminders_install_add(), m.reminders_install_open()] as step, i (step)}
-					<li class="grid grid-cols-[28px_minmax(0,1fr)] items-center gap-2.5 text-[14.5px]">
+					<li class="grid grid-cols-[28px_minmax(0,1fr)] items-center gap-2.5 text-[0.90625rem]">
 						<span
-							class="grid size-7 place-items-center rounded-full bg-soft text-[13px] font-bold text-accent"
+							class="grid size-7 place-items-center rounded-full bg-soft text-[0.8125rem] font-bold text-accent"
 							>{i + 1}</span
 						>
 						<span class="flex items-center gap-1.5"
@@ -131,14 +131,14 @@
 	{:else if device}
 		<Card title={m.reminders_device()}>
 			{#if device === 'on'}
-				<p class="text-[15px]">{m.reminders_device_on()}</p>
+				<p class="text-[0.9375rem]">{m.reminders_device_on()}</p>
 				<div class="grid grid-cols-2 gap-2">
 					<Button variant="ghost" onclick={sample}>{m.reminders_preview()}</Button>
 					<Button variant="ghost" disabled={busy} onclick={turnOff}>{m.reminders_turn_off()}</Button
 					>
 				</div>
 			{:else if device === 'off'}
-				<p class="text-[15px] text-muted">{m.reminders_device_off()}</p>
+				<p class="text-[0.9375rem] text-muted">{m.reminders_device_off()}</p>
 				<Button disabled={busy} onclick={turnOn}>{m.reminders_turn_on()}</Button>
 			{:else if device === 'blocked'}
 				<Notice>{m.reminders_blocked()}</Notice>
@@ -152,7 +152,7 @@
 		{#each REMINDER_KINDS as kind (kind)}
 			{@const at = settings.times[kind]}
 			<li class="flex min-h-14 items-center justify-between gap-3 py-1.5">
-				<span class="min-w-0 text-[15px] font-semibold">{NAME[kind]()}</span>
+				<span class="min-w-0 text-[0.9375rem] font-semibold">{NAME[kind]()}</span>
 				<span class="flex shrink-0 items-center">
 					<!-- The time slides away when off, and comes back at the time it starts with. -->
 					<span class={['time-slot', at && 'on']}>
@@ -173,12 +173,14 @@
 			</li>
 		{/each}
 	</ul>
-	<p class="px-1 text-[13px] text-muted">{m.reminders_hint()}</p>
+	<p class="px-1 text-[0.8125rem] text-muted">{m.reminders_hint()}</p>
 
 	<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
-		<h2 class="py-3 text-[19px] font-bold">{m.reminders_quiet()}</h2>
+		<h2 class="py-3 text-[1.1875rem] font-bold">{m.reminders_quiet()}</h2>
 		<div class="flex min-h-14 items-center justify-between gap-3">
-			<span class="text-[15px] font-semibold" aria-hidden="true">{m.reminders_quiet_from()}</span>
+			<span class="text-[0.9375rem] font-semibold" aria-hidden="true"
+				>{m.reminders_quiet_from()}</span
+			>
 			<TimeField
 				value={settings.quietStart}
 				label={m.reminders_quiet_from()}
@@ -189,7 +191,9 @@
 			/>
 		</div>
 		<div class="flex min-h-14 items-center justify-between gap-3">
-			<span class="text-[15px] font-semibold" aria-hidden="true">{m.reminders_quiet_until()}</span>
+			<span class="text-[0.9375rem] font-semibold" aria-hidden="true"
+				>{m.reminders_quiet_until()}</span
+			>
 			<TimeField
 				value={settings.quietEnd}
 				label={m.reminders_quiet_until()}
@@ -200,7 +204,7 @@
 			/>
 		</div>
 	</div>
-	<p class="px-1 text-[13px] text-muted">{m.reminders_quiet_hint()}</p>
+	<p class="px-1 text-[0.8125rem] text-muted">{m.reminders_quiet_hint()}</p>
 </main>
 
 <style>

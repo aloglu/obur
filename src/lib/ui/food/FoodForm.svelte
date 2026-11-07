@@ -283,9 +283,12 @@
 	<div
 		class="grid min-h-[52px] grid-cols-[minmax(0,1fr)_36px_88px_34px] items-center gap-2 border-line not-first:border-t"
 	>
-		<label for={id} class={sub ? 'pl-3.5 text-[14px] text-muted' : 'text-[15px] font-[550]'}>
+		<label
+			for={id}
+			class={sub ? 'pl-3.5 text-[0.875rem] text-muted' : 'text-[0.9375rem] font-[550]'}
+		>
 			{rowName}<span class="sr-only"> {unit}</span>
-			{#if bad}<span class="block text-[13px] font-semibold text-bad"
+			{#if bad}<span class="block text-[0.8125rem] font-semibold text-bad"
 					>{m.food_invalid_number()}</span
 				>{/if}
 		</label>
@@ -296,7 +299,7 @@
 				aria-label={m.food_less_than_of({ name: rowName })}
 				onclick={() => (value.lessThan = !value.lessThan)}
 				class={[
-					'size-9 rounded-[10px] text-[15px] font-[750]',
+					'size-9 rounded-[10px] text-[0.9375rem] font-[750]',
 					value.lessThan ? 'bg-soft text-accent' : 'bg-surface2 text-muted'
 				]}>&lt;</button
 			>
@@ -308,9 +311,9 @@
 			autocomplete="off"
 			placeholder={core ? m.food_unknown() : '–'}
 			aria-invalid={bad}
-			class="h-10 w-[88px] rounded-[10px] border border-line bg-surface2 px-2.5 text-right text-[16px] font-[650] tabular-nums placeholder:text-[14px] placeholder:font-medium placeholder:text-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent aria-invalid:border-bad"
+			class="h-10 w-[88px] rounded-[10px] border border-line bg-surface2 px-2.5 text-right text-[1rem] font-[650] tabular-nums placeholder:text-[0.875rem] placeholder:font-medium placeholder:text-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent aria-invalid:border-bad"
 		/>
-		<span class="text-[13px] text-muted">{unit}</span>
+		<span class="text-[0.8125rem] text-muted">{unit}</span>
 	</div>
 {/snippet}
 
@@ -321,13 +324,15 @@
 		<div class="flex items-center gap-3">
 			<FoodIcon {icon} name={name || '-'} {brand} />
 			<span class="flex min-w-0 flex-1 flex-col">
-				<span class="text-[15px] font-semibold">{m.icon_label()}</span>
-				<span class="text-[13px] text-muted">{icon ? m.icon_chosen() : m.icon_suggested()}</span>
+				<span class="text-[0.9375rem] font-semibold">{m.icon_label()}</span>
+				<span class="text-[0.8125rem] text-muted"
+					>{icon ? m.icon_chosen() : m.icon_suggested()}</span
+				>
 			</span>
 			<button
 				type="button"
 				onclick={() => (choosingIcon = true)}
-				class="min-h-11 rounded-input px-3 text-[15px] font-semibold text-accent"
+				class="min-h-11 rounded-input px-3 text-[0.9375rem] font-semibold text-accent"
 				>{m.icon_change()}</button
 			>
 		</div>
@@ -337,7 +342,7 @@
 		class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
 		aria-labelledby="values-heading"
 	>
-		<h2 id="values-heading" class="text-[19px] font-bold">{m.food_values()}</h2>
+		<h2 id="values-heading" class="text-[1.1875rem] font-bold">{m.food_values()}</h2>
 		<Chips
 			label={m.food_basis()}
 			bind:value={basis}
@@ -368,7 +373,7 @@
 					</div>
 					<Select bind:value={servingSizeUnit} aria-label={m.food_unit()} options={UNITS} />
 				</div>
-				<p id="food-serving-size-hint" class="text-[13px] text-muted">
+				<p id="food-serving-size-hint" class="text-[0.8125rem] text-muted">
 					{m.food_serving_size_hint()}
 				</p>
 			</div>
@@ -382,7 +387,7 @@
 			]}
 		/>
 		{#if valueNotes}{@render valueNotes()}{:else}
-			<p class="text-[13px] text-muted">{m.food_values_hint()}</p>
+			<p class="text-[0.8125rem] text-muted">{m.food_values_hint()}</p>
 		{/if}
 		<div class="flex flex-col">
 			{#each FIELDS as field (field)}
@@ -400,7 +405,7 @@
 			type="button"
 			aria-expanded={extrasShown}
 			onclick={() => (extrasShown = !extrasShown)}
-			class="flex min-h-11 items-center gap-1.5 self-start text-[15px] font-bold text-accent"
+			class="flex min-h-11 items-center gap-1.5 self-start text-[0.9375rem] font-bold text-accent"
 		>
 			{m.food_more_nutrients()}
 			<ChevronDown
@@ -425,7 +430,7 @@
 		class="flex flex-col rounded-card bg-surface p-[18px] shadow-card"
 		aria-labelledby="portions-heading"
 	>
-		<h2 id="portions-heading" class="mb-1 text-[19px] font-bold">{m.food_portions()}</h2>
+		<h2 id="portions-heading" class="mb-1 text-[1.1875rem] font-bold">{m.food_portions()}</h2>
 		{#each portions as portion, i (i)}
 			<div class="flex flex-col gap-2 border-line py-3 not-first-of-type:border-t">
 				<div class="relative">
@@ -438,7 +443,7 @@
 					/>
 					<button
 						type="button"
-						class="absolute -top-3 right-0 min-h-11 px-1 text-[13.5px] font-bold text-bad"
+						class="absolute -top-3 right-0 min-h-11 px-1 text-[0.84375rem] font-bold text-bad"
 						aria-label={m.food_portion_remove()}
 						onclick={() => portions.splice(i, 1)}>{m.food_portion_remove_short()}</button
 					>
@@ -454,12 +459,12 @@
 				</div>
 			</div>
 		{:else}
-			<p class="pt-1 pb-2 text-[13px] text-muted">{m.food_portions_none()}</p>
+			<p class="pt-1 pb-2 text-[0.8125rem] text-muted">{m.food_portions_none()}</p>
 		{/each}
 		<button
 			type="button"
 			onclick={() => portions.push({ name: '', text: '', unit: basis === '100ml' ? 'ml' : 'g' })}
-			class="flex min-h-11 items-center gap-1.5 self-start text-[15px] font-bold text-accent"
+			class="flex min-h-11 items-center gap-1.5 self-start text-[0.9375rem] font-bold text-accent"
 		>
 			<Plus size={18} aria-hidden="true" />{m.food_portion_add()}
 		</button>
@@ -474,7 +479,7 @@
 				{ value: 'private', label: m.food_visibility_private() }
 			]}
 		/>
-		<p class="text-[13px] text-muted">
+		<p class="text-[0.8125rem] text-muted">
 			{visibility === 'shared' ? m.food_share_note_shared() : m.food_share_note_private()}
 		</p>
 	</section>
@@ -484,7 +489,7 @@
 	<Button type="submit" wide disabled={busy || !name.trim() || (!!start && !unsaved && !dirty)}
 		>{busy ? m.common_working() : (saveLabel ?? m.food_save())}</Button
 	>
-	{#if note}<p class="px-1 text-[13px] text-muted">{note}</p>{/if}
+	{#if note}<p class="px-1 text-[0.8125rem] text-muted">{note}</p>{/if}
 </form>
 
 {#if choosingIcon}

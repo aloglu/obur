@@ -27,14 +27,14 @@
 	class="shrink-0 rounded-[14px] bg-surface2 p-1 has-focus-visible:ring-2 has-focus-visible:ring-accent"
 >
 	<div
-		class="relative flex min-h-11 items-center rounded-[10px] pr-8 pl-3 text-[14px] font-[650] text-text"
+		class="relative flex min-h-11 items-center rounded-[10px] pr-8 pl-3 text-[0.875rem] font-[650] text-text"
 	>
 		{names[value]()}
 		<select
 			{id}
 			{value}
 			onchange={(e) => onchange(e.currentTarget.value)}
-			class="absolute inset-0 size-full cursor-pointer appearance-none text-[16px] opacity-0 outline-none"
+			class="absolute inset-0 size-full cursor-pointer appearance-none text-[1rem] opacity-0 outline-none"
 		>
 			{#each HISTORY_RANGES as r (r)}<option value={r}>{names[r]()}</option>{/each}
 		</select>

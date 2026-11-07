@@ -20,10 +20,10 @@
 	{label}
 	{disabled}
 	{onchange}
-	class="flex min-h-14 w-full items-center justify-between gap-3 py-2 text-left text-[15px] font-semibold disabled:opacity-50"
+	class="flex min-h-14 w-full items-center justify-between gap-3 py-2 text-left text-[0.9375rem] font-semibold disabled:opacity-50"
 >
 	<span class="min-w-0">{label}</span>
-	<span class="flex shrink-0 items-center gap-1.5 text-[14px] font-medium text-muted">
+	<span class="flex shrink-0 items-center gap-1.5 text-[0.875rem] font-medium text-muted">
 		{current}<ChevronDown size={18} aria-hidden="true" />
 	</span>
 </Menu>

@@ -33,8 +33,8 @@
 	</button>
 	{#key heading.title}
 		<div class="title-in min-w-0">
-			<h1 class="text-[24px] leading-tight font-[750]">{heading.title}</h1>
-			<p class="mt-0.5 text-[13px] text-muted">{heading.detail}</p>
+			<h1 class="text-[1.5rem] leading-tight font-[750]">{heading.title}</h1>
+			<p class="mt-0.5 text-[0.8125rem] text-muted">{heading.detail}</p>
 		</div>
 	{/key}
 	<button

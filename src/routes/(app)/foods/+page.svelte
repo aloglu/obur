@@ -88,7 +88,7 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<BackLink href={resolve('/(app)/more')} label={m.nav_more()} />
-	<h1 class="text-[24px] font-[750]">{m.foods_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.foods_title()}</h1>
 	<div class="pinned-search">
 		<TextField
 			label={m.foods_search()}
@@ -100,19 +100,19 @@
 	</div>
 	<a
 		href={resolve('/(app)/foods/new')}
-		class="grid min-h-[52px] place-items-center rounded-button bg-fill px-4 text-[17px] font-[750] text-on-accent"
+		class="grid min-h-[52px] place-items-center rounded-button bg-fill px-4 text-[1.0625rem] font-[750] text-on-accent"
 		>{m.foods_new()}</a
 	>
 	{#if query.trim()}
 		{#if searched && results.length === 0}
-			<p class="text-[14px] text-muted">{m.foods_none()}</p>
+			<p class="text-[0.875rem] text-muted">{m.foods_none()}</p>
 		{:else if results.length > 0}
 			<ListCard title={m.foods_title()} unit={m.list_kcal()}>
 				{#each results as r (r.id)}{@render row(r, false)}{/each}
 			</ListCard>
 		{/if}
 	{:else if own.length === 0}
-		<p class="text-[15px] text-muted">{m.foods_empty()}</p>
+		<p class="text-[0.9375rem] text-muted">{m.foods_empty()}</p>
 	{:else}
 		<ListCard title={m.foods_list_head()} unit={m.list_kcal()}>
 			{#each own as r (r.id)}{@render row(r, r.archived)}{/each}

@@ -136,10 +136,10 @@
 <svelte:head><title>{m.household_title()} · {m.app_name()}</title></svelte:head>
 
 {#snippet label(text: string, id: string)}
-	<h2 {id} class="mb-1.5 px-1 text-[13px] font-[650] text-muted">{text}</h2>
+	<h2 {id} class="mb-1.5 px-1 text-[0.8125rem] font-[650] text-muted">{text}</h2>
 {/snippet}
 {#snippet facts(rows: [string, string][], testid?: string)}
-	<dl class="flex flex-col divide-y divide-line text-[14px]" data-testid={testid}>
+	<dl class="flex flex-col divide-y divide-line text-[0.875rem]" data-testid={testid}>
 		{#each rows as [name, value] (name)}
 			<div class="flex justify-between gap-3 py-2.5 text-muted">
 				<dt>{name}</dt>
@@ -152,7 +152,7 @@
 <main class="mx-auto flex max-w-[640px] flex-col gap-4 px-3.5 py-4 desk:px-7">
 	<div class="flex flex-col gap-3">
 		<BackLink href={resolve('/(app)/more')} label={m.nav_more()} />
-		<h1 class="text-[24px] font-[750]">{m.household_title()}</h1>
+		<h1 class="text-[1.5rem] font-[750]">{m.household_title()}</h1>
 	</div>
 	{#if problem && !deleting}<Notice>{problem}</Notice>{/if}
 
@@ -163,22 +163,22 @@
 				<li class="grid min-h-16 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 py-2">
 					<span
 						aria-hidden="true"
-						class="grid size-10 place-items-center rounded-small bg-soft font-display text-[17px] font-extrabold text-accent"
+						class="grid size-10 place-items-center rounded-small bg-soft font-display text-[1.0625rem] font-extrabold text-accent"
 						>{member.displayName.trim().slice(0, 1).toLocaleUpperCase('tr')}</span
 					>
 					<span class="min-w-0">
 						<span class="flex flex-wrap items-center gap-1.5">
-							<b class="text-[15px] font-semibold break-words">{member.displayName}</b>
+							<b class="text-[0.9375rem] font-semibold break-words">{member.displayName}</b>
 							{#if member.id === data.user?.id}<span
-									class="rounded-menu bg-surface2 px-2 py-0.5 text-[12px] font-[650] text-muted"
+									class="rounded-menu bg-surface2 px-2 py-0.5 text-[0.75rem] font-[650] text-muted"
 									>{m.household_you()}</span
 								>{/if}
 							{#if member.role === 'admin'}<span
-									class="rounded-menu bg-soft px-2 py-0.5 text-[12px] font-[650] text-accent"
+									class="rounded-menu bg-soft px-2 py-0.5 text-[0.75rem] font-[650] text-accent"
 									>{m.household_admin()}</span
 								>{/if}
 						</span>
-						<small class="block text-[13px] text-muted"
+						<small class="block text-[0.8125rem] text-muted"
 							>{m.household_joined({ date: date(member.createdAt) })}</small
 						>
 					</span>
@@ -187,7 +187,7 @@
 							type="button"
 							disabled={busy}
 							onclick={() => ((deleting = member), (removeShared = 'keep'), (understood = false))}
-							class="min-h-11 text-[14px] font-bold whitespace-nowrap text-bad"
+							class="min-h-11 text-[0.875rem] font-bold whitespace-nowrap text-bad"
 							>{m.household_delete_member()}</button
 						>
 					{/if}
@@ -212,24 +212,26 @@
 						<div class="flex flex-col gap-2 pt-3">
 							<div class="flex items-center gap-2 rounded-input bg-surface2 py-2.5 pr-2.5 pl-3.5">
 								<span
-									class="min-w-0 flex-1 truncate font-mono text-[13px]"
+									class="min-w-0 flex-1 truncate font-mono text-[0.8125rem]"
 									data-testid="invite-link">{link}</span
 								>
 								<button
 									type="button"
 									onclick={copy}
-									class="min-h-11 shrink-0 rounded-small bg-surface px-3 text-[14px] font-[650]"
+									class="min-h-11 shrink-0 rounded-small bg-surface px-3 text-[0.875rem] font-[650]"
 									>{m.common_copy()}</button
 								>
 							</div>
-							<p class="text-[13px] text-muted">{m.household_invite_ready()}</p>
+							<p class="text-[0.8125rem] text-muted">{m.household_invite_ready()}</p>
 						</div>
 					</div>
 				</div>
 			</div>
 			{#if invites.length > 0}
 				<div class="rounded-card bg-surface px-[18px] pb-1 shadow-card">
-					<h3 class="pt-2.5 pb-0.5 text-[12.5px] font-[650] text-muted">{m.household_invites()}</h3>
+					<h3 class="pt-2.5 pb-0.5 text-[0.78125rem] font-[650] text-muted">
+						{m.household_invites()}
+					</h3>
 					<ul class="flex flex-col divide-y divide-line">
 						{#each invites as i (i.id)}
 							{@const Icon = live(i) ? Link : i.usedAt ? UserCheck : Link2Off}
@@ -238,12 +240,12 @@
 									><Icon size={18} aria-hidden="true" /></span
 								>
 								<span class="min-w-0">
-									<b class="block truncate text-[15px] font-semibold"
+									<b class="block truncate text-[0.9375rem] font-semibold"
 										>{i.note
 											? m.household_invite_for({ name: i.note })
 											: m.household_invite_any()}</b
 									>
-									<small class="block text-[13px] text-muted">{status(i)}</small>
+									<small class="block text-[0.8125rem] text-muted">{status(i)}</small>
 								</span>
 								{#if live(i)}
 									<button
@@ -251,7 +253,7 @@
 										disabled={busy}
 										aria-label={m.household_revoke()}
 										onclick={() => revoke(i)}
-										class="min-h-11 text-[14px] font-bold text-bad">{m.common_cancel()}</button
+										class="min-h-11 text-[0.875rem] font-bold text-bad">{m.common_cancel()}</button
 									>
 								{/if}
 							</li>
@@ -272,7 +274,7 @@
 					</Notice>
 				{/each}
 				{#if backups.problems.length === 0}
-					<p class="flex items-center gap-3 text-[17px] font-[650]">
+					<p class="flex items-center gap-3 text-[1.0625rem] font-[650]">
 						<span
 							class="grid size-10 shrink-0 place-items-center rounded-small text-good"
 							style:background="color-mix(in srgb, var(--good) 13%, var(--surface))"
@@ -298,9 +300,9 @@
 	<section aria-labelledby="scans-label">
 		{@render label(m.household_scans(), 'scans-label')}
 		<div class="flex flex-col gap-2 rounded-card bg-surface p-[18px] shadow-card">
-			<p class="text-[13px] text-muted">{m.household_scans_body()}</p>
+			<p class="text-[0.8125rem] text-muted">{m.household_scans_body()}</p>
 			{#if data.scanTotals.scans === 0}
-				<p class="text-[14px] text-muted">{m.household_scans_none()}</p>
+				<p class="text-[0.875rem] text-muted">{m.household_scans_none()}</p>
 			{:else}
 				{@const t = data.scanTotals}
 				{@const share = (part: number, whole: number) =>
@@ -329,13 +331,13 @@
 		{@render label(m.household_deletions(), 'deleted-label')}
 		<div class="flex flex-col gap-2 rounded-card bg-surface p-[18px] shadow-card">
 			{#if deletions.length === 0}
-				<p class="text-[15px] font-semibold">{m.household_deletions_none()}</p>
+				<p class="text-[0.9375rem] font-semibold">{m.household_deletions_none()}</p>
 			{:else}
 				<ul class="flex flex-col divide-y divide-line" data-testid="deletions">
 					{#each deletions as d (d.accountId)}
 						<li class="flex flex-col py-2">
-							<span class="font-mono text-[13px] break-all">{d.accountId}</span>
-							<span class="text-[13px] text-muted"
+							<span class="font-mono text-[0.8125rem] break-all">{d.accountId}</span>
+							<span class="text-[0.8125rem] text-muted"
 								>{date(d.deletedAt)}{d.removedSharedFoods
 									? ` · ${m.household_deletions_shared_removed()}`
 									: ''}</span
@@ -344,7 +346,7 @@
 					{/each}
 				</ul>
 			{/if}
-			<p class="text-[13px] text-muted">{m.household_deletions_body()}</p>
+			<p class="text-[0.8125rem] text-muted">{m.household_deletions_body()}</p>
 		</div>
 	</section>
 </main>
@@ -355,7 +357,7 @@
 		title={m.household_delete_title({ name: member.displayName })}
 		onclose={() => (deleting = null)}
 	>
-		<p class="text-[15px]">{m.household_delete_body()}</p>
+		<p class="text-[0.9375rem]">{m.household_delete_body()}</p>
 		<Chips
 			label={m.data_delete_shared()}
 			bind:value={removeShared}
@@ -364,9 +366,9 @@
 				{ value: 'remove', label: m.data_delete_remove() }
 			]}
 		/>
-		<p class="text-[13px] text-muted">{m.data_delete_backups()}</p>
+		<p class="text-[0.8125rem] text-muted">{m.data_delete_backups()}</p>
 		{#if problem}<Notice>{problem}</Notice>{/if}
-		<label class="flex min-h-11 items-center gap-3 text-[15px] font-semibold">
+		<label class="flex min-h-11 items-center gap-3 text-[0.9375rem] font-semibold">
 			<input type="checkbox" bind:checked={understood} class="size-5 accent-[var(--bad)]" />
 			{m.data_delete_confirm_check()}
 		</label>

@@ -152,7 +152,7 @@
 	<div class="grid grid-cols-2 gap-2">
 		<a
 			href={resolve('/(app)/saved-meals')}
-			class="inline-flex min-h-[52px] items-center justify-center rounded-button border border-line bg-surface text-[17px] font-[750]"
+			class="inline-flex min-h-[52px] items-center justify-center rounded-button border border-line bg-surface text-[1.0625rem] font-[750]"
 			>{m.common_cancel()}</a
 		>
 		<Button type="submit" disabled={busy || !dirty}

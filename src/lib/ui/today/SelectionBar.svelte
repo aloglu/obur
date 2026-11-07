@@ -13,7 +13,7 @@
 	}
 	let { count, busy, oncancel, onmove, oncopy, ondelete }: Props = $props();
 	const action =
-		'min-h-12 rounded-[14px] bg-toast-text/12 text-[14px] font-bold disabled:opacity-40';
+		'min-h-12 rounded-[14px] bg-toast-text/12 text-[0.875rem] font-bold disabled:opacity-40';
 </script>
 
 <div
@@ -22,7 +22,7 @@
 	class="fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-40 flex flex-col gap-1.5 rounded-[22px] bg-toast-bg p-2 text-toast-text shadow-toast desk:right-7 desk:left-auto desk:w-[420px]"
 >
 	<div class="flex items-center justify-between px-2 pt-0.5">
-		<span class="text-[14px] font-bold" aria-live="polite"
+		<span class="text-[0.875rem] font-bold" aria-live="polite"
 			>{count === 0
 				? m.select_none()
 				: count === 1
@@ -32,7 +32,7 @@
 		<button
 			type="button"
 			onclick={oncancel}
-			class="min-h-9 px-1 text-[14px] font-semibold opacity-85">{m.select_cancel()}</button
+			class="min-h-9 px-1 text-[0.875rem] font-semibold opacity-85">{m.select_cancel()}</button
 		>
 	</div>
 	<div class="grid grid-cols-3 gap-1.5">

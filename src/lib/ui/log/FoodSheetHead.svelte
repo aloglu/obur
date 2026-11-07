@@ -15,7 +15,7 @@
 <div class="flex min-w-0 items-center gap-3">
 	<FoodIcon {icon} name={iconName ?? name} {brand} />
 	<div class="min-w-0">
-		<h2 class="line-clamp-2 text-[19px] leading-tight font-[750] break-words">{name}</h2>
-		<p class="text-[13px] text-muted">{detail}</p>
+		<h2 class="line-clamp-2 text-[1.1875rem] leading-tight font-[750] break-words">{name}</h2>
+		<p class="text-[0.8125rem] text-muted">{detail}</p>
 	</div>
 </div>

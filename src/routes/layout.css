@@ -106,7 +106,7 @@
 		background: var(--surface);
 		color: var(--text);
 		box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
-		font-size: 15px;
+		font-size: 0.9375rem;
 		font-weight: 650;
 	}
 	.hold-drag-name {
@@ -121,7 +121,7 @@
 		background: var(--accent);
 		color: var(--on-accent);
 		padding: 2px 9px;
-		font-size: 13px;
+		font-size: 0.8125rem;
 		font-weight: 750;
 	}
 }

@@ -24,7 +24,7 @@
 	const card = 'flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card';
 	const grid = 'grid grid-cols-4 gap-x-2 gap-y-3 desk:grid-cols-6';
 	const item =
-		'flex min-w-0 flex-col items-center gap-1.5 text-center text-[12px] font-[650] leading-tight';
+		'flex min-w-0 flex-col items-center gap-1.5 text-center text-[0.75rem] font-[650] leading-tight';
 </script>
 
 <svelte:head><title>{m.achievements_title()} · {m.app_name()}</title></svelte:head>
@@ -36,13 +36,13 @@
 			class="grid size-11 place-items-center rounded-full bg-surface2"
 			aria-label={m.nav_progress()}><ChevronLeft size={22} aria-hidden="true" /></a
 		>
-		<h1 class="text-[24px] font-[750]">{m.achievements_title()}</h1>
+		<h1 class="text-[1.5rem] font-[750]">{m.achievements_title()}</h1>
 	</div>
 
 	<section class={card} aria-labelledby="weight-title">
 		<div>
-			<h2 id="weight-title" class="text-[19px] font-bold">{m.achievements_weight_title()}</h2>
-			<p class="text-[13px] text-muted">
+			<h2 id="weight-title" class="text-[1.1875rem] font-bold">{m.achievements_weight_title()}</h2>
+			<p class="text-[0.8125rem] text-muted">
 				{weights.length
 					? m.achievements_weight_note({ count: String(weights.length) })
 					: data.weightAllowed
@@ -76,7 +76,7 @@
 
 	{#if goals.length}
 		<section class={card} aria-labelledby="goal-title">
-			<h2 id="goal-title" class="text-[19px] font-bold">{m.achievements_goal_title()}</h2>
+			<h2 id="goal-title" class="text-[1.1875rem] font-bold">{m.achievements_goal_title()}</h2>
 			<ul class={grid}>
 				{#each goals as a (a.level)}
 					<li class={item}>
@@ -92,7 +92,7 @@
 	{/if}
 
 	<section class={card} aria-labelledby="streak-title">
-		<h2 id="streak-title" class="text-[19px] font-bold">{m.achievements_streak_title()}</h2>
+		<h2 id="streak-title" class="text-[1.1875rem] font-bold">{m.achievements_streak_title()}</h2>
 		<ul class={grid}>
 			{#if data.next.streak !== null}
 				<li class={[item, 'text-muted']}>
@@ -120,7 +120,7 @@
 
 	{#if firsts.length}
 		<section class={card} aria-labelledby="firsts-title">
-			<h2 id="firsts-title" class="text-[19px] font-bold">{m.achievements_firsts_title()}</h2>
+			<h2 id="firsts-title" class="text-[1.1875rem] font-bold">{m.achievements_firsts_title()}</h2>
 			<ul class={grid}>
 				{#each firsts as a (a.level)}
 					<li class={item}>

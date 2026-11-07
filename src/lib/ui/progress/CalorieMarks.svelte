@@ -67,7 +67,7 @@
 		const from = selected ?? bars.length - 1;
 		onselect(Math.max(0, Math.min(bars.length - 1, from + step)));
 	}
-	const axis = 'fill-muted text-[10.5px] tabular-nums desk:text-[13.5px]';
+	const axis = 'fill-muted text-[0.65625rem] tabular-nums desk:text-[0.84375rem]';
 </script>
 
 <defs>

@@ -5,6 +5,6 @@
 </script>
 
 <section class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
-	{#if title}<h2 class="text-[19px] font-bold">{title}</h2>{/if}
+	{#if title}<h2 class="text-[1.1875rem] font-bold">{title}</h2>{/if}
 	{@render children()}
 </section>

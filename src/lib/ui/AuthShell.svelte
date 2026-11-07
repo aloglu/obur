@@ -21,12 +21,14 @@
 	{#if brand}
 		<div class="mt-5 mb-2.5 flex flex-col items-center gap-2.5">
 			<img src="/icon-192.png" alt="" width="76" height="76" class="rounded-[18px] shadow-card" />
-			<p class="font-display text-[22px] font-extrabold tracking-[-0.02em] text-muted">
+			<p class="font-display text-[1.375rem] font-extrabold tracking-[-0.02em] text-muted">
 				{m.app_name()}
 			</p>
 		</div>
 	{/if}
-	<h1 class={['text-center text-[28px] font-[750] text-balance', !brand && 'mt-4']}>{title}</h1>
-	{#if lead}<p class="-mt-1 mb-1.5 text-center text-[15px] text-balance text-muted">{lead}</p>{/if}
+	<h1 class={['text-center text-[1.75rem] font-[750] text-balance', !brand && 'mt-4']}>{title}</h1>
+	{#if lead}<p class="-mt-1 mb-1.5 text-center text-[0.9375rem] text-balance text-muted">
+			{lead}
+		</p>{/if}
 	{@render children()}
 </main>

@@ -28,11 +28,11 @@
 	>
 		<FoodIcon {icon} name={iconFrom?.name ?? name} brand={iconFrom?.brand ?? brand} />
 		<span>
-			<span class="line-clamp-2 text-[15px] font-semibold break-words"
+			<span class="line-clamp-2 text-[0.9375rem] font-semibold break-words"
 				>{brand ? `${brand} ` : ''}{name}</span
 			>
-			<small class="block text-[13px] text-muted">{detail}</small>
+			<small class="block text-[0.8125rem] text-muted">{detail}</small>
 		</span>
-		<span class="text-[15px] font-semibold tabular-nums">{kcal === null ? '–' : kcal}</span>
+		<span class="text-[0.9375rem] font-semibold tabular-nums">{kcal === null ? '–' : kcal}</span>
 	</a>
 </li>

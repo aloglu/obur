@@ -45,7 +45,7 @@
 <svelte:head><title>{m.help_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<h1 class="text-[24px] font-[750]">{m.help_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.help_title()}</h1>
 	<div class="pinned-search">
 		<label
 			class="flex min-h-12 items-center gap-2.5 rounded-input border border-line bg-surface px-3.5 focus-within:outline-3 focus-within:outline-offset-1 focus-within:outline-accent"
@@ -56,7 +56,7 @@
 				bind:value={query}
 				placeholder={m.help_search()}
 				aria-label={m.help_search()}
-				class="min-w-0 flex-1 bg-transparent py-2 text-[16px] outline-none"
+				class="min-w-0 flex-1 bg-transparent py-2 text-[1rem] outline-none"
 			/>
 		</label>
 	</div>
@@ -67,7 +67,7 @@
 				aria-pressed={topic === t}
 				onclick={() => (topic = t)}
 				class={[
-					'min-h-11 rounded-input px-4 text-[14px] font-semibold',
+					'min-h-11 rounded-input px-4 text-[0.875rem] font-semibold',
 					topic === t ? 'bg-fill text-on-accent' : 'bg-surface2 text-text'
 				]}>{t === 'all' ? m.help_all() : topicName(t)}</button
 			>
@@ -81,7 +81,7 @@
 		>
 			<h2
 				id="topic-{g}"
-				class="pt-2 pb-1 text-[12px] font-bold tracking-[0.06em] text-muted uppercase"
+				class="pt-2 pb-1 text-[0.75rem] font-bold tracking-[0.06em] text-muted uppercase"
 			>
 				{topicName(g)}
 			</h2>
@@ -89,7 +89,7 @@
 				{#each shown.filter((h) => h.topic === g) as h (h.id)}
 					<details class="group" open={query.trim() !== '' && shown.length === 1}>
 						<summary
-							class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 py-2 text-[15px] font-semibold [&::-webkit-details-marker]:hidden"
+							class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 py-2 text-[0.9375rem] font-semibold [&::-webkit-details-marker]:hidden"
 						>
 							{text(`help_${h.id}_q`)}
 							<ChevronDown
@@ -98,10 +98,10 @@
 								class="shrink-0 text-muted transition-transform group-open:rotate-180 motion-reduce:transition-none"
 							/>
 						</summary>
-						<div class="flex flex-col gap-2.5 pb-4 text-[15px] leading-relaxed">
+						<div class="flex flex-col gap-2.5 pb-4 text-[0.9375rem] leading-relaxed">
 							{#each paragraphs(h) as p, i (i)}
 								{#if formula(p)}
-									<p class="rounded-tile bg-surface2 px-3.5 py-2.5 text-[14px] font-semibold">
+									<p class="rounded-tile bg-surface2 px-3.5 py-2.5 text-[0.875rem] font-semibold">
 										{p}
 									</p>
 								{:else}
@@ -111,7 +111,9 @@
 							{#if h.id === 'rings'}
 								<ul class="flex flex-col gap-2.5">
 									{#each RING_EXAMPLES as example (example.status)}
-										<li class="grid grid-cols-[36px_minmax(0,1fr)] items-center gap-3 text-[14px]">
+										<li
+											class="grid grid-cols-[36px_minmax(0,1fr)] items-center gap-3 text-[0.875rem]"
+										>
 											<span class="size-9"
 												><DayRing status={example.status} fill={example.fill} /></span
 											>
@@ -126,6 +128,6 @@
 			</div>
 		</section>
 	{:else}
-		<p class="px-1 text-[15px] text-muted">{m.help_none({ query: query.trim() })}</p>
+		<p class="px-1 text-[0.9375rem] text-muted">{m.help_none({ query: query.trim() })}</p>
 	{/each}
 </main>

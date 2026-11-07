@@ -35,28 +35,28 @@
 		<p
 			class="flex w-[7rem] shrink-0 flex-wrap content-center items-baseline gap-1 self-stretch border-r border-line pr-3"
 		>
-			<span class="font-display text-[26px] leading-none font-extrabold tabular-nums"
+			<span class="font-display text-[1.625rem] leading-none font-extrabold tabular-nums"
 				><Roll
 					value={nutrients ? (energy ? kcal(energy.value) : m.amount_unknown_short()) : '—'}
 				/></span
 			>
-			<span class="text-[13px] font-semibold text-muted">kcal</span>
+			<span class="text-[0.8125rem] font-semibold text-muted">kcal</span>
 		</p>
 		{#if nutrients}
 			<dl class="grid min-w-0 flex-1 grid-cols-3 gap-2">
 				{#each macros as macro (macro.label)}
 					<div class="min-w-0">
-						<dt class="flex items-center gap-1.5 text-[12px] font-semibold text-muted">
+						<dt class="flex items-center gap-1.5 text-[0.75rem] font-semibold text-muted">
 							<span class="size-2 shrink-0 rounded-full" style:background={macro.color}></span>
 							{macro.label}
 						</dt>
-						<dd class="text-[15px] font-bold tabular-nums"><Roll value={macro.value} /></dd>
+						<dd class="text-[0.9375rem] font-bold tabular-nums"><Roll value={macro.value} /></dd>
 					</div>
 				{/each}
 			</dl>
 		{/if}
 	</div>
 	{#if nutrients && carbsUnstated}
-		<p class="text-[12px] text-muted">{m.amount_carbs_unstated()}</p>
+		<p class="text-[0.75rem] text-muted">{m.amount_carbs_unstated()}</p>
 	{/if}
 </div>

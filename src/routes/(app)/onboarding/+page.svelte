@@ -173,11 +173,11 @@
 	const rates = ['0', '0.25', '0.5', '0.75', '1'];
 	const card = 'flex flex-col gap-4 rounded-card bg-surface p-[18px] shadow-card';
 	const estimate = 'flex flex-col gap-1.5 rounded-card bg-surface p-[18px] shadow-card';
-	const label = 'text-[13px] font-[650] text-muted';
+	const label = 'text-[0.8125rem] font-[650] text-muted';
 	const big =
-		'font-display text-[40px] leading-none font-extrabold tracking-[-0.03em] tabular-nums';
-	const unit = 'ml-1.5 text-[15px] font-[650] text-muted';
-	const why = 'text-[14px] text-muted';
+		'font-display text-[2.5rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums';
+	const unit = 'ml-1.5 text-[0.9375rem] font-[650] text-muted';
+	const why = 'text-[0.875rem] text-muted';
 	const eqnRow = 'flex justify-between gap-3 border-line py-2 not-first:border-t';
 	const names = { 1: m.onb_step_about, 2: m.onb_step_estimate, 3: m.onb_step_goal };
 </script>
@@ -191,7 +191,7 @@
 	>
 		<ChevronLeft size={22} aria-hidden="true" />{back.label}
 	</a>
-	<h1 class="text-[24px] font-[750]">{m.onb_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.onb_title()}</h1>
 	{#if step !== 'manual'}
 		<div class="grid grid-cols-3 gap-1.5" aria-hidden="true">
 			{#each [1, 2, 3] as s (s)}
@@ -227,10 +227,10 @@
 						/>
 						<div class={['collapse-row -my-2', sex === 'female' && 'open']}>
 							<div class="flex flex-col" inert={sex !== 'female'}>
-								<label class="flex min-h-11 items-center gap-3 text-[15px]"
+								<label class="flex min-h-11 items-center gap-3 text-[0.9375rem]"
 									><input type="checkbox" bind:checked={pregnant} />{m.onb_pregnant()}</label
 								>
-								<label class="flex min-h-11 items-center gap-3 text-[15px]"
+								<label class="flex min-h-11 items-center gap-3 text-[0.9375rem]"
 									><input
 										type="checkbox"
 										bind:checked={breastfeeding}
@@ -260,7 +260,7 @@
 				<button
 					type="button"
 					onclick={() => go('manual')}
-					class="inline-flex min-h-11 items-center justify-center self-center text-[15px] font-[650] text-accent"
+					class="inline-flex min-h-11 items-center justify-center self-center text-[0.9375rem] font-[650] text-accent"
 					>{m.onb_manual_title()}</button
 				>
 			{:else if step === 2 && facts && bmiValue !== null && burn}
@@ -277,7 +277,7 @@
 								style:left="{bmiAt}%"
 							></i>
 						</div>
-						<div class="relative h-4 text-[11.5px] text-muted tabular-nums" aria-hidden="true">
+						<div class="relative h-4 text-[0.71875rem] text-muted tabular-nums" aria-hidden="true">
 							{#each [[15, '15'], [18.5, '18,5'], [25, '25'], [30, '30'], [40, '40']] as const as [at, text] (at)}
 								<span
 									class={[
@@ -315,7 +315,7 @@
 							type="button"
 							aria-expanded={ownOpen}
 							onclick={() => (ownOpen = !ownOpen)}
-							class="-my-1 inline-flex min-h-11 items-center gap-1 self-start text-[15px] font-[650] text-accent"
+							class="-my-1 inline-flex min-h-11 items-center gap-1 self-start text-[0.9375rem] font-[650] text-accent"
 						>
 							{m.onb_own_toggle()}
 							<ChevronDown
@@ -370,7 +370,7 @@
 							disabled: Number(r) > cap
 						}))}
 					/>
-					{#if rates.some((r) => Number(r) > cap)}<p class="-mt-2 text-[13px] text-muted">
+					{#if rates.some((r) => Number(r) > cap)}<p class="-mt-2 text-[0.8125rem] text-muted">
 							{m.onb_rate_capped()}
 						</p>{/if}
 					<UnitField label={m.onb_floor()} unit="kcal" bind:value={floorText} inputmode="numeric" />
@@ -380,7 +380,7 @@
 					<p>
 						<span class={big}><Roll value={kcal(preview)} /></span><span class={unit}>kcal</span>
 					</p>
-					<div class="flex flex-col text-[14px] tabular-nums">
+					<div class="flex flex-col text-[0.875rem] tabular-nums">
 						<div class={eqnRow}><span>{m.onb_base_label()}</span><span>{kcal(base)}</span></div>
 						<div class={eqnRow}>
 							<span>{m.profile_target_goal()}</span><span>−{kcal(deficit)}</span>
@@ -394,7 +394,7 @@
 						</p>{/if}
 					<p class={why}>{m.onb_budget_note()}</p>
 				</div>
-				<p class="px-1 text-[13px] text-muted">{m.onb_disclaimer()}</p>
+				<p class="px-1 text-[0.8125rem] text-muted">{m.onb_disclaimer()}</p>
 				<div class="grid grid-cols-[auto_minmax(0,1fr)] gap-2.5">
 					<Button variant="ghost" onclick={() => go(2)}>{m.common_back()}</Button>
 					<Button
@@ -412,8 +412,8 @@
 			{:else if step === 'manual'}
 				<div class={card}>
 					<div class="flex flex-col gap-1.5">
-						<h2 class="text-[19px] font-bold">{m.onb_manual_title()}</h2>
-						<p class="text-[14px] text-muted">{m.onb_manual_body()}</p>
+						<h2 class="text-[1.1875rem] font-bold">{m.onb_manual_title()}</h2>
+						<p class="text-[0.875rem] text-muted">{m.onb_manual_body()}</p>
 					</div>
 					<UnitField
 						label={m.onb_manual_kcal()}
@@ -422,7 +422,7 @@
 						inputmode="numeric"
 					/>
 				</div>
-				<p class="px-1 text-[13px] text-muted">{m.onb_disclaimer()}</p>
+				<p class="px-1 text-[0.8125rem] text-muted">{m.onb_disclaimer()}</p>
 				<div class="grid grid-cols-[auto_minmax(0,1fr)] gap-2.5">
 					<Button variant="ghost" onclick={() => go(detailsValid && !allowed ? 2 : 1)}
 						>{m.common_back()}</Button

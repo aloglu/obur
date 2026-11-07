@@ -59,18 +59,18 @@
 <svelte:head><title>{m.profile_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<h1 class="text-[24px] font-[750]">{m.profile_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.profile_title()}</h1>
 	{#if t && day}
 		<Card title={m.profile_target()}>
 			<!-- A headline and labelled rows, so nothing wraps mid-sentence (owner review 2026-10-30). -->
 			<p class="flex items-baseline gap-2">
-				<span class="font-display text-[28px] leading-none font-extrabold tabular-nums"
+				<span class="font-display text-[1.75rem] leading-none font-extrabold tabular-nums"
 					>{kcal(day.budget)}</span
 				>
-				<span class="text-[15px] font-semibold text-muted">{m.profile_target_per_day()}</span>
+				<span class="text-[0.9375rem] font-semibold text-muted">{m.profile_target_per_day()}</span>
 			</p>
 			{#if t.mode === 'calculated'}
-				<dl class="flex flex-col text-[15px]">
+				<dl class="flex flex-col text-[0.9375rem]">
 					{#each [[m.profile_target_base(), kcal(t.baseBurnKcal ?? 0)], [m.profile_target_goal(), `− ${kcal(t.deficitKcal)}`], [m.profile_target_floor(), kcal(t.floorKcal)]] as [label, value] (label)}
 						<div
 							class="flex min-h-9 items-center justify-between gap-3 border-b border-line last:border-0"
@@ -81,13 +81,13 @@
 					{/each}
 				</dl>
 			{:else}
-				<p class="text-[15px] text-muted">{m.profile_target_own()}</p>
+				<p class="text-[0.9375rem] text-muted">{m.profile_target_own()}</p>
 			{/if}
-			<p class="text-[13px] text-muted">
+			<p class="text-[0.8125rem] text-muted">
 				{m.profile_since({ day: dayTitle(t.effectiveFrom, data.today) })}
 			</p>
 			{#if t.mode === 'calculated'}
-				<p class="text-[13px] text-muted">{m.profile_follows_weight()}</p>
+				<p class="text-[0.8125rem] text-muted">{m.profile_follows_weight()}</p>
 			{/if}
 			<a
 				href="{resolve('/(app)/onboarding')}?from=profile"
@@ -99,17 +99,17 @@
 	{:else}
 		<!-- A budget is a free choice: optional, said once, and only here (docs/ui.md). -->
 		<Card title={m.profile_budget_title()}>
-			<p class="text-[14px] text-muted">{m.profile_budget_optional()}</p>
+			<p class="text-[0.875rem] text-muted">{m.profile_budget_optional()}</p>
 			<a
 				href="{resolve('/(app)/onboarding')}?from=profile"
-				class="grid min-h-12 place-items-center rounded-input bg-fill px-4 text-[15px] font-[750] text-on-accent"
+				class="grid min-h-12 place-items-center rounded-input bg-fill px-4 text-[0.9375rem] font-[750] text-on-accent"
 			>
 				{m.profile_setup()}
 			</a>
 		</Card>
 	{/if}
 	<section aria-labelledby="about-label">
-		<h2 id="about-label" class="mb-1.5 px-1 text-[13px] font-[650] text-muted">
+		<h2 id="about-label" class="mb-1.5 px-1 text-[0.8125rem] font-[650] text-muted">
 			{m.profile_about()}
 		</h2>
 		<div class={group}>
@@ -117,11 +117,11 @@
 				<NavRow href={setupHref} {label} {value} />
 			{/each}
 		</div>
-		<p class="mt-1.5 px-1 text-[13px] text-muted">{m.details_weight_from_today()}</p>
+		<p class="mt-1.5 px-1 text-[0.8125rem] text-muted">{m.details_weight_from_today()}</p>
 	</section>
 	{#if t && t.mode !== 'none'}
 		<section aria-labelledby="settings-label">
-			<h2 id="settings-label" class="mb-1.5 px-1 text-[13px] font-[650] text-muted">
+			<h2 id="settings-label" class="mb-1.5 px-1 text-[0.8125rem] font-[650] text-muted">
 				{m.profile_settings()}
 			</h2>
 			<div class={group}>
@@ -144,7 +144,7 @@
 					</div>
 				{/if}
 			</div>
-			<p class="mt-1.5 px-1 text-[13px] text-muted">{m.profile_settings_hint()}</p>
+			<p class="mt-1.5 px-1 text-[0.8125rem] text-muted">{m.profile_settings_hint()}</p>
 		</section>
 		{#if day}
 			<Card>

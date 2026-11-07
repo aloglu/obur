@@ -74,7 +74,7 @@
 	<a href={resolve('/(app)/more')} class="flex items-center gap-1 self-start font-bold text-accent">
 		<ChevronLeft size={20} aria-hidden="true" />{m.nav_more()}
 	</a>
-	<h1 class="text-[24px] font-[750]">{m.more_appearance()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.more_appearance()}</h1>
 	<Card>
 		<Chips
 			label={m.more_mode()}
@@ -95,7 +95,7 @@
 					role="radio"
 					aria-checked={palette === p.id}
 					onclick={() => pick(p.id)}
-					class="flex min-w-0 flex-col items-center gap-1.5 text-[13px] font-semibold"
+					class="flex min-w-0 flex-col items-center gap-1.5 text-[0.8125rem] font-semibold"
 				>
 					<span
 						class={[
@@ -123,7 +123,7 @@
 					role="radio"
 					aria-checked={appIcon === icon.id}
 					onclick={() => chooseIcon(icon.id)}
-					class="flex min-w-0 flex-col items-center gap-1.5 text-center text-[13px] leading-tight font-semibold"
+					class="flex min-w-0 flex-col items-center gap-1.5 text-center text-[0.8125rem] leading-tight font-semibold"
 				>
 					<img
 						src={appIconFile(icon.id, 'icon-180.png')}
@@ -140,6 +140,6 @@
 				</button>
 			{/each}
 		</div>
-		<p class="text-[13px] text-muted">{m.more_app_icon_hint()}</p>
+		<p class="text-[0.8125rem] text-muted">{m.more_app_icon_hint()}</p>
 	</Card>
 </main>

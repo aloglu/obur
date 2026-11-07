@@ -93,22 +93,25 @@
 	aria-labelledby="water-title"
 >
 	<div class="flex h-6 items-center justify-between gap-2">
-		<h2 id="water-title" class="text-[15px] font-bold">{m.water_title()}</h2>
+		<h2 id="water-title" class="text-[0.9375rem] font-bold">{m.water_title()}</h2>
 		{#if entries.length > 0}
 			<button
 				type="button"
 				onclick={() => (editing = true)}
 				aria-label={m.water_edit_label()}
-				class="-mr-1.5 min-h-11 px-1.5 text-[14px] font-[650] text-accent">{m.water_edit()}</button
+				class="-mr-1.5 min-h-11 px-1.5 text-[0.875rem] font-[650] text-accent"
+				>{m.water_edit()}</button
 			>
 		{/if}
 	</div>
 	<div class="mt-2.5 flex flex-col gap-[3px]">
-		<p class="font-display text-[26px] leading-[1.1] font-[750] tracking-[-0.02em] tabular-nums">
+		<p
+			class="font-display text-[1.625rem] leading-[1.1] font-[750] tracking-[-0.02em] tabular-nums"
+		>
 			<Roll value={formatDecimal(totalMl, ',', 0)} />
-			<small class="font-sans text-[13px] font-semibold tracking-normal text-muted">ml</small>
+			<small class="font-sans text-[0.8125rem] font-semibold tracking-normal text-muted">ml</small>
 		</p>
-		<p class="text-[13px] leading-[1.3] text-muted">
+		<p class="text-[0.8125rem] leading-[1.3] text-muted">
 			{#if pendingMl}
 				<span class="font-semibold text-warn"
 					>{m.offline_water_pending({ ml: String(pendingMl) })}</span
@@ -127,7 +130,7 @@
 				disabled={busy}
 				onclick={() => add(ml)}
 				aria-label={m.water_add_label({ ml: String(ml) })}
-				class="min-h-12 rounded-input bg-surface2 text-[15px] font-bold whitespace-nowrap transition-transform active:scale-[0.97] disabled:opacity-50"
+				class="min-h-12 rounded-input bg-surface2 text-[0.9375rem] font-bold whitespace-nowrap transition-transform active:scale-[0.97] disabled:opacity-50"
 				>+{ml}</button
 			>
 		{/each}
@@ -155,13 +158,13 @@
 						onkeydown={(e) => {
 							if (e.key === 'Escape') inlineField.open = null;
 						}}
-						class="w-0 min-w-0 flex-1 bg-transparent text-[16px] font-semibold tabular-nums outline-none placeholder:font-medium placeholder:text-muted"
+						class="w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold tabular-nums outline-none placeholder:font-medium placeholder:text-muted"
 					/>
 					<button
 						type="button"
 						onclick={() => (unit = unit === 'ml' ? 'l' : 'ml')}
 						aria-label={unit === 'ml' ? m.water_unit_ml() : m.water_unit_l()}
-						class="h-10 shrink-0 px-1 text-[14px] font-[650] text-muted">{unit}</button
+						class="h-10 shrink-0 px-1 text-[0.875rem] font-[650] text-muted">{unit}</button
 					>
 					<button
 						type="submit"
@@ -172,7 +175,7 @@
 					>
 				</div>
 				{#if amountError}
-					<p id="water-amount-error" class="mt-1 px-1 text-[13px] font-semibold text-bad">
+					<p id="water-amount-error" class="mt-1 px-1 text-[0.8125rem] font-semibold text-bad">
 						{amountError}
 					</p>
 				{/if}
@@ -182,7 +185,7 @@
 				type="button"
 				disabled={busy}
 				onclick={() => (inlineField.open = 'water')}
-				class="min-h-12 rounded-input bg-surface2 text-[15px] font-bold transition-transform active:scale-[0.97] disabled:opacity-50"
+				class="min-h-12 rounded-input bg-surface2 text-[0.9375rem] font-bold transition-transform active:scale-[0.97] disabled:opacity-50"
 				>{m.water_other()}</button
 			>
 		{/if}

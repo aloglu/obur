@@ -162,7 +162,7 @@
 		: undefined}
 	direct={start?.archived ? { label: m.food_restore(), run: () => setArchived(false) } : undefined}
 />
-{#if start?.archived}<p class="text-[14px] text-muted">{m.food_archived()}</p>{/if}
+{#if start?.archived}<p class="text-[0.875rem] text-muted">{m.food_archived()}</p>{/if}
 
 <form class="flex flex-col gap-3" onsubmit={save} novalidate>
 	<section class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
@@ -175,13 +175,13 @@
 		<div class="flex items-center gap-3">
 			<FoodIcon {icon} name={name || '-'} />
 			<span class="flex min-w-0 flex-1 flex-col">
-				<span class="text-[13px] font-[650] text-muted">{m.icon_label()}</span>
-				<span class="text-[14px]">{icon ? m.icon_chosen() : m.icon_suggested()}</span>
+				<span class="text-[0.8125rem] font-[650] text-muted">{m.icon_label()}</span>
+				<span class="text-[0.875rem]">{icon ? m.icon_chosen() : m.icon_suggested()}</span>
 			</span>
 			<button
 				type="button"
 				onclick={() => (choosingIcon = true)}
-				class="min-h-11 rounded-input px-3 text-[15px] font-semibold text-accent"
+				class="min-h-11 rounded-input px-3 text-[0.9375rem] font-semibold text-accent"
 				>{m.icon_change()}</button
 			>
 		</div>
@@ -210,7 +210,7 @@
 				aria-invalid={showErrors && cookedYieldG === undefined}
 			/>
 		</div>
-		<p class="text-[13px] text-muted">{m.recipe_hint()}</p>
+		<p class="text-[0.8125rem] text-muted">{m.recipe_hint()}</p>
 		{#if showErrors && numbersBad}<Notice>{m.recipe_invalid()}</Notice>{/if}
 	</section>
 
@@ -230,8 +230,8 @@
 			aria-labelledby="per-serving"
 		>
 			<div class="flex items-baseline justify-between gap-3">
-				<h2 id="per-serving" class="text-[19px] font-bold">{m.recipe_per_serving()}</h2>
-				<span class="text-[14px] whitespace-nowrap text-muted tabular-nums"
+				<h2 id="per-serving" class="text-[1.1875rem] font-bold">{m.recipe_per_serving()}</h2>
+				<span class="text-[0.875rem] whitespace-nowrap text-muted tabular-nums"
 					>{servings && cookedYieldG
 						? m.recipe_serving_weight({ g: formatDecimal(cookedYieldG / servings, ',', 0) })
 						: m.recipe_no_cooked_weight()}</span
@@ -252,7 +252,7 @@
 	<div class="grid grid-cols-2 gap-2">
 		<a
 			href={resolve('/(app)/recipes')}
-			class="inline-flex min-h-[52px] items-center justify-center rounded-button border border-line bg-surface text-[17px] font-[750]"
+			class="inline-flex min-h-[52px] items-center justify-center rounded-button border border-line bg-surface text-[1.0625rem] font-[750]"
 			>{m.common_cancel()}</a
 		>
 		<Button type="submit" disabled={busy || !dirty}

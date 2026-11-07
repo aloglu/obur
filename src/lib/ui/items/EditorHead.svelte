@@ -26,7 +26,7 @@
 
 <BackLink href={backHref} label={backLabel} />
 <div class="flex items-center justify-between gap-2">
-	<h1 class="min-w-0 text-[24px] font-[750]">{title}</h1>
+	<h1 class="min-w-0 text-[1.5rem] font-[750]">{title}</h1>
 	{#if items.length > 0}
 		<div class="-mr-2 shrink-0"><ActionMenu label={m.editor_actions()} {items} /></div>
 	{/if}
@@ -38,7 +38,7 @@
 			<div
 				class="mx-3.5 mt-3 mb-2 flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
 			>
-				<p class="text-[15px]">{remove.confirm}</p>
+				<p class="text-[0.9375rem]">{remove.confirm}</p>
 				<div class="grid grid-cols-2 gap-2">
 					<Button variant="ghost" onclick={() => (confirming = false)}>{m.editor_keep()}</Button>
 					<Button variant="danger" disabled={busy} onclick={remove.run}>{remove.yes}</Button>

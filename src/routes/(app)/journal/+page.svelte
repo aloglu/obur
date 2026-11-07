@@ -33,7 +33,7 @@
 <svelte:head><title>{m.journal_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[760px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<h1 class="text-[24px] font-[750]">{m.journal_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.journal_title()}</h1>
 	<CalendarMonth
 		month={data.month}
 		days={data.calendar}

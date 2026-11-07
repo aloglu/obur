@@ -143,7 +143,7 @@
 				detail={basisLine}
 			/>
 		{:else}
-			<h2 class="text-[21px] font-[750]">{m.amount_title()}</h2>
+			<h2 class="text-[1.3125rem] font-[750]">{m.amount_title()}</h2>
 		{/if}
 	{/snippet}
 	{#if food}
@@ -158,7 +158,7 @@
 					onunit={(key) =>
 						(amountText = formatDecimal(options.find((o) => o.key === key)!.defaultAmount, ',', 2))}
 				/>
-				{#if amountText.trim() && amount === undefined}<p class="text-[13px] text-bad">
+				{#if amountText.trim() && amount === undefined}<p class="text-[0.8125rem] text-bad">
 						{m.amount_invalid()}
 					</p>{/if}
 			</div>
@@ -176,6 +176,6 @@
 			>
 		</form>
 	{:else}
-		<p class="text-[14px] text-muted">{m.common_working()}</p>
+		<p class="text-[0.875rem] text-muted">{m.common_working()}</p>
 	{/if}
 </Sheet>

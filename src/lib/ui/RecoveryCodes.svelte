@@ -29,7 +29,7 @@
 <Notice title={m.codes_warning_title()}>{m.codes_body()}</Notice>
 <div class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
 	<ol
-		class="grid grid-cols-1 gap-2 font-mono text-[15px] tabular-nums min-[360px]:grid-cols-2"
+		class="grid grid-cols-1 gap-2 font-mono text-[0.9375rem] tabular-nums min-[360px]:grid-cols-2"
 		aria-label={m.codes_title()}
 	>
 		{#each codes as code (code)}<li>{code}</li>{/each}
@@ -44,7 +44,7 @@
 	</div>
 </div>
 <label
-	class="flex min-h-14 items-center gap-3 rounded-input bg-surface px-4 text-[15px] font-semibold shadow-card"
+	class="flex min-h-14 items-center gap-3 rounded-input bg-surface px-4 text-[0.9375rem] font-semibold shadow-card"
 >
 	<input type="checkbox" bind:checked={saved} />
 	{m.codes_saved()}

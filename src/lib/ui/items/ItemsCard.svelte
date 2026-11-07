@@ -79,13 +79,13 @@
 	aria-labelledby="items-title"
 >
 	<div class="flex min-h-11 items-center justify-between gap-3">
-		<h2 id="items-title" class="text-[19px] font-bold">{title}</h2>
-		<span class="text-[15px] font-bold tabular-nums"
+		<h2 id="items-title" class="text-[1.1875rem] font-bold">{title}</h2>
+		<span class="text-[0.9375rem] font-bold tabular-nums"
 			><Roll value={`${kcal(total)}${partial ? '+' : ''}`} /></span
 		>
 	</div>
 	{#if items.length === 0}
-		<p class={['pb-2 text-[14px]', showErrors ? 'font-semibold text-bad' : 'text-muted']}>
+		<p class={['pb-2 text-[0.875rem]', showErrors ? 'font-semibold text-bad' : 'text-muted']}>
 			{emptyText}
 		</p>
 	{/if}
@@ -109,8 +109,8 @@
 						brand={d.snapshot?.brand}
 					/>
 					<span class="min-w-0">
-						<span class="line-clamp-2 text-[15px] font-semibold break-words">{d.name}</span>
-						<span class={['block text-[13px]', n ? 'text-muted' : 'font-semibold text-bad']}
+						<span class="line-clamp-2 text-[0.9375rem] font-semibold break-words">{d.name}</span>
+						<span class={['block text-[0.8125rem]', n ? 'text-muted' : 'font-semibold text-bad']}
 							>{!n
 								? m.meal_editor_item_invalid()
 								: d.kind === 'quick'
@@ -118,7 +118,7 @@
 									: quantityOf(d, measures)}</span
 						>
 					</span>
-					<span class="text-[15px] font-semibold tabular-nums"
+					<span class="text-[0.9375rem] font-semibold tabular-nums"
 						><Roll value={n?.energy_kcal ? kcal(n.energy_kcal.value) : '?'} /></span
 					>
 				</button>
@@ -132,7 +132,9 @@
 									bind:unit={d.optionKey}
 									units={optionsFor(d, measures).map((o) => ({ value: o.key, label: o.label }))}
 								/>
-								<dl class="flex flex-wrap gap-x-3.5 gap-y-1 text-[13px] text-muted tabular-nums">
+								<dl
+									class="flex flex-wrap gap-x-3.5 gap-y-1 text-[0.8125rem] text-muted tabular-nums"
+								>
 									{#each macros(asValues(n)) as macro (macro.label)}
 										<div class="flex items-center gap-1.5">
 											<span class="size-2 rounded-full" style:background={macro.color}></span>
@@ -145,7 +147,7 @@
 							<button
 								type="button"
 								onclick={() => remove(d.key)}
-								class="min-h-8 self-start text-[14px] font-bold text-bad">{removeLabel}</button
+								class="min-h-8 self-start text-[0.875rem] font-bold text-bad">{removeLabel}</button
 							>
 						</div>
 					</div>

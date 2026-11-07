@@ -47,9 +47,9 @@
 		onclick={toggle}
 		class="flex min-h-[60px] w-full items-center justify-between gap-3 py-1.5 text-left"
 	>
-		<span class="min-w-0 text-[15px] font-semibold">
+		<span class="min-w-0 text-[0.9375rem] font-semibold">
 			{label}
-			{#if detail}<small class="block text-[13px] font-normal text-muted">{detail}</small>{/if}
+			{#if detail}<small class="block text-[0.8125rem] font-normal text-muted">{detail}</small>{/if}
 		</span>
 		{@render track()}
 	</button>

@@ -78,18 +78,18 @@
 				></i>
 			{/each}
 		{/if}
-		<p class="text-[13px] font-bold tracking-[0.06em] text-muted uppercase">
+		<p class="text-[0.8125rem] font-bold tracking-[0.06em] text-muted uppercase">
 			{achievementEyebrow(a)}
 		</p>
 		{#if a.kind === 'first'}
-			<p class="font-display text-[34px] leading-tight font-extrabold">{achievementTitle(a)}</p>
+			<p class="font-display text-[2.125rem] leading-tight font-extrabold">{achievementTitle(a)}</p>
 		{:else}
 			<p
-				class="font-display text-[64px] leading-none font-extrabold tracking-[-0.03em] tabular-nums"
+				class="font-display text-[4rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums"
 			>
 				{a.kind === 'goal'
 					? String(a.level).replace('.', ',')
-					: shown}{#if a.kind !== 'streak'}<small class="font-sans text-[28px] text-muted">
+					: shown}{#if a.kind !== 'streak'}<small class="font-sans text-[1.75rem] text-muted">
 						kg</small
 					>{/if}
 			</p>
@@ -99,22 +99,22 @@
 			<span class="obj"><Picture hex={achievementPicture(a)} size={120} /></span>
 		</div>
 		{#if a.kind === 'weight'}
-			<p class="says font-display text-[24px] leading-tight font-extrabold">
+			<p class="says font-display text-[1.5rem] leading-tight font-extrabold">
 				{achievementDetail(a)}.
 			</p>
 		{/if}
-		<p class="sub max-w-[28ch] text-[15px] text-muted">{achievementLine(a)}</p>
+		<p class="sub max-w-[28ch] text-[0.9375rem] text-muted">{achievementLine(a)}</p>
 		<button
 			bind:this={done}
 			type="button"
 			onclick={closeCelebration}
-			class="done mt-2.5 min-h-[52px] min-w-[200px] rounded-tile bg-fill px-6 text-[17px] font-[750] text-on-accent"
+			class="done mt-2.5 min-h-[52px] min-w-[200px] rounded-tile bg-fill px-6 text-[1.0625rem] font-[750] text-on-accent"
 			>{m.achievement_done()}</button
 		>
 		<a
 			href={resolve('/(app)/achievements')}
 			onclick={closeCelebration}
-			class="done grid min-h-11 place-items-center px-3 text-[15px] font-semibold text-accent"
+			class="done grid min-h-11 place-items-center px-3 text-[0.9375rem] font-semibold text-accent"
 			>{m.achievement_see_all()}</a
 		>
 	</div>

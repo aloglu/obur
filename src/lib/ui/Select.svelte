@@ -44,7 +44,7 @@
 			{disabled}
 			{onchange}
 			class={[
-				'flex min-h-12 min-w-0 cursor-pointer items-center justify-between gap-2 rounded-input bg-surface2 py-2 pr-3 pl-3.5 text-left text-[16px] font-semibold text-text disabled:opacity-50',
+				'flex min-h-12 min-w-0 cursor-pointer items-center justify-between gap-2 rounded-input bg-surface2 py-2 pr-3 pl-3.5 text-left text-[1rem] font-semibold text-text disabled:opacity-50',
 				'focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-accent',
 				wide && 'w-full'
 			]
@@ -61,7 +61,7 @@
 
 {#if label}
 	<div class={['flex flex-col gap-1.5', wide && 'w-full', extra as string]}>
-		<label for={fieldId} class="text-[13px] font-[650] text-muted">{label}</label>
+		<label for={fieldId} class="text-[0.8125rem] font-[650] text-muted">{label}</label>
 		{@render field()}
 	</div>
 {:else}

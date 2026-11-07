@@ -32,8 +32,8 @@
 					><Check size={16} strokeWidth={3} aria-hidden="true" /></span
 				>
 				<span class="min-w-0 flex-1">
-					<span class="block text-[15px] font-bold">{toast.current.message}</span>
-					{#if toast.current.detail}<span class="block text-[13px] break-words opacity-75"
+					<span class="block text-[0.9375rem] font-bold">{toast.current.message}</span>
+					{#if toast.current.detail}<span class="block text-[0.8125rem] break-words opacity-75"
 							>{toast.current.detail}</span
 						>{/if}
 				</span>
@@ -41,7 +41,7 @@
 					<button
 						type="button"
 						onclick={undo}
-						class="min-h-11 shrink-0 rounded-small px-3 text-[15px] font-bold underline"
+						class="min-h-11 shrink-0 rounded-small px-3 text-[0.9375rem] font-bold underline"
 						>{m.toast_undo()}</button
 					>
 				{/if}

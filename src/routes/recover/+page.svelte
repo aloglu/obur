@@ -106,10 +106,10 @@
 		</form>
 		<a
 			href={resolve('/login')}
-			class="inline-flex min-h-11 items-center justify-center self-center text-[15px] font-[650] text-accent"
+			class="inline-flex min-h-11 items-center justify-center self-center text-[0.9375rem] font-[650] text-accent"
 			>{m.recover_back()}</a
 		>
-		<p class="mt-auto pt-6 text-center text-[13px] text-balance text-muted">
+		<p class="mt-auto pt-6 text-center text-[0.8125rem] text-balance text-muted">
 			{m.recover_no_codes()}
 		</p>
 	{:else if stage === 'enrol'}

@@ -50,8 +50,8 @@
 
 {#snippet words(e: JournalEvent)}
 	<span class="min-w-0">
-		<b class="block text-[14px] font-semibold">{title(e)}</b>
-		<span class="block text-[13px] text-muted">{detail(e)}</span>
+		<b class="block text-[0.875rem] font-semibold">{title(e)}</b>
+		<span class="block text-[0.8125rem] text-muted">{detail(e)}</span>
 	</span>
 {/snippet}
 
@@ -59,23 +59,23 @@
 	class="rounded-card bg-surface px-[18px] py-2 shadow-card"
 	aria-labelledby="highlights-title"
 >
-	<h2 id="highlights-title" class="pt-2.5 text-[19px] font-bold">
+	<h2 id="highlights-title" class="pt-2.5 text-[1.1875rem] font-bold">
 		{m.journal_highlights({ month: monthName })}
 	</h2>
 	{#each weeks as w (w.from)}
 		<article class="py-[18px] not-last:border-b not-last:border-line" aria-label={span(w)}>
 			<div class="flex items-baseline justify-between gap-3">
-				<h3 class="text-[15px] font-bold">{span(w)}</h3>
+				<h3 class="text-[0.9375rem] font-bold">{span(w)}</h3>
 				{#if w.weightChange !== null}
 					<span
 						class={[
-							'text-[14px] font-[650] whitespace-nowrap tabular-nums',
+							'text-[0.875rem] font-[650] whitespace-nowrap tabular-nums',
 							w.weightChange < 0 ? 'text-good' : 'text-muted'
 						]}>{signed(w.weightChange)} kg</span
 					>
 				{/if}
 			</div>
-			<p class="mt-[3px] text-[13.5px] text-muted tabular-nums">
+			<p class="mt-[3px] text-[0.84375rem] text-muted tabular-nums">
 				{#if w.averageKcal !== null}
 					{kcal(w.averageKcal)}
 					{m.journal_kcal_a_day()}{#if w.averageDiff !== null}
@@ -113,7 +113,7 @@
 			{/if}
 		</article>
 	{:else}
-		<p class="py-3.5 text-[15px] text-muted">
+		<p class="py-3.5 text-[0.9375rem] text-muted">
 			{current ? m.journal_empty_current() : m.journal_empty()}
 		</p>
 	{/each}

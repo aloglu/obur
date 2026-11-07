@@ -159,14 +159,14 @@
 		r.basis === 'serving' ? (r.servingLabel ?? '') : r.basis === '100g' ? '100 g' : '100 ml';
 
 	const tile =
-		'flex min-h-28 flex-col items-center justify-center gap-2.5 rounded-tile bg-surface px-1.5 text-center text-[14.5px] leading-tight font-bold shadow-card transition-transform active:scale-[0.97]';
+		'flex min-h-28 flex-col items-center justify-center gap-2.5 rounded-tile bg-surface px-1.5 text-center text-[0.90625rem] leading-tight font-bold shadow-card transition-transform active:scale-[0.97]';
 </script>
 
 {#snippet mealList(items: SavedMealSummary[])}
 	<section aria-labelledby="saved-heading">
 		<h2
 			id="saved-heading"
-			class="px-2 text-[12px] font-bold tracking-[0.06em] text-muted uppercase"
+			class="px-2 text-[0.75rem] font-bold tracking-[0.06em] text-muted uppercase"
 		>
 			{m.saved_title()}
 		</h2>
@@ -180,8 +180,8 @@
 					>
 						<Bookmark size={18} class="shrink-0 text-accent" aria-hidden="true" />
 						<span class="min-w-0 flex-1">
-							<span class="line-clamp-2 text-[15px] font-semibold break-words">{s.name}</span>
-							<span class="block text-[13px] text-muted">{mealSummary(s)}</span>
+							<span class="line-clamp-2 text-[0.9375rem] font-semibold break-words">{s.name}</span>
+							<span class="block text-[0.8125rem] text-muted">{mealSummary(s)}</span>
 						</span>
 					</button>
 				</li>
@@ -201,15 +201,15 @@
 				>
 					<FoodIcon icon={r.icon} name={r.name} brand={r.brand} />
 					<span class="min-w-0">
-						<span class="line-clamp-2 text-[15px] leading-[1.3] font-semibold break-words"
+						<span class="line-clamp-2 text-[0.9375rem] leading-[1.3] font-semibold break-words"
 							>{r.brand ? `${r.brand} ` : ''}{r.name}</span
 						>
-						<span class="block text-[13px] text-muted"
+						<span class="block text-[0.8125rem] text-muted"
 							>{r.kcal === null ? m.foods_kcal_unknown() : per(r)}</span
 						>
 					</span>
 					{#if r.kcal !== null}
-						<span class="min-w-11 text-right text-[15px] font-[650] tabular-nums"
+						<span class="min-w-11 text-right text-[0.9375rem] font-[650] tabular-nums"
 							>{kcal(r.kcal)}</span
 						>
 					{/if}
@@ -236,14 +236,14 @@
 					focused = true;
 					void loadRecent();
 				}}
-				class="min-w-0 flex-1 bg-transparent text-[16px] font-medium text-text outline-none placeholder:font-normal placeholder:text-muted"
+				class="min-w-0 flex-1 bg-transparent text-[1rem] font-medium text-text outline-none placeholder:font-normal placeholder:text-muted"
 			/>
 		</label>
 		{#if focused || typing}
 			<button
 				type="button"
 				onclick={cancel}
-				class="min-h-12 px-1 text-[14px] font-[650] text-accent">{m.log_cancel()}</button
+				class="min-h-12 px-1 text-[0.875rem] font-[650] text-accent">{m.log_cancel()}</button
 			>
 		{/if}
 	</div>
@@ -252,7 +252,7 @@
 	<div aria-live="polite" class="flex flex-col empty:hidden">
 		{#if preset}
 			<div
-				class="preset flex h-10 items-center gap-1.5 self-start rounded-small bg-soft pr-1 pl-3.5 text-[14px] font-semibold text-accent"
+				class="preset flex h-10 items-center gap-1.5 self-start rounded-small bg-soft pr-1 pl-3.5 text-[0.875rem] font-semibold text-accent"
 			>
 				{m.log_adding_to({ meal: mealName(preset), day: dayTitle(date, today) })}
 				<button
@@ -278,14 +278,14 @@
 		>
 			{#if searchFailed}
 				<div class="flex flex-col items-start gap-2 py-2">
-					<p class="text-[15px] text-muted">{m.log_search_offline()}</p>
+					<p class="text-[0.9375rem] text-muted">{m.log_search_offline()}</p>
 					<button type="button" onclick={onquick} class="font-semibold text-accent underline"
 						>{m.log_quick_add()}</button
 					>
 				</div>
 			{:else if searchedFor && results.length === 0}
 				<div class="flex flex-col items-start gap-2 py-2">
-					<p class="text-[15px] text-muted">{m.log_no_results({ query: searchedFor })}</p>
+					<p class="text-[0.9375rem] text-muted">{m.log_no_results({ query: searchedFor })}</p>
 					<a href={resolve('/(app)/foods/new')} class="font-semibold text-accent underline"
 						>{m.log_create_food()}</a
 					>
@@ -352,11 +352,11 @@
 			class="rounded-card bg-surface px-[18px] py-2 shadow-card"
 			aria-labelledby="recent-heading"
 		>
-			<h2 id="recent-heading" class="pt-2 text-[13px] font-[650] text-muted">
+			<h2 id="recent-heading" class="pt-2 text-[0.8125rem] font-[650] text-muted">
 				{m.log_recent()}
 			</h2>
 			{#if recent && recent.length === 0}
-				<p class="py-2 text-[14px] text-muted">{m.log_no_recent()}</p>
+				<p class="py-2 text-[0.875rem] text-muted">{m.log_no_recent()}</p>
 			{:else if recent}
 				{@render foodList(recent)}
 			{/if}

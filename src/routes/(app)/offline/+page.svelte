@@ -9,9 +9,9 @@
 <svelte:head><title>{m.offline_page_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<h1 class="text-[24px] font-[750]">{m.offline_page_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.offline_page_title()}</h1>
 	<Card>
-		<p class="text-[15px]">{m.offline_page_body()}</p>
+		<p class="text-[0.9375rem]">{m.offline_page_body()}</p>
 		<a href={resolve('/(app)')} class="font-semibold text-accent underline"
 			>{m.offline_page_link()}</a
 		>

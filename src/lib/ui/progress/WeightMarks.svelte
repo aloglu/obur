@@ -118,7 +118,7 @@
 		const from = selected ?? points.length - 1;
 		onselect(Math.max(0, Math.min(points.length - 1, from + step)));
 	}
-	const axis = 'fill-muted text-[10.5px] tabular-nums desk:text-[13.5px]';
+	const axis = 'fill-muted text-[0.65625rem] tabular-nums desk:text-[0.84375rem]';
 </script>
 
 <clipPath id="{uid}-reveal">
@@ -148,14 +148,15 @@
 		y={y(goalKg!)}
 		dy=".35em"
 		text-anchor="end"
-		class="fill-good text-[10.5px] font-semibold desk:text-[13.5px]">{m.history_goal()}</text
+		class="fill-good text-[0.65625rem] font-semibold desk:text-[0.84375rem]"
+		>{m.history_goal()}</text
 	>
 {:else if goalKg !== null && goalKg < low && end}
 	<text
 		x={ctx.width}
 		y="2"
 		text-anchor="end"
-		class="fill-good text-[10.5px] font-semibold desk:text-[13.5px]"
+		class="fill-good text-[0.65625rem] font-semibold desk:text-[0.84375rem]"
 		>{m.history_goal_below({
 			goal: formatDecimal(goalKg, ',', 1),
 			distance: (value(end) - goalKg).toFixed(1).replace('.', ',')

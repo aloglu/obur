@@ -92,7 +92,7 @@
 			type="button"
 			disabled={busy}
 			onclick={variant}
-			class="flex min-h-14 items-center justify-between gap-3 text-left text-[15px] font-semibold"
+			class="flex min-h-14 items-center justify-between gap-3 text-left text-[0.9375rem] font-semibold"
 		>
 			{m.food_variant()}
 			<ChevronRight size={20} aria-hidden="true" class="shrink-0 text-muted" />
@@ -102,7 +102,7 @@
 				type="button"
 				disabled={busy}
 				onclick={() => setArchived(!food.archived)}
-				class="flex min-h-14 items-center text-left text-[15px] font-semibold {food.archived
+				class="flex min-h-14 items-center text-left text-[0.9375rem] font-semibold {food.archived
 					? ''
 					: 'text-bad'}">{food.archived ? m.food_restore() : m.food_archive_row()}</button
 			>
@@ -112,23 +112,23 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<BackLink href={resolve('/(app)/foods')} label={m.foods_title()} />
-	<h1 class="text-[24px] font-[750] break-words">
+	<h1 class="text-[1.5rem] font-[750] break-words">
 		{#if editing}{m.food_edit_title()}{:else}{food.brand ? `${food.brand} ` : ''}{food.name}{/if}
 	</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if food.archived}<Notice tone="info">{m.food_archived()}</Notice>{/if}
-	{#if food.curatedDataset}<p class="text-[14px] text-muted">
+	{#if food.curatedDataset}<p class="text-[0.875rem] text-muted">
 			{m.food_source_usda({
 				dataset: food.curatedDataset === 'sr_legacy' ? 'SR Legacy' : 'Foundation Foods'
 			})}
 		</p>{/if}
-	{#if food.derivedFrom && food.mine}<p class="text-[14px] text-muted">
+	{#if food.derivedFrom && food.mine}<p class="text-[0.875rem] text-muted">
 			{m.food_from_variant()}
 		</p>{/if}
 
 	{#if food.origin === 'recipe' && food.mine}
 		<Card>
-			<p class="text-[14px] text-muted">{m.recipe_yours()}</p>
+			<p class="text-[0.875rem] text-muted">{m.recipe_yours()}</p>
 			<a
 				href={resolve('/(app)/recipes/[id]', { id: food.id })}
 				class="inline-flex min-h-11 items-center self-start rounded-button bg-fill px-4 font-[750] text-on-accent"
@@ -146,19 +146,19 @@
 			/>{/key}
 	{:else}
 		<Card>
-			<p class="text-[14px] text-muted">
+			<p class="text-[0.875rem] text-muted">
 				{food.origin === 'recipe' ? m.recipe_from_others() : m.food_read_only()}
 			</p>
 			<dl class="flex flex-col divide-y divide-line">
 				{#each food.nutrients as n (n.code)}
 					<div class="flex min-h-11 items-center justify-between gap-3">
-						<dt class="text-[15px]">{nutrientName[n.code]?.() ?? n.code}</dt>
-						<dd class="text-[15px] font-semibold tabular-nums">
+						<dt class="text-[0.9375rem]">{nutrientName[n.code]?.() ?? n.code}</dt>
+						<dd class="text-[0.9375rem] font-semibold tabular-nums">
 							{n.qualifier === 'less_than' ? '< ' : ''}{formatDecimal(n.value, ',', 2)}
-							{#if n.qualifier === 'derived'}<span class="text-[12px] font-normal text-muted"
+							{#if n.qualifier === 'derived'}<span class="text-[0.75rem] font-normal text-muted"
 									>({m.food_derived()})</span
 								>{/if}
-							{#if n.qualifier === 'estimate'}<span class="text-[12px] font-normal text-muted"
+							{#if n.qualifier === 'estimate'}<span class="text-[0.75rem] font-normal text-muted"
 									>({m.food_estimate()})</span
 								>{/if}
 						</dd>

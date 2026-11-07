@@ -23,7 +23,7 @@
 </script>
 
 <span
-	class="relative inline-flex h-9 items-center rounded-[10px] bg-surface2 px-3 text-[14px] font-[650] whitespace-nowrap tabular-nums focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent"
+	class="relative inline-flex h-9 items-center rounded-[10px] bg-surface2 px-3 text-[0.875rem] font-[650] whitespace-nowrap tabular-nums focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent"
 >
 	{shown}
 	<input
@@ -41,6 +41,6 @@
 		onchange={(e) => {
 			if (e.currentTarget.value) onchange(e.currentTarget.value.slice(0, 5));
 		}}
-		class="absolute inset-0 size-full cursor-pointer text-[16px] opacity-0"
+		class="absolute inset-0 size-full cursor-pointer text-[1rem] opacity-0"
 	/>
 </span>

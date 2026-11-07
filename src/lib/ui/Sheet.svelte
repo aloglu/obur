@@ -161,7 +161,7 @@
 
 {#snippet titleRow()}
 	<div class="flex items-center justify-between gap-3">
-		{#if head}{@render head()}{:else}<h2 class="min-w-0 text-[21px] font-[750] break-words">
+		{#if head}{@render head()}{:else}<h2 class="min-w-0 text-[1.3125rem] font-[750] break-words">
 				{title}
 			</h2>{/if}
 		<button

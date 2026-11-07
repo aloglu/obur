@@ -12,13 +12,13 @@
 </script>
 
 <div class="flex flex-col gap-1.5">
-	<label for={fieldId} class="text-[13px] font-[650] text-muted">{label}</label>
+	<label for={fieldId} class="text-[0.8125rem] font-[650] text-muted">{label}</label>
 	<input
 		id={fieldId}
 		bind:value
 		aria-describedby={hint ? `${fieldId}-hint` : undefined}
-		class="min-h-12 rounded-input border border-line bg-surface2 px-3.5 text-[16px] font-semibold text-text placeholder:text-muted focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-accent"
+		class="min-h-12 rounded-input border border-line bg-surface2 px-3.5 text-[1rem] font-semibold text-text placeholder:text-muted focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-accent"
 		{...rest}
 	/>
-	{#if hint}<p id="{fieldId}-hint" class="text-[13px] text-muted">{hint}</p>{/if}
+	{#if hint}<p id="{fieldId}-hint" class="text-[0.8125rem] text-muted">{hint}</p>{/if}
 </div>

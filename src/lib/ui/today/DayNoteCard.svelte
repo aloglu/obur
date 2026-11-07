@@ -129,14 +129,14 @@
 		class="grid min-h-[60px] w-full grid-cols-[minmax(0,1fr)_auto_24px] items-center gap-2.5 text-left"
 	>
 		<span class="min-w-0">
-			<b class="block text-[15px] font-[650]">{m.note_title()}</b>
+			<b class="block text-[0.9375rem] font-[650]">{m.note_title()}</b>
 			{#if !open}
-				<small class="block truncate text-[13px] text-muted"
+				<small class="block truncate text-[0.8125rem] text-muted"
 					>{hasText ? notePreview(text) : m.note_add()}</small
 				>
 			{/if}
 		</span>
-		<span class="text-[12.5px] whitespace-nowrap text-muted">
+		<span class="text-[0.78125rem] whitespace-nowrap text-muted">
 			{#if status === 'saved' || status === 'device'}{m.note_saved_short()}{/if}
 		</span>
 		<ChevronDown
@@ -166,7 +166,7 @@
 							editing = false;
 							void save();
 						}}
-						class="min-h-[120px] resize-none rounded-input bg-surface2 px-3.5 py-3 text-[16px] leading-normal font-medium placeholder:text-muted focus:outline-2 focus:-outline-offset-2 focus:outline-accent"
+						class="min-h-[120px] resize-none rounded-input bg-surface2 px-3.5 py-3 text-[1rem] leading-normal font-medium placeholder:text-muted focus:outline-2 focus:-outline-offset-2 focus:outline-accent"
 					></textarea>
 				{:else}
 					<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
@@ -181,22 +181,24 @@
 								}}
 							/>
 						{:else}
-							<p class="text-[15px] text-muted">{m.note_tap()}</p>
+							<p class="text-[0.9375rem] text-muted">{m.note_tap()}</p>
 						{/if}
 					</div>
 				{/if}
-				<div class="flex min-h-9 items-center justify-between gap-3 text-[12.5px] text-muted">
+				<div class="flex min-h-9 items-center justify-between gap-3 text-[0.78125rem] text-muted">
 					<span>{foot}</span>
 					{#if editing}
 						<button
 							type="button"
 							onmousedown={(e) => e.preventDefault()}
 							onclick={() => field?.blur()}
-							class="min-h-9 text-[14px] font-[650] text-accent">{m.note_done()}</button
+							class="min-h-9 text-[0.875rem] font-[650] text-accent">{m.note_done()}</button
 						>
 					{:else}
-						<button type="button" onclick={edit} class="min-h-9 text-[14px] font-[650] text-accent"
-							>{m.note_edit()}</button
+						<button
+							type="button"
+							onclick={edit}
+							class="min-h-9 text-[0.875rem] font-[650] text-accent">{m.note_edit()}</button
 						>
 					{/if}
 				</div>

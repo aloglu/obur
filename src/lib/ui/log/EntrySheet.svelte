@@ -429,14 +429,14 @@
 	}
 	const rowMs = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
 	const action =
-		'flex min-h-[52px] items-center justify-between gap-3 rounded-small bg-surface2 py-1.5 pr-3 pl-3.5 text-left text-[15px] font-[650]';
+		'flex min-h-[52px] items-center justify-between gap-3 rounded-small bg-surface2 py-1.5 pr-3 pl-3.5 text-left text-[0.9375rem] font-[650]';
 </script>
 
 <svelte:window ononline={retry} />
 
 <Sheet title={heard ? m.entry_heard_title() : m.entry_title()} {onclose}>
 	<label class="flex flex-col gap-1.5">
-		<span class={heard ? 'text-[13px] font-[650] text-muted' : 'sr-only'}
+		<span class={heard ? 'text-[0.8125rem] font-[650] text-muted' : 'sr-only'}
 			>{heard ? m.entry_heard() : m.entry_typed()}</span
 		>
 		<textarea
@@ -448,7 +448,7 @@
 			rows="2"
 			autocomplete="off"
 			placeholder={m.entry_placeholder()}
-			class="resize-none rounded-input bg-surface2 px-3.5 py-3 text-[16px] font-medium text-text placeholder:font-normal placeholder:text-muted focus-visible:outline-2 focus-visible:outline-accent"
+			class="resize-none rounded-input bg-surface2 px-3.5 py-3 text-[1rem] font-medium text-text placeholder:font-normal placeholder:text-muted focus-visible:outline-2 focus-visible:outline-accent"
 		></textarea>
 	</label>
 	{#if unreachable}
@@ -485,7 +485,7 @@
 							>
 								{#if notFound(card) || unsure(card)}
 									<span
-										class="grid size-10 place-items-center rounded-small bg-warn-soft text-[18px] font-extrabold text-warn"
+										class="grid size-10 place-items-center rounded-small bg-warn-soft text-[1.125rem] font-extrabold text-warn"
 										aria-hidden="true">?</span
 									>
 								{:else}
@@ -500,12 +500,12 @@
 									/>
 								{/if}
 								<span class="min-w-0">
-									<span class="block truncate text-[15px] leading-[1.3] font-semibold"
+									<span class="block truncate text-[0.9375rem] leading-[1.3] font-semibold"
 										>{card.kind === 'food' && unsure(card) ? `${card.text}?` : title(card)}</span
 									>
-									<span class="block truncate text-[13px] text-muted">{rowDetail(card)}</span>
+									<span class="block truncate text-[0.8125rem] text-muted">{rowDetail(card)}</span>
 								</span>
-								<span class="min-w-11 text-right text-[15px] font-[650] tabular-nums"
+								<span class="min-w-11 text-right text-[0.9375rem] font-[650] tabular-nums"
 									>{kcalOf(card)}</span
 								>
 							</button>
@@ -527,10 +527,10 @@
 										class="flex min-h-[52px] items-center justify-between gap-3 rounded-small bg-surface2 py-1.5 pr-3 pl-3.5 text-left"
 									>
 										<span class="min-w-0">
-											<b class="block truncate text-[15px] font-[650]"
+											<b class="block truncate text-[0.9375rem] font-[650]"
 												>{c.brand ? `${c.brand} ` : ''}{c.name}</b
 											>
-											<small class="block text-[13px] text-muted"
+											<small class="block text-[0.8125rem] text-muted"
 												>{per(c)}{c.kcal === null ? '' : ` · ${kcal(c.kcal)} kcal`}</small
 											>
 										</span>
@@ -543,10 +543,11 @@
 									class="flex min-h-[52px] items-center justify-between gap-3 rounded-small bg-soft py-1.5 pr-3 pl-3.5 text-left"
 								>
 									<span class="min-w-0">
-										<b class="block text-[15px] font-[650] text-accent"
+										<b class="block text-[0.9375rem] font-[650] text-accent"
 											>{m.entry_something_else()}</b
 										>
-										<small class="block text-[13px] text-muted">{m.entry_search_foods()}</small>
+										<small class="block text-[0.8125rem] text-muted">{m.entry_search_foods()}</small
+										>
 									</span>
 									<Search size={18} aria-hidden="true" class="shrink-0 text-accent" />
 								</button>
@@ -574,14 +575,14 @@
 										type="search"
 										aria-label={m.entry_search_foods()}
 										placeholder={m.log_search_placeholder()}
-										class="min-h-12 rounded-input bg-surface2 px-3.5 text-[16px] font-medium outline-none focus:outline-2 focus:outline-accent"
+										class="min-h-12 rounded-input bg-surface2 px-3.5 text-[1rem] font-medium outline-none focus:outline-2 focus:outline-accent"
 									/>
 								</div>
 								{#each searchResults as r (r.id)}
 									<button
 										type="button"
 										onclick={() => choose(card, r.id)}
-										class="min-h-11 truncate rounded-small px-2 text-left text-[15px] font-semibold hover:bg-surface2"
+										class="min-h-11 truncate rounded-small px-2 text-left text-[0.9375rem] font-semibold hover:bg-surface2"
 										>{r.brand ? `${r.brand} ` : ''}{r.name}</button
 									>
 								{/each}
@@ -613,10 +614,10 @@
 											bind:unit={card.optionKey}
 											units={options.map((o) => ({ value: o.key, label: o.label }))}
 										/>
-										{#if !card.amountText.trim()}<p class="text-[13px] text-warn">
+										{#if !card.amountText.trim()}<p class="text-[0.8125rem] text-warn">
 												{m.entry_how_much()}
 											</p>{/if}
-										{#if !card.optionKey}<p class="text-[13px] text-warn">
+										{#if !card.optionKey}<p class="text-[0.8125rem] text-warn">
 												{card.said ? m.entry_unit_choose({ said: card.said }) : m.entry_unit_pick()}
 											</p>{/if}
 										<MacroPreview nutrients={foodNutrients(card)} />
@@ -640,7 +641,7 @@
 											bind:value={card.mlText}
 											inputmode="decimal"
 										/>
-										{#if !card.mlText.trim()}<p class="text-[13px] text-warn">
+										{#if !card.mlText.trim()}<p class="text-[0.8125rem] text-warn">
 												{m.entry_water_choose()}
 											</p>{/if}
 									{:else if card.kind === 'weight'}

@@ -64,10 +64,10 @@
 	data-meal-drop={bulk ? meal : undefined}
 >
 	<div class={[row, 'min-h-11 px-2.5']}>
-		<h2 id="meal-{meal}" class="col-span-2 text-[19px] font-bold">{mealName(meal)}</h2>
+		<h2 id="meal-{meal}" class="col-span-2 text-[1.1875rem] font-bold">{mealName(meal)}</h2>
 		{#if total}
 			<span
-				class="min-w-11 text-right text-[15px] font-[750] tabular-nums"
+				class="min-w-11 text-right text-[0.9375rem] font-[750] tabular-nums"
 				aria-label="{kcal(total)} kcal"><Roll value={kcal(total)} /></span
 			>
 		{/if}
@@ -112,22 +112,22 @@
 							brand={e.food?.brand}
 						/>
 						<span class="ml-3 min-w-0">
-							<span class="line-clamp-2 text-[15px] leading-[1.3] font-semibold break-words"
+							<span class="line-clamp-2 text-[0.9375rem] leading-[1.3] font-semibold break-words"
 								>{entryName(e)}</span
 							>
-							<span class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
+							<span class="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-muted">
 								{entryQuantity(e)}
 								{#if e.kind === 'quick'}<span
-										class="rounded-menu bg-surface2 px-2 py-0.5 text-[12px] font-semibold"
+										class="rounded-menu bg-surface2 px-2 py-0.5 text-[0.75rem] font-semibold"
 										>{m.entry_macros_unknown()}</span
 									>{/if}
 								{#if e.pending}<span
-										class="rounded-menu bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn"
+										class="rounded-menu bg-warn-soft px-2 py-0.5 text-[0.75rem] font-semibold text-warn"
 										>{m.entry_pending()}</span
 									>{/if}
 							</span>
 						</span>
-						<span class="ml-3 min-w-11 text-right text-[15px] font-[650] tabular-nums"
+						<span class="ml-3 min-w-11 text-right text-[0.9375rem] font-[650] tabular-nums"
 							>{kcal(e.nutrients.energy_kcal?.value ?? 0)}</span
 						>
 					</button>
@@ -143,18 +143,18 @@
 						>
 							<FoodIcon name={op.preview.name} />
 							<span class="min-w-0">
-								<span class="line-clamp-2 text-[15px] leading-[1.3] font-semibold break-words"
+								<span class="line-clamp-2 text-[0.9375rem] leading-[1.3] font-semibold break-words"
 									>{op.preview.name}</span
 								>
-								<span class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
+								<span class="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-muted">
 									{op.preview.quantity}
 									<span
-										class="rounded-menu bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn"
+										class="rounded-menu bg-warn-soft px-2 py-0.5 text-[0.75rem] font-semibold text-warn"
 										>{op.status === 'review' ? m.offline_review_row() : m.entry_pending()}</span
 									>
 								</span>
 							</span>
-							<span class="min-w-11 text-right text-[15px] font-[650] text-muted tabular-nums"
+							<span class="min-w-11 text-right text-[0.9375rem] font-[650] text-muted tabular-nums"
 								>{op.preview.kcal === null ? '?' : kcal(op.preview.kcal)}</span
 							>
 						</button>

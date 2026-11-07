@@ -48,7 +48,7 @@
 		<span
 			class={[
 				'font-display leading-none font-extrabold tracking-[-0.02em] tabular-nums',
-				size === 'md' ? 'text-[24px]' : 'text-[15px]'
+				size === 'md' ? 'text-[1.5rem]' : 'text-[0.9375rem]'
 			]}>{a.level}</span
 		>
 	{:else}

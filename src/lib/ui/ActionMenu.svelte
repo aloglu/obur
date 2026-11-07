@@ -92,7 +92,7 @@
 					role="menuitem"
 					aria-label={item.ariaLabel}
 					class={[
-						'flex min-h-11 w-full items-center rounded-[10px] px-3 text-left text-[15px] font-[550] hover:bg-surface2',
+						'flex min-h-11 w-full items-center rounded-[10px] px-3 text-left text-[0.9375rem] font-[550] hover:bg-surface2',
 						item.danger && 'text-bad'
 					]}
 					onclick={() => choose(item.action)}>{item.label}</button

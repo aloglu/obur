@@ -97,14 +97,16 @@
 <div
 	class="flex items-center justify-between gap-3 rounded-card bg-surface p-[14px_18px] shadow-card"
 >
-	<p class="min-w-0 text-[14px] break-words">{m.settings_signed_in_as({ name: displayName })}</p>
+	<p class="min-w-0 text-[0.875rem] break-words">
+		{m.settings_signed_in_as({ name: displayName })}
+	</p>
 	<span class="shrink-0 whitespace-nowrap"
 		><Button variant="ghost" onclick={signOut}>{m.home_sign_out()}</Button></span
 	>
 </div>
 
 <!-- Credit the icons' licence requires (static/icons/food/LICENSE.txt, static/icons/achievements/LICENSE.txt). -->
-<p class="px-1 text-[12.5px] text-muted">
+<p class="px-1 text-[0.78125rem] text-muted">
 	<a
 		href="https://openmoji.org"
 		target="_blank"

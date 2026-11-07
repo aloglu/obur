@@ -33,7 +33,7 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<BackLink href={resolve('/(app)/foods')} label={m.foods_title()} />
-	<h1 class="text-[24px] font-[750]">{m.food_new_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.food_new_title()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	<FoodForm {busy} onsave={save} startName={page.url.searchParams.get('name') ?? ''} />
 </main>

@@ -35,8 +35,8 @@
 		<div class="grid grid-cols-[40px_minmax(0,1fr)] items-center gap-3">
 			<FoodIcon name={preview.name} />
 			<span class="min-w-0">
-				<b class="block text-[15px] font-semibold break-words">{preview.name}</b>
-				<small class="block text-[13px] text-muted">
+				<b class="block text-[0.9375rem] font-semibold break-words">{preview.name}</b>
+				<small class="block text-[0.8125rem] text-muted">
 					{[
 						preview.quantity,
 						preview.kcal === null ? null : `${kcal(preview.kcal)} kcal`,
@@ -48,7 +48,7 @@
 			</span>
 		</div>
 	{/if}
-	<p class="text-[14px] text-muted">{refused ? reason : m.offline_discard_body()}</p>
+	<p class="text-[0.875rem] text-muted">{refused ? reason : m.offline_discard_body()}</p>
 	{#if refused && preview}
 		{#if preview.kcal !== null && oncalories}
 			<Button onclick={oncalories}

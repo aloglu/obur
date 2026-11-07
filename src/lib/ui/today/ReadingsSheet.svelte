@@ -113,7 +113,7 @@
 	{/if}
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if rows.length === 0}
-		<p class="text-[14px] text-muted">{m.readings_none()}</p>
+		<p class="text-[0.875rem] text-muted">{m.readings_none()}</p>
 	{/if}
 	<ul class="flex flex-col divide-y divide-line">
 		{#each rows as row, i (row.reading.id)}
@@ -140,28 +140,30 @@
 							inputmode="decimal"
 							autocomplete="off"
 							aria-invalid={text.trim() !== '' && !valid}
-							class="min-h-11 w-0 flex-1 rounded-input border border-line bg-surface2 px-3 text-[16px] font-semibold tabular-nums"
+							class="min-h-11 w-0 flex-1 rounded-input border border-line bg-surface2 px-3 text-[1rem] font-semibold tabular-nums"
 						/>
-						<span class="text-[14px] text-muted">{unit}</span>
+						<span class="text-[0.875rem] text-muted">{unit}</span>
 						<button
 							type="submit"
 							disabled={busy || !valid}
-							class="min-h-11 rounded-input bg-fill px-3 text-[14px] font-bold text-on-accent disabled:opacity-50"
+							class="min-h-11 rounded-input bg-fill px-3 text-[0.875rem] font-bold text-on-accent disabled:opacity-50"
 							>{m.weight_save()}</button
 						>
 						<button
 							type="button"
 							onclick={() => (editing = null)}
-							class="min-h-11 rounded-input px-2 text-[14px] font-semibold text-muted"
+							class="min-h-11 rounded-input px-2 text-[0.875rem] font-semibold text-muted"
 							>{m.common_cancel()}</button
 						>
 					</form>
 				{:else}
 					<div class="flex min-w-0 flex-1 flex-col" class:opacity-60={row.deleted}>
-						<span class="text-[16px] font-bold tabular-nums" class:line-through={row.deleted}
+						<span class="text-[1rem] font-bold tabular-nums" class:line-through={row.deleted}
 							>{show(r.value)} {unit}</span
 						>
-						<span class="text-[13px] text-muted">{row.deleted ? m.readings_deleted() : when}</span>
+						<span class="text-[0.8125rem] text-muted"
+							>{row.deleted ? m.readings_deleted() : when}</span
+						>
 					</div>
 					{#if row.deleted}
 						<button
@@ -169,7 +171,7 @@
 							disabled={busy}
 							onclick={() => setDeleted(i, false)}
 							aria-label={m.readings_undo_label({ value: show(r.value), unit, when })}
-							class="min-h-11 rounded-input px-3 text-[14px] font-bold text-accent"
+							class="min-h-11 rounded-input px-3 text-[0.875rem] font-bold text-accent"
 							>{m.toast_undo()}</button
 						>
 					{:else}
@@ -181,7 +183,7 @@
 								text = show(r.value);
 							}}
 							aria-label={m.readings_edit_label({ value: show(r.value), unit, when })}
-							class="min-h-11 rounded-input px-3 text-[14px] font-semibold"
+							class="min-h-11 rounded-input px-3 text-[0.875rem] font-semibold"
 							>{m.readings_edit()}</button
 						>
 						<button
@@ -189,7 +191,7 @@
 							disabled={busy}
 							onclick={() => setDeleted(i, true)}
 							aria-label={m.readings_delete_label({ value: show(r.value), unit, when })}
-							class="min-h-11 rounded-input px-3 text-[14px] font-semibold text-bad"
+							class="min-h-11 rounded-input px-3 text-[0.875rem] font-semibold text-bad"
 							>{m.readings_delete()}</button
 						>
 					{/if}
@@ -202,7 +204,7 @@
 			type="button"
 			disabled={busy}
 			onclick={loadOlder}
-			class="min-h-12 w-full rounded-input bg-surface2 text-[15px] font-bold disabled:opacity-50"
+			class="min-h-12 w-full rounded-input bg-surface2 text-[0.9375rem] font-bold disabled:opacity-50"
 			>{m.readings_older()}</button
 		>
 	{/if}

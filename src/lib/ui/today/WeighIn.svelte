@@ -24,7 +24,7 @@
 	let {
 		date,
 		key,
-		buttonClass = 'min-h-12 rounded-input bg-surface2 text-[15px] font-bold transition-transform active:scale-[0.97] disabled:opacity-50',
+		buttonClass = 'min-h-12 rounded-input bg-surface2 text-[0.9375rem] font-bold transition-transform active:scale-[0.97] disabled:opacity-50',
 		onchange
 	}: Props = $props();
 	let text = $state('');
@@ -99,9 +99,9 @@
 				onkeydown={(e) => {
 					if (e.key === 'Escape') inlineField.open = null;
 				}}
-				class="w-0 min-w-0 flex-1 bg-transparent text-[16px] font-semibold tabular-nums outline-none placeholder:font-medium placeholder:text-muted"
+				class="w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold tabular-nums outline-none placeholder:font-medium placeholder:text-muted"
 			/>
-			<span class="shrink-0 px-1 text-[14px] font-[650] text-muted">kg</span>
+			<span class="shrink-0 px-1 text-[0.875rem] font-[650] text-muted">kg</span>
 			<button
 				type="submit"
 				disabled={busy || kg === undefined || invalid}
@@ -110,7 +110,7 @@
 				><Check size={18} aria-hidden="true" /></button
 			>
 		</div>
-		{#if invalid}<p class="mt-1 px-1 text-[13px] font-semibold text-bad">
+		{#if invalid}<p class="mt-1 px-1 text-[0.8125rem] font-semibold text-bad">
 				{m.weight_invalid()}
 			</p>{/if}
 	</form>

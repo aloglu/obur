@@ -40,10 +40,10 @@
 	<a href={resolve('/(app)/more')} class="flex items-center gap-1 self-start font-bold text-accent">
 		<ChevronLeft size={20} aria-hidden="true" />{m.nav_more()}
 	</a>
-	<h1 class="text-[24px] font-[750]">{m.deleted_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.deleted_title()}</h1>
 	<div class="rounded-card bg-surface px-[18px] py-1.5 shadow-card">
 		{#if data.entries.length === 0}
-			<p class="py-3.5 text-[15px] text-muted">{m.deleted_empty()}</p>
+			<p class="py-3.5 text-[0.9375rem] text-muted">{m.deleted_empty()}</p>
 		{:else}
 			<ul class="flex flex-col divide-y divide-line">
 				{#each data.entries as entry (entry.id)}
@@ -56,14 +56,14 @@
 							brand={entry.food?.brand}
 						/>
 						<span class="min-w-0">
-							<span class="line-clamp-2 text-[15px] leading-[1.3] font-semibold break-words"
+							<span class="line-clamp-2 text-[0.9375rem] leading-[1.3] font-semibold break-words"
 								>{entryName(entry)}</span
 							>
-							<span class="block text-[13px] text-muted"
+							<span class="block text-[0.8125rem] text-muted"
 								>{dayTitle(entry.localDate, data.today)} · {mealName(entry.meal)}</span
 							>
 						</span>
-						<span class="text-[15px] font-[650] tabular-nums"
+						<span class="text-[0.9375rem] font-[650] tabular-nums"
 							>{kcal(entry.nutrients.energy_kcal?.value ?? 0)}</span
 						>
 						<button
@@ -71,7 +71,7 @@
 							disabled={busy}
 							onclick={() => restore(entry)}
 							aria-label={m.deleted_restore_label({ name: entryName(entry) })}
-							class="min-h-11 text-[14px] font-[650] text-accent disabled:opacity-50"
+							class="min-h-11 text-[0.875rem] font-[650] text-accent disabled:opacity-50"
 							>{m.deleted_restore()}</button
 						>
 					</li>
@@ -79,5 +79,5 @@
 			</ul>
 		{/if}
 	</div>
-	<p class="px-1 text-[13px] text-muted">{m.deleted_hint()}</p>
+	<p class="px-1 text-[0.8125rem] text-muted">{m.deleted_hint()}</p>
 </main>

@@ -21,8 +21,8 @@
 			><Picture hex={achievementPicture(a)} size={30} /></span
 		>
 		<span class="min-w-0 flex-1">
-			<span class="block text-[15px] font-bold">{title}</span>
-			{#if detail}<span class="block text-[13px] opacity-75">{detail}</span>{/if}
+			<span class="block text-[0.9375rem] font-bold">{title}</span>
+			{#if detail}<span class="block text-[0.8125rem] opacity-75">{detail}</span>{/if}
 		</span>
 		<ChevronRight size={20} aria-hidden="true" class="shrink-0 opacity-70" />
 	</button>

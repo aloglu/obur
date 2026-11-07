@@ -70,7 +70,7 @@
 	<a href={resolve('/(app)/more')} class="flex items-center gap-1 self-start font-bold text-accent">
 		<ChevronLeft size={20} aria-hidden="true" />{m.nav_more()}
 	</a>
-	<h1 class="text-[24px] font-[750]">{m.more_goal()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.more_goal()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if calculated && t}
 		<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
@@ -79,10 +79,10 @@
 					type="button"
 					aria-expanded={editing}
 					onclick={openGoal}
-					class="flex min-h-14 w-full items-center justify-between gap-3 text-left text-[15px] font-semibold"
+					class="flex min-h-14 w-full items-center justify-between gap-3 text-left text-[0.9375rem] font-semibold"
 				>
 					{m.goal_weight()}
-					<span class="flex items-center gap-1 text-[14px] font-medium text-muted tabular-nums">
+					<span class="flex items-center gap-1 text-[0.875rem] font-medium text-muted tabular-nums">
 						{t.goalWeightKg ? `${formatDecimal(t.goalWeightKg, ',', 1)} kg` : m.details_no_goal()}
 						<ChevronRight
 							size={18}
@@ -119,20 +119,20 @@
 				onchange={(v) => change({ rateKgPerWeek: Number(v) })}
 				{options}
 			/>
-			<div class="flex min-h-14 items-center justify-between gap-3 text-[15px]">
+			<div class="flex min-h-14 items-center justify-between gap-3 text-[0.9375rem]">
 				<span class="font-semibold">{m.goal_inactive()}</span>
 				<span class="whitespace-nowrap text-muted"
 					><b class="font-bold text-text tabular-nums"><Roll value={kcal(inactive ?? 0)} /></b> kcal</span
 				>
 			</div>
 		</div>
-		<p class="px-1 text-[13px] text-muted">{m.goal_note()}</p>
+		<p class="px-1 text-[0.8125rem] text-muted">{m.goal_note()}</p>
 	{:else}
 		<div class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
-			<p class="text-[15px]">{m.goal_needs_budget()}</p>
+			<p class="text-[0.9375rem]">{m.goal_needs_budget()}</p>
 			<a
 				href="{resolve('/(app)/onboarding')}?from=goal"
-				class="grid min-h-12 place-items-center rounded-input bg-fill px-4 text-[15px] font-[750] text-on-accent"
+				class="grid min-h-12 place-items-center rounded-input bg-fill px-4 text-[0.9375rem] font-[750] text-on-accent"
 				>{m.profile_setup()}</a
 			>
 		</div>

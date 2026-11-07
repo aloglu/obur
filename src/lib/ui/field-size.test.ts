@@ -2,7 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// iPhones zoom the page in when a field whose text is under 16 px gets focus, so each one states a size of at least that.
+// iPhones zoom the page in when a field whose text is under 16 px gets focus, so each one states a size of at least that
+// (1rem: the root is never under 16 px).
 // Placeholders may be smaller: they don't count.
 const svelteFiles = (dir: string): string[] =>
 	readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -24,11 +25,12 @@ describe('form fields', () => {
 		expect(fields.length).toBeGreaterThan(10);
 	});
 
+	// Sizes are in rem (text follows the phone's text size, static/text-scale.js); 1rem is never under 16 px.
 	it.each(fields)('$file: text of at least 16 px', ({ tag }) => {
-		const sizes = [...tag.matchAll(/(?<![:\w-])text-\[(\d+(?:\.\d+)?)px\]/g)].map((s) =>
+		const sizes = [...tag.matchAll(/(?<![:\w-])text-\[(\d+(?:\.\d+)?)rem\]/g)].map((s) =>
 			Number(s[1])
 		);
 		expect(sizes.length, tag).toBeGreaterThan(0);
-		expect(Math.min(...sizes), tag).toBeGreaterThanOrEqual(16);
+		expect(Math.min(...sizes), tag).toBeGreaterThanOrEqual(1);
 	});
 });

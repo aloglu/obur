@@ -62,31 +62,35 @@
 	aria-labelledby="weight-title"
 >
 	<div class="flex h-6 items-center justify-between gap-2">
-		<h2 id="weight-title" class="text-[15px] font-bold">{m.weight_title()}</h2>
+		<h2 id="weight-title" class="text-[0.9375rem] font-bold">{m.weight_title()}</h2>
 		{#if latest}
 			<button
 				type="button"
 				disabled={busy}
 				onclick={openHistory}
 				aria-label={m.weight_edit_label()}
-				class="-mr-1.5 min-h-11 px-1.5 text-[14px] font-[650] text-accent">{m.weight_edit()}</button
+				class="-mr-1.5 min-h-11 px-1.5 text-[0.875rem] font-[650] text-accent"
+				>{m.weight_edit()}</button
 			>
 		{/if}
 	</div>
 	<div class="mt-2.5 flex flex-col gap-[3px]">
 		{#if latest}
-			<p class="font-display text-[26px] leading-[1.1] font-[750] tracking-[-0.02em] tabular-nums">
+			<p
+				class="font-display text-[1.625rem] leading-[1.1] font-[750] tracking-[-0.02em] tabular-nums"
+			>
 				<Roll value={show(latest.value)} />
-				<small class="font-sans text-[13px] font-semibold tracking-normal text-muted">kg</small>
+				<small class="font-sans text-[0.8125rem] font-semibold tracking-normal text-muted">kg</small
+				>
 			</p>
 		{:else}
 			<p
-				class="font-display text-[26px] leading-[1.1] font-[750] tracking-[-0.02em] text-muted tabular-nums"
+				class="font-display text-[1.625rem] leading-[1.1] font-[750] tracking-[-0.02em] text-muted tabular-nums"
 			>
 				–
 			</p>
 		{/if}
-		<p class="text-[13px] leading-[1.3] text-muted">
+		<p class="text-[0.8125rem] leading-[1.3] text-muted">
 			{#if pendingKg?.preview.kind === 'weight'}
 				<span class="font-semibold text-warn"
 					>{m.offline_weight_pending({ kg: show(pendingKg.preview.kg) })}</span

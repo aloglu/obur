@@ -30,9 +30,11 @@
 			<Icon size={20} aria-hidden="true" />
 		</span>
 		<div class="flex min-h-10 flex-col justify-center gap-0.5">
-			{#if title}<b class="text-[16px] leading-snug font-bold">{title}</b>{/if}
+			{#if title}<b class="text-[1rem] leading-snug font-bold">{title}</b>{/if}
 			{#if children}
-				<div class={['text-[14px] leading-snug', title ? 'text-muted' : 'font-medium text-text']}>
+				<div
+					class={['text-[0.875rem] leading-snug', title ? 'text-muted' : 'font-medium text-text']}
+				>
 					{@render children()}
 				</div>
 			{/if}

@@ -34,11 +34,11 @@
 		<p class="min-w-0 whitespace-nowrap" aria-live="polite">
 			<span
 				class={[
-					'font-display text-[46px] leading-none font-extrabold tracking-[-0.03em] tabular-nums',
+					'font-display text-[2.875rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums',
 					over && 'text-bad'
 				]}><Roll value={kcal(total ? Math.abs(total - eaten) : eaten)} /></span
 			>
-			<span class={['ml-1 text-[15px] font-[650]', over ? 'text-bad' : 'text-muted']}
+			<span class={['ml-1 text-[0.9375rem] font-[650]', over ? 'text-bad' : 'text-muted']}
 				>{#if total}<Swap
 						a={m.budget_left()}
 						b={m.budget_over()}
@@ -51,7 +51,7 @@
 				type="button"
 				onclick={onaddactivity}
 				aria-label={m.activity_add()}
-				class="relative mt-1 inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-small bg-surface2 px-[11px] text-[13.5px] font-semibold text-muted transition-transform after:absolute after:-inset-x-0.5 after:-inset-y-[5px] active:scale-[0.97]"
+				class="relative mt-1 inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-small bg-surface2 px-[11px] text-[0.84375rem] font-semibold text-muted transition-transform after:absolute after:-inset-x-0.5 after:-inset-y-[5px] active:scale-[0.97]"
 			>
 				{m.budget_activity_short()}<b class="font-bold text-text tabular-nums"
 					>{kcal(budget.activityKcal)}</b
@@ -74,7 +74,7 @@
 				style:width="{fraction * 100}%"
 			></div>
 		</div>
-		<div class="flex items-center justify-between gap-3 text-[14px] text-muted">
+		<div class="flex items-center justify-between gap-3 text-[0.875rem] text-muted">
 			<span class="flex items-center gap-1.5 whitespace-nowrap"
 				>{m.budget_eaten()}<b class="font-bold text-text tabular-nums"
 					><Roll value={kcal(eaten)} /></b
@@ -100,7 +100,7 @@
 		</div>
 		<div class={['collapse-row', showBreakdown && 'open']}>
 			<div>
-				<dl id="budget-breakdown" class="flex flex-col pt-2 text-[14px]">
+				<dl id="budget-breakdown" class="flex flex-col pt-2 text-[0.875rem]">
 					<div class="flex justify-between gap-3 py-2">
 						<dt>{manual ? m.budget_row_own() : m.budget_row_base()}</dt>
 						<dd class="tabular-nums">{kcal(budget.baseKcal)}</dd>
@@ -119,10 +119,10 @@
 						<dt>{m.budget_row_total()}</dt>
 						<dd class="tabular-nums">{kcal(budget.budget)}</dd>
 					</div>
-					{#if budget.activityNotAddedKcal}<p class="pb-2 text-[12.5px] text-muted">
+					{#if budget.activityNotAddedKcal}<p class="pb-2 text-[0.78125rem] text-muted">
 							{m.budget_activity_not_added({ kcal: kcal(budget.activityNotAddedKcal) })}
 						</p>{/if}
-					{#if budget.floorApplied}<p class="pb-2 text-[12.5px] text-muted">
+					{#if budget.floorApplied}<p class="pb-2 text-[0.78125rem] text-muted">
 							{m.budget_floor({ floor: kcal(floor) })}
 						</p>{/if}
 				</dl>

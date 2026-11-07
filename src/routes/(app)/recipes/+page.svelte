@@ -15,9 +15,9 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<BackLink href={resolve('/(app)/more')} label={m.nav_more()} />
-	<h1 class="text-[24px] font-[750]">{m.recipes_title()}</h1>
+	<h1 class="text-[1.5rem] font-[750]">{m.recipes_title()}</h1>
 	{#if data.recipes.length === 0}
-		<p class="text-[15px] text-muted">{m.recipes_none()}</p>
+		<p class="text-[0.9375rem] text-muted">{m.recipes_none()}</p>
 	{:else}
 		<ListCard title={m.recipes_list_head()} unit={m.recipes_list_unit()}>
 			{#each data.recipes as r (r.id)}
@@ -36,7 +36,7 @@
 	{/if}
 	<a
 		href={resolve('/(app)/recipes/new')}
-		class="grid min-h-[52px] place-items-center rounded-button bg-fill px-4 text-[17px] font-[750] text-on-accent"
+		class="grid min-h-[52px] place-items-center rounded-button bg-fill px-4 text-[1.0625rem] font-[750] text-on-accent"
 		>{m.recipes_new()}</a
 	>
 </main>
