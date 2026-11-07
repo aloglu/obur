@@ -50,13 +50,21 @@
 			() => ((palette = before), setPalette(before))
 		);
 	}
-	function chooseIcon(id: AppIconId) {
+	// Safari reads the Home Screen icon when a page loads and ignores later changes to it (owner's iPhone,
+	// 2026-11-07), so once saved, the page loads again with the new one; the toast carries over the reload.
+	async function chooseIcon(id: AppIconId) {
 		const before = appIcon;
-		void keep(
-			{ appIcon: id },
-			() => ((appIcon = id), setAppIcon(id)),
-			() => ((appIcon = before), setAppIcon(before))
-		);
+		appIcon = id;
+		try {
+			await savePreferences({ appIcon: id });
+		} catch {
+			appIcon = before;
+			showToast({ message: m.settings_save_failed() });
+			return;
+		}
+		setAppIcon(id);
+		showToast({ message: m.app_icon_saved(), detail: m.more_app_icon_hint() });
+		location.reload();
 	}
 </script>
 

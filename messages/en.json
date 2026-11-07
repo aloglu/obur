@@ -334,6 +334,7 @@
 	"more_appearance": "Appearance",
 	"more_app_icon": "App icon",
 	"settings_save_failed": "That setting couldn't be saved. Check the connection and try again.",
+	"app_icon_saved": "App icon changed",
 	"more_app_icon_hint": "A new icon shows after you add obur to the Home Screen again.",
 	"more_theme": "Theme",
 	"common_choose": "Choose",

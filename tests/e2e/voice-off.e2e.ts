@@ -14,8 +14,11 @@ test('without a speech or OCR service, the tiles go, a grey card says so once, a
 	await expect(card).toBeVisible();
 	await expect(page.getByText('Scan a label and Type it work as usual.')).toBeVisible();
 
-	// Dismissed, it stays gone on this device.
-	await page.getByRole('button', { name: 'Dismiss' }).click();
+	// Dismissed, it is kept with the account (saved before going on).
+	await Promise.all([
+		page.waitForResponse((r) => r.url().endsWith('/api/v1/profile/preferences') && r.ok()),
+		page.getByRole('button', { name: 'Dismiss' }).click()
+	]);
 	await expect(card).toBeHidden();
 	await page.reload();
 	await expect(page.getByRole('button', { name: 'Type it' })).toBeVisible();

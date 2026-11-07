@@ -1,5 +1,6 @@
 <script lang="ts">
 	import './layout.css';
+	import { untrack } from 'svelte';
 	import { appIconFile, manifestHref } from '#lib/shared/app-icons.ts';
 	import { applyLook } from '#lib/client/prefs.ts';
 	import type { LayoutProps } from './$types';
@@ -9,6 +10,13 @@
 	// The account's settings arrive with every page change (+layout.server.ts): one changed on another device shows
 	// here without a reload, and this browser's cookies follow, so pages before signing in look the same.
 	$effect(() => applyLook(data.theme, data.palette, data.appIcon, data.timeFormat));
+	// Safari reads the Home Screen icon only when a page loads: an icon changed on another device loads the page again
+	// once, on the next page change, so adding obur to the Home Screen gets it.
+	const loadedIcon = untrack(() => data.appIcon);
+	$effect(() => {
+		// Not offline: saved copies of pages may disagree, and it would reload on every page change.
+		if (data.appIcon !== loadedIcon && navigator.onLine) location.reload();
+	});
 </script>
 
 <svelte:head>

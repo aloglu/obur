@@ -32,8 +32,11 @@ test('the app icon chosen on Appearance is what the Home Screen and the manifest
 	// Saved to the account before going on.
 	await Promise.all([
 		page.waitForResponse((r) => r.url().endsWith('/api/v1/profile/preferences') && r.ok()),
+		page.waitForEvent('load'),
 		icons.getByRole('radio', { name: 'Zerde' }).click()
 	]);
+	// The page loads again by itself (Safari reads the icon only on a load), with the toast carried over.
+	await expect(page.getByRole('status')).toContainText('App icon changed');
 	await expect(touch).toHaveAttribute('href', at('/app-icons/zerde/icon-180.png'));
 	await page.reload();
 	await expect(touch).toHaveAttribute('href', at('/app-icons/zerde/icon-180.png'));
@@ -76,6 +79,7 @@ test('the app icon chosen on Appearance is what the Home Screen and the manifest
 	// Saved to the account before going on.
 	await Promise.all([
 		page.waitForResponse((r) => r.url().endsWith('/api/v1/profile/preferences') && r.ok()),
+		page.waitForEvent('load'),
 		icons.getByRole('radio', { name: 'Pazar', exact: true }).click()
 	]);
 	await page.reload();
