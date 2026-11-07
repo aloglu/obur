@@ -28,10 +28,14 @@ obur_secrets() {
 			for role in ADMIN MIGRATOR APP WORKER; do
 				echo "OBUR_${role}_DB_PASSWORD=$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
 			done
+			echo "OBUR_SECRETS_KEY=$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
 			echo "OBUR_VAPID_PUBLIC_KEY=${keys% *}"
 			echo "OBUR_VAPID_PRIVATE_KEY=${keys#* }"
 		} >"$OBUR_SECRETS.tmp"
 		mv "$OBUR_SECRETS.tmp" "$OBUR_SECRETS"
+	fi
+	if ! grep -q '^OBUR_SECRETS_KEY=' "$OBUR_SECRETS"; then
+		echo "OBUR_SECRETS_KEY=$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')" >>"$OBUR_SECRETS"
 	fi
 	set -a
 	# shellcheck source=/dev/null

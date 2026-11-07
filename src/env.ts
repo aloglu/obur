@@ -60,6 +60,27 @@ export const variables = defineEnvVars({
 			return url.origin;
 		}
 	},
+	OBUR_SECRETS_KEY: {
+		description:
+			"64 hex characters that encrypt people's own AI keys (made by the obur container on first start). Unset: personal keys are off.",
+		schema: (value) => {
+			if (!value) return null;
+			if (!/^[0-9a-f]{64}$/i.test(value))
+				throw new Error('OBUR_SECRETS_KEY must be 64 hex characters');
+			return value;
+		}
+	},
+	AI_PROVIDER_TEST_URL: {
+		description:
+			'Browser tests only: a stand-in for OpenAI and OpenRouter. Never set it on a real server.',
+		schema: (value) => {
+			if (!value) return null;
+			const url = new URL(value);
+			if (url.protocol !== 'http:' && url.protocol !== 'https:')
+				throw new Error('AI_PROVIDER_TEST_URL must be http(s)');
+			return url.origin;
+		}
+	},
 	OBUR_STATUS_DIR: {
 		description:
 			'Folder with the backup status file and the restore mark, written by the backup tools (read-only here).',

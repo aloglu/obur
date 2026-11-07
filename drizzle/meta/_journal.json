@@ -302,6 +302,20 @@
       "when": 1794059075469,
       "tag": "0042_profile_preferences_grant",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794084901580,
+      "tag": "0043_remote_models",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1794084902110,
+      "tag": "0044_remote_models_rls",
+      "breakpoints": true
     }
   ]
 }
