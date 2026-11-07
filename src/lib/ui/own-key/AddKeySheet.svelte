@@ -65,7 +65,9 @@
 		options={PROVIDERS.map((p) => ({ value: p, label: PROVIDER_NAME[p] }))}
 	/>
 	<div class="flex flex-col gap-1.5">
-		<label for="model-key" class="text-[0.8125rem] font-[650] text-muted">{m.models_key_label()}</label>
+		<label for="model-key" class="text-[0.8125rem] font-[650] text-muted"
+			>{m.models_key_label()}</label
+		>
 		<input
 			id="model-key"
 			type="password"

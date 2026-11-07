@@ -46,7 +46,8 @@
 		{/if}
 	</ul>
 	<p class="text-[0.9375rem] leading-snug">{m.models_consent_terms({ provider: name })}</p>
-	<Button wide onclick={onallow} disabled={busy}>{m.models_consent_send({ provider: name })}</Button>
+	<Button wide onclick={onallow} disabled={busy}>{m.models_consent_send({ provider: name })}</Button
+	>
 	<Button wide variant="ghost" onclick={onclose}>
 		{local ? m.models_consent_keep() : m.models_consent_not_now()}
 	</Button>
