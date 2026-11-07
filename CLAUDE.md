@@ -45,7 +45,7 @@
 - Test connection reuse, absent identity and cross-user inserts/updates. Do not bypass RLS to make application features work.
 - Hand-made foods and confirmed scans are shared on the server by default, with a private option; LoseIt-imported foods are private by default, with an opt-in share in the import preview. Shared visibility never includes diary activity, who logged a food, or private ingredients. Logging a shared food never creates a copy; "Make my own variant" creates a private one.
 - Require recent passkey verification for sensitive actions. Follow the separately specified recovery flow for a lost credential; never add an undocumented recovery shortcut.
-- Read public URL, WebAuthn RP ID, allowed origins and secrets from configuration. Use example values in documentation. No secrets or real private hostnames in source. The owner's pilot uses Cloudflare Tunnel; its real hostname and RP ID exist only in the owner's `.env`.
+- Read public URL, WebAuthn RP ID, allowed origins and secrets from configuration. Use example values in documentation. No secrets or real private hostnames in source. The owner's own installation's real hostname and RP ID exist only in the owner's configuration.
 - Enforce bounded upload sizes and retention, including abandoned and failed jobs. Keep production photos/audio out of backups and public fixtures; retain transcripts for regression only with the specified consent.
 - No telemetry or external food/model lookups at runtime. Only explicitly configured infrastructure and optional integrations described in the design may contact third parties. Redact sensitive content from logs.
 
@@ -83,7 +83,7 @@
 
 ## Commands and scope
 
-Verified on 2026-10-25 (Node 24+, npm, Docker). Add commands here only after running them; production Compose and restore commands are still to come.
+Verified on 2026-10-25 and 2026-11-07 (Node 24+, npm, Docker). Add commands here only after running them.
 
 - Setup: `cp .env.example .env`, replace every `change-me-*` password (the URLs must match), then `npm install`.
 - Development database (PostgreSQL 18, localhost only, data checksums on): `npm run db:start` / `npm run db:stop`.
@@ -97,7 +97,8 @@ Verified on 2026-10-25 (Node 24+, npm, Docker). Add commands here only after run
 - All Vitest projects (unit, rule and database tests): `npx vitest run` (or `npm run test:unit` for watch mode).
 - End-to-end tests (phone WebKit and desktop Chromium in the official Playwright image, with host networking; needs `npm run db:start`; recreates the `obur_e2e` database each run): `npm run test:e2e`. Passkey journeys run in Chromium only (virtual authenticator). Screenshot baselines live next to the tests; after an intended visual change, regenerate them with `npm run test:e2e -- --update-snapshots` and review the new images before committing. `npm run test:e2e:local` runs desktop Chromium on the host only.
 - Production build: `npm run build`.
-- Deploy the committed HEAD to the pilot server (backs up first; needs the SSH aliases, see `deploy/unraid/README.md`): `./deploy/pilot.sh`.
+- The `obur` image (app, worker, PostgreSQL and backups in one container; `deploy/obur/`): `docker build -t obur:test .`, then `deploy/obur/smoke-test.sh obur:test` (fresh start, sign-in page, setup link, first backup, administrator refused to the app's user, clean stop). Add-ons: `docker build -t obur-speech:test speech`, `docker build -t obur-labels:test labels`.
+- Releases: `.github/workflows/release.yml` runs only on a `v*` tag or by hand (Actions credits are limited; never on every push). It checks, builds the three images, smoke-tests `obur` and publishes them to ghcr.io. Installing, updating and restoring for operators: `docs/install/`, `docs/restore.md` (commands are `docker exec obur obur …`).
 - First admin's one-time setup link (24 h): `npm run admin:setup-link`. Recovery link for someone who lost every passkey and code (1 h): `npm run admin:recovery-link -- "<display name or user ID>"`. Both need `PUBLIC_ORIGIN` and `DATABASE_MIGRATOR_URL`.
 - Curated USDA foods: `npm run curated:build -- <sr_legacy .zip> <foundation .zip>` regenerates `src/lib/server/modules/catalog/curated/usda-foods.json` from the downloaded datasets (checksums pinned in the script); `npm run curated:load` loads it (idempotent; `obur migrate` runs it in production).
 - Messages: edit `messages/en.json`; `npm run i18n` compiles them.
