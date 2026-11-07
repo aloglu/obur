@@ -3,6 +3,7 @@
 // every file. Reading validates paths, sizes, checksums and every record before anything is written. Checksums
 // detect damage; they do not make an archive trustworthy, so the content is validated as untrusted input.
 import { APP_ICONS } from '../../../shared/app-icons.ts';
+import { PALETTES } from '../../../shared/themes.ts';
 import { createHash } from 'node:crypto';
 import { strFromU8, strToU8, unzipSync, zipSync, type Unzipped } from 'fflate';
 import * as v from 'valibot';
@@ -278,10 +279,17 @@ export const ProfileRecord = v.object({
 	breastfeeding: v.boolean(),
 	decimalMark: v.picklist([',', '.']),
 	firstDayOfWeek: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7)),
-	/** Added 2026-11-07; older archives have none. */
+	// Settings (shared/preferences.ts), added 2026-11-07; older archives have none and keep the defaults.
 	appIcon: v.optional(
 		v.nullable(v.picklist(APP_ICONS.map((i) => i.id).filter((id) => id !== 'pazar')))
-	)
+	),
+	themeMode: v.optional(v.picklist(['system', 'light', 'dark'])),
+	palette: v.optional(v.picklist(PALETTES.map((p) => p.id))),
+	timeFormat: v.optional(v.picklist(['device', '24', '12'])),
+	scanLogAfter: v.optional(v.boolean()),
+	weightView: v.optional(v.picklist(['readings', 'trend'])),
+	voiceOffSeen: v.optional(v.boolean()),
+	holdHintSeen: v.optional(v.boolean())
 });
 
 export const DayCompletionRecord = v.object({

@@ -375,8 +375,7 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
   not the device: an iPhone's Home Screen app keeps its own cookies apart from Safari's, so a choice made in the app
   was lost when the owner removed it and added obur again from Safari (owner's report, 2026-11-07). Signed in, the
   server writes the account's icon into the page's `apple-touch-icon` and links `/manifest.webmanifest?icon=<id>`,
-  a route that names that icon's files; an `obur_icon` cookie covers pages before signing in. It is in the export
-  with the other profile settings. A phone reads the icon when obur is added to the Home Screen, so the card's one line says
+  a route that names that icon's files; an `obur_icon` cookie covers pages before signing in. It is in the export with the other settings (see "Settings follow the account"). A phone reads the icon when obur is added to the Home Screen, so the card's one line says
   a new icon shows after adding it again. The logo and browser tab icon stay the brown and cream artwork.
 - **Fonts (owner, 2026-11-07, review round 9):** Bricolage Grotesque and Inter stay in every theme.
 
@@ -498,7 +497,7 @@ Routine choices made while building the screens; none changes the direction abov
 - **Budget card** shows calories eaten and "Budget: Not set yet" until goals arrive (Phase 1, step 7); the ring structure is already in place.
 - **Nutrient bars** are drawn relative to each other until targets exist (step 7). "Partial · N unknown" marks totals where some entries lack the value; "Unknown" when none has it.
 - **Desktop Log panel** starts fresh after each save (query and preset cleared).
-- **Theme** choice is per device (cookie) so the server renders the right theme without a flash; System is the default.
+- **Settings follow the account** (owner, 2026-11-07: "all our settings synced to the user account", in the backup and the export): mode, theme, app icon, 24/12-hour time, Scan's "Log it after saving", Progress's Readings/Trend, and the dismissed "Speak is off" card and holding tip (`shared/preferences.ts`, columns on `profiles`, `PATCH /api/v1/profile/preferences`). The root layout reads them on every page change, so a change made on another device shows without a reload, and the page's Home Screen icon link is always current (it was written once per page load before, which is why Safari added the old icon). Cookies keep the look for pages before signing in, and the first time an account loads it takes over the look that browser already had. A device's time zone and its waiting entries stay on the device. System is the default mode.
 - **Day titles** are formatted by hand ("Tue 20 Oct", "Tuesday 20 October 2026") because browser engines format dates differently.
 - **Portion text**: "1 bar" for one basis serving, "2 × 1 bar", "3 × slice (26 g)", "2 × Su bardağı (200 ml)".
 

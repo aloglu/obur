@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { savePreferences } from '#lib/client/prefs.ts';
 	import { slide } from 'svelte/transition';
 	// docs/ui.md "Today". Phone: one column. From 760 px: Budget and the meals on the left, the rest on the right.
 	import { goto, invalidateAll } from '$app/navigation';
@@ -13,7 +14,7 @@
 	import type { ActivityEntry } from '#lib/shared/body-types.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
 	import { dayTitle, entryName, kcal, mealName } from '#lib/shared/format.ts';
-	import { onMount, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import X from '@lucide/svelte/icons/x';
 	import Swap from '#lib/ui/Swap.svelte';
@@ -262,23 +263,12 @@
 		endSelect();
 	});
 
-	// A one-time tip about holding entries, remembered on this device (storage may be unavailable: then it shows).
-	const HINT_KEY = 'obur:hold-hint-seen';
-	let hintSeen = $state(true);
-	onMount(() => {
-		try {
-			hintSeen = localStorage.getItem(HINT_KEY) === 'yes';
-		} catch {
-			hintSeen = false;
-		}
-	});
+	// A one-time tip about holding entries; dismissed, it stays gone on every device (kept with the account).
+	let hintSeen = $state(untrack(() => data.preferences?.holdHintSeen ?? false));
 	function closeHint() {
 		hintSeen = true;
-		try {
-			localStorage.setItem(HINT_KEY, 'yes');
-		} catch {
-			// Not remembered; it shows again next time.
-		}
+		// Not saved (offline): it shows again next time.
+		savePreferences({ holdHintSeen: true }).catch(() => {});
 	}
 
 	async function toggleComplete() {

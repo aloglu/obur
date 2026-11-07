@@ -9,6 +9,7 @@
 // stay separate entries. Imported foods are private. Target versions are added only to an account without targets of
 // its own, and a profile only to an account without one, so imported history never changes existing budgets.
 import { DEFAULT_APP_ICON, isAppIcon } from '../../../shared/app-icons.ts';
+import { DEFAULT_PALETTE, isPalette } from '../../../shared/themes.ts';
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
@@ -169,7 +170,14 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 						appIcon:
 							isAppIcon(profile.appIcon) && profile.appIcon !== DEFAULT_APP_ICON
 								? profile.appIcon
-								: null
+								: null,
+						themeMode: profile.themeMode,
+						palette: isPalette(profile.palette) ? profile.palette : DEFAULT_PALETTE,
+						timeFormat: profile.timeFormat,
+						scanLogAfter: profile.scanLogAfter,
+						weightView: profile.weightView,
+						voiceOffSeen: profile.voiceOffSeen,
+						holdHintSeen: profile.holdHintSeen
 					}
 				: null,
 			reminders: reminder
@@ -985,7 +993,14 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 		newTargets.forEach((t) => remember('target', t.id));
 	}
 	if (p.importProfile && data.account.profile) {
-		await tx.insert(profiles).values({ userId, ...data.account.profile, updatedAt: now });
+		const profile = data.account.profile;
+		// Settings that came with the archive count as saved, so a browser's own choices don't replace them.
+		await tx.insert(profiles).values({
+			userId,
+			...profile,
+			preferencesSavedAt: profile.themeMode !== undefined ? now : null,
+			updatedAt: now
+		});
 	}
 	const r = data.account.reminders;
 	if (p.importReminders && r) {

@@ -134,6 +134,7 @@ async function buildHistory() {
 		values (${randomUUID()}, ${MEHMET}, '2026-10-02', 'Europe/Istanbul', 'loseit', 210, false)`;
 
 	await goals.saveProfile(MEHMET, { heightCm: 180, birthDate: '1990-05-01', sex: 'male' });
+	await goals.savePreferences(MEHMET, { palette: 'kaset', appIcon: 'zerde', timeFormat: '24' });
 	await goals.setTarget(
 		MEHMET,
 		{ mode: 'manual', effectiveFrom: '2026-10-01', budgetKcal: 2200 },
@@ -387,6 +388,11 @@ describe('import', () => {
 		expect(await count('diary_entries', ZEYNEP)).toBe(0); // the preview wrote nothing
 
 		await portability.applyImport(ZEYNEP, archive);
+		// Settings come along, and count as saved.
+		expect(await goals.preferences(ZEYNEP)).toMatchObject({
+			preferences: { palette: 'kaset', appIcon: 'zerde', timeFormat: '24', themeMode: 'system' },
+			saved: true
+		});
 		const before = readArchive(archive).data;
 		const after = readArchive(await portability.exportArchive(ZEYNEP)).data;
 		expect(semantic(after)).toEqual(semantic(before));

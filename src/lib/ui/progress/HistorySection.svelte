@@ -2,6 +2,8 @@
 	// The history on Progress (docs/ui.md, "Progress charts"): Weight, Calories and Nutrients tabs on every screen, one
 	// topic at a time in one card. Each topic's headline is also the chart's readout: it follows the finger while
 	// looking at a point, and goes back to the range's figure on release.
+	import { page } from '$app/state';
+	import { savePreferences } from '#lib/client/prefs.ts';
 	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import ChartPie from '@lucide/svelte/icons/chart-pie';
 	import TrendingDown from '@lucide/svelte/icons/trending-down';
@@ -9,7 +11,7 @@
 	import { dateWithYear, dayAndMonth, kcal, shortDate } from '#lib/shared/format.ts';
 	import type { CalorieBar, ProgressHistory, WeightPoint } from '#lib/shared/history.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
-	import { onMount } from 'svelte';
+	import { untrack } from 'svelte';
 	import Roll from '../Roll.svelte';
 	import WeighIn from '../today/WeighIn.svelte';
 	import CaloriesChart from './CaloriesChart.svelte';
@@ -50,24 +52,12 @@
 	);
 
 	// Readings (what was weighed) or Trend (the smoothed weight and pace; docs/feasibility.md, "Weight trend").
-	// Remembered on this device; storage may be unavailable, and then Readings shows.
+	// Kept with the account; when it can't be saved, the choice still applies now.
 	type WeightView = 'readings' | 'trend';
-	const VIEW_KEY = 'obur:history-weight-view';
-	let view = $state<WeightView>('readings');
-	onMount(() => {
-		try {
-			if (localStorage.getItem(VIEW_KEY) === 'trend') view = 'trend';
-		} catch {
-			// Storage blocked: keep Readings.
-		}
-	});
+	let view = $state<WeightView>(untrack(() => page.data.preferences?.weightView ?? 'readings'));
 	function setView(next: WeightView) {
 		view = next;
-		try {
-			localStorage.setItem(VIEW_KEY, next);
-		} catch {
-			// Not remembered on this device; the choice still applies now.
-		}
+		savePreferences({ weightView: next }).catch(() => {});
 	}
 
 	const points = $derived(history.weight.points);

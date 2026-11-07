@@ -1,4 +1,8 @@
-// Per-device preferences kept in cookies so the server can render the right theme and day without a flash.
+// Settings follow the account (shared/preferences.ts; saved with savePreferences). The look is also kept in cookies, so
+// pages before signing in look the same, and applied to the page at once when changed. The time zone cookie is the
+// device's own.
+import { api } from './api.ts';
+import type { Preferences } from '#lib/shared/preferences.ts';
 import { DEFAULT_PALETTE, paletteOf, type PaletteId } from '#lib/shared/themes.ts';
 import {
 	DEFAULT_APP_ICON,
@@ -43,10 +47,7 @@ export function setPalette(id: PaletteId): void {
 	document.querySelector('meta[name="theme-color"][media*="dark"]')?.setAttribute('content', dark);
 }
 
-/**
- * The Home Screen icon: read when obur is added to the Home Screen, so the page's links change at once. Kept with the
- * account by the caller (PUT /api/v1/profile/app-icon); the cookie covers pages before signing in.
- */
+/** The Home Screen icon: read when obur is added to the Home Screen, so the page's links change at once. */
 export function setAppIcon(id: AppIconId): void {
 	document.cookie =
 		id === DEFAULT_APP_ICON
@@ -65,6 +66,29 @@ export function setTimeFormat(choice: TimeFormat): void {
 		choice === 'device'
 			? `obur_time=; path=/; max-age=0; samesite=lax${secure()}`
 			: `obur_time=${choice}; path=/; max-age=${YEAR}; samesite=lax${secure()}`;
+}
+
+/** Saves settings to the account; rejects when it couldn't (offline, say). */
+export async function savePreferences(change: Partial<Preferences>): Promise<void> {
+	await api('PATCH', '/api/v1/profile/preferences', change);
+}
+
+/** Brings this page and this browser's cookies in line with the account's look. */
+export function applyLook(
+	theme: ThemeChoice,
+	palette: PaletteId,
+	icon: AppIconId,
+	time: TimeFormat
+): void {
+	if (currentTheme() !== theme) setTheme(theme);
+	if ((document.documentElement.dataset.palette ?? DEFAULT_PALETTE) !== palette)
+		setPalette(palette);
+	const cookie = (name: string) =>
+		document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))?.[1];
+	if ((cookie('obur_icon') ?? DEFAULT_APP_ICON) !== icon) setAppIcon(icon);
+	if ((cookie('obur_time') ?? 'device') !== time) setTimeFormat(time);
+	if ((cookie('obur_theme') ?? 'system') !== theme) setTheme(theme);
+	if ((cookie('obur_palette') ?? DEFAULT_PALETTE) !== palette) setPalette(palette);
 }
 
 /** A clock time in the chosen format; "device" leaves it to the browser's locale. */

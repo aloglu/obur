@@ -1,7 +1,9 @@
 <script lang="ts">
 	// docs/ui.md "Logging": search on top; Speak, Scan and Type it tiles; Recent always there, filling the room it has;
 	// typing shows results; the meal preset pill. Calories alone stay one tap from search, also offline.
-	import { onMount, tick } from 'svelte';
+	import { page } from '$app/state';
+	import { savePreferences } from '#lib/client/prefs.ts';
+	import { onMount, tick, untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import Bookmark from '@lucide/svelte/icons/bookmark';
 	import PencilLine from '@lucide/svelte/icons/pencil-line';
@@ -61,23 +63,12 @@
 
 	const showSuggestions = $derived(focused && !typing);
 
-	// Told once on each device that Speak is off; it stays quiet after that.
-	const VOICE_OFF_KEY = 'obur:voice-off-seen';
-	let voiceOffSeen = $state(true);
-	onMount(() => {
-		try {
-			voiceOffSeen = localStorage.getItem(VOICE_OFF_KEY) === 'yes';
-		} catch {
-			voiceOffSeen = false;
-		}
-	});
+	// Told once that Speak is off; dismissed, it stays quiet on every device (kept with the account).
+	let voiceOffSeen = $state(untrack(() => page.data.preferences?.voiceOffSeen ?? false));
 	function dismissVoiceOff() {
 		voiceOffSeen = true;
-		try {
-			localStorage.setItem(VOICE_OFF_KEY, 'yes');
-		} catch {
-			// Not remembered; it shows again next time.
-		}
+		// Not saved (offline): it shows again next time.
+		savePreferences({ voiceOffSeen: true }).catch(() => {});
 	}
 
 	// Refreshed on every focus: logging, undo or edits elsewhere change what is recent.

@@ -2,6 +2,8 @@
 	// Scan a label (docs/ui.md, "Scan"): take or choose a photo of the nutrition table; it is made smaller on the
 	// phone (which also drops its location data) and read on the server. The values come back as a proposal in the
 	// food form beside the photo, to check and save; nothing is saved before that. The photo is never kept.
+	import { untrack } from 'svelte';
+	import { savePreferences } from '#lib/client/prefs.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Camera from '@lucide/svelte/icons/camera';
@@ -98,20 +100,10 @@
 	let saveProblem = $state('');
 
 	// Whether saving opens Log for the new food, or stays here for the next label (scanning groceries in one go).
-	// A per-device convenience, so browser storage is enough; it may be unavailable, and then it stays on.
-	const LOG_AFTER = 'obur:scan-log-after-save';
-	let logAfter = $state(true);
-	try {
-		logAfter = localStorage.getItem(LOG_AFTER) !== 'no';
-	} catch {
-		// Storage blocked: keep the default.
-	}
+	// Kept with the account; when it can't be saved, the choice still applies now.
+	let logAfter = $state(untrack(() => data.preferences?.scanLogAfter ?? true));
 	function rememberLogAfter() {
-		try {
-			localStorage.setItem(LOG_AFTER, logAfter ? 'yes' : 'no');
-		} catch {
-			// Not remembered on this device; the choice still applies now.
-		}
+		savePreferences({ scanLogAfter: logAfter }).catch(() => {});
 	}
 
 	/** About 1600 px on the long side as JPEG: OCR gains nothing above that, and drawing drops the location data. */

@@ -1,4 +1,5 @@
 // Profiles and versioned targets against real PostgreSQL, run as the runtime role.
+import { DEFAULT_PREFERENCES } from '../../../shared/preferences.ts';
 import { randomUUID } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -255,16 +256,35 @@ describe('following the latest weight', () => {
 	});
 });
 
-describe('app icon', () => {
-	it('is kept with the account, the default as none, untouched by other profile saves, and private', async () => {
-		await goals.setAppIcon(MEHMET, 'zerde');
-		expect((await goals.profile(MEHMET))?.appIcon).toBe('zerde');
-		// Saving the rest of the profile keeps it.
+describe('settings', () => {
+	it('start at the defaults, save any part, keep the rest and the profile, and stay private', async () => {
+		expect(await goals.preferences(MEHMET)).toEqual({
+			preferences: DEFAULT_PREFERENCES,
+			saved: false
+		});
+		await goals.saveProfile(MEHMET, { ...adult, decimalMark: '.' });
+		await goals.savePreferences(MEHMET, { palette: 'zerde', appIcon: 'kaset', themeMode: 'dark' });
+		await goals.savePreferences(MEHMET, { weightView: 'trend', voiceOffSeen: true });
+		expect(await goals.preferences(MEHMET)).toEqual({
+			preferences: {
+				...DEFAULT_PREFERENCES,
+				palette: 'zerde',
+				appIcon: 'kaset',
+				themeMode: 'dark',
+				weightView: 'trend',
+				voiceOffSeen: true
+			},
+			saved: true
+		});
+		// The profile's own fields are untouched, and saving the profile keeps the settings.
+		expect(await goals.profile(MEHMET)).toMatchObject({ heightCm: 180, decimalMark: '.' });
 		await goals.saveProfile(MEHMET, adult);
-		expect((await goals.profile(MEHMET))?.appIcon).toBe('zerde');
-		expect(await goals.profile(AYSE)).toBeNull();
-		await goals.setAppIcon(MEHMET, 'pazar');
-		expect((await goals.profile(MEHMET))?.appIcon).toBeNull();
+		expect((await goals.preferences(MEHMET)).preferences.palette).toBe('zerde');
+		// Someone else's are their own.
+		expect((await goals.preferences(AYSE)).saved).toBe(false);
+		// Only known values.
+		await expect(goals.savePreferences(MEHMET, { palette: 'neon' as never })).rejects.toThrow();
+		await expect(goals.savePreferences(MEHMET, { extra: 1 } as never)).rejects.toThrow();
 	});
 });
 

@@ -1,6 +1,12 @@
 // Profiles and versioned targets (docs/design.md, "Targets, profile and activity"). Targets are estimates; minors,
 // pregnancy and breastfeeding get no calculated targets, but a professional's target can be entered by hand.
-import { DEFAULT_APP_ICON, isAppIcon, type AppIconId } from '../../../shared/app-icons.ts';
+import { DEFAULT_APP_ICON, isAppIcon } from '../../../shared/app-icons.ts';
+import {
+	DEFAULT_PREFERENCES,
+	PreferencesInput,
+	type Preferences
+} from '../../../shared/preferences.ts';
+import { isPalette } from '../../../shared/themes.ts';
 import { desc, eq, lte } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import {
@@ -65,8 +71,18 @@ const toProfile = (r: ProfileRow): Profile => ({
 	pregnant: r.pregnant,
 	breastfeeding: r.breastfeeding,
 	decimalMark: r.decimalMark,
-	firstDayOfWeek: r.firstDayOfWeek,
-	appIcon: isAppIcon(r.appIcon) ? r.appIcon : null
+	firstDayOfWeek: r.firstDayOfWeek
+});
+
+const toPreferences = (r: ProfileRow): Preferences => ({
+	themeMode: r.themeMode,
+	palette: isPalette(r.palette) ? r.palette : DEFAULT_PREFERENCES.palette,
+	appIcon: isAppIcon(r.appIcon) ? r.appIcon : DEFAULT_APP_ICON,
+	timeFormat: r.timeFormat,
+	scanLogAfter: r.scanLogAfter,
+	weightView: r.weightView,
+	voiceOffSeen: r.voiceOffSeen,
+	holdHintSeen: r.holdHintSeen
 });
 
 const toVersion = (r: VersionRow): TargetVersion => ({
@@ -240,15 +256,39 @@ export function createGoals(db: Database) {
 			return toProfile(row);
 		},
 
-		/** The Home Screen icon chosen on Appearance, kept with the account; the default is stored as null. */
-		async setAppIcon(userId: string, icon: AppIconId): Promise<void> {
-			const appIcon = icon === DEFAULT_APP_ICON ? null : icon;
-			await withUser(db, userId, (tx) =>
+		/** The person's settings, and whether they were ever saved to the account (shared/preferences.ts). */
+		async preferences(userId: string): Promise<{ preferences: Preferences; saved: boolean }> {
+			const [row] = await withUser(db, userId, (tx) =>
+				tx.select().from(profiles).where(eq(profiles.userId, userId))
+			);
+			return row
+				? { preferences: toPreferences(row), saved: row.preferencesSavedAt !== null }
+				: { preferences: DEFAULT_PREFERENCES, saved: false };
+		},
+
+		/** Saves any of the settings; the rest stay as they are. */
+		async savePreferences(
+			userId: string,
+			raw: v.InferInput<typeof PreferencesInput>
+		): Promise<Preferences> {
+			const { appIcon, ...rest } = v.parse(PreferencesInput, raw);
+			const now = new Date();
+			const set = {
+				...rest,
+				...(appIcon !== undefined
+					? { appIcon: appIcon === DEFAULT_APP_ICON ? null : appIcon }
+					: {}),
+				preferencesSavedAt: now,
+				updatedAt: now
+			};
+			const [row] = await withUser(db, userId, (tx) =>
 				tx
 					.insert(profiles)
-					.values({ userId, appIcon, updatedAt: new Date() })
-					.onConflictDoUpdate({ target: profiles.userId, set: { appIcon, updatedAt: new Date() } })
+					.values({ userId, ...set })
+					.onConflictDoUpdate({ target: profiles.userId, set })
+					.returning()
 			);
+			return toPreferences(row);
 		},
 
 		/** The target in force on a day: the newest version among those effective on or before it. */

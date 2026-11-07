@@ -9,7 +9,7 @@ import { restorePending } from '#lib/server/restore-guard.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { isValidZone } from '#lib/shared/diary-rules.ts';
 import { DEFAULT_PALETTE, isPalette, paletteOf } from '#lib/shared/themes.ts';
-import { DEFAULT_APP_ICON, appIconFile, isAppIcon, manifestHref } from '#lib/shared/app-icons.ts';
+import { DEFAULT_APP_ICON, isAppIcon } from '#lib/shared/app-icons.ts';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -31,8 +31,6 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 						)
 						.replace('%obur.bg.light%', paletteOf(event.locals.palette).bg[0])
 						.replace('%obur.bg.dark%', paletteOf(event.locals.palette).bg[1])
-						.replace('%obur.manifest%', manifestHref(event.locals.appIcon))
-						.replace('%obur.touch-icon%', appIconFile(event.locals.appIcon, 'icon-180.png'))
 			}
 		);
 	});

@@ -36,9 +36,23 @@ export const profiles = pgTable(
 			.default(','),
 		// ISO weekday: 1 = Monday, 7 = Sunday.
 		firstDayOfWeek: smallint('first_day_of_week').notNull().default(1),
-		/** The Home Screen icon chosen on Appearance (shared/app-icons.ts); null is the default. Per account, because an
-		 * iPhone's Home Screen app keeps its own cookies apart from Safari's (owner's report, 2026-11-07). */
+		// Settings that follow the person (shared/preferences.ts). The app icon is null for the default.
 		appIcon: text('app_icon'),
+		themeMode: text('theme_mode', { enum: ['system', 'light', 'dark'] })
+			.notNull()
+			.default('system'),
+		palette: text('palette').notNull().default('pazar'),
+		timeFormat: text('time_format', { enum: ['device', '24', '12'] })
+			.notNull()
+			.default('device'),
+		scanLogAfter: boolean('scan_log_after').notNull().default(true),
+		weightView: text('weight_view', { enum: ['readings', 'trend'] })
+			.notNull()
+			.default('readings'),
+		voiceOffSeen: boolean('voice_off_seen').notNull().default(false),
+		holdHintSeen: boolean('hold_hint_seen').notNull().default(false),
+		/** When the settings were first saved to the account; until then a browser's own choices are taken over. */
+		preferencesSavedAt: timestamp('preferences_saved_at', { withTimezone: true }),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
@@ -49,6 +63,13 @@ export const profiles = pgTable(
 		),
 		check('profiles_waist_range', sql`${t.waistCm} is null or ${t.waistCm} between 30 and 250`),
 		check('profiles_sex_valid', sql`${t.sex} is null or ${t.sex} in ('female', 'male')`),
+		check('profiles_theme_mode_valid', sql`${t.themeMode} in ('system', 'light', 'dark')`),
+		check(
+			'profiles_palette_valid',
+			sql`${t.palette} in ('pazar', 'sade', 'zerde', 'patlican', 'zeytin', 'disko', 'kaset', 'sinyal')`
+		),
+		check('profiles_time_format_valid', sql`${t.timeFormat} in ('device', '24', '12')`),
+		check('profiles_weight_view_valid', sql`${t.weightView} in ('readings', 'trend')`),
 		check(
 			'profiles_app_icon_valid',
 			sql`${t.appIcon} is null or ${t.appIcon} in ('pazar', 'pazar-light', 'sade', 'zerde', 'patlican', 'zeytin', 'disko', 'kaset', 'sinyal')`

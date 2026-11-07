@@ -1,13 +1,19 @@
 <script lang="ts">
-	// docs/ui.md "Themes" and "App icon": mode, then themes, then the app icon. All are per device. Mode and theme apply
-	// at once; the icon shows the next time obur is added to the Home Screen.
+	// docs/ui.md "Themes" and "App icon": mode, then themes, then the app icon, kept with the account (on every device
+	// and in the backup). Mode and theme apply at once; the icon shows the next time obur is added to the Home Screen.
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { m } from '#lib/paraglide/messages.js';
-	import { setAppIcon, setPalette, setTheme, type ThemeChoice } from '#lib/client/prefs.ts';
-	import { api } from '#lib/client/api.ts';
+	import {
+		savePreferences,
+		setAppIcon,
+		setPalette,
+		setTheme,
+		type ThemeChoice
+	} from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
+	import type { Preferences } from '#lib/shared/preferences.ts';
 	import { APP_ICONS, appIconFile, type AppIconId } from '#lib/shared/app-icons.ts';
 	import { PALETTES, type PaletteId } from '#lib/shared/themes.ts';
 	import Card from '#lib/ui/Card.svelte';
@@ -18,23 +24,39 @@
 	let palette = $state<PaletteId>(untrack(() => data.palette));
 	let appIcon = $state<AppIconId>(untrack(() => data.appIcon));
 
-	// Kept with the account, so the icon is the same wherever obur is added from (Safari, on an iPhone).
-	async function chooseIcon(id: AppIconId) {
-		const before = appIcon;
-		appIcon = id;
-		setAppIcon(id);
+	/** Shown at once, saved to the account; put back as it was when it couldn't be saved. */
+	async function keep(change: Partial<Preferences>, show: () => void, undo: () => void) {
+		show();
 		try {
-			await api('PUT', '/api/v1/profile/app-icon', { icon: id });
+			await savePreferences(change);
 		} catch {
-			appIcon = before;
-			setAppIcon(before);
-			showToast({ message: m.more_app_icon_failed() });
+			undo();
+			showToast({ message: m.settings_save_failed() });
 		}
 	}
-
+	function chooseTheme(next: ThemeChoice) {
+		const before = theme;
+		void keep(
+			{ themeMode: next },
+			() => ((theme = next), setTheme(next)),
+			() => ((theme = before), setTheme(before))
+		);
+	}
 	function pick(id: PaletteId) {
-		palette = id;
-		setPalette(id);
+		const before = palette;
+		void keep(
+			{ palette: id },
+			() => ((palette = id), setPalette(id)),
+			() => ((palette = before), setPalette(before))
+		);
+	}
+	function chooseIcon(id: AppIconId) {
+		const before = appIcon;
+		void keep(
+			{ appIcon: id },
+			() => ((appIcon = id), setAppIcon(id)),
+			() => ((appIcon = before), setAppIcon(before))
+		);
 	}
 </script>
 
@@ -48,8 +70,8 @@
 	<Card>
 		<Chips
 			label={m.more_mode()}
-			bind:value={theme}
-			onchange={setTheme}
+			value={theme}
+			onchange={chooseTheme}
 			options={[
 				{ value: 'system', label: m.theme_system() },
 				{ value: 'light', label: m.theme_light() },

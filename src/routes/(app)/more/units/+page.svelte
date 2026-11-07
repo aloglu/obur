@@ -1,19 +1,28 @@
 <script lang="ts">
-	// docs/ui.md "More and settings": Time is per device. Weight is kilograms until pounds are built.
+	// docs/ui.md "More and settings": Time follows the account. Weight is kilograms until pounds are built.
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
-	import { setTimeFormat, type TimeFormat } from '#lib/client/prefs.ts';
+	import { savePreferences, setTimeFormat, type TimeFormat } from '#lib/client/prefs.ts';
+	import { showToast } from '#lib/client/toast.svelte.ts';
 	import MenuRow from '#lib/ui/MenuRow.svelte';
 
 	let { data } = $props();
 	let time = $state<TimeFormat>(untrack(() => data.timeFormat));
 
-	function change(next: TimeFormat) {
+	async function change(next: TimeFormat) {
+		const before = time;
 		setTimeFormat(next);
-		void invalidateAll();
+		try {
+			await savePreferences({ timeFormat: next });
+			await invalidateAll();
+		} catch {
+			time = before;
+			setTimeFormat(before);
+			showToast({ message: m.settings_save_failed() });
+		}
 	}
 </script>
 
