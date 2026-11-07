@@ -319,6 +319,22 @@ describe('notes on what was decided', () => {
 		]);
 	});
 
+	it('names values whose numbers the OCR was unsure of, and only the column it used', () => {
+		const lines = table(ROWS);
+		const unsure = (text: string, x: number) =>
+			lines.find((l) => l.text === text && l.box[0][0] === x)!;
+		unsure('16,5', 300).score = 0.6; // protein, per 100 g
+		unsure('1098/265', 300).score = 0.85; // energy, per 100 g
+		unsure('0,3', 400).score = 0.4; // salt and carbohydrate, per serving: not used
+		const p = parseLabel(lines);
+		expect(value(p, 'protein')?.value).toBe(16.5);
+		expect(p.notes).toContainEqual({
+			kind: 'unclear',
+			codes: ['energy_kj', 'energy_kcal', 'protein']
+		});
+		expect(parseLabel(table(ROWS)).notes.some((n) => n.kind === 'unclear')).toBe(false);
+	});
+
 	it('says when it read running text, and has nothing to say about nothing', () => {
 		const text = parseLabel([
 			line('Enerji ve Besin Öğeleri (100g)', 20, 40, 500),

@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { foodWarnings } from './food-checks.ts';
+import { energyCheckable, foodWarnings } from './food-checks.ts';
 import { FoodInput } from './food-input.ts';
 import type { NutrientValue } from './nutrients.ts';
 
@@ -145,5 +145,22 @@ describe('FoodInput', () => {
 		expect(foodWarnings('100g', values)).toContain('energy_macros_mismatch');
 		values[3] = n('protein', 2.5);
 		expect(foodWarnings('100g', values)).not.toContain('energy_macros_mismatch');
+	});
+
+	it('checks energy given only in kJ, and knows when the check cannot run', () => {
+		const values = [
+			n('energy_kj', 1247),
+			n('fat', 0.5, 'less_than'),
+			n('carbohydrate_excl_fibre', 69),
+			n('protein', 25)
+		];
+		expect(energyCheckable(values)).toBe(true);
+		expect(foodWarnings('100g', values)).toContain('energy_macros_mismatch');
+		values[3] = n('protein', 2.5);
+		expect(foodWarnings('100g', values)).not.toContain('energy_macros_mismatch');
+		// Without energy, without a main value, or with energy only as a bound, nothing is checked.
+		expect(energyCheckable(values.slice(1))).toBe(false);
+		expect(energyCheckable(values.slice(0, 3))).toBe(false);
+		expect(energyCheckable([n('energy_kcal', 5, 'less_than'), ...values.slice(1)])).toBe(false);
 	});
 });

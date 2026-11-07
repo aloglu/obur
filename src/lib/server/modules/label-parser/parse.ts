@@ -31,6 +31,8 @@ export interface LabelProposal {
 interface Seen {
 	dropped: NutrientCode[];
 	milligrams: NutrientCode[];
+	/** Values whose numbers the OCR read with low confidence. */
+	unclear: NutrientCode[];
 }
 
 type Code = Extract<
@@ -145,13 +147,15 @@ interface Num {
 	percent: boolean;
 	/** Horizontal position in the image. */
 	x: number;
+	/** The OCR's confidence in the line it came from. */
+	score: number;
 }
 
 const NUMBER =
 	/(%\s*)?([<≤]\s*)?(\d+(?:[.,]\d+)?)(?:\s*(kj|kcal))?(?:\s*\/\s*(\d+(?:[.,]\d+)?))?\s*(kj|kcal|mg|g|ml)?(?![\p{L}\d])(\s*%)?/giu;
 
 /** Numbers in a text; `x0`/`x1` place each one along the line in proportion to its characters. */
-function numbers(text: string, x0 = 0, x1 = 0): Num[] {
+function numbers(text: string, x0 = 0, x1 = 0, score = 1): Num[] {
 	const out: Num[] = [];
 	for (const m of fold(text).matchAll(NUMBER)) {
 		const unit = (m[6] ?? m[4] ?? null) as Num['unit'];
@@ -164,7 +168,8 @@ function numbers(text: string, x0 = 0, x1 = 0): Num[] {
 			units: [m[4] ?? null, m[5] ? (m[6] ?? null) : null],
 			// "1,4g %2": a number with a unit is an amount; the % belongs to the next number.
 			percent: !!m[1] || (!!m[7] && !unit),
-			x: x0 + (x1 - x0) * at
+			x: x0 + (x1 - x0) * at,
+			score
 		});
 	}
 	return out;
@@ -178,6 +183,7 @@ interface Line {
 	cx: number;
 	cy: number;
 	h: number;
+	score: number;
 }
 
 function toLine(l: OcrLine): Line {
@@ -192,7 +198,8 @@ function toLine(l: OcrLine): Line {
 		x1,
 		cx: (x0 + x1) / 2,
 		cy: ys.reduce((a, b) => a + b, 0) / ys.length,
-		h: Math.max(...ys) - Math.min(...ys)
+		h: Math.max(...ys) - Math.min(...ys),
+		score: l.score
 	};
 }
 
@@ -252,6 +259,9 @@ function headerColumns(lines: Line[], top: number, rowGap: number): Column[] {
 	}
 	return columns;
 }
+
+/** OCR confidence below which a value's number is called hard to read (docs/feasibility.md, "Unflagged misreads"). */
+const UNCLEAR_BELOW = 0.9;
 
 const round = (n: number) => Math.round(n * 10_000) / 10_000;
 
@@ -385,7 +395,9 @@ function parseTable(lines: Line[], seen: Seen): Read | undefined {
 			.slice(r.hit.end)
 			.replace(/\([^)]{0,12}\)/g, (m) => ' '.repeat(m.length));
 		const share = r.hit.end / Math.max(r.line.text.length, 1);
-		cells.get(r)!.push(...numbers(own, r.line.x0 + (r.line.x1 - r.line.x0) * share, r.line.x1));
+		cells
+			.get(r)!
+			.push(...numbers(own, r.line.x0 + (r.line.x1 - r.line.x0) * share, r.line.x1, r.line.score));
 	}
 	// Other numbers go to rows column by column, top to bottom, following the drift of a curved pack: each takes
 	// the row (below the previous one) that best keeps the previous offset.
@@ -422,7 +434,7 @@ function parseTable(lines: Line[], seen: Seen): Read | undefined {
 				energyRow >= 0 &&
 				Math.abs(l.cy - best[energyRow].line.cy) <= rowGap * 1.5
 			) {
-				cells.get(best[energyRow])!.push(...numbers(l.text, l.x0, l.x1));
+				cells.get(best[energyRow])!.push(...numbers(l.text, l.x0, l.x1, l.score));
 				after = Math.max(after, energyRow);
 				continue;
 			}
@@ -439,7 +451,7 @@ function parseTable(lines: Line[], seen: Seen): Read | undefined {
 				if (missFor(i) <= rowGap * 0.75 && (pick < 0 || missFor(i) < missFor(pick))) pick = i;
 			}
 			if (pick < 0) continue;
-			cells.get(best[pick])!.push(...numbers(l.text, l.x0, l.x1));
+			cells.get(best[pick])!.push(...numbers(l.text, l.x0, l.x1, l.score));
 			offset = l.cy - best[pick].line.cy;
 			after = pick;
 		}
@@ -479,8 +491,12 @@ function parseTable(lines: Line[], seen: Seen): Read | undefined {
 		} else nums = all.filter((n) => !n.percent).slice(0, 1);
 		if (!nums.length || r.hit.row === 'other') continue;
 		const per100 = chosen?.kind !== 'serving';
-		if (r.hit.row === 'energy') add(out, energy(nums, r.line.folded), seen, per100);
-		else add(out, [amount(r.hit.row, nums[0], seen)], seen, per100);
+		const values =
+			r.hit.row === 'energy' ? energy(nums, r.line.folded) : [amount(r.hit.row, nums[0], seen)];
+		const used = r.hit.row === 'energy' ? nums.slice(0, 2) : nums.slice(0, 1);
+		if (Math.min(...used.map((n) => n.score)) < UNCLEAR_BELOW)
+			seen.unclear.push(...values.filter((v) => !out.has(v.code)).map((v) => v.code));
+		add(out, values, seen, per100);
 	}
 	const portion = amounts.map((c) => ('portion' in c ? c.portion : null)).find(Boolean) ?? null;
 	// No basis column: the title may say it ("Enerji ve Besin Öğeleri (100g'da)", "100 g için Besin Öğeleri").
@@ -578,8 +594,8 @@ export function parseLabel(ocr: OcrLine[]): LabelProposal {
 	// Once a table is recognised it is never re-read as running text: that is where confident wrong numbers come
 	// from. Values the table didn't give stay unknown for the person to fill in.
 	// A table that is recognised keeps only what it saw; a failed attempt's choices are not reported.
-	let seen: Seen = { dropped: [], milligrams: [] };
-	const fresh = () => (seen = { dropped: [], milligrams: [] });
+	let seen: Seen = { dropped: [], milligrams: [], unclear: [] };
+	const fresh = () => (seen = { dropped: [], milligrams: [], unclear: [] });
 	const result = parseTable(lines, seen) ??
 		parseText(lines, fresh()) ?? {
 			basis: null,
@@ -595,6 +611,8 @@ export function parseLabel(ocr: OcrLine[]): LabelProposal {
 	const notes = [...result.notes];
 	if (dropped.length) notes.push({ kind: 'dropped', codes: dropped });
 	if (milligrams.length) notes.push({ kind: 'converted_mg', codes: milligrams });
+	const unclear = unique(seen.unclear).filter((c) => kept.has(c));
+	if (unclear.length) notes.push({ kind: 'unclear', codes: unclear });
 	return {
 		...result,
 		notes,

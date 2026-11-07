@@ -19,4 +19,6 @@ export type LabelNote =
 	/** Numbers no food can have for the basis, left out so they stay unknown. */
 	| { kind: 'dropped'; codes: NutrientCode[] }
 	/** Salt or sodium written in milligrams, given in grams. */
-	| { kind: 'converted_mg'; codes: NutrientCode[] };
+	| { kind: 'converted_mg'; codes: NutrientCode[] }
+	/** Values whose numbers were hard to read in the photo. */
+	| { kind: 'unclear'; codes: NutrientCode[] };

@@ -54,7 +54,8 @@ const TABLE = [
 		['Tuz (g)', '<0,1', '<0,1', '%1']
 	].flatMap(([name, a, b, c], i) => [
 		line(name, 100, 120 + i * 26),
-		line(a, 300, 120 + i * 26, 60),
+		// The OCR was unsure of the protein figure.
+		{ ...line(a, 300, 120 + i * 26, 60), score: a === '6,5' ? 0.7 : 0.95 },
 		line(b, 400, 120 + i * 26, 60),
 		line(c, 520, 120 + i * 26, 40)
 	])
@@ -81,6 +82,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	// What was read and decided, in place of the hint on copying a label.
 	const notes = page.getByRole('list', { name: 'What was read' });
 	await expect(notes.getByRole('listitem')).toHaveText([
+		'Protein was hard to read in the photo. Check it against the label: a missed decimal comma turns 2,5 into 25.',
 		'Read per 100 g. The per-serving and %RI columns were skipped. Its serving size became a portion below.',
 		"400 kcal matches the label's 1673 kJ.",
 		"Fibre wasn't read, so it stays unknown, not zero. Type it if it's on the label."

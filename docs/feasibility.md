@@ -152,11 +152,13 @@ Tested on 2026-10-25 by the owner with the throwaway probe in `spikes/phone-prob
 Updated 2026-11-07 (pre-release check):
 
 - Voice: a held-out set with a second speaker was recorded and scored (2026-10-30, below); the improvement round then
-  tuned on it, so the next honest number needs 10–15 fresh clips. Phone end-to-end time was checked by the owner
-  (about 2–3 s from Done to the confirmation screen), not measured over mobile data.
-- Labels: 22 photos are now development data; an honest held-out number needs about 10 new labels. One known kind of
-  unflagged wrong value remains: the OCR drops a decimal comma or digit ("2,5" → "25"); the person checks every value
-  against the photo. A full check of the hand-read values is still open (owner spot-checked 5–6 labels).
+  tuned on it, so there is no honest held-out number after tuning. Owner's decision (2026-11-07): release on the
+  current results and judge it in daily use; every voice entry is confirmed before saving. Phone end-to-end time was
+  checked by the owner (about 2–3 s from Done to the confirmation screen), not measured over mobile data.
+- Labels: 22 photos are now development data; there is no held-out number after tuning (owner's decision, 2026-11-07:
+  add a check from the photos we have instead of gathering new ones). The decimal-comma misread now gets an amber note
+  or a warning on every saved OCR run ("Unflagged misreads", below). A full check of the hand-read values is still open
+  (owner spot-checked 5–6 labels).
 - The failed offline launch: resolved on 2026-10-29 (Cloudflare served a stale service worker; see the design).
 
 ## Voice, held-out evaluation (Phase 2 step 8, 2026-10-30)
@@ -276,6 +278,35 @@ cannot see these, the person checks every value against the photo, and the warni
 values (21 on the new photos) are mostly very small or pale print the OCR did not read; they stay empty. An honest
 held-out number now needs new photos (the owner has few new products: options are counting edits in real use, a
 friend's kitchen, or new purchases over time).
+
+## Unflagged misreads (2026-11-07)
+
+Question: the OCR sometimes drops a decimal comma or digit ("2,5" → "25", "7,8" → "8"), which the parser cannot see.
+Can the scan page point the person at these values, without new photos?
+
+Method: every saved OCR run of the owner's 22 label photos (the 10 Phase 0 labels at three OCR configurations and three
+sizes, and the 12 newer photos as the service reads them), parsed and compared value by value with the hand-read
+truth. A wrong value counts as flagged when its label shows a plausibility warning or an amber note naming it or
+saying the values couldn't be checked.
+
+Findings. Per-nutrient limits would not catch them: the misreads seen are ordinary amounts (25 g protein, 22 g sugars),
+and a real label in the set has 18.2 g salt. What the unflagged ones share is that the energy check could not run
+(energy or a main value not read), or that the OCR was unsure of the number. The OCR's confidence is a weak signal on
+its own: "25" for "2,5" was read with full confidence.
+
+Changes: an amber note for values read from a line the OCR scored under 0.9 ("Protein was hard to read in the photo…");
+an amber note when the energy check could not run (energy not read, given only as "less than", or fat, carbohydrate or
+protein not read); the energy check also runs from kJ when kcal was not read.
+
+| Saved OCR runs | Wrong values | Flagged before | Flagged now | Labels with no wrong value given a new amber note |
+| --- | --- | --- | --- | --- |
+| As the service reads them (PP-OCRv6 small, 1280 px), 22 labels | 4 | 3 | 4 | 3 of 18 |
+| All nine Phase 0 configurations and the service run | 31 | 12 | 24 | 35 of 78 |
+
+The 7 still without a note or warning are all on one label printed as running text, which already carries its own
+amber note to check each value. Confidence threshold: 0.6 caught 1 of the 4 service-run misreads; 0.9 caught 2 and
+marked 3 of 151 right values; 0.95 marked twice as many right ones for nothing more. This is development evidence on
+the same photos, not a held-out result.
 
 ## Blurry label photos (2026-11-07)
 

@@ -21,6 +21,17 @@ const KCAL_PER_G: Partial<Record<NutrientCode, number>> = {
 	polyols: 2.4
 };
 
+/** The main values energy is checked against; without one of them the check can't run. */
+export const ENERGY_PARTS = ['fat', 'carbohydrate_excl_fibre', 'protein'] as const;
+
+/** Whether energy can be checked against fat, carbohydrate and protein: an exact energy and all three known. */
+export function energyCheckable(values: NutrientValue[]): boolean {
+	const exactEnergy = values.some(
+		(v) => (v.code === 'energy_kcal' || v.code === 'energy_kj') && v.qualifier !== 'less_than'
+	);
+	return exactEnergy && ENERGY_PARTS.every((c) => values.some((v) => v.code === c));
+}
+
 export function foodWarnings(basis: Basis, values: NutrientValue[]): FoodWarning[] {
 	const exact = new Map(
 		values.filter((v) => v.qualifier !== 'less_than').map((v) => [v.code, v.value])
@@ -56,13 +67,13 @@ export function foodWarnings(basis: Basis, values: NutrientValue[]): FoodWarning
 	}
 	// Only when every main contributor is known; rounded labels legitimately differ, so the margin is generous. A
 	// "less than" value counts at its bound: it is small, and skipping the check would hide a misread elsewhere.
-	const known = (c: NutrientCode) => any.has(c);
-	if (has('energy_kcal') && known('fat') && known('carbohydrate_excl_fibre') && known('protein')) {
+	// Energy in kJ alone is checked too.
+	if (energyCheckable(values)) {
 		const computed = Object.entries(KCAL_PER_G).reduce(
 			(sum, [c, f]) => sum + (any.get(c as NutrientCode) ?? 0) * (f ?? 0),
 			0
 		);
-		const reported = val('energy_kcal');
+		const reported = has('energy_kcal') ? val('energy_kcal') : val('energy_kj') / 4.184;
 		if (Math.abs(computed - reported) > Math.max(15, reported * 0.2)) {
 			warnings.push('energy_macros_mismatch');
 		}

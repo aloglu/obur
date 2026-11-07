@@ -5,7 +5,7 @@
 	import Check from '@lucide/svelte/icons/check';
 	import CircleHelp from '@lucide/svelte/icons/circle-help';
 	import { m } from '#lib/paraglide/messages.js';
-	import { foodWarnings } from '#lib/shared/food-checks.ts';
+	import { ENERGY_PARTS, energyCheckable, foodWarnings } from '#lib/shared/food-checks.ts';
 	import type { LabelNote } from '#lib/shared/label-notes.ts';
 	import type { NutrientCode, NutrientValue } from '#lib/shared/nutrients.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
@@ -38,9 +38,9 @@
 	};
 	/** "Saturated fat (g)" → "Saturated fat". */
 	const nameOf = (code: NutrientCode) => (NAME[code]?.() ?? code).replace(/\s*\(.*\)$/, '');
-	/** "Fibre, sugars and salt": the first capitalised, as it starts the sentence. */
-	function names(codes: NutrientCode[]) {
-		const words = codes.map((c, i) => (i === 0 ? nameOf(c) : nameOf(c).toLowerCase()));
+	/** "Fibre, sugars and salt": the first capitalised when it starts the sentence. */
+	function names(codes: NutrientCode[], first = true) {
+		const words = codes.map((c, i) => (i === 0 && first ? nameOf(c) : nameOf(c).toLowerCase()));
 		return words.length < 2
 			? words.join('')
 			: m.list_and({ first: words.slice(0, -1).join(', '), last: words[words.length - 1] });
@@ -68,6 +68,20 @@
 		// First: on a blurry photo, values that were read are the likeliest to be wrong.
 		if (blurry) out.push({ check: true, text: m.scan_note_blurry() });
 		const has = (code: NutrientCode) => nutrients.find((n) => n.code === code);
+		// Numbers the OCR wasn't sure of: where a dropped decimal comma ("2,5" read as "25") is likeliest.
+		for (const note of notes) {
+			if (note.kind !== 'unclear') continue;
+			const codes = note.codes.filter(
+				(c) => c !== 'energy_kj' || !note.codes.includes('energy_kcal')
+			);
+			out.push({
+				check: true,
+				text:
+					codes.length === 1
+						? m.scan_note_unclear_one({ name: nameOf(codes[0]) })
+						: m.scan_note_unclear_many({ names: names(codes) })
+			});
+		}
 		for (const note of notes) {
 			if (note.kind === 'columns') {
 				const parts = [m.scan_note_read({ basis: basisText(note.used) })];
@@ -101,6 +115,19 @@
 		for (const note of notes) {
 			if (note.kind === 'dropped')
 				out.push({ check: true, text: m.scan_note_dropped({ names: names(note.codes) }) });
+		}
+		// The energy check is what catches most misreads; say when it couldn't run.
+		if (nutrients.length && !energyCheckable(nutrients)) {
+			const energyKnown = has('energy_kcal') || has('energy_kj');
+			const absent = ENERGY_PARTS.filter((c) => !has(c));
+			out.push({
+				check: true,
+				text: !energyKnown
+					? m.scan_note_unchecked_energy()
+					: absent.length
+						? m.scan_note_unchecked_parts({ names: names(absent, false) })
+						: m.scan_note_unchecked_energy_bound()
+			});
 		}
 		const dropped = new Set(notes.flatMap((n) => (n.kind === 'dropped' ? n.codes : [])));
 		const missing = ROWS.filter((codes) => !codes.some((c) => has(c) || dropped.has(c))).map(
