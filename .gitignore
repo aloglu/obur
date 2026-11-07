@@ -17,7 +17,11 @@ node_modules/
 __pycache__/
 *.onnx
 *.bin
-models/
+# Downloaded model files only; never a source folder that happens to be called models.
+/models/
+speech/models/
+labels/models/
+spikes/**/models/
 
 # Build output
 .output
