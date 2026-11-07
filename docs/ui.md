@@ -470,6 +470,19 @@ The demo's line icons are hand-drawn: 24 px grid, 2–2.4 px stroke, round caps.
 - **Live result previews keep their layout still:** the number that changes sits in a fixed-width column, so the
   values beside it don't move as it gains or loses digits.
 
+### Your own AI key for Speak and Scan (owner's review, round 10, 2026-11-07)
+
+All seven screens kept; reference: `docs/ui/review-2026-11/remote-models.html`. Design: `docs/design.md`, "Remote models for Speak and Scan".
+
+- **More → Speak and Scan:** a card for Speak and one for Scan, each a radio list: **On this server** ("Nothing leaves your server"; only when the server has that add-on) and **With my OpenAI key** / **With my OpenRouter key** (disabled with "Add a key below first" until one exists). **Your keys:** provider, "···· last four · checked today", Remove; this month's count of recordings and labels; Add a key. Only the person sees this page's choices and keys.
+- **Add a key:** a sheet with an OpenAI / OpenRouter segmented control, the key field, where to find a key, **Check and save** ("Checking with OpenAI…" while it asks). A refused key is never saved; the field turns red with the reason. A line says it is stored encrypted and only the last four characters are shown again.
+- **Consent:** choosing a key for Speak or Scan opens "Send your recordings to OpenAI?" / "Send your label photos to OpenAI?" listing exactly what is sent, that the company's terms apply, that nothing of anyone else's is sent, and that switching back stops it: **Send to OpenAI** (primary) and **Keep it on this server**.
+- **Using it:** Speak shows "With your OpenAI key" under Done. Check the label's notes start with an amber "Read by OpenAI. Check each value against your photo."
+- **Failures** (redrawn after the owner found the first version confusing): one warning card saying what happened, one button that fixes it, then **Type it instead**. Key refused: **Replace the key** (opens Speak and Scan). Out of credit: **Record again** / **Take the photo again**. Not answering: **Try again**, which resends the same recording or photo. Only when the server has the add-on, a small link: "Read this one on obur's server instead". Nothing ever switches to a company by itself.
+- **No add-on on the server:** while personal keys are allowed, Log keeps the Speak and Scan tiles in their usual order and colours; tapping one opens "Speak isn't set up on this server" (or Scan) with **Use my own key** and **Type it instead**.
+- **Household (admins):** a **Personal AI keys** switch, on by default. Off hides the choice, the server refuses remote requests, and people with keys see why.
+- **No Turkish examples** in visible text or user-facing docs (owner, 2026-11-07).
+
 ## 4. Deliberately left open
 
 - **Where the achievements page is opened from:** proposed a row on Progress ("Achievements" with the count) and from an achievement in Journal; not yet confirmed.

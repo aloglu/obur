@@ -454,10 +454,10 @@ Status: **requirements** from the owner (2026-11-07): personal keys first, expli
 **Keys.**
 - Stored per person in their own table row (forced RLS: only its owner; admins and exports never see it), encrypted with AES-256-GCM under a server key generated on first start into `/data/secrets` (`OBUR_SECRETS_KEY`; in development from `.env`). Backups hold only the encrypted key; the server key is not in backups, so a stolen backup does not reveal it. After a restore onto another server the key can't be decrypted: the person is asked to enter it again.
 - Shown afterwards only as its last four characters. Checked when added (OpenAI: list models; OpenRouter: the key's own info endpoint) and removable at any time, which deletes the row.
-- Never logged; request logs and errors redact the Authorization header. Only two fixed hosts are contacted (`api.openai.com`, `openrouter.ai`); there is no custom base URL, so a key setting can't make the server call anywhere else.
+- Never logged; request logs and errors redact the Authorization header. Only two fixed hosts are contacted (`api.openai.com`, `openrouter.ai`); nothing a person enters can change where the server calls. (`AI_PROVIDER_TEST_URL`, an operator setting for the browser tests' stand-in provider, replaces both.)
 
 **Speak.**
-- OpenAI: `POST /v1/audio/transcriptions` with `gpt-transcribe` (OpenAI retires its earlier transcription models on 2027-02-26), `languages: ["tr", "en"]`, the same vocabulary prompt as the local add-on, and the person's recent food and brand names as `keywords`.
+- OpenAI: `POST /v1/audio/transcriptions` with `gpt-transcribe` (OpenAI retires its earlier transcription models on 2027-02-26) and the same prompt as the local add-on: meal and unit words, then the person's recent food and brand names.
 - OpenRouter: `POST /api/v1/audio/transcriptions` with a default transcription model, `provider: {zdr: true, data_collection: "deny"}` (only endpoints that keep nothing and don't train). OpenRouter takes no vocabulary, so brand names are likelier to need correcting.
 - The phone records MP4 (Safari) or WebM (Chromium, Firefox), which both accept. Same size and length limits as today.
 
@@ -466,7 +466,7 @@ Status: **requirements** from the owner (2026-11-07): personal keys first, expli
 - A new pure function in `label-parser` turns that table into the usual proposal, reusing the row names, number reading, column choice (per 100 g/ml over per serving, %RI skipped), impossible-value drops, notes and plausibility warnings. The model's text is never taken as numbers directly.
 - Defaults: OpenAI `gpt-5-mini`; on OpenRouter the same model with `zdr` and `data_collection: "deny"` and `require_parameters` (so structured output is honoured). A remote reading always carries an amber note: "Read by <provider>. Check each value against your photo." The blurry check is local-only and is skipped.
 
-**Models.** Each provider has a default model per feature, set in code and changed only in a release; an advanced field lets a person name another model id from their provider (checked when saved). Defaults follow the providers' recommendations at the time of release.
+**Models.** Each provider has one model per feature, set in code and changed only in a release, following the providers' recommendations at the time (1.0.0: OpenAI `gpt-transcribe` and `gpt-5-mini`; OpenRouter `openai/whisper-large-v3` and `openai/gpt-5-mini`). Choosing another model is a possible later option, not in 1.0.0.
 
 **Failures.** A refused key ("Your OpenAI key was refused. Check it in Settings → Speak and Scan."), an account out of credit, the provider's rate limit or an outage each get their own message; typing always remains, and when the local add-on is installed the message offers **Use this server instead** for that one request. Nothing falls back to a remote model on its own.
 
