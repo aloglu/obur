@@ -280,14 +280,14 @@ Method: the owner's 22 label photos (10 development, 12 held-out), each redrawn 
 
 | Blur radius | Sharpness range | Labels read with at least 5 of 7 right | Labels with a wrong value |
 | --- | --- | --- | --- |
-| none (real photos) | 0.26–0.53 | 17 of 22 | 4 |
-| 1 px | 0.15–0.32 | 17 | 3 |
-| 1.5 px | 0.11–0.20 | 15 | 4 |
-| 2 px | 0.09–0.14 | 3 | 4 |
+| none (real photos) | 0.26–0.53 | 16 of 22 | 3 |
+| 1 px | 0.15–0.32 | 17 | 2 |
+| 1.5 px | 0.11–0.20 | 14 | 5 |
+| 2 px | 0.09–0.14 | 3 | 3 |
 | 3 px | 0.07–0.10 | 1 | 0 |
 | 4 px | 0.07–0.11 | 0 | 0 |
 
-Findings: no real photo measured below 0.26; from 2 px, where reading mostly fails, every copy measured 0.14 or below. Between 0.15 and 0.20 some copies were still read correctly, so the measure cannot predict a failed read on its own. Blurred copies that were read gave wrong values more often (up to 4 of 7 on one label).
+Findings: no real photo measured below 0.26; from 2 px, where reading mostly fails, every copy measured 0.14 or below. Between 0.15 and 0.20 some copies were still read correctly, so the measure cannot predict a failed read on its own. Copies at 1.5 px gave a wrong value on more labels than the real photos (5 against 3), up to 4 of 7 on one label. The counts were computed from the scored results, not estimated.
 
 Decision (provisional): below 0.16 a photo is called blurry. With nothing read, the scan page says the photo is blurry instead of "no table found"; with values read, Check the label opens with a note that values may be misread. Limits: the blur was artificial (a Gaussian), not camera shake or a missed focus; 22 labels; one OCR configuration. Revisit with real blurry photos if the message appears wrongly or not at all.
 
