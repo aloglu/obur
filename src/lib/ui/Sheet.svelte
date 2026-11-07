@@ -157,12 +157,14 @@
 
 {#snippet titleRow()}
 	<div class="flex items-center justify-between gap-3">
-		{#if head}{@render head()}{:else}<h2 class="text-[21px] font-[750]">{title}</h2>{/if}
+		{#if head}{@render head()}{:else}<h2 class="min-w-0 text-[21px] font-[750] break-words">
+				{title}
+			</h2>{/if}
 		<button
 			bind:this={closeButton}
 			type="button"
 			onclick={onclose}
-			class="grid size-11 place-items-center rounded-full bg-surface2 text-muted"
+			class="grid size-11 shrink-0 place-items-center self-start rounded-full bg-surface2 text-muted"
 			aria-label={m.sheet_close()}><X size={20} aria-hidden="true" /></button
 		>
 	</div>

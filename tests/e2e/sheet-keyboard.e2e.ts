@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { apiAs, createFood, signedInAs } from './fixtures.ts';
 
 // A browser test can't open a phone's keyboard, so this stands in for what an iPhone reports with one up: a smaller
@@ -128,4 +128,58 @@ test('opening a sheet does not put focus on its close button; Tab reaches it, Es
 	await expect(
 		page.getByRole('dialog', { name: 'Type what you ate' }).getByLabel('You typed')
 	).toBeFocused();
+});
+
+test('a long food name in a sheet title leaves the close button its full size', async ({
+	page
+}, testInfo) => {
+	const tag = `Uzun ${testInfo.project.name}`;
+	await signedInAs(page, tag);
+	const name = `${tag} Geleneksel Taş Fırında Pişirilmiş Tam Buğdaylı Ekşi Mayalı Köy Ekmeği Dilimlenmiş`;
+	const unbroken = `${tag} Çikolatalıfındıkkremalıgofretbisküvisütlüçikolatakaplamalı`;
+	for (const n of [name, unbroken]) {
+		await createFood(page, {
+			name: n,
+			brand: 'Uzunmarkaadıolanfırıncılık',
+			basis: '100g',
+			nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }],
+			servings: []
+		});
+	}
+	// Layout sizes, which the opening animation's scale doesn't change.
+	const sizeOfClose = (sheet: ReturnType<Page['getByRole']>) =>
+		sheet.getByRole('button', { name: 'Close' }).evaluate((close: HTMLElement) => {
+			const dialog = close.closest('dialog')!;
+			return {
+				width: close.offsetWidth,
+				height: close.offsetHeight,
+				inside: close.getBoundingClientRect().right <= dialog.getBoundingClientRect().right
+			};
+		});
+
+	for (const n of [name, unbroken]) {
+		// The amount sheet on Log, which has its own head.
+		await page.goto('/log');
+		await page.getByRole('searchbox').first().fill(n.slice(0, 30));
+		await page
+			.getByRole('button', { name: new RegExp(n.slice(tag.length + 1, tag.length + 12)) })
+			.first()
+			.click();
+		const amount = page.getByRole('dialog').last();
+		await expect(amount).toBeVisible();
+		expect(await sizeOfClose(amount)).toEqual({ width: 44, height: 44, inside: true });
+
+		// Add a food in a recipe, whose title becomes the food's name.
+		await page.goto('/recipes/new');
+		await page.getByRole('button', { name: 'Add food' }).click();
+		const add = page.getByRole('dialog', { name: 'Add a food' });
+		await add.getByLabel('Search foods').fill(n.slice(0, 30));
+		await add
+			.getByRole('button', { name: new RegExp(n.slice(tag.length + 1, tag.length + 12)) })
+			.first()
+			.click();
+		const picked = page.getByRole('dialog').last();
+		await expect(picked.getByLabel('Amount')).toBeVisible();
+		expect(await sizeOfClose(picked)).toEqual({ width: 44, height: 44, inside: true });
+	}
 });
