@@ -15,7 +15,7 @@
 		type="button"
 		onclick={openCelebration}
 		aria-label={m.achievement_toast_open({ title, detail: detail.replace(/[.!?…]$/, '') })}
-		class="achievement-toast pointer-events-auto flex max-w-[440px] min-w-0 items-center gap-3 rounded-tile bg-toast-bg py-3 pr-3 pl-3 text-left text-toast-text shadow-toast"
+		class="achievement-toast pointer-events-auto flex max-w-[min(440px,100%)] min-w-0 items-center gap-3 rounded-tile bg-toast-bg py-3 pr-3 pl-3 text-left text-toast-text shadow-toast"
 	>
 		<span class="pop grid size-10 shrink-0 place-items-center rounded-full bg-surface"
 			><Picture hex={achievementPicture(a)} size={30} /></span

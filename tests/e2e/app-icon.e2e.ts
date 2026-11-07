@@ -28,6 +28,8 @@ test('the app icon chosen on Appearance is what the Home Screen and the manifest
 		page.getByText('A new icon shows after you add obur to the Home Screen again.')
 	).toBeVisible();
 
+	// On the narrowest phones (320 px), where a message used to run off the screen.
+	await page.setViewportSize({ width: 320, height: 640 });
 	// Chosen: the page's links change at once, and stay after a reload.
 	// Saved to the account before going on.
 	await Promise.all([
@@ -36,7 +38,13 @@ test('the app icon chosen on Appearance is what the Home Screen and the manifest
 		icons.getByRole('radio', { name: 'Zerde' }).click()
 	]);
 	// The page loads again by itself (Safari reads the icon only on a load), with the toast carried over.
-	await expect(page.getByRole('status')).toContainText('App icon changed');
+	const status = page.getByRole('status').filter({ hasText: 'App icon changed' });
+	await expect(status).toContainText('Add obur to the Home Screen again to see it.');
+	// The message stays inside the screen, wrapping when it needs to.
+	const box = (await status.locator('.toast').boundingBox())!;
+	const width = page.viewportSize()!.width;
+	expect(box.x).toBeGreaterThanOrEqual(0);
+	expect(box.x + box.width).toBeLessThanOrEqual(width);
 	await expect(touch).toHaveAttribute('href', at('/app-icons/zerde/icon-180.png'));
 	await page.reload();
 	await expect(touch).toHaveAttribute('href', at('/app-icons/zerde/icon-180.png'));

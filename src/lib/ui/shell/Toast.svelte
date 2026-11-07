@@ -25,7 +25,7 @@
 	{#if toast.current}
 		{#key toast.current.id}
 			<div
-				class="toast pointer-events-auto flex max-w-[440px] min-w-0 items-center gap-3 rounded-tile bg-toast-bg py-3 pr-2 pl-3.5 text-toast-text shadow-toast"
+				class="toast pointer-events-auto flex max-w-[min(440px,100%)] min-w-0 items-center gap-3 rounded-tile bg-toast-bg py-3 pr-2 pl-3.5 text-toast-text shadow-toast"
 			>
 				<span
 					class="check grid size-7 shrink-0 place-items-center rounded-full bg-fill text-on-accent"
@@ -33,7 +33,7 @@
 				>
 				<span class="min-w-0 flex-1">
 					<span class="block text-[15px] font-bold">{toast.current.message}</span>
-					{#if toast.current.detail}<span class="block truncate text-[13px] opacity-75"
+					{#if toast.current.detail}<span class="block text-[13px] break-words opacity-75"
 							>{toast.current.detail}</span
 						>{/if}
 				</span>

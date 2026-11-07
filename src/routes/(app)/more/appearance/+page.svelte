@@ -63,7 +63,7 @@
 			return;
 		}
 		setAppIcon(id);
-		showToast({ message: m.app_icon_saved(), detail: m.more_app_icon_hint() });
+		showToast({ message: m.app_icon_saved(), detail: m.app_icon_saved_detail() });
 		location.reload();
 	}
 </script>
