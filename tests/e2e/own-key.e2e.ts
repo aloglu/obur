@@ -52,7 +52,7 @@ test('adding a key: a refused one is never saved; allowing a company is explicit
 }, testInfo) => {
 	const name = `Anahtar ${testInfo.project.name}`;
 	await signedInAs(page, name);
-	await page.goto('/more');
+	await page.goto('/more/settings');
 	await page.getByRole('link', { name: /Speak and Scan/ }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Speak and Scan' })).toBeVisible();
 	const speakCard = page.getByRole('radiogroup', { name: 'Speak' });

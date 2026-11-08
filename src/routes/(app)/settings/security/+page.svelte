@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackLink from '#lib/ui/BackLink.svelte';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
@@ -79,7 +80,7 @@
 <svelte:head><title>{m.security_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex min-h-dvh max-w-[520px] flex-col gap-3 px-3.5 py-6">
-	<a href={resolve('/(app)')} class="text-[0.875rem] font-semibold text-accent">← {m.app_name()}</a>
+	<BackLink href={resolve('/(app)/more/settings')} label={m.settings_title()} />
 	<h1 class="text-[1.5rem] font-[750]">{m.security_title()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if info}<Notice tone="info">{info}</Notice>{/if}

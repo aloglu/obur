@@ -45,6 +45,7 @@ test('an iPhone set to its largest text gets text at 200 %, and the pages still 
 		'/progress',
 		'/journal',
 		'/more',
+		'/more/settings',
 		'/more/appearance',
 		'/foods/new',
 		'/household',

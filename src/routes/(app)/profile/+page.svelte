@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackLink from '#lib/ui/BackLink.svelte';
 	// Profile (docs/ui.md, review demo account.html): the budget and where it comes from, then what feeds it. About you
 	// is rows that open setup's first step; the budget settings apply from today.
 	import { invalidateAll } from '$app/navigation';
@@ -59,6 +60,7 @@
 <svelte:head><title>{m.profile_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
+	<BackLink href={resolve('/(app)/more/settings')} label={m.settings_title()} />
 	<h1 class="text-[1.5rem] font-[750]">{m.profile_title()}</h1>
 	{#if t && day}
 		<Card title={m.profile_target()}>

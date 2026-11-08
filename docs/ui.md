@@ -110,7 +110,8 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 
 ### More and settings
 
-- **More** is compact: rows with current values; Appearance, Goal, Units and Reminders on nested pages. Sign out sits in its row beside the name.
+- **More** is compact: Foods, Recipes, Saved meals and Recently deleted with their counts; then **Settings**, Household (admins) and Help; then Sign out in its row beside the name.
+- **More → Settings** (owner, 2026-11-08: More had become mostly settings): Profile, Goal, Units, Appearance, Reminders and Speak and Scan, with their current values; then Your data and Security. Each settings page's back link returns to Settings.
 - **Appearance:** mode, then themes as cards, then app icons, with no descriptions except a short line: "A new icon shows after you add obur to the Home Screen again."
 - **Goal:** Pace is a row ("Steady · 0,25 kg a week") opening a menu. Goal weight opens in place and moved here from Profile's details; Maintain and the 1 kg pace ("Fastest") stay as options because setup offers them. Without a calculated budget the page points to setup. **Units:** Weight and a new **Time** (24-hour or 12-hour, defaulting to the device).
 - **Reminders:** just the time; tapping opens the native picker. The Home Screen hint shows only on Reminders, in three one-line steps with room between them. Quiet hours stay on the page as their own card (the demo left them out; they are a real setting, owner 2026-10-31).
@@ -148,9 +149,9 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 **Navigation**
 - **Phone status bar:** pages start 12 px below the status bar (`env(safe-area-inset-top)`, plus room for iOS's blur fading out below it); content scrolls under it, where iOS blurs it (owner, 2026-10-31: keep the blur, but nothing should sit in it at rest).
 - **Phone:** a floating tab bar inset 12 px from the screen edges, with Today, Log, Journal, Progress and More. The active tab gets a soft accent background and accent text.
-- **From 760 px:** a sticky side nav with the same five items: icons only (72 px) until 1100 px, labelled (232 px) from there. `/settings` redirects to `/more`.
+- **From 760 px:** a sticky side nav with the same five items: icons only (72 px) until 1100 px, labelled (232 px) from there. `/settings` redirects to `/more/settings`.
 - **More:** see "More and settings" in the design review above.
-- **Theme:** chosen in Settings (desktop) or More (phone) as System / Light / Dark, with System as the default. There is no theme toggle in the header.
+- **Theme:** chosen in More → Settings → Appearance as System / Light / Dark, with System as the default. There is no theme toggle in the header.
 
 **Header**
 - Shows previous day, then the title (Today / Yesterday / "Thu 15 Oct") with the long date under it, then next day.
@@ -506,7 +507,7 @@ All seven screens kept; reference: `docs/ui/review-2026-11/remote-models.html`. 
 
 Routine choices made while building the screens; none changes the direction above. Listed so the owner can review them.
 
-- **Sign out** sits at the bottom of Settings (desktop) and More (phone), under "Signed in as …". The demo did not place it.
+- **Sign out** sits at the bottom of More, under "Signed in as …". The demo did not place it.
 - **Default meal** for a new entry when no meal was preset: breakfast 04:00–10:30, lunch 11:00–15:00, dinner 17:00–21:30, otherwise snacks (device time zone).
 - **After midnight** (before 04:00) the amount sheet keeps Today selected and shows "It's after midnight. Did you mean yesterday?" above the day chips, as the design asks (offer, never silently change).
 - **Budget card** shows calories eaten and "Budget: Not set yet" until goals arrive (Phase 1, step 7); the ring structure is already in place.

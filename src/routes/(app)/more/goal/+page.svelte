@@ -69,8 +69,11 @@
 <svelte:head><title>{m.more_goal()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a href={resolve('/(app)/more')} class="flex items-center gap-1 self-start font-bold text-accent">
-		<ChevronLeft size={20} aria-hidden="true" />{m.nav_more()}
+	<a
+		href={resolve('/(app)/more/settings')}
+		class="flex items-center gap-1 self-start font-bold text-accent"
+	>
+		<ChevronLeft size={20} aria-hidden="true" />{m.settings_title()}
 	</a>
 	<h1 class="text-[1.5rem] font-[750]">{m.more_goal()}</h1>
 	{#if problem}<Notice>{problem}</Notice>{/if}

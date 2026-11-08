@@ -107,11 +107,7 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await expect(page.getByRole('definition').filter({ hasText: '2139 kcal' })).toBeVisible();
 
 	// Goal: the goal weight in place, the pace from a menu; each is a new budget version from today.
-	await page
-		.getByRole('link', { name: 'More', exact: true })
-		.filter({ visible: true })
-		.first()
-		.click();
+	await page.getByRole('link', { name: 'Settings', exact: true }).click();
 	await page.getByRole('link', { name: /^Goal/ }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Goal' })).toBeVisible();
 	await page.getByRole('button', { name: /^Goal weight/ }).click();
@@ -120,11 +116,7 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await expect(page.getByRole('button', { name: /^Goal weight/ })).toContainText('74 kg');
 	await choose(page, 'Pace', 'Steady · 0,25 kg a week');
 	await expect(page.getByRole('status')).toContainText('Budget settings saved');
-	await page
-		.getByRole('link', { name: 'More', exact: true })
-		.filter({ visible: true })
-		.first()
-		.click();
+	await page.getByRole('link', { name: 'Settings', exact: true }).click();
 	await expect(page.getByRole('link', { name: /^Goal/ })).toContainText('Steady · 0,25 kg a week');
 });
 

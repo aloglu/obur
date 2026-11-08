@@ -29,8 +29,11 @@
 <svelte:head><title>{m.more_units()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a href={resolve('/(app)/more')} class="flex items-center gap-1 self-start font-bold text-accent">
-		<ChevronLeft size={20} aria-hidden="true" />{m.nav_more()}
+	<a
+		href={resolve('/(app)/more/settings')}
+		class="flex items-center gap-1 self-start font-bold text-accent"
+	>
+		<ChevronLeft size={20} aria-hidden="true" />{m.settings_title()}
 	</a>
 	<h1 class="text-[1.5rem] font-[750]">{m.more_units()}</h1>
 	<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">

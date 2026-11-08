@@ -7,7 +7,7 @@ test('reminders: a switch and the system time picker per reminder, quiet hours, 
 	page
 }, testInfo) => {
 	await signedInAs(page, `Hatırlatma ${testInfo.project.name}`);
-	await page.goto('/more');
+	await page.goto('/more/settings');
 	await page.getByRole('link', { name: 'Reminders' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Reminders' })).toBeVisible();
 

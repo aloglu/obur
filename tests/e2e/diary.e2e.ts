@@ -249,16 +249,21 @@ test('a field menu opens where it fits, and closes with its choice made', async 
 	await expect(sheet.getByRole('option', { name: 'Snacks' })).toBeHidden();
 });
 
-test('More shows its values; Settings links still arrive there', async ({ page }, testInfo) => {
+test('Settings sits under More and shows its values; old links still arrive there', async ({
+	page
+}, testInfo) => {
 	await signedInAs(page, `Daha ${testInfo.project.name}`);
+	await page.goto('/more');
+	await page.getByRole('link', { name: 'Settings', exact: true }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
 	await page.goto('/settings');
-	await expect(page).toHaveURL(/\/more$/);
+	await expect(page).toHaveURL(/\/more\/settings$/);
 	await expect(page.getByRole('link', { name: /Appearance.*Pazar · System/ })).toBeVisible();
 
 	await page.getByRole('link', { name: /Units/ }).click();
 	await choose(page, /^Time:/, '12-hour');
 	await expect(page.getByRole('button', { name: 'Time: 12-hour' })).toBeVisible();
-	await page.getByRole('link', { name: 'More' }).first().click();
+	await page.getByRole('link', { name: 'Settings', exact: true }).first().click();
 	await expect(page.getByRole('link', { name: /Units.*kg · 12-hour/ })).toBeVisible();
 });
 

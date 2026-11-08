@@ -65,7 +65,7 @@ async function saveCodes(page: Page): Promise<string[]> {
 }
 
 async function signOut(page: Page) {
-	await page.goto('/settings');
+	await page.goto('/more');
 	await page.getByRole('button', { name: 'Sign out' }).click();
 	await expect(page).toHaveURL(/\/login$/);
 }
@@ -73,7 +73,7 @@ async function signOut(page: Page) {
 /** Lands on Today and confirms who is signed in. */
 async function expectSignedIn(page: Page, name: string) {
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
-	await page.goto('/settings');
+	await page.goto('/more');
 	await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
 }
 
