@@ -4,9 +4,8 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 ## Owner's to-do, raised 2026-11-08 (remind the owner at the start of the next session)
 
-- In Cloudflare, turn off Bot Fight Mode for obur's domain, or add a rule that skips bot checks for that hostname: it
-  answered plain curl with a challenge (403), which could break the installed app's background requests (offline
-  sending, refreshes, reminders).
+- Done 2026-11-08: Bot Fight Mode is off for obur's domain (the free plan cannot exempt one hostname). Plain curl
+  to `/login` now gets 200 instead of the 403 challenge. Cloudflare's DDoS protection is separate and stays on.
 - The owner created their account on the VPS (2026-11-08). Then: import the LoseIt export, try an own OpenAI or
   OpenRouter key for Speak and Scan, and report anything odd.
 - The role-membership warnings in the VPS log are fixed in `main` (108b4b4) and reach the server with the next test
