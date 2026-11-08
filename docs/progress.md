@@ -8,7 +8,8 @@ The owner imported their LoseIt export on the VPS and uses obur as their real tr
 there is real. Cloudflare Bot Fight Mode is off (the free plan cannot exempt one hostname; plain curl to `/login` gets
 200). The role-membership warnings are fixed in `main` (108b4b4) and reach the server with the next release.
 
-First-day reports (2026-11-08), all fixed and released as `v1.0.0-beta.4` (beta.3 published only its add-on images: the `obur` smoke test failed on a `docker logs | grep -q` race under pipefail, fixed in `deploy/obur/smoke-test.sh`):
+The owner runs `1.0.0-beta.4` on the VPS (2026-11-08) and confirmed both voice sentences now work; whether to archive
+the LoseIt foods is the owner's call as they go. First-day reports (2026-11-08), all fixed and released as `v1.0.0-beta.4` (beta.3 published only its add-on images: the `obur` smoke test failed on a `docker logs | grep -q` race under pipefail, fixed in `deploy/obur/smoke-test.sh`):
 
 - Fixed (voice): a weight-only serving ("40 g", typical of LoseIt foods logged in grams) is proposed in grams ("two"
   of it is 80 g); a food named without an amount is proposed as one serving; the sheet asks for a unit it doesn't
