@@ -228,6 +228,45 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			});
 		},
 
+		/** How many of the person's own foods came from a LoseIt import, in use and archived. */
+		async importedFoods(userId: string): Promise<{ active: number; archived: number }> {
+			return withUser(db, userId, async (tx) => {
+				const [row] = await tx
+					.select({
+						active: sql<number>`count(*) filter (where ${foods.archivedAt} is null)::int`,
+						archived: sql<number>`count(*) filter (where ${foods.archivedAt} is not null)::int`
+					})
+					.from(foods)
+					.where(and(eq(foods.ownerId, userId), eq(foods.origin, 'loseit')));
+				return row;
+			});
+		},
+
+		/**
+		 * Archives, or brings back, every food the person imported from LoseIt, in one step. Only their own imported
+		 * foods change; diary entries keep their own snapshots. Returns how many foods changed.
+		 */
+		async setImportedArchived(userId: string, archived: boolean): Promise<number> {
+			return withUser(db, userId, async (tx) => {
+				const changed = await tx
+					.update(foods)
+					.set({
+						archivedAt: archived ? now() : null,
+						version: sql`${foods.version} + 1`,
+						updatedAt: now()
+					})
+					.where(
+						and(
+							eq(foods.ownerId, userId),
+							eq(foods.origin, 'loseit'),
+							archived ? sql`${foods.archivedAt} is null` : sql`${foods.archivedAt} is not null`
+						)
+					)
+					.returning({ id: foods.id });
+				return changed.length;
+			});
+		},
+
 		/** "Make my own variant": a private copy that records which food it came from. */
 		async makeVariant(userId: string, foodId: string): Promise<string> {
 			return withUser(db, userId, async (tx) => {

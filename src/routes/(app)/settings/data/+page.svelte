@@ -88,7 +88,30 @@
 	let finished = $state<{ count: number; from: string | null } | null>(null);
 	// A file chosen before the page is interactive would be lost silently, so the picker waits for hydration.
 	let ready = $state(false);
-	onMount(() => (ready = true));
+	// Foods from a LoseIt import, which can be archived all at once (docs/design.md, "LoseIt import").
+	let imported = $state<{ active: number; archived: number } | null>(null);
+	const loadImported = async () => {
+		imported = await api<{ active: number; archived: number }>(
+			'GET',
+			'/api/v1/foods/imported'
+		).catch(() => imported);
+	};
+	onMount(() => {
+		ready = true;
+		void loadImported();
+	});
+	const archiveImported = (archived: boolean) =>
+		run(async () => {
+			const { changed } = await api<{ changed: number }>('POST', '/api/v1/foods/imported', {
+				archived
+			});
+			await loadImported();
+			showToast({
+				message: archived
+					? m.data_imported_archived({ count: String(changed) })
+					: m.data_imported_restored({ count: String(changed) })
+			});
+		});
 	let problem = $state('');
 	let file = $state<File | null>(null);
 	let summary = $state<Summary | null>(null);
@@ -244,7 +267,7 @@
 			summary = null;
 			file = null;
 			showToast({ message: m.data_import_done() });
-			await invalidateAll();
+			await Promise.all([invalidateAll(), loadImported()]);
 		}, importProblem);
 
 	const deleteAccount = () =>
@@ -432,6 +455,26 @@
 			</div>
 		{/if}
 	</Card>
+
+	{#if imported && imported.active + imported.archived > 0}
+		<Card title={m.data_imported_title()}>
+			<p class="text-[0.8125rem] text-muted">
+				{imported.active > 0
+					? m.data_imported_body({ count: String(imported.active) })
+					: m.data_imported_all_archived({ count: String(imported.archived) })}
+			</p>
+			{#if imported.active > 0}
+				<Button variant="ghost" disabled={busy} onclick={() => archiveImported(true)}
+					>{m.data_imported_archive({ count: String(imported.active) })}</Button
+				>
+			{/if}
+			{#if imported.archived > 0}
+				<Button variant="ghost" disabled={busy} onclick={() => archiveImported(false)}
+					>{m.data_imported_restore({ count: String(imported.archived) })}</Button
+				>
+			{/if}
+		</Card>
+	{/if}
 
 	<Card title={m.data_delete_title()}>
 		<p class="text-[0.8125rem] text-muted">{m.data_delete_body()}</p>

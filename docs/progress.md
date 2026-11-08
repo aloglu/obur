@@ -13,6 +13,8 @@ First-day reports (2026-11-08), not yet fixed:
 - Fixed (voice): a weight-only serving ("40 g", typical of LoseIt foods logged in grams) is proposed in grams ("two"
   of it is 80 g); a food named without an amount is proposed as one serving; the sheet asks for a unit it doesn't
   offer. Tests in `nl-parser/units.test.ts` and `shared/unit-options.test.ts`.
+- Added: Your data → "Archive N foods from LoseIt" (and "Bring back"), only the person's own imported foods;
+  `catalog.setImportedArchived`, DB test in `catalog.db.test.ts`.
 - Journal highlights: the voice-log and budget-change icons are drawn at different sizes.
 - Check and log sheet: the focused amount field's left and right borders aren't fully highlighted.
 - The owner asked whether the More tab should become Settings, and whether LoseIt foods should be kept apart from

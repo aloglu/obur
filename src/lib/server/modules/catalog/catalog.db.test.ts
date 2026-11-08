@@ -279,6 +279,36 @@ describe('variants and archiving', () => {
 	});
 });
 
+describe('imported foods', () => {
+	it('archives and brings back only the person’s own LoseIt foods, in one step', async () => {
+		const imported = await catalog.createFood(MEHMET, food({ visibility: 'private' }), {
+			origin: 'loseit'
+		});
+		const shared = await catalog.createFood(MEHMET, food({ name: 'Shared import' }), {
+			origin: 'loseit'
+		});
+		const own = await catalog.createFood(MEHMET, food({ name: 'Own ayran' }));
+		const theirs = await catalog.createFood(ZEYNEP, food({ name: 'Zeynep import' }), {
+			origin: 'loseit'
+		});
+		expect(await catalog.importedFoods(MEHMET)).toEqual({ active: 2, archived: 0 });
+
+		expect(await catalog.setImportedArchived(MEHMET, true)).toBe(2);
+		expect((await catalog.getFood(MEHMET, imported)).archived).toBe(true);
+		expect((await catalog.getFood(MEHMET, shared)).archived).toBe(true);
+		expect((await catalog.getFood(MEHMET, own)).archived).toBe(false);
+		expect((await catalog.getFood(ZEYNEP, theirs)).archived).toBe(false);
+		expect((await catalog.searchFoods(MEHMET, 'ayran')).map((f) => f.name)).toEqual(['Own ayran']);
+		expect(await catalog.importedFoods(MEHMET)).toEqual({ active: 0, archived: 2 });
+		// Repeating it changes nothing; another person's imports are theirs alone.
+		expect(await catalog.setImportedArchived(MEHMET, true)).toBe(0);
+		expect(await catalog.importedFoods(ZEYNEP)).toEqual({ active: 1, archived: 0 });
+
+		expect(await catalog.setImportedArchived(MEHMET, false)).toBe(2);
+		expect((await catalog.getFood(MEHMET, imported)).archived).toBe(false);
+	});
+});
+
 describe('search', () => {
 	beforeEach(async () => {
 		await catalog.createFood(MEHMET, food());
