@@ -15,10 +15,11 @@ First-day reports (2026-11-08), not yet fixed:
   offer. Tests in `nl-parser/units.test.ts` and `shared/unit-options.test.ts`.
 - Added: Your data → "Archive N foods from LoseIt" (and "Bring back"), only the person's own imported foods;
   `catalog.setImportedArchived`, DB test in `catalog.db.test.ts`.
-- Journal highlights: the voice-log and budget-change icons are drawn at different sizes.
-- Check and log sheet: the focused amount field's left and right borders aren't fully highlighted.
-- The owner asked whether the More tab should become Settings, and whether LoseIt foods should be kept apart from
-  obur's own foods (discussion pending).
+- Fixed: Journal highlight icons now match the achievement badges (40 px); focus outlines inside collapsing rows
+  (Check and log's amount field) are no longer cut at the sides (`layout.css`, `.collapse-row`).
+- Added: More → Settings (Profile, Goal, Units, Appearance, Reminders, Speak and Scan, Your data, Security); More
+  keeps Foods, Recipes, Saved meals, Recently deleted, Household, Help and Sign out. `/settings` → `/more/settings`.
+- Decided: LoseIt foods stay (voice fixed instead); the owner can archive them all at once.
 
 ## Current phase
 

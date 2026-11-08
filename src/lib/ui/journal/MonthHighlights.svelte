@@ -97,12 +97,12 @@
 							{:else}
 								<div class="flex items-center gap-2.5">
 									<span
-										class="grid size-7 shrink-0 place-items-center rounded-full bg-surface2 text-muted"
+										class="grid size-10 shrink-0 place-items-center rounded-full bg-surface2 text-muted"
 										aria-hidden="true"
 									>
-										{#if e.kind === 'lowest'}<TrendingDown size={15} />
-										{:else if e.kind === 'budget'}<Target size={15} />
-										{:else}<Flag size={15} />{/if}
+										{#if e.kind === 'lowest'}<TrendingDown size={18} />
+										{:else if e.kind === 'budget'}<Target size={18} />
+										{:else}<Flag size={18} />{/if}
 									</span>
 									{@render words(e)}
 								</div>

@@ -223,6 +223,9 @@ main {
 .collapse-row > div {
 	overflow: hidden;
 	min-height: 0;
+	/* Room for focus outlines (up to 4 px outside a field), which the clipping would otherwise cut at the sides. */
+	margin-inline: -4px;
+	padding-inline: 4px;
 	visibility: hidden;
 	opacity: 0;
 	transition:
