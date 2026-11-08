@@ -66,6 +66,11 @@ In **Datasets**, under your apps pool, create `obur` and inside it `data` (and, 
    account. Open it on your phone once the https address works (see [Remote access](remote-access.md)), then follow
    [First start](first-start.md).
 
+## Adding Speak and Scan later
+
+Open the app's **Edit** page, put the `obur-speech` and `obur-labels` sections and the two `_URL` lines back as in
+step 2, and **Save**. Your data stays where it is.
+
 ## Updating
 
 Open the app's **Edit** page and **Save** it again, or use **Update** when TrueNAS offers one: it pulls the

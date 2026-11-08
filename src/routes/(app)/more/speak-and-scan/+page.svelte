@@ -38,6 +38,14 @@
 		return day === data.today ? m.day_today().toLowerCase() : dayAndMonth(day);
 	};
 
+	// Why "On this server" is unavailable: an admin can install the add-on, so they are told which one and where.
+	const notInstalled = (feature: Feature) =>
+		data.user?.role !== 'admin'
+			? m.models_server_none()
+			: feature === 'speak'
+				? m.models_server_none_admin_speak()
+				: m.models_server_none_admin_scan();
+
 	async function choose(feature: Feature, source: Source, allowed = false) {
 		if (choices[feature] === source) return;
 		if (source !== 'server' && !allowed) {
@@ -128,7 +136,7 @@
 					feature,
 					'server',
 					m.models_server(),
-					s.local[feature] ? m.models_server_line() : m.models_server_none(),
+					s.local[feature] ? m.models_server_line() : notInstalled(feature),
 					!s.local[feature]
 				)}
 				{#each usable as k (k.provider)}

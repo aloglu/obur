@@ -72,7 +72,7 @@ Updating: the Docker tab shows **update ready** next to obur; click it. A new fi
 
 Updating: the stack's **Update Stack** button pulls the new images and restarts them.
 
-## Moving from "obur only" to Speak and Scan
+## Adding Speak and Scan later
 
 Stop and remove the obur container on the Docker tab (the appdata folder stays), then follow "obur with Speak and
 Scan" with the same `OBUR_DATA_DIR`, backups folder, address and passphrase. obur opens the same database.

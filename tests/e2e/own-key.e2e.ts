@@ -199,10 +199,28 @@ test('a server without the add-ons keeps Speak and Scan and offers the person’
 	await expect(
 		page.getByRole('radiogroup', { name: 'Speak' }).getByRole('radio', { name: /On this server/ })
 	).toBeDisabled();
+	await expect(page.getByRole('radiogroup', { name: 'Speak' })).toContainText(
+		'Not set up on this server. Your household’s admin can add it.'
+	);
 
 	await page.goto(`${NO_ADDONS}/scan`);
 	await expect(page.getByText('Scan isn’t set up on this server')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Use my own key' })).toBeVisible();
+});
+
+test('an admin is told which add-on a server without them needs', async ({ page }, testInfo) => {
+	test.skip(
+		testInfo.project.name !== 'desktop-chromium',
+		'one browser is enough for a line of text'
+	);
+	await signedInAs(page, 'Yönetici Eklentisiz', 'admin');
+	await page.goto(`${NO_ADDONS}/more/speak-and-scan`);
+	await expect(page.getByRole('radiogroup', { name: 'Speak' })).toContainText(
+		'Needs the obur-speech add-on'
+	);
+	await expect(page.getByRole('radiogroup', { name: 'Scan' })).toContainText(
+		'Needs the obur-labels add-on'
+	);
 });
 
 test('the household’s admin sees the personal keys switch, on by default', async ({
