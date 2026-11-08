@@ -90,6 +90,9 @@ backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cl
 - **Update:** `docker compose pull && docker compose up -d`, then read the log. Before changing the database, obur
   takes a backup by itself; a failed upgrade changes nothing and stops with the reason in the log. Afterwards
   `docker image prune -f` removes old downloads. Don't update while a restore is pending.
+- **Adding Speak and Scan later** (only if the person asks; ~1.5 GB more memory): put the `obur-speech` and
+  `obur-labels` services back into `compose.yaml` from `deploy/compose.yaml`, remove empty `SPEECH_URL=` and
+  `LABELS_URL=` lines from `.env`, then `docker compose up -d`. The data is untouched. Removing them is the reverse.
 - **Back up now:** `docker exec obur obur backup now`. **List backups:** `docker exec obur obur backup info`.
   **Prove a restore works** (into a throwaway copy, nothing changes): `docker exec obur obur backup restore-check`.
 - **Someone lost every passkey and recovery code:** `docker exec obur obur recovery-link "<their name>"` (one hour,

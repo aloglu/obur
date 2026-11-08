@@ -23,12 +23,15 @@ the LoseIt foods is the owner's call as they go. First-day reports (2026-11-08),
 - Decided: LoseIt foods stay (voice fixed instead); the owner can archive them all at once.
 
 Off-site backup on the VPS (2026-11-08): Cloudflare R2, restore check passed from both copies (51 tables, 12,752
-rows); the passphrase is in the owner's password manager. In `main` since beta.4 (next release):
+rows); the passphrase is in the owner's password manager. Released as `v1.0.0-beta.5` (2026-11-08):
 
 - Household → Backups shows "Last off-site restore check" with its time instead of the ambiguous "Off-site copy: Set up".
 - `OBUR_BACKUP_PASSPHRASE` set to the example value (`change-me…`, `a-long-phrase-only-you-know`) stops obur with a
   clear message (`deploy/obur/env.sh`); `OBUR_OFFSITE_PATH` documented in `deploy/.env.example`, troubleshooting and
   the agent guide, with the "is or was the repo encrypted?" error (a bucket left with an earlier install's backups).
+- Speak and Scan page: the second card is titled "Scan"; without an add-on, "On this server" says why (members: the
+  admin can add it; admins: which add-on, and "Adding Speak and Scan later" in the Docker, Unraid, TrueNAS and agent
+  guides). The owner's VPS runs without the add-ons; adding them is the owner's step, data untouched.
 - Decided: backup status stays in Household (installation-wide, admins only), not in Your data (per person).
 
 ## Current phase
