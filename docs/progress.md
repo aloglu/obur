@@ -2,14 +2,22 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Owner's to-do, raised 2026-11-08 (remind the owner at the start of the next session)
+## In daily use since 2026-11-08
 
-- Done 2026-11-08: Bot Fight Mode is off for obur's domain (the free plan cannot exempt one hostname). Plain curl
-  to `/login` now gets 200 instead of the 403 challenge. Cloudflare's DDoS protection is separate and stays on.
-- The owner created their account on the VPS (2026-11-08). Then: import the LoseIt export, try an own OpenAI or
-  OpenRouter key for Speak and Scan, and report anything odd.
-- The role-membership warnings in the VPS log are fixed in `main` (108b4b4) and reach the server with the next test
-  release.
+The owner imported their LoseIt export on the VPS and uses obur as their real tracker from 2026-11-08; their data
+there is real. Cloudflare Bot Fight Mode is off (the free plan cannot exempt one hostname; plain curl to `/login` gets
+200). The role-membership warnings are fixed in `main` (108b4b4) and reach the server with the next release.
+
+First-day reports (2026-11-08), not yet fixed:
+
+- Voice: for a food whose serving only restates its weight ("40 g", typical of LoseIt database foods logged in
+  grams), the unit choice hides that serving, but voice still proposes it. "two <food>" gets no usable unit (blank
+  kcal, can't log); a food named without an amount was logged as 1 g. Reproduced with `parseEntry` + `unitForFood` +
+  `unitOptions`.
+- Journal highlights: the voice-log and budget-change icons are drawn at different sizes.
+- Check and log sheet: the focused amount field's left and right borders aren't fully highlighted.
+- The owner asked whether the More tab should become Settings, and whether LoseIt foods should be kept apart from
+  obur's own foods (discussion pending).
 
 ## Current phase
 
