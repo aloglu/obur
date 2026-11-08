@@ -29,6 +29,7 @@ export interface BackupReport {
 	lastSuccessfulBackupAt: string | null;
 	lastRestoreCheckAt: string | null;
 	offsiteConfigured: boolean;
+	lastOffsiteRestoreCheckAt: string | null;
 }
 
 const HOUR = 3600_000;
@@ -71,6 +72,7 @@ export function assessBackups(
 		problems,
 		lastSuccessfulBackupAt: status?.lastSuccessfulBackupAt ?? null,
 		lastRestoreCheckAt: status?.lastRestoreCheck?.at ?? null,
-		offsiteConfigured: !!status?.offsiteConfigured
+		offsiteConfigured: !!status?.offsiteConfigured,
+		lastOffsiteRestoreCheckAt: status?.lastOffsiteRestoreCheck?.at ?? null
 	};
 }

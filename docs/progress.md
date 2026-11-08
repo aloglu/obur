@@ -22,9 +22,18 @@ the LoseIt foods is the owner's call as they go. First-day reports (2026-11-08),
   keeps Foods, Recipes, Saved meals, Recently deleted, Household, Help and Sign out. `/settings` → `/more/settings`.
 - Decided: LoseIt foods stay (voice fixed instead); the owner can archive them all at once.
 
+Off-site backup on the VPS (2026-11-08): Cloudflare R2, restore check passed from both copies (51 tables, 12,752
+rows); the passphrase is in the owner's password manager. In `main` since beta.4 (next release):
+
+- Household → Backups shows "Last off-site restore check" with its time instead of the ambiguous "Off-site copy: Set up".
+- `OBUR_BACKUP_PASSPHRASE` set to the example value (`change-me…`, `a-long-phrase-only-you-know`) stops obur with a
+  clear message (`deploy/obur/env.sh`); `OBUR_OFFSITE_PATH` documented in `deploy/.env.example`, troubleshooting and
+  the agent guide, with the "is or was the repo encrypted?" error (a bucket left with an earlier install's backups).
+- Decided: backup status stays in Household (installation-wide, admins only), not in Your data (per person).
+
 ## Current phase
 
-**Phase 2 — LoseIt replacement and early voice**: approved by the owner on 2026-10-30. Phase 1 is complete (deployed on the owner's Unraid, offline behaviour confirmed on the iPhone). The owner keeps using LoseIt until obur is production-ready.
+**Phase 2 — LoseIt replacement and early voice**: approved by the owner on 2026-10-30. Phase 1 is complete (deployed on the owner's Unraid, offline behaviour confirmed on the iPhone). The owner uses obur daily since 2026-11-08 (see above); 1.0.0 follows once a few days of use turn up nothing new.
 
 ## Design review build
 

@@ -303,12 +303,9 @@
 				{@render facts([
 					[m.household_backups_last(), when(backups.lastSuccessfulBackupAt)],
 					[m.household_backups_check(), when(backups.lastRestoreCheckAt)],
-					[
-						m.household_backups_offsite(),
-						backups.offsiteConfigured
-							? m.household_backups_offsite_on()
-							: m.household_backups_offsite_none()
-					]
+					backups.offsiteConfigured
+						? [m.household_backups_offsite_check(), when(backups.lastOffsiteRestoreCheckAt)]
+						: [m.household_backups_offsite(), m.household_backups_offsite_none()]
 				])}
 			</div>
 		</section>

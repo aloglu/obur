@@ -59,6 +59,11 @@ obur_env() {
 	export VAPID_SUBJECT=${VAPID_SUBJECT:-$subject}
 	[[ -n ${OBUR_BACKUP_PASSPHRASE:-} ]] ||
 		obur_fail "set OBUR_BACKUP_PASSPHRASE: it encrypts the backups. Keep a copy off this server; without it no backup can be read."
+	# The examples in .env.example and the install guides would encrypt the backups with a phrase anyone can read.
+	case $OBUR_BACKUP_PASSPHRASE in
+	change-me* | a-long-phrase-only-you-know)
+		obur_fail "OBUR_BACKUP_PASSPHRASE is still the example value: choose your own long phrase and keep a copy off this server." ;;
+	esac
 	export PGBACKREST_REPO1_CIPHER_PASS=$OBUR_BACKUP_PASSPHRASE
 	export PGBACKREST_REPO1_RETENTION_FULL=${OBUR_BACKUP_KEEP_WEEKS:-5}
 	export PGBACKREST_PROCESS_MAX=${OBUR_BACKUP_PROCESSES:-4}

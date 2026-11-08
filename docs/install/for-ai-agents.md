@@ -86,7 +86,7 @@ backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cl
 ## Routine maintenance
 
 - **Health:** `docker compose ps` (obur `healthy`), `docker compose logs --tail 100 obur`, and in the app Household →
-  Backups (last backup, last weekly restore check, off-site copy).
+  Backups (last backup, last weekly restore check, last off-site restore check).
 - **Update:** `docker compose pull && docker compose up -d`, then read the log. Before changing the database, obur
   takes a backup by itself; a failed upgrade changes nothing and stops with the reason in the log. Afterwards
   `docker image prune -f` removes old downloads. Don't update while a restore is pending.
@@ -102,6 +102,11 @@ backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cl
 Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then:
 
 - **"set PUBLIC_ORIGIN …" / "set OBUR_BACKUP_PASSPHRASE …":** a required setting is missing; add it and start again.
+- **"OBUR_BACKUP_PASSPHRASE is still the example value":** let the person choose their own phrase (or generate one)
+  and save it in their password manager; see `troubleshooting.md` if backups already exist.
+- **"the off-site repository could not be set up … is or was the repo encrypted?":** the bucket folder holds another
+  installation's backups. Ask the person whether those are still needed; never delete them on your own. Otherwise set
+  `OBUR_OFFSITE_PATH` to a new folder.
 - **"waiting: the database folder is empty but backups exist":** stop. The data folder is wrong or lost. Check that
   `OBUR_DATA_DIR` points where it used to. If the database really is gone, restoring is the person's decision; walk
   them through `docs/restore.md`. Never set `OBUR_ALLOW_NEW_DATABASE`.

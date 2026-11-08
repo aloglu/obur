@@ -89,7 +89,7 @@
 	"household_backups_last": "Last backup",
 	"household_backups_check": "Last restore check",
 	"household_backups_offsite": "Off-site copy",
-	"household_backups_offsite_on": "Set up",
+	"household_backups_offsite_check": "Last off-site restore check",
 	"household_backups_offsite_none": "None",
 	"household_invite_button": "Create invite link",
 	"household_invite_ready": "Send this link privately. It works once and expires in 7 days.",
