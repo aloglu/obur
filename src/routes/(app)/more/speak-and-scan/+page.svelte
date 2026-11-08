@@ -115,13 +115,13 @@
 	{/if}
 
 	{#each FEATURES as feature (feature)}
-		<Card title={feature === 'speak' ? m.speak_title() : m.log_scan()}>
+		<Card title={feature === 'speak' ? m.speak_title() : m.models_scan_title()}>
 			<p class="-mt-1 text-[0.875rem] text-muted">
 				{feature === 'speak' ? m.models_speak_line() : m.models_scan_line()}
 			</p>
 			<div
 				role="radiogroup"
-				aria-label={feature === 'speak' ? m.speak_title() : m.log_scan()}
+				aria-label={feature === 'speak' ? m.speak_title() : m.models_scan_title()}
 				class="flex flex-col divide-y divide-line"
 			>
 				{@render option(
