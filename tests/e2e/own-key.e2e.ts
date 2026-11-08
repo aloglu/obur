@@ -82,9 +82,7 @@ test('adding a key: a refused one is never saved; allowing a company is explicit
 	await expect(openai).toBeChecked();
 	// Scan is separate and still on the server.
 	await expect(
-		page
-			.getByRole('radiogroup', { name: 'Scan' })
-			.getByRole('radio', { name: /On this server/ })
+		page.getByRole('radiogroup', { name: 'Scan' }).getByRole('radio', { name: /On this server/ })
 	).toBeChecked();
 
 	await page.getByRole('button', { name: 'Remove your OpenAI key' }).click();
