@@ -105,9 +105,10 @@
 						text: i.text,
 						candidates: i.candidates,
 						food: i.food,
-						// A unit the sheet doesn't offer is asked for, never shown as a blank kcal.
+						// A unit the sheet doesn't offer is asked for, never shown as a blank kcal. Food units never
+						// depend on household measures, which may not be loaded (or declared) yet.
 						optionKey:
-							i.food && unitOptions(i.food, measures).some((o) => o.key === keyOf(i.unit))
+							i.food && unitOptions(i.food, []).some((o) => o.key === keyOf(i.unit))
 								? keyOf(i.unit)
 								: '',
 						said: i.said,
