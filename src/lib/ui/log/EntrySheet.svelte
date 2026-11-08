@@ -105,7 +105,11 @@
 						text: i.text,
 						candidates: i.candidates,
 						food: i.food,
-						optionKey: keyOf(i.unit),
+						// A unit the sheet doesn't offer is asked for, never shown as a blank kcal.
+						optionKey:
+							i.food && unitOptions(i.food, measures).some((o) => o.key === keyOf(i.unit))
+								? keyOf(i.unit)
+								: '',
 						said: i.said,
 						amountText: num(i.amount),
 						unsure: i.candidates[0]?.loose ?? false,

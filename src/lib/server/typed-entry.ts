@@ -1,6 +1,10 @@
 // Typed (and spoken) entries: the pure parser's proposals matched to the person's foods and portions. Proposes only;
 // the client shows everything for confirmation and saves through the ordinary create endpoints.
-import { parseEntry, unitForFood, type ParsedUnit } from '#lib/server/modules/nl-parser/index.ts';
+import {
+	parseEntry,
+	proposeForFood,
+	type ParsedUnit
+} from '#lib/server/modules/nl-parser/index.ts';
 import { addDays, localDate } from '#lib/shared/diary-rules.ts';
 import type { EntryItem, ParsedEntry, SaidUnit } from '#lib/shared/entry-types.ts';
 import { catalog } from './catalog.ts';
@@ -32,13 +36,16 @@ export async function understandEntry(
 		if (p.kind === 'food') {
 			const candidates = await catalog.searchFoodsLoose(userId, p.text, 5, recent);
 			const food = candidates[0] ? await catalog.getFood(userId, candidates[0].id) : null;
+			const proposed = food
+				? proposeForFood(p.amount, p.unit, food)
+				: { unit: null, amount: p.amount };
 			items.push({
 				kind: 'food',
 				text: p.text,
 				candidates,
 				food,
-				amount: p.amount,
-				unit: food ? unitForFood(p.unit, food) : null,
+				amount: proposed.amount,
+				unit: proposed.unit,
 				said: said(p.unit),
 				vague: p.vague
 			});

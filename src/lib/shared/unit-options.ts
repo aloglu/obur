@@ -33,6 +33,24 @@ function labelRestatesSize(food: QuantityModel & { servingLabel: string | null }
 	);
 }
 
+/**
+ * A proposed amount and unit as the amount sheet offers them (typed and spoken entries). A food's own serving that
+ * the sheet hides, because its label only restates its size ("40 g"), becomes that size in g or ml: "two" of it is
+ * 80 g. Nothing is converted that the food itself does not state.
+ */
+export function offeredAmount(
+	food: QuantityModel & { servingLabel: string | null },
+	unit: UnitOption['input'] | null,
+	amount: number | null
+): { unit: UnitOption['input'] | null; amount: number | null } {
+	if (unit?.kind !== 'basis_serving' || !labelRestatesSize(food)) return { unit, amount };
+	const size = food.servingSize!;
+	return {
+		unit: size.unit === 'g' ? { kind: 'mass', unit: 'g' } : { kind: 'volume', unit: 'ml' },
+		amount: amount === null ? null : Number((amount * size.amount).toFixed(4))
+	};
+}
+
 /** `keepBasis` keeps the basis serving even when redundant, so an entry logged in it can still be edited. */
 export function unitOptions(
 	food: QuantityModel & { servingLabel: string | null },

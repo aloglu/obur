@@ -3,7 +3,7 @@
 // own serving. Grams and millilitres need a food that converts from them. Anything else is left for the person to
 // choose: no weight or density is ever assumed.
 import { supportedDimensions, type QuantityModel } from '../../../shared/quantity.ts';
-import type { UnitOption } from '../../../shared/unit-options.ts';
+import { offeredAmount, type UnitOption } from '../../../shared/unit-options.ts';
 import type { CountWord, ParsedUnit } from './parse.ts';
 import { fold } from './parse.ts';
 
@@ -52,4 +52,23 @@ export function unitForFood(
 			return { kind: 'basis_serving' };
 	}
 	return null;
+}
+
+/**
+ * The amount and unit to propose for a matched food, in a unit its amount sheet offers. A food named without an
+ * amount ("I had a protein bar") is proposed as one of its own servings, which the person confirms or changes before
+ * logging; a per-100 g food named without one is asked.
+ */
+export function proposeForFood(
+	amount: number | null,
+	parsed: ParsedUnit | null,
+	food: QuantityModel & { servingLabel: string | null }
+): { unit: FoodUnit | null; amount: number | null } {
+	const bare = amount === null && parsed === null && food.basis === 'serving';
+	const proposed = offeredAmount(
+		food,
+		unitForFood(bare ? { kind: 'count', word: null } : parsed, food),
+		bare ? 1 : amount
+	);
+	return proposed as { unit: FoodUnit | null; amount: number | null };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { optionKeyFor, unitOptions } from './unit-options.ts';
+import { offeredAmount, optionKeyFor, unitOptions } from './unit-options.ts';
 
 const measures = [{ code: 'su_bardagi', name: 'Su bardağı', ml: 200 }];
 
@@ -84,5 +84,52 @@ describe('unitOptions', () => {
 		expect(
 			optionKeyFor({ kind: 'serving', servingId: 'a', name: 'slice', amount: 26, unit: 'g' })
 		).toBe('serving:a');
+	});
+});
+
+describe('offeredAmount', () => {
+	const restated = {
+		basis: 'serving' as const,
+		servingLabel: '40 g',
+		servingSize: { amount: 40, unit: 'g' as const },
+		servings: []
+	};
+
+	it('turns a hidden serving into its weight, so the sheet can show it', () => {
+		// Regression (2026-11-08): "two <food>" proposed a serving the sheet hid, leaving no unit and no kcal.
+		expect(unitOptions(restated, measures).map((o) => o.key)).toEqual(['g']);
+		expect(offeredAmount(restated, { kind: 'basis_serving' }, 2)).toEqual({
+			unit: { kind: 'mass', unit: 'g' },
+			amount: 80
+		});
+		expect(offeredAmount(restated, { kind: 'basis_serving' }, null)).toEqual({
+			unit: { kind: 'mass', unit: 'g' },
+			amount: null
+		});
+	});
+
+	it('does the same for a serving that only restates millilitres', () => {
+		const drink = {
+			...restated,
+			servingLabel: '330 ml',
+			servingSize: { amount: 330, unit: 'ml' as const }
+		};
+		expect(offeredAmount(drink, { kind: 'basis_serving' }, 1)).toEqual({
+			unit: { kind: 'volume', unit: 'ml' },
+			amount: 330
+		});
+	});
+
+	it('leaves a named serving, and every other unit, as proposed', () => {
+		const bar = { ...restated, servingLabel: '1 bar' };
+		expect(offeredAmount(bar, { kind: 'basis_serving' }, 2)).toEqual({
+			unit: { kind: 'basis_serving' },
+			amount: 2
+		});
+		expect(offeredAmount(restated, { kind: 'mass', unit: 'g' }, 30)).toEqual({
+			unit: { kind: 'mass', unit: 'g' },
+			amount: 30
+		});
+		expect(offeredAmount(restated, null, 2)).toEqual({ unit: null, amount: 2 });
 	});
 });
