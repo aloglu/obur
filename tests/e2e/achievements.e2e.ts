@@ -53,6 +53,17 @@ test('a new weight mark is celebrated once; older ones arrive quietly', async ({
 	await expect(page.getByRole('region', { name: 'Streaks of complete days' })).toContainText(
 		'Next: 3 complete days in a row'
 	);
+	// An earned badge plays its celebration again (owner, 2026-11-09, as in the demo); Done returns to the badge.
+	const badge = kilos.getByRole('button', { name: /4 kg lost, / });
+	await badge.click();
+	const again = page.getByRole('dialog', { name: 'Achievement: 4 kg lost' });
+	await expect(again).toContainText("That's a pumpkin.");
+	await expect(again.getByRole('link', { name: 'See all achievements' })).toHaveCount(0);
+	await again.getByRole('button', { name: 'Done' }).click();
+	await expect(again).toBeHidden();
+	await expect(badge).toBeFocused();
+	await expect(kilos.getByRole('button', { name: /Next: 6 kg/ })).toHaveCount(0); // not reached yet
+
 	// Weighing in at all is the first of the first steps; the other firsts appear only once earned.
 	await expect(page.getByRole('region', { name: 'Firsts' }).getByRole('listitem')).toHaveText([
 		/First weigh-in/

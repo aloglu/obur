@@ -4,6 +4,7 @@
 	// closes it; nothing else waits on it.
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
+	import { page } from '$app/state';
 	import { celebration, closeCelebration } from '#lib/client/celebration.svelte.ts';
 	import Picture from './Picture.svelte';
 	import {
@@ -111,12 +112,15 @@
 			class="done mt-2.5 min-h-[52px] min-w-[200px] rounded-tile bg-fill px-6 text-[1.0625rem] font-[750] text-on-accent"
 			>{m.achievement_done()}</button
 		>
-		<a
-			href={resolve('/(app)/achievements')}
-			onclick={closeCelebration}
-			class="done grid min-h-11 place-items-center px-3 text-[0.9375rem] font-semibold text-accent"
-			>{m.achievement_see_all()}</a
-		>
+		<!-- Not when replayed from the badge page itself. -->
+		{#if page.url.pathname !== resolve('/(app)/achievements')}
+			<a
+				href={resolve('/(app)/achievements')}
+				onclick={closeCelebration}
+				class="done grid min-h-11 place-items-center px-3 text-[0.9375rem] font-semibold text-accent"
+				>{m.achievement_see_all()}</a
+			>
+		{/if}
 	</div>
 {/if}
 

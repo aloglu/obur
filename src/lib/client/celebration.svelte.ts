@@ -58,7 +58,20 @@ export function openCelebration() {
 	celebration.toast = null;
 }
 
+/** Where focus goes back to after a replay (the badge that opened it). */
+let returnTo: HTMLElement | null = null;
+
+/** Plays an earned achievement's celebration again, from its badge (docs/ui.md, "Achievements, Journal and Help"). */
+export function replayCelebration(a: Achievement, from?: HTMLElement) {
+	clearTimeout(timer);
+	celebration.toast = null;
+	returnTo = from ?? null;
+	celebration.open = a;
+}
+
 export function closeCelebration() {
 	celebration.open = null;
 	markSeen();
+	returnTo?.focus();
+	returnTo = null;
 }

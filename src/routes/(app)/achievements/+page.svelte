@@ -1,6 +1,6 @@
 <script lang="ts">
 	// docs/ui.md, "Achievements, Journal and Help": the badge page. Kilos lost and streaks newest first after the one
-	// next mark; the goal and firsts only once reached.
+	// next mark; the goal and firsts only once reached. Tapping an earned badge plays its celebration again.
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
@@ -8,6 +8,7 @@
 	import { shortDate } from '#lib/shared/format.ts';
 	import Badge from '#lib/ui/achievements/Badge.svelte';
 	import { firstName } from '#lib/ui/achievements/text.ts';
+	import { replayCelebration } from '#lib/client/celebration.svelte.ts';
 
 	let { data } = $props();
 	const of = <K extends Achievement['kind']>(kind: K) =>
@@ -62,12 +63,21 @@
 					</li>
 				{/if}
 				{#each weights as a (a.level)}
-					<li class={item}>
-						<Badge achievement={a} />
-						<span class="sr-only"
-							>{m.achievements_weight_label({ kg: String(a.level), date: shortDate(a.date) })}</span
+					<li>
+						<button
+							type="button"
+							class={[item, 'w-full']}
+							onclick={(e) => replayCelebration(a, e.currentTarget)}
 						>
-						<span aria-hidden="true">{shortDate(a.date)}</span>
+							<Badge achievement={a} />
+							<span class="sr-only"
+								>{m.achievements_weight_label({
+									kg: String(a.level),
+									date: shortDate(a.date)
+								})}</span
+							>
+							<span aria-hidden="true">{shortDate(a.date)}</span>
+						</button>
 					</li>
 				{/each}
 			</ul>
@@ -79,12 +89,18 @@
 			<h2 id="goal-title" class="text-[1.1875rem] font-bold">{m.achievements_goal_title()}</h2>
 			<ul class={grid}>
 				{#each goals as a (a.level)}
-					<li class={item}>
-						<Badge achievement={a} />
-						<span class="sr-only"
-							>{m.achievements_goal_label({ kg: kg(a.level), date: shortDate(a.date) })}</span
+					<li>
+						<button
+							type="button"
+							class={[item, 'w-full']}
+							onclick={(e) => replayCelebration(a, e.currentTarget)}
 						>
-						<span aria-hidden="true">{kg(a.level)} kg</span>
+							<Badge achievement={a} />
+							<span class="sr-only"
+								>{m.achievements_goal_label({ kg: kg(a.level), date: shortDate(a.date) })}</span
+							>
+							<span aria-hidden="true">{kg(a.level)} kg</span>
+						</button>
 					</li>
 				{/each}
 			</ul>
@@ -104,15 +120,21 @@
 				</li>
 			{/if}
 			{#each streaks as a (a.level)}
-				<li class={item}>
-					<Badge achievement={a} />
-					<span class="sr-only"
-						>{m.achievements_streak_label({
-							days: String(a.level),
-							date: shortDate(a.date)
-						})}</span
+				<li>
+					<button
+						type="button"
+						class={[item, 'w-full']}
+						onclick={(e) => replayCelebration(a, e.currentTarget)}
 					>
-					<span aria-hidden="true">{m.achievements_days({ days: String(a.level) })}</span>
+						<Badge achievement={a} />
+						<span class="sr-only"
+							>{m.achievements_streak_label({
+								days: String(a.level),
+								date: shortDate(a.date)
+							})}</span
+						>
+						<span aria-hidden="true">{m.achievements_days({ days: String(a.level) })}</span>
+					</button>
 				</li>
 			{/each}
 		</ul>
@@ -123,15 +145,21 @@
 			<h2 id="firsts-title" class="text-[1.1875rem] font-bold">{m.achievements_firsts_title()}</h2>
 			<ul class={grid}>
 				{#each firsts as a (a.level)}
-					<li class={item}>
-						<Badge achievement={a} />
-						<span class="sr-only"
-							>{m.achievements_first_label({
-								name: firstName(a.level as 'scan' | 'voice' | 'recipe'),
-								date: shortDate(a.date)
-							})}</span
+					<li>
+						<button
+							type="button"
+							class={[item, 'w-full']}
+							onclick={(e) => replayCelebration(a, e.currentTarget)}
 						>
-						<span aria-hidden="true">{firstName(a.level as 'scan' | 'voice' | 'recipe')}</span>
+							<Badge achievement={a} />
+							<span class="sr-only"
+								>{m.achievements_first_label({
+									name: firstName(a.level as 'scan' | 'voice' | 'recipe'),
+									date: shortDate(a.date)
+								})}</span
+							>
+							<span aria-hidden="true">{firstName(a.level as 'scan' | 'voice' | 'recipe')}</span>
+						</button>
 					</li>
 				{/each}
 			</ul>

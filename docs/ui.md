@@ -400,7 +400,7 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   title follows the unit: "Kilos lost" or "Pounds lost". Colours keep AA contrast in light and dark.
 - **As built:** the toast sits above an ordinary toast, shows the comparison's picture, title and "That's …", and
   stays 8 s; tapping opens the celebration (count-up, the picture dropping in, the comparison and its line, confetti;
-  Done or Escape closes; "See all achievements"). Only the most notable new one gets the toast; others that arrive
+  Done or Escape closes; "See all achievements"). Tapping an earned badge on the badge page plays its celebration again (as in the review demo; built 2026-11-09 after the owner noticed it missing), without "See all achievements"; Done returns focus to the badge. Only the most notable new one gets the toast; others that arrive
   with it are kept quietly. Celebrated means seen, once. Kilo circles hold only the number (owner: "just put the
   number in circle"); the tint is 10 % of `--badge-coral` plus 8 points every further 10 kg, and the number's ink
   moves from coral to the text colour (and in dark, to the dark accent ink) as the tint deepens, tested for 3:1 at

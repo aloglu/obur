@@ -55,6 +55,8 @@ Agreed and being fixed one commit at a time (`main`, next release):
   until it arrives; `/login` forwards a signed-in visitor to Today. Journey test in `auth.e2e.ts`.
 - Changed: Help has no topic chips; answers slide open and shut (`help.e2e.ts`).
 - Changed: Today's Activity pill has a flame in the accent colour, so it reads as a button.
+- Added (was in the approved demo, missed in the build): tapping an earned badge replays its celebration
+  (`achievements.e2e.ts`).
 
 Checked 2026-11-09: lint, type-check, all Vitest projects (1052 tests), the full browser suite in the Playwright
 image (207 passed, 16 skipped by design; no screenshot changed) and the passkey journeys. Not yet released.
@@ -66,8 +68,6 @@ Waiting on the owner (asked 2026-11-09):
 - Scanning to create a food without logging it: a Scan entry on Foods (no logging) and Log's Scan always logging,
   replacing the remembered "Log it after saving" checkbox; or keep the checkbox.
 - Scan as a sheet over Log or Foods, like Speak, instead of its own page (it has always been a page).
-- Achievements: the owner hasn't seen a celebration since moving over; they come as an 8 s toast first, full screen on
-  a tap. Ask whether a toast appeared after the first scan, and check Progress → Achievements for "First scan".
 
 Next step: the owner's answers above, then release `1.0.0-beta.6`.
 
