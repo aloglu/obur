@@ -143,6 +143,36 @@ test('the admin signs in again and adds a security key', async () => {
 	await admin.restore(phone, phoneCredentials);
 });
 
+test('on a new device, one passkey signs in even with a chosen app icon', async () => {
+	const { page, context } = admin;
+	// Owner report 2026-11-09: the account's icon arrived while still on the sign-in page, which reloaded for the
+	// Home Screen icon and asked for the passkey a second time.
+	const origin = new URL(page.url()).origin;
+	const chosen = await page.request.patch('/api/v1/profile/preferences', {
+		headers: { origin },
+		data: { appIcon: 'sade' }
+	});
+	expect(chosen.ok()).toBe(true);
+	await context.clearCookies(); // a browser that has never seen this account
+	let prompts = 0;
+	page.on('request', (r) => {
+		if (r.url().endsWith('/api/v1/auth/login/options')) prompts += 1;
+	});
+	await page.goto('/login');
+	await page.getByRole('button', { name: 'Sign in with a passkey' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await page.waitForTimeout(500); // a reload in place would show the sign-in page again by now
+	await expect(page).not.toHaveURL(/\/login/);
+	expect(prompts).toBe(1);
+	// Signed in already: the sign-in page goes straight to Today.
+	await page.goto('/login');
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await page.request.patch('/api/v1/profile/preferences', {
+		headers: { origin },
+		data: { appIcon: 'pazar' }
+	});
+});
+
 test('an admin setting asks for the passkey again once the last check is old', async () => {
 	const { page } = admin;
 	// Owner report 2026-11-09: the Personal AI keys switch said "couldn't be saved" later in a session.
@@ -160,6 +190,7 @@ test('an admin setting asks for the passkey again once the last check is old', a
 	await Promise.all([saved(), keys.click()]);
 	await page.reload();
 	await expect(keys).toBeChecked();
+	await signOut(page);
 });
 
 test('an invited member joins with their own passkey', async ({ browser }) => {

@@ -50,6 +50,9 @@ Agreed and being fixed one commit at a time (`main`, next release):
 - Fixed: Type it and Speak read fractions ("1/3s of a container", "a third", "two thirds", "⅓", "1 1/2") and
   a portion named by its own word ("2 cups" → the food's "Cup"). Parser cases in `fixtures.ts`, `units.test.ts`,
   `typed-entry.e2e.ts`. "2 × Cup" on Today stays as it is (owner, 2026-11-09).
+- Fixed: signing in on a new device with a chosen app icon asked for the passkey twice (the account's icon arrived
+  on the sign-in page, which reloaded for the Home Screen icon). Sign-in now loads Today once, the button busy
+  until it arrives; `/login` forwards a signed-in visitor to Today. Journey test in `auth.e2e.ts`.
 
 ## Current phase
 

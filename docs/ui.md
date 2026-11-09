@@ -67,7 +67,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
 
 ### Signing in and first day
 
-- **Sign in:** icon and "obur" centred on the screen, one button low, no subtitle and no invite line. On desktop the group is centred, with 72 px between name and button.
+- **Sign in:** icon and "obur" centred on the screen, one button low, no subtitle and no invite line. On desktop the group is centred, with 72 px between name and button. After the passkey, the button stays busy while Today loads in one full page load; a signed-in visitor to the sign-in page goes straight to Today (2026-11-09: refreshing the sign-in page with the account's look reloaded it for a changed app icon and asked for the passkey twice).
 - **Set up and Join:** no description under the title, no hints under fields, no closing line.
 - **Recovery codes:** an amber warning card ("Keep these somewhere safe", shown only now), then "I've saved these codes" as its own row with the app's checkbox; Continue waits for it.
 - **Signed out with entries waiting:** the regular sign-in layout, with the warning card right above the button. It must never cover the name. The device keeps a small note (`client/offline/waiting.ts`: name and count only) because nobody is signed in to read the queue by account.

@@ -5,7 +5,6 @@
 	import KeyRound from '@lucide/svelte/icons/key-round';
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { goto, invalidateAll } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
 	import { waitingAccounts, type Waiting } from '#lib/client/offline/waiting.ts';
 	import { describeError, passkeysSupported, signIn } from '#lib/client/passkeys.ts';
@@ -24,13 +23,15 @@
 		problem = '';
 		try {
 			await signIn();
-			await invalidateAll();
-			await goto(resolve('/(app)'));
 		} catch (e) {
 			problem = describeError(e);
-		} finally {
 			busy = false;
+			return;
 		}
+		// One full load of Today, with the button still busy until it arrives. Refreshing this page's data first would
+		// bring the account's look, and a changed app icon reloads the page in place (for the Home Screen icon),
+		// which landed on this page again and asked for the passkey twice (owner report 2026-11-09).
+		location.assign(resolve('/(app)'));
 	}
 </script>
 
