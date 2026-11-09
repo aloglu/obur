@@ -101,7 +101,9 @@ or pushing to the local repository even when the off-site push fails).
 
 Released as `v1.0.0-beta.7` (2026-11-09) with the backup fix.
 
-Next step: the owner updates to beta.7 (it applies 0045 with the fixed pre-upgrade backup, R2 configured: the first real check of the fix); then the open archiving issue above.
+The owner updated to beta.7 the same day: it started and is serving (the fixed pre-upgrade backup ran with R2 configured and 0045 applied).
+
+Next step: the owner goes through the beta.6 changes; then the open archiving issue above.
 
 ## Current phase
 
