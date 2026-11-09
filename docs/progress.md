@@ -99,7 +99,9 @@ Open (older than beta.6): when the off-site store is unreachable, `archive-push`
 stops reaching the local one too and backups wait on it. Needs its own fix (e.g. async archiving with a queue limit,
 or pushing to the local repository even when the off-site push fails).
 
-Next step: release `1.0.0-beta.7` with the backup fix once the owner agrees.
+Released as `v1.0.0-beta.7` (2026-11-09) with the backup fix.
+
+Next step: the owner updates to beta.7 (it applies 0045 with the fixed pre-upgrade backup, R2 configured: the first real check of the fix); then the open archiving issue above.
 
 ## Current phase
 
