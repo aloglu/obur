@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { SPEECH_STUB } from '../../playwright.config.ts';
-import { scanEditsFor, signedInAs, choose } from './fixtures.ts';
+import { scanEditsFor, signedInAs } from './fixtures.ts';
 
 // Small images: the stand-in OCR answers by the photo's width (3, 5, 7 or 9 px), so each test gets its own made-up
 // table even while both browsers run at once. A width's answer is never changed while the other browser may use it.
