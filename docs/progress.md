@@ -45,6 +45,8 @@ Agreed and being fixed one commit at a time (`main`, next release):
   (`withRecentAuth`). Passkey journey test in `auth.e2e.ts`.
 - Fixed: logging several items at once (saved meal, Type it, Speak) highlights every new row on Today, not only
   the first (`highlight` takes a list; `saved-meals.e2e.ts`).
+- Changed: a scanned label no longer adds a portion; a per-serving size is kept only as the basis of per-serving
+  values (owner: every scanned portion was wrong). `scan.e2e.ts`, parser notes.
 
 ## Current phase
 

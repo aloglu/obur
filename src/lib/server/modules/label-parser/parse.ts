@@ -522,8 +522,7 @@ function parseTable(lines: Line[], seen: Seen): Read | undefined {
 			kind: 'columns',
 			used: basis,
 			skippedServing: amounts.some((c) => c !== chosen && c.kind === 'serving'),
-			skippedRi: columns.some((c) => c.kind === 'ri'),
-			portion: !!portion && basis !== 'serving'
+			skippedRi: columns.some((c) => c.kind === 'ri')
 		});
 	if (titled) notes.push({ kind: 'basis_from_title', basis: titled });
 	return { basis, portion, nutrients: [...out.values()], layout: 'table', notes };

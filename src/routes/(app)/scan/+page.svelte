@@ -233,7 +233,12 @@
 		proposal = { basis: '100g', portion: null, nutrients: [], layout: 'none', notes: [] };
 	}
 
-	/** The proposal as the food form's starting values; the name and brand are typed by the person. */
+	/**
+	 * The proposal as the food form's starting values; the name and brand are typed by the person. A per-serving
+	 * column's size is used only when the values are per serving (it is then the basis). It is never added as a
+	 * portion: that header is the label's least reliable line, and a wrong weight would skew every later log of it
+	 * (owner, 2026-11-09). Portions are the person's to add.
+	 */
 	const initial = $derived.by((): FoodDetail | undefined => {
 		if (!proposal) return undefined;
 		const p = proposal;
@@ -260,18 +265,7 @@
 			nutrients: p.nutrients.some((n) => n.code === 'salt')
 				? p.nutrients.filter((n) => n.code !== 'sodium')
 				: p.nutrients,
-			servings:
-				!serving && p.portion
-					? [
-							{
-								id: '',
-								name: p.portion.name,
-								amount: p.portion.amount,
-								unit: p.portion.unit,
-								source: 'label'
-							}
-						]
-					: [],
+			servings: [],
 			warnings: []
 		};
 	});

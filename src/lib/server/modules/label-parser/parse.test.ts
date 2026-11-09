@@ -290,7 +290,7 @@ describe('running text', () => {
 describe('notes on what was decided', () => {
 	it('says which column was read, what was skipped and that the serving became a portion', () => {
 		expect(parseLabel(table(ROWS)).notes).toEqual([
-			{ kind: 'columns', used: '100g', skippedServing: true, skippedRi: true, portion: true }
+			{ kind: 'columns', used: '100g', skippedServing: true, skippedRi: true }
 		]);
 	});
 

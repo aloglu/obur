@@ -96,7 +96,6 @@
 				if (note.skippedServing && note.skippedRi) parts.push(m.scan_note_skipped_both());
 				else if (note.skippedServing) parts.push(m.scan_note_skipped_serving());
 				else if (note.skippedRi) parts.push(m.scan_note_skipped_ri());
-				if (note.portion) parts.push(m.scan_note_portion());
 				out.push({ check: false, text: parts.join(' ') });
 			} else if (note.kind === 'basis_from_title') {
 				out.push({ check: false, text: m.scan_note_title({ basis: basisText(note.basis) }) });

@@ -10,8 +10,6 @@ export type LabelNote =
 			used: '100g' | '100ml' | 'serving';
 			skippedServing: boolean;
 			skippedRi: boolean;
-			/** A per-serving size offered as a portion. */
-			portion: boolean;
 	  }
 	/** The basis came from the table's title, not a column. */
 	| { kind: 'basis_from_title'; basis: '100g' | '100ml' }

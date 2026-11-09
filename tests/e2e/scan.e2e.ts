@@ -83,7 +83,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	const notes = page.getByRole('list', { name: 'What was read' });
 	await expect(notes.getByRole('listitem')).toHaveText([
 		'Protein was hard to read in the photo. Check it against the label: a missed decimal comma turns 2,5 into 25.',
-		'Read per 100 g. The per-serving and %RI columns were skipped. Its serving size became a portion below.',
+		'Read per 100 g. The per-serving and %RI columns were skipped.',
 		"400 kcal matches the label's 1673 kJ.",
 		"Fibre wasn't read, so it stays unknown, not zero. Type it if it's on the label."
 	]);
@@ -96,7 +96,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	await page.getByRole('button', { name: 'Your photo' }).click();
 	await expect(page.getByRole('img', { name: 'Your photo of the label' })).toBeVisible();
 
-	// Values per 100 g from the table, the bound kept, the serving offered as a portion; the name is typed.
+	// Values per 100 g from the table and the bound kept; the serving is not made a portion; the name is typed.
 	await expect(page.locator('#n-energy_kcal')).toHaveValue('400');
 	await expect(page.locator('#n-fat')).toHaveValue('18');
 	await expect(page.locator('#n-carbohydrate')).toHaveValue('52');
@@ -113,7 +113,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 		name: new RegExp(`Fındıklı gofret ${testInfo.project.name}`)
 	});
 	await expect(sheet).toBeVisible();
-	await choose(sheet, 'Unit', 'porsiyon (30 g)');
+	await expect(sheet.getByRole('button', { name: /porsiyon/ })).toHaveCount(0);
 	await sheet.getByRole('button', { name: /^Log to/ }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(page.getByRole('main')).toContainText(`Fındıklı gofret ${testInfo.project.name}`);

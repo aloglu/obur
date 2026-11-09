@@ -414,7 +414,6 @@
 	"scan_note_skipped_both": "The per-serving and %RI columns were skipped.",
 	"scan_note_skipped_serving": "The per-serving column was skipped.",
 	"scan_note_skipped_ri": "The %RI column was skipped.",
-	"scan_note_portion": "Its serving size became a portion below.",
 	"scan_note_title": "Read {basis}, as the table's title says.",
 	"scan_note_text": "Read from running text, not a table. Check each value against the photo.",
 	"scan_note_energy_match": "{kcal} kcal matches the label's {kj} kJ.",
