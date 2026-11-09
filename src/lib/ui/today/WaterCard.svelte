@@ -50,6 +50,11 @@
 
 	async function addOther(event: SubmitEvent) {
 		event.preventDefault();
+		// Empty, the check closes the field, like a tap elsewhere.
+		if (amount.trim() === '') {
+			inlineField.open = null;
+			return;
+		}
 		const ml = parseWaterMl(amount, unit);
 		if (ml === undefined) {
 			amountError = m.water_other_invalid();

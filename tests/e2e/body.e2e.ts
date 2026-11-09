@@ -34,6 +34,7 @@ test('water: quick additions add up and can be undone', async ({ page }) => {
 	expect(await cursor(water.getByRole('button', { name: 'Edit or delete water' }))).toBe('pointer');
 	const weight = page.getByRole('region', { name: 'Weight' });
 	await weight.getByRole('button', { name: 'New weigh-in' }).click();
+	await weight.getByLabel('New weight').fill('0');
 	const save = weight.getByRole('button', { name: 'Save' });
 	await expect(save).toBeDisabled();
 	expect(await cursor(save)).toBe('default');
@@ -99,6 +100,16 @@ test('weight: the card shows the change since the last weigh-in; a tap elsewhere
 	await expect(water.getByLabel('Amount of water')).toBeVisible();
 	await page.getByRole('heading', { level: 1 }).click();
 	await expect(water.getByLabel('Amount of water')).toBeHidden();
+
+	// Empty, the check closes the field too, without an error or a save.
+	await water.getByRole('button', { name: 'Other amount' }).click();
+	await water.getByRole('button', { name: 'Add water', exact: true }).click();
+	await expect(water.getByLabel('Amount of water')).toBeHidden();
+	await expect(water.getByRole('button', { name: 'Other amount' })).toBeVisible();
+	await weight.getByRole('button', { name: 'New weigh-in' }).click();
+	await weight.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(weight.getByLabel('New weight')).toBeHidden();
+	await expect(weight).toContainText('82,8 kg');
 });
 
 test('water: a reading can be edited or deleted after the toast is gone', async ({ page }) => {

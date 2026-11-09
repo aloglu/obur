@@ -22,7 +22,7 @@ The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app an
 - **One warning style.** A plain surface card: an icon tile coloured by severity (grey information, amber needs you, red failure, green done), a bold one-line title, a short line under it, actions below when there are any. Used for offline and back online, a refused entry, entries waiting while signed out, no microphone, Speak switched off, and the recovery-codes warning. The card itself is never tinted. Household's backup status keeps its own larger line.
 - **Fewer descriptions.** No explanatory text under titles and fields unless the owner kept it. Help carries explanations; no inline "?" links. Help's topics scroll sideways by finger (with a soft fade at the edge), and by dragging with a mouse.
 - **Checkbox.** One app-drawn style, for example "I've saved these codes", the pregnancy questions and delete confirmations.
-- **Inline fields** (Other amount, New weigh-in and so on): a tap on any non-interactive area closes them without saving, and so does opening another one. Only one is open at a time.
+- **Inline fields** (Other amount, New weigh-in and so on): a tap on any non-interactive area closes them without saving, and so does opening another one or tapping the check with the field empty (owner, 2026-11-09). Only one is open at a time.
 - **Examples and placeholders are in English,** in the English interface, although Turkish input works (including messages such as `speak_example`).
 - **Macro colours** do not follow the accent. Protein, carbs and fat change together, per theme, never protein alone.
 - **Keyboard.** An open sheet stays inside the area the on-screen keyboard leaves free, however tall its content grows (`ui/Sheet.svelte`, from `visualViewport`).

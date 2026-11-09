@@ -77,7 +77,9 @@
 		class="field-swap"
 		onsubmit={(e) => {
 			e.preventDefault();
-			if (kg !== undefined && !invalid) save(kg);
+			// Empty, the check closes the field, like a tap elsewhere.
+			if (text.trim() === '') inlineField.open = null;
+			else if (kg !== undefined && !invalid) save(kg);
 		}}
 	>
 		<div
@@ -104,7 +106,7 @@
 			<span class="shrink-0 px-1 text-[0.875rem] font-[650] text-muted">kg</span>
 			<button
 				type="submit"
-				disabled={busy || kg === undefined || invalid}
+				disabled={busy || invalid}
 				aria-label={m.weight_save()}
 				class="grid size-10 shrink-0 place-items-center rounded-small bg-fill text-on-accent disabled:opacity-50"
 				><Check size={18} aria-hidden="true" /></button

@@ -34,6 +34,12 @@ rows); the passphrase is in the owner's password manager. Released as `v1.0.0-be
   guides). The owner's VPS runs without the add-ons; adding them is the owner's step, data untouched.
 - Decided: backup status stays in Household (installation-wide, admins only), not in Your data (per person).
 
+## Owner's reports, 2026-11-09
+
+Agreed and being fixed one commit at a time (`main`, next release):
+
+- Done: an empty Other amount or New weigh-in closes when its check is tapped (`WaterCard`, `WeighIn`; `body.e2e.ts`).
+
 ## Current phase
 
 **Phase 2 — LoseIt replacement and early voice**: approved by the owner on 2026-10-30. Phase 1 is complete (deployed on the owner's Unraid, offline behaviour confirmed on the iPhone). The owner uses obur daily since 2026-11-08 (see above); 1.0.0 follows once a few days of use turn up nothing new.
