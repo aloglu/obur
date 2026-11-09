@@ -41,6 +41,8 @@
 		valuesAction?: Snippet;
 		/** The hint on copying a label, when it should say more (that a scan can fill it in). */
 		valuesHint?: string;
+		/** Under the Nutrition title, above the basis: the scanned photo on New food. */
+		valuesTop?: Snippet;
 	}
 
 	const UNITS: { value: 'g' | 'ml'; label: string }[] = [
@@ -58,7 +60,8 @@
 		note,
 		valueNotes,
 		valuesAction,
-		valuesHint
+		valuesHint,
+		valuesTop
 	}: Props = $props();
 	const start = untrack(() => initial);
 
@@ -390,10 +393,12 @@
 		class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
 		aria-labelledby="values-heading"
 	>
-		<div class="-my-1 flex min-h-11 items-center justify-between gap-2">
+		<!-- At large text sizes the action wraps under the title rather than pushing the page sideways. -->
+		<div class="-my-1 flex min-h-11 flex-wrap items-center justify-between gap-x-2">
 			<h2 id="values-heading" class="text-[1.1875rem] font-bold">{m.food_values()}</h2>
-			{#if valuesAction}<div class="-mr-3 shrink-0">{@render valuesAction()}</div>{/if}
+			{#if valuesAction}<div class="-mr-1.5 shrink-0">{@render valuesAction()}</div>{/if}
 		</div>
+		{#if valuesTop}{@render valuesTop()}{/if}
 		<Chips
 			label={m.food_basis()}
 			bind:value={basis}

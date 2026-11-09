@@ -273,7 +273,7 @@ test('a blurry photo says so: instead of "no table" when nothing was read, as a 
 	);
 });
 
-test('New food: Scan label fills the Nutrition card in place, asks before replacing typed values, and saves without logging', async ({
+test('New food: Scan label fills the Nutrition card in place, asks before replacing typed values, retakes from the photo, and saves without logging', async ({
 	page,
 	request
 }, testInfo) => {
@@ -310,6 +310,21 @@ test('New food: Scan label fills the Nutrition card in place, asks before replac
 	await expect(page.getByRole('list', { name: 'What was read' })).toBeVisible();
 	await page.getByRole('button', { name: 'Show photo' }).click();
 	await expect(page.getByRole('img', { name: 'Your photo of the label' })).toBeVisible();
+
+	// Retake sits under the opened photo and replaces the values without asking: tapping it says so already.
+	await page.locator('#n-energy_kcal').fill('999');
+	await page.getByRole('button', { name: 'Retake' }).click();
+	await expect(page.getByText('Replace the values you typed')).toHaveCount(0);
+	await sheet
+		.getByLabel('Choose photo')
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE17 });
+	await expect(sheet).toBeHidden();
+	await expect(page.locator('#n-energy_kcal')).toHaveValue('400');
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
+	await expect(page.getByRole('button', { name: 'Show photo' })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
 
 	// Save food goes back to Foods with the food highlighted; it counts as a scan, and nothing is logged.
 	await page.getByRole('button', { name: 'Save food' }).click();

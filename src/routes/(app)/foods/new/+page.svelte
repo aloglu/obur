@@ -2,7 +2,8 @@
 	// New food (docs/ui.md, "Food form"): the food form, with Scan label on the right of the Nutrition title when
 	// scanning is set up. Scan label opens the Scan sheet over the form; what it reads fills the Nutrition card in
 	// place (asking first when values were typed), with the notes and the photo one tap away. Save food goes back
-	// to Foods with the food highlighted. Nothing is logged. The photo is never kept.
+	// to Foods with the food highlighted. Nothing is logged. The photo is never kept. After a scan the button beside
+	// the title is Show photo; Retake, under the opened photo, scans again and replaces the values without asking.
 	import { onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -19,6 +20,7 @@
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
 	import ScanNotes from '#lib/ui/food/ScanNotes.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
+	import ScanAction from '#lib/ui/scan/ScanAction.svelte';
 	import ScanSheet from '#lib/ui/scan/ScanSheet.svelte';
 
 	let { data } = $props();
@@ -87,17 +89,41 @@
 <svelte:head><title>{m.food_new_title()} · {m.app_name()}</title></svelte:head>
 
 {#snippet scanAction()}
-	<button
-		type="button"
-		onclick={() => (result?.photo ? (showPhoto = !showPhoto) : scanLabel())}
-		aria-expanded={result?.photo ? showPhoto : undefined}
-		class="min-h-11 rounded-input px-3 text-[0.9375rem] font-semibold text-accent"
-		>{result?.photo
-			? showPhoto
-				? m.scan_hide_photo()
-				: m.scan_show_photo()
-			: m.food_scan_label()}</button
-	>
+	{#if result?.photo}
+		<ScanAction
+			icon="photo"
+			label={showPhoto ? m.scan_hide_photo() : m.scan_show_photo()}
+			expanded={showPhoto}
+			onclick={() => (showPhoto = !showPhoto)}
+		/>
+	{:else}
+		<ScanAction icon="scan" label={m.food_scan_label()} onclick={scanLabel} />
+	{/if}
+{/snippet}
+
+<!-- The photo opens under the title; Retake sits under it, never over the label's values. -->
+{#snippet photoPanel()}
+	{#if result?.photo}
+		<div class={['collapse-row -mt-3', showPhoto && 'open']}>
+			<div inert={!showPhoto}>
+				<div class="mt-3 flex flex-col gap-2.5 rounded-input bg-surface2 p-2.5">
+					<img
+						src={result.photo}
+						alt={m.scan_photo_alt()}
+						class="max-h-[60vh] w-full rounded-small object-contain"
+					/>
+					<div class="flex justify-end">
+						<ScanAction
+							raised
+							icon="scan"
+							label={m.scan_retake()}
+							onclick={() => (scanning = true)}
+						/>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
 {/snippet}
 
 {#snippet valueNotes()}
@@ -116,17 +142,6 @@
 			</div>
 		</div>
 	{:else if result && scanned}
-		{#if result.photo}
-			<div class={['collapse-row -mt-3', showPhoto && 'open']}>
-				<div inert={!showPhoto}>
-					<img
-						src={result.photo}
-						alt={m.scan_photo_alt()}
-						class="mt-3 max-h-[60vh] w-full rounded-small object-contain"
-					/>
-				</div>
-			</div>
-		{/if}
 		<ScanNotes
 			notes={result.proposal.notes}
 			basis={scanned.basis}
@@ -151,6 +166,7 @@
 		startName={page.url.searchParams.get('name') ?? ''}
 		valuesAction={data.scanSource ? scanAction : undefined}
 		valueNotes={data.scanSource ? valueNotes : undefined}
+		valuesTop={data.scanSource ? photoPanel : undefined}
 	/>
 </main>
 

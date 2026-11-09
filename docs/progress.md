@@ -69,6 +69,11 @@ Agreed and being fixed one commit at a time (`main`, next release):
   "Scan and replace"). The notes replace the hint; the button becomes Show photo. Saving a new food (scanned or
   not) goes to Foods with it highlighted (`?saved=`, shown at the top when not on the first page); nothing is
   logged; a scanned one counts in the scan-correction totals. `scan.e2e.ts`, `catalog.e2e.ts`.
+- Added (owner approved, review stop 4): after a scan on New food, Show photo opens the photo in the Nutrition
+  card with **Retake** under it, which scans again and replaces the values without asking. Scan label, Show photo
+  and Retake carry Log's icons in Scan's ochre square (`ScanAction.svelte`). Kept by the owner: saving a typed
+  food also returns to Foods highlighted. At 200% text the button wraps under the Nutrition title
+  (`large-text.e2e.ts` caught it running past the screen).
 - Test fixes: the busy-scanner test used one stand-in OCR answer for both browsers at once, so one sometimes got
   the other's; each browser has its own photo width now. Scan tests open the sheet at `/log?scan=1` instead of
   relying on `/scan` redirecting.
