@@ -28,6 +28,29 @@ const SYNONYMS: Record<CountWord, string[]> = {
 };
 const words = (s: string) => fold(s).split(/[^a-z0-9]+/);
 
+/** "cups" → cups, cup; "berries" → berry; "boxes" → box. */
+const singulars = (w: string) => [
+	w,
+	...(w.endsWith('s') ? [w.slice(0, -1)] : []),
+	...(w.endsWith('es') ? [w.slice(0, -2)] : []),
+	...(w.endsWith('ies') ? [`${w.slice(0, -3)}y`] : [])
+];
+
+/**
+ * The food's own portion that a word names, singular or plural ("2 cups" → its "Cup", "3 scoops" → "Scoop (30 g)").
+ * Matched after the food is found, so any portion name works, not only the count words the parser knows.
+ */
+export function portionNamed(
+	word: string,
+	food: QuantityModel & { servingLabel: string | null }
+): FoodUnit | null {
+	const dims = supportedDimensions(food);
+	if (!dims.mass && !dims.volume) return null;
+	const forms = singulars(fold(word));
+	const portion = food.servings.find((s) => words(s.name).some((w) => forms.includes(w)));
+	return portion ? { kind: 'serving', servingId: portion.id } : null;
+}
+
 export function unitForFood(
 	parsed: ParsedUnit | null,
 	food: QuantityModel & { servingLabel: string | null }
@@ -62,12 +85,15 @@ export function unitForFood(
 export function proposeForFood(
 	amount: number | null,
 	parsed: ParsedUnit | null,
-	food: QuantityModel & { servingLabel: string | null }
+	food: QuantityModel & { servingLabel: string | null },
+	/** A word after the number that names one of the food's portions ("2 cups"), found by `portionNamed`. */
+	named?: string
 ): { unit: FoodUnit | null; amount: number | null } {
 	const bare = amount === null && parsed === null && food.basis === 'serving';
 	const proposed = offeredAmount(
 		food,
-		unitForFood(bare ? { kind: 'count', word: null } : parsed, food),
+		(named ? portionNamed(named, food) : null) ??
+			unitForFood(bare ? { kind: 'count', word: null } : parsed, food),
 		bare ? 1 : amount
 	);
 	return proposed as { unit: FoodUnit | null; amount: number | null };

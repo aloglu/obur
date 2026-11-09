@@ -250,6 +250,39 @@ export const DEV_CASES: [string, ParseResult][] = [
 		'Two and a half slices of toast',
 		{ daysAgo: null, meal: null, items: [food('toast', 2.5, count('slice'))] }
 	],
+	// Fractions (owner report 2026-11-09: "1/3s of a container" was not understood).
+	[
+		'I ate 1/3s of a container of ricotta peyniri',
+		{ daysAgo: null, meal: null, items: [food('ricotta peyniri', 1 / 3, count('container'))] }
+	],
+	[
+		'A third of a container of ricotta',
+		{ daysAgo: null, meal: null, items: [food('ricotta', 1 / 3, count('container'))] }
+	],
+	[
+		'Two thirds of a tub of yogurt',
+		{ daysAgo: null, meal: null, items: [food('yogurt', 2 / 3, count('container'))] }
+	],
+	[
+		'⅓ container of hummus and 1 1/2 slices of bread',
+		{
+			daysAgo: null,
+			meal: null,
+			items: [food('hummus', 1 / 3, count('container')), food('bread', 1.5, count('slice'))]
+		}
+	],
+	[
+		'Three quarters of a pizza',
+		{ daysAgo: null, meal: null, items: [food('pizza', 0.75, count(null))] }
+	],
+	[
+		'Üçte bir kutu yoğurt',
+		{ daysAgo: null, meal: null, items: [food('yoğurt', 1 / 3, count('can'))] }
+	],
+	[
+		"3'te 2 paket bisküvi",
+		{ daysAgo: null, meal: null, items: [food('bisküvi', 2 / 3, count('package'))] }
+	],
 	['Some rice', { daysAgo: null, meal: null, items: [food('rice', null, null, true)] }],
 	[
 		'300g chicken and 100g rice for dinner the day before yesterday',

@@ -2,6 +2,7 @@
 // the client shows everything for confirmation and saves through the ordinary create endpoints.
 import {
 	parseEntry,
+	portionNamed,
 	proposeForFood,
 	type ParsedUnit
 } from '#lib/server/modules/nl-parser/index.ts';
@@ -14,6 +15,23 @@ const said = (u: ParsedUnit | null): SaidUnit => (!u ? null : u.kind === 'count'
 
 /** ISO weekday (1 = Monday) of a YYYY-MM-DD date. */
 const isoWeekday = (date: string) => ((new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+
+type FoodProposal = Extract<ReturnType<typeof parseEntry>['items'][number], { kind: 'food' }>;
+
+/**
+ * "2 cups milk", "3 scoops whey": a number whose next word the parser doesn't know as a unit. If the other words find
+ * a food on their own and that food has a portion with this name (singular or plural), the word is the portion;
+ * otherwise it stays part of the food's name ("2 protein bars").
+ */
+async function portionFirst(userId: string, p: FoodProposal, recent: string[]) {
+	if (p.amount === null || p.unit?.kind !== 'count' || p.unit.word !== null) return null;
+	const [word, ...others] = p.text.split(' ');
+	if (!others.length) return null;
+	const candidates = await catalog.searchFoodsLoose(userId, others.join(' '), 5, recent);
+	if (!candidates[0] || candidates[0].loose) return null;
+	const food = await catalog.getFood(userId, candidates[0].id);
+	return food && portionNamed(word, food) ? { candidates, food, word } : null;
+}
 
 export async function understandEntry(
 	userId: string,
@@ -34,10 +52,13 @@ export async function understandEntry(
 	const items: EntryItem[] = [];
 	for (const p of parsed.items) {
 		if (p.kind === 'food') {
-			const candidates = await catalog.searchFoodsLoose(userId, p.text, 5, recent);
-			const food = candidates[0] ? await catalog.getFood(userId, candidates[0].id) : null;
+			const named = await portionFirst(userId, p, recent);
+			const candidates =
+				named?.candidates ?? (await catalog.searchFoodsLoose(userId, p.text, 5, recent));
+			const food =
+				named?.food ?? (candidates[0] ? await catalog.getFood(userId, candidates[0].id) : null);
 			const proposed = food
-				? proposeForFood(p.amount, p.unit, food)
+				? proposeForFood(p.amount, p.unit, food, named?.word)
 				: { unit: null, amount: p.amount };
 			items.push({
 				kind: 'food',

@@ -56,9 +56,11 @@ export function fold(word: string): string {
 
 function tokenize(text: string): Token[] {
 	const out: Token[] = [];
-	// Numbers with a decimal comma or dot, words (letters and digits), commas and "+" as separators. Apostrophes split
-	// a suffix off ("Lunch'ta" → "Lunch", "ta"); "200g" becomes "200", "g".
-	for (const m of text.normalize('NFC').matchAll(/\d+(?:[.,]\d+)?|%|[\p{L}]+|[,+;]/gu)) {
+	// Fractions ("1/3", "⅓"), numbers with a decimal comma or dot, words (letters and digits), commas and "+" as
+	// separators. Apostrophes split a suffix off ("Lunch'ta" → "Lunch", "ta"); "200g" becomes "200", "g".
+	for (const m of text
+		.normalize('NFC')
+		.matchAll(/\d+\s*\/\s*\d+|[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]|\d+(?:[.,]\d+)?|%|[\p{L}]+|[,+;]/gu)) {
 		const raw = m[0];
 		out.push(
 			raw === ',' || raw === '+' || raw === ';' ? { raw, f: raw, sep: true } : { raw, f: fold(raw) }
@@ -123,6 +125,44 @@ const TENS_EN: Record<string, number> = {
 	ninety: 90
 };
 
+const VULGAR: Record<string, number> = {
+	'½': 1 / 2,
+	'⅓': 1 / 3,
+	'⅔': 2 / 3,
+	'¼': 1 / 4,
+	'¾': 3 / 4,
+	'⅕': 1 / 5,
+	'⅖': 2 / 5,
+	'⅗': 3 / 5,
+	'⅘': 4 / 5,
+	'⅙': 1 / 6,
+	'⅚': 5 / 6,
+	'⅛': 1 / 8,
+	'⅜': 3 / 8,
+	'⅝': 5 / 8,
+	'⅞': 7 / 8
+};
+/** "1/3" or "⅓" as a number; null otherwise (or for a zero denominator). */
+function fractionOf(f: string): number | null {
+	if (f in VULGAR) return VULGAR[f];
+	const m = /^(\d+)\s*\/\s*(\d+)$/.exec(f);
+	return m && Number(m[2]) > 0 ? Number(m[1]) / Number(m[2]) : null;
+}
+/** "third", "quarters": what a number before it is divided by ("two thirds" → 2/3). */
+const DENOMINATORS: Record<string, number> = {
+	third: 3,
+	thirds: 3,
+	quarter: 4,
+	quarters: 4,
+	fourth: 4,
+	fourths: 4,
+	fifth: 5,
+	fifths: 5
+};
+/** Turkish "üçte bir" (a third), "dörtte üç": the denominator with its locative suffix. */
+const TR_DENOMINATOR = /^(iki|uc|dort|bes|alti|yedi|sekiz|dokuz|on)(te|de|ta|da)$/;
+const TR_LOCATIVE = /^(te|de|ta|da)$/;
+
 /** True for a word that could follow a number as its unit. */
 const isUnitWord = (f: string) => unitOf(f) !== null;
 
@@ -136,6 +176,35 @@ function readNumbers(tokens: Token[]): Token[] {
 	const at = (k: number) => tokens[k]?.f;
 	while (i < tokens.length) {
 		const t = tokens[i];
+		// "1/3", "⅓" (and "1/3s", "1/3rd" as people type them).
+		const fraction = fractionOf(t.f);
+		if (fraction !== null) {
+			out.push({ ...t, n: fraction });
+			i += /^(s|st|nd|rd|th|rds|ths)$/.test(at(i + 1) ?? '') ? 2 : 1;
+			continue;
+		}
+		if (t.f.includes('/')) {
+			i += 1; // "2/0": not a number
+			continue;
+		}
+		// "üçte bir", "dörtte üç".
+		const trDenominator = TR_DENOMINATOR.exec(t.f);
+		if (trDenominator) {
+			const [over, used] = wordNumber(tokens, i + 1);
+			if (over !== null) {
+				const under = UNITS_TR[trDenominator[1]] ?? TENS_TR[trDenominator[1]];
+				out.push({
+					raw: tokens
+						.slice(i, i + 1 + used)
+						.map((x) => x.raw)
+						.join(' '),
+					f: t.f,
+					n: over / under
+				});
+				i += 1 + used;
+				continue;
+			}
+		}
 		// Percentages stay part of a food's name: "yüzde on yağlı", "10 percent fat", "%10".
 		if ((t.f === 'yuzde' || t.f === '%') && tokens[i + 1]) {
 			const [value, used] = wordNumber(tokens, i + 1, true);
@@ -153,6 +222,13 @@ function readNumbers(tokens: Token[]): Token[] {
 				i += 2;
 				continue;
 			}
+			// "1 1/2", "1½".
+			const more = fractionOf(at(i + used) ?? '');
+			if (more !== null) [value, used] = [value + more, used + 1];
+			// "3'te 1": a third.
+			if (TR_LOCATIVE.test(at(i + used) ?? '') && /^\d/.test(at(i + used + 1) ?? '') && value > 0)
+				[value, used] = [Number(at(i + used + 1)!.replace(',', '.')) / value, used + 2];
+			[value, used] = over(tokens, i + used, value, used);
 			[value, used] = halves(tokens, i + used, value, used);
 			out.push({ ...t, n: value });
 			i += used;
@@ -189,7 +265,8 @@ function readNumbers(tokens: Token[]): Token[] {
 		}
 		const [value, used] = wordNumber(tokens, i);
 		if (value !== null) {
-			const [withHalf, total] = halves(tokens, i + used, value, used);
+			const [whole, counted] = over(tokens, i + used, value, used);
+			const [withHalf, total] = halves(tokens, i + counted, whole, counted);
 			out.push({
 				raw: tokens
 					.slice(i, i + total)
@@ -205,6 +282,12 @@ function readNumbers(tokens: Token[]): Token[] {
 		i += 1;
 	}
 	return out;
+}
+
+/** "third", "quarters" after a number: "a third" → 1/3, "two thirds" → 2/3. */
+function over(tokens: Token[], k: number, value: number, used: number): [number, number] {
+	const d = DENOMINATORS[tokens[k]?.f ?? ''];
+	return d ? [value / d, used + 1] : [value, used];
 }
 
 /** "buçuk" or "and a half" after a number. */
@@ -509,10 +592,15 @@ function readItem(tokens: Token[]): Proposal | null {
 		used.add(numberAt);
 		let k = numberAt + 1;
 		if (tokens[k]?.f === 'of') k += 1;
+		// "a third of a container": the article before the unit is not a second number.
+		const article =
+			(tokens[k]?.f === 'a' || tokens[k]?.f === 'an') && unitOf(tokens[k + 1]?.f ?? '');
+		if (article) k += 1;
 		const hit = tokens[k] && unitOf(tokens[k].f);
 		if (hit) {
 			unit = hit;
 			used.add(k);
+			if (article) used.add(k - 1);
 		}
 	} else {
 		// A unit with no number counts one: "kutu kola", "glass of water".

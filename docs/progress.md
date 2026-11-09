@@ -47,6 +47,9 @@ Agreed and being fixed one commit at a time (`main`, next release):
   the first (`highlight` takes a list; `saved-meals.e2e.ts`).
 - Changed: a scanned label no longer adds a portion; a per-serving size is kept only as the basis of per-serving
   values (owner: every scanned portion was wrong). `scan.e2e.ts`, parser notes.
+- Fixed: Type it and Speak read fractions ("1/3s of a container", "a third", "two thirds", "⅓", "1 1/2") and
+  a portion named by its own word ("2 cups" → the food's "Cup"). Parser cases in `fixtures.ts`, `units.test.ts`,
+  `typed-entry.e2e.ts`. "2 × Cup" on Today stays as it is (owner, 2026-11-09).
 
 ## Current phase
 

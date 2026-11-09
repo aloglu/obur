@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { proposeForFood, unitForFood } from './units.ts';
+import { portionNamed, proposeForFood, unitForFood } from './units.ts';
 
 const per100g = (servings: { id: string; name: string; amount: number; unit: 'g' | 'ml' }[]) => ({
 	basis: '100g' as const,
@@ -93,5 +93,31 @@ describe('proposeForFood', () => {
 			unit: { kind: 'basis_serving' },
 			amount: 2
 		});
+	});
+});
+
+describe('portionNamed', () => {
+	const milk = {
+		basis: '100ml' as const,
+		servingLabel: null,
+		servings: [
+			{ id: 'cup', name: 'Cup', amount: 240, unit: 'ml' as const },
+			{ id: 'berry', name: 'Berry (2 g)', amount: 2, unit: 'g' as const }
+		]
+	};
+	it('finds the food’s own portion by its name, singular or plural', () => {
+		expect(portionNamed('cups', milk)).toEqual({ kind: 'serving', servingId: 'cup' });
+		expect(portionNamed('Cup', milk)).toEqual({ kind: 'serving', servingId: 'cup' });
+		expect(portionNamed('berries', milk)).toEqual({ kind: 'serving', servingId: 'berry' });
+		expect(portionNamed('protein', milk)).toBeNull();
+	});
+	it('proposes that portion with the amount said ("2 cups")', () => {
+		expect(proposeForFood(2, { kind: 'count', word: null }, milk, 'cups')).toEqual({
+			unit: { kind: 'serving', servingId: 'cup' },
+			amount: 2
+		});
+	});
+	it('needs a food that converts: a per-serving food without a size has none to name', () => {
+		expect(portionNamed('bar', bar)).toBeNull();
 	});
 });

@@ -54,6 +54,39 @@ test('a typed sentence becomes items to confirm, logged together and undone toge
 	await expect(page.getByRole('region', { name: 'Water' })).toContainText('0 ml');
 });
 
+test('a fraction of a container and a portion named by its own word (owner report 2026-11-09)', async ({
+	page
+}, testInfo) => {
+	const tag = testInfo.project.name.replace(/[^a-z]/gi, '');
+	await signedInAs(page, `Mert ${tag}`);
+	await createFood(page, {
+		name: `Ricotta Peyniri ${tag}`,
+		brand: null,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 150, qualifier: 'reported' }],
+		servings: [{ name: 'Container', amount: 300, unit: 'g' }]
+	});
+	await createFood(page, {
+		name: `Oat Drink ${tag}`,
+		brand: null,
+		basis: '100ml',
+		nutrients: [{ code: 'energy_kcal', value: 50, qualifier: 'reported' }],
+		servings: [{ name: 'Cup', amount: 240, unit: 'ml' }]
+	});
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Type it' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
+	await sheet
+		.getByLabel('You typed')
+		.fill(`I ate 1/3s of a container of ricotta peyniri ${tag} and 2 cups of oat drink ${tag}`);
+	const ricotta = sheet.getByRole('region', { name: `Ricotta Peyniri ${tag}` });
+	await expect(ricotta).toContainText('150'); // a third of 300 g at 150 kcal per 100 g
+	await expect(ricotta).toContainText('0,33 Container (300 g)');
+	const oat = sheet.getByRole('region', { name: `Oat Drink ${tag}` });
+	await expect(oat).toContainText('240'); // 2 × 240 ml at 50 kcal per 100 ml
+	await expect(oat).toContainText('2 Cup (240 ml)');
+});
+
 test('weight, calories-only and a curated food with a bare count', async ({ page }, testInfo) => {
 	await signedInAs(page, `Kaan ${testInfo.project.name}`);
 	await page.goto('/log');
