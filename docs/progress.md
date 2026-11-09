@@ -81,7 +81,9 @@ Agreed and being fixed one commit at a time (`main`, next release):
 Checked 2026-11-09: lint, type-check, all Vitest projects, the full browser suite in the Playwright image and the
 passkey journeys (1052 Vitest; 209 browser tests passed, 16 skipped by design; no screenshot changed). Not yet released.
 
-Next step: release `1.0.0-beta.6` (needs migration 0045), when the owner says so.
+Released as `v1.0.0-beta.6` (2026-11-09), with migration 0045 (drops `profiles.scan_log_after`; runs on update).
+
+Next step: the owner updates to beta.6 and keeps reporting from daily use.
 
 ## Current phase
 
