@@ -3,6 +3,7 @@
 	// room, amber in the last 200 kcal or 10 %, red over), Eaten and Budget at its ends. The breakdown opens from Budget.
 	// Without a budget it is just what was eaten: a budget is a free choice, and Today never asks for one.
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import Flame from '@lucide/svelte/icons/flame';
 	import { m } from '#lib/paraglide/messages.js';
 	import { kcal } from '#lib/shared/format.ts';
 	import type { DayBudget } from '#lib/shared/goals.ts';
@@ -53,6 +54,8 @@
 				aria-label={m.activity_add()}
 				class="relative mt-1 inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-small bg-surface2 px-[11px] text-[0.84375rem] font-semibold text-muted transition-transform after:absolute after:-inset-x-0.5 after:-inset-y-[5px] active:scale-[0.97]"
 			>
+				<!-- A flame for calories burned, so the pill reads as a button (owner, 2026-11-09). -->
+				<Flame size={15} strokeWidth={2.25} aria-hidden="true" class="-ml-0.5 text-accent" />
 				{m.budget_activity_short()}<b class="font-bold text-text tabular-nums"
 					>{kcal(budget.activityKcal)}</b
 				>

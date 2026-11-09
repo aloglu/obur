@@ -54,6 +54,7 @@ Agreed and being fixed one commit at a time (`main`, next release):
   on the sign-in page, which reloaded for the Home Screen icon). Sign-in now loads Today once, the button busy
   until it arrives; `/login` forwards a signed-in visitor to Today. Journey test in `auth.e2e.ts`.
 - Changed: Help has no topic chips; answers slide open and shut (`help.e2e.ts`).
+- Changed: Today's Activity pill has a flame in the accent colour, so it reads as a button.
 
 ## Current phase
 
