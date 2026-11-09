@@ -83,7 +83,23 @@ passkey journeys (1052 Vitest; 209 browser tests passed, 16 skipped by design; n
 
 Released as `v1.0.0-beta.6` (2026-11-09), with migration 0045 (drops `profiles.scan_log_after`; runs on update).
 
-Next step: the owner updates to beta.6 and keeps reporting from daily use.
+Found on the owner's server after updating to beta.6 (2026-11-09): obur restarted every minute with "the backup
+before the upgrade failed, so nothing was changed" (pgBackRest `[050] unable to acquire lock … obur-archive-1.lock`).
+The backup scheduler and the pre-upgrade backup both create the stanza at start-up; with an off-site store the
+scheduler holds pgBackRest's lock for seconds while reaching it, and the pre-upgrade one gave up at once. Untested
+before because the smoke test and the upgrade check had no off-site store, and beta.5 had no migration. Reproduced
+here (beta.5 → beta.6 with an off-site store configured: same error). Fixed in `deploy/obur/obur-backup`: stanza
+setup takes turns (`flock`, up to 15 min) and retries a busy lock; the pre-upgrade backup is local only (as if no
+off-site store were configured), so an unreachable off-site store can't block an upgrade. Checked: the reproduction
+gets past the lock; beta.5 → fixed image upgrades (0045 applied); smoke test passes. Not checked: a working but slow
+S3 store (no S3 server here works with pgBackRest). Owner's way back in meanwhile: start once without
+`OBUR_OFFSITE_TYPE`, then restore it.
+
+Open (older than beta.6): when the off-site store is unreachable, `archive-push` fails for both repositories, so WAL
+stops reaching the local one too and backups wait on it. Needs its own fix (e.g. async archiving with a queue limit,
+or pushing to the local repository even when the off-site push fails).
+
+Next step: release `1.0.0-beta.7` with the backup fix once the owner agrees.
 
 ## Current phase
 

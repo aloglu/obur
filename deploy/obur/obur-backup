@@ -75,14 +75,33 @@ local_only() {
 	)
 }
 
+# Idempotent: succeeds when the stanza already exists. stanza-create acts on every configured repository, so the
+# local one is set up first on its own: an unreachable off-site store never stops local backups.
+#
+# One at a time: the scheduler and the backup before an upgrade both start with this when the container starts, and
+# pgBackRest refuses a second stanza-create while one holds its lock (it held it for seconds while reaching the
+# off-site store, and the upgrade's backup gave up: 1.0.0-beta.6 on a server with R2). A lock still busy (WAL being
+# archived) is waited for too.
 ensure_stanza() {
-	# Idempotent: succeeds when the stanza already exists. stanza-create acts on every configured repository, so the
-	# local one is set up first on its own: an unreachable off-site store never stops local backups.
-	local out
-	if ! out=$(local_only stanza-create 2>&1); then
+	(
+		flock -w 900 9 || {
+			log "the backup repository stayed busy for 15 minutes"
+			exit 1
+		}
+		ensure_stanza_now
+	) 9>"${TMPDIR:-/tmp}/obur-backup-stanza.lock"
+}
+
+ensure_stanza_now() {
+	local out tries=0
+	until out=$(local_only stanza-create 2>&1); do
+		if [[ $out == *'ERROR: [050]'* ]] && ((++tries < 60)); then
+			sleep 2
+			continue
+		fi
 		log "the local repository could not be set up: $(grep -m3 -E 'ERROR|HINT' <<<"$out" | tr -s ' ' | tr '\n' ' ')"
 		return 1
-	fi
+	done
 	if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]] && ! out=$(pgbackrest stanza-create 2>&1); then
 		log "the off-site repository could not be set up (local backups continue): $(grep -m3 -E 'ERROR|HINT' <<<"$out" | tr -s ' ' | tr '\n' ' ')"
 	fi
@@ -100,16 +119,23 @@ archive_status() {
 			lastFailedAt: (if $f == "" then null else $f end)}'
 }
 
+# A backup of type $1 to every repository, or with "local" after it only to the local one, as if no off-site store
+# were configured (the backup before an upgrade).
 backup() {
-	local type=$1 ok=true repo results='{}' started
+	local type=$1 ok=true repo results='{}' started targets run=pgbackrest
+	targets=$(repos)
+	if [[ ${2:-} == local ]]; then
+		targets=1
+		run=local_only
+	fi
 	started=$(now)
 	if ! ensure_stanza; then
 		log "the local backup repository could not be set up; no backup was taken"
 		status --arg at "$started" '.lastBackup = {at: $at, type: "none", ok: false, repos: {"1": false}}'
 		return 1
 	fi
-	for repo in $(repos); do
-		if pgbackrest --repo="$repo" --type="$type" backup; then
+	for repo in $targets; do
+		if $run --repo="$repo" --type="$type" backup; then
 			results=$(jq --arg r "$repo" '. + {($r): true}' <<<"$results")
 		else
 			ok=false
@@ -244,7 +270,9 @@ pgbackrest)
 	exec pgbackrest "$@"
 	;;
 run) backup "$(scheduled_type)" ;;
-pre-upgrade) backup incr ;;
+# Local only: the point to go back to if an upgrade goes wrong, quick, and never stopped by an unreachable off-site
+# store. The nightly backup copies the upgraded database off site as usual.
+pre-upgrade) backup incr local ;;
 full) backup full ;;
 info) pgbackrest info ;;
 restore-check) restore_check ;;
