@@ -26,6 +26,12 @@ const WIDE13 = png(
 const WIDE15 = png(
 	'iVBORw0KGgoAAAANSUhEUgAAAA8AAAACCAIAAAAIKhHDAAAAFUlEQVR4nGP8//8/A9GAiXilDAwMAA4VAwEw52YlAAAAAElFTkSuQmCC'
 );
+const WIDE17 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAABEAAAACCAIAAAAxTaCYAAAAEUlEQVR4nGNocFAgFTGQoQcAGIIdwU27pEwAAAAASUVORK5CYII='
+);
+const WIDE19 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAABMAAAACCAIAAAA1uHClAAAAEUlEQVR4nGNocFAgDzGQrRMAl50hQR7bJ2sAAAAASUVORK5CYII='
+);
 const line = (text: string, x: number, y: number, w = text.length * 8) => ({
 	text,
 	box: [
@@ -209,19 +215,23 @@ test('a busy scanner keeps the photo waiting in line and reads it when there is 
 	request
 }, testInfo) => {
 	await signedInAs(page, `Sıra ${testInfo.project.name}`);
+	// Its own width per browser: the busy answer turns into the reading once used, so the two runs must not share it.
+	const [width, photo] = testInfo.project.name === 'phone-webkit' ? [19, WIDE19] : [11, WIDE11];
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
 		data: {
-			width: 11,
+			width,
 			status: 503,
 			body: { error: 'busy', ahead: 1 },
 			then: { status: 200, body: { lines: TABLE, ocrMs: 900, queueMs: 0 } }
 		}
 	});
-	await page.goto('/scan');
+	// The Scan sheet over Log (opening /scan without a reading lands here too).
+	await page.goto('/log?scan=1');
+	await expect(page.getByRole('dialog', { name: 'Scan a label' })).toBeVisible();
 	await page.waitForLoadState('networkidle');
 	await page
 		.getByLabel('Choose photo')
-		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE11 });
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: photo });
 	await expect(
 		page.getByRole('status').filter({ hasText: 'Waiting for the scanner' })
 	).toContainText("It's reading another label. Yours is next");
@@ -244,7 +254,9 @@ test('a blurry photo says so: instead of "no table" when nothing was read, as a 
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
 		data: { width: 15, status: 200, body: { lines: TABLE, sharpness: 0.12, ocrMs: 1 } }
 	});
-	await page.goto('/scan');
+	// The Scan sheet over Log (opening /scan without a reading lands here too).
+	await page.goto('/log?scan=1');
+	await expect(page.getByRole('dialog', { name: 'Scan a label' })).toBeVisible();
 	await page.waitForLoadState('networkidle');
 	await page
 		.getByLabel('Choose photo')
@@ -259,4 +271,54 @@ test('a blurry photo says so: instead of "no table" when nothing was read, as a 
 	await expect(notes.getByRole('listitem').first()).toHaveText(
 		'The photo looks blurry, so some values may be misread. Check each one against the label.'
 	);
+});
+
+test('New food: Scan label fills the Nutrition card in place, asks before replacing typed values, and saves without logging', async ({
+	page,
+	request
+}, testInfo) => {
+	const name = `Oat Crackers ${testInfo.project.name}`;
+	await signedInAs(page, `Pantry ${testInfo.project.name}`);
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: { width: 17, status: 200, body: { lines: TABLE, ocrMs: 1 } }
+	});
+	await page.goto('/foods');
+	await page.getByRole('link', { name: 'New food' }).click();
+	await page.getByLabel('Name', { exact: true }).fill(name);
+	await page.locator('#n-energy_kcal').fill('999');
+
+	// Typed values are only replaced when the person says so (owner's review, 2026-11-09).
+	await page.getByRole('button', { name: 'Scan label' }).click();
+	await expect(
+		page.getByText('Replace the values you typed with what the label says?')
+	).toBeVisible();
+	await page.getByRole('button', { name: 'Keep mine' }).click();
+	await expect(page.locator('#n-energy_kcal')).toHaveValue('999');
+	await page.getByRole('button', { name: 'Scan label' }).click();
+	await page.getByRole('button', { name: 'Scan and replace' }).click();
+
+	// The same Scan sheet as Log, over the form; what it reads fills the form in place, the name kept.
+	const sheet = page.getByRole('dialog', { name: 'Scan a label' });
+	await page.waitForLoadState('networkidle');
+	await sheet
+		.getByLabel('Choose photo')
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE17 });
+	await expect(sheet).toBeHidden();
+	await expect(page.getByRole('heading', { level: 1, name: 'New food' })).toBeVisible();
+	await expect(page.locator('#n-energy_kcal')).toHaveValue('400');
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
+	await expect(page.getByRole('list', { name: 'What was read' })).toBeVisible();
+	await page.getByRole('button', { name: 'Show photo' }).click();
+	await expect(page.getByRole('img', { name: 'Your photo of the label' })).toBeVisible();
+
+	// Save food goes back to Foods with the food highlighted; it counts as a scan, and nothing is logged.
+	await page.getByRole('button', { name: 'Save food' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Foods' })).toBeVisible();
+	await expect(page.getByRole('link', { name: new RegExp(name) })).toHaveAttribute(
+		'data-highlight',
+		'true'
+	);
+	expect(await scanEditsFor(name)).toMatchObject({ changed: 0, removed: 0, added: 0 });
+	await page.goto('/');
+	await expect(page.getByText(name)).toHaveCount(0);
 });

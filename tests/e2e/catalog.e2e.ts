@@ -32,6 +32,10 @@ test('a member creates a shared per-serving food that another member can find an
 	await expect(nutrient(page, 'fibre')).toHaveAttribute('placeholder', 'Unknown');
 	await page.getByRole('button', { name: 'Save food' }).click();
 
+	// Saving goes back to Foods with the new food highlighted.
+	const saved = page.getByRole('link', { name: /HighPro\+/ });
+	await expect(saved).toHaveAttribute('data-highlight', 'true');
+	await saved.click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Edit food' })).toBeVisible();
 	await expect(page.getByLabel('Name', { exact: true })).toHaveValue(new RegExp('HighPro\\+'));
 	await expect(nutrient(page, 'fibre')).toHaveValue('');

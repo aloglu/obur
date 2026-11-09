@@ -37,6 +37,10 @@
 		note?: string;
 		/** In place of the hint on copying a label: what a label scan read and decided. */
 		valueNotes?: Snippet;
+		/** On the right of the Nutrition title: Scan label on New food (docs/ui.md, "Food form"). */
+		valuesAction?: Snippet;
+		/** The hint on copying a label, when it should say more (that a scan can fill it in). */
+		valuesHint?: string;
 	}
 
 	const UNITS: { value: 'g' | 'ml'; label: string }[] = [
@@ -52,7 +56,9 @@
 		unsaved = false,
 		actions,
 		note,
-		valueNotes
+		valueNotes,
+		valuesAction,
+		valuesHint
 	}: Props = $props();
 	const start = untrack(() => initial);
 
@@ -79,14 +85,16 @@
 		'salt'
 	];
 
-	const reported = (code: NutrientCode) =>
-		start?.nutrients.find(
+	const reportedIn = (nutrients: NutrientValue[], code: NutrientCode) =>
+		nutrients.find(
 			(n) => n.code === code && (n.qualifier === 'reported' || n.qualifier === 'less_than')
 		);
 
-	let labelType = $state<'eu' | 'us'>(
-		reported('carbohydrate_total') || reported('sodium') ? 'us' : 'eu'
-	);
+	const reported = (code: NutrientCode) => reportedIn(start?.nutrients ?? [], code);
+	const labelTypeOf = (nutrients: NutrientValue[]) =>
+		reportedIn(nutrients, 'carbohydrate_total') || reportedIn(nutrients, 'sodium') ? 'us' : 'eu';
+
+	let labelType = $state<'eu' | 'us'>(labelTypeOf(start?.nutrients ?? []));
 	const codeFor = (field: Field): NutrientCode =>
 		field === 'carbohydrate'
 			? labelType === 'eu'
@@ -96,14 +104,17 @@
 				? 'sodium'
 				: field;
 
-	function initialRow(field: Field) {
+	function initialRow(
+		field: Field,
+		find: (code: NutrientCode) => NutrientValue | undefined = reported
+	) {
 		const codes: NutrientCode[] =
 			field === 'carbohydrate'
 				? ['carbohydrate_excl_fibre', 'carbohydrate_total']
 				: field === 'salt'
 					? ['salt', 'sodium']
 					: [field];
-		const found = codes.map(reported).find(Boolean);
+		const found = codes.map(find).find(Boolean);
 		return {
 			text: found ? formatDecimal(found.value, ',', 4) : '',
 			lessThan: found?.qualifier === 'less_than'
@@ -136,10 +147,10 @@
 			unit: s.unit
 		}))
 	);
-	let extras = $state(
+	const extraRows = (find: (code: NutrientCode) => NutrientValue | undefined) =>
 		Object.fromEntries(
 			EXTRA_CODES.map((code) => {
-				const found = reported(code);
+				const found = find(code);
 				return [
 					code,
 					{
@@ -148,8 +159,8 @@
 					}
 				];
 			})
-		) as Record<Extra, { text: string; lessThan: boolean }>
-	);
+		) as Record<Extra, { text: string; lessThan: boolean }>;
+	let extras = $state(extraRows(reported));
 	const extrasOpen = untrack(() => EXTRA_CODES.some((c) => extras[c].text !== ''));
 	let showErrors = $state(false);
 
@@ -227,6 +238,34 @@
 	const startState = formState();
 	const dirty = $derived(formState() !== startState);
 	let extrasShown = $state(extrasOpen);
+
+	/** Whether any value of the Nutrition card has been typed, so filling it from a label would replace something. */
+	export function hasValues() {
+		return (
+			FIELDS.some((f) => rows[f].text.trim() !== '') ||
+			EXTRA_CODES.some((c) => extras[c].text.trim() !== '') ||
+			servingLabel.trim() !== '' ||
+			servingSizeText.trim() !== ''
+		);
+	}
+
+	/**
+	 * Replaces the Nutrition card with what a label scan read (New food's Scan label). The name, brand, icon,
+	 * portions and who can find it stay as typed.
+	 */
+	export function fillValues(
+		food: Pick<FoodDetail, 'basis' | 'servingLabel' | 'servingSize' | 'nutrients'>
+	) {
+		const find = (code: NutrientCode) => reportedIn(food.nutrients, code);
+		labelType = labelTypeOf(food.nutrients);
+		basis = food.basis;
+		servingLabel = food.servingLabel ?? '';
+		servingSizeText = food.servingSize ? formatDecimal(food.servingSize.amount, ',', 4) : '';
+		servingSizeUnit = food.servingSize?.unit ?? 'g';
+		rows = Object.fromEntries(FIELDS.map((f) => [f, initialRow(f, find)])) as typeof rows;
+		extras = extraRows(find);
+		if (EXTRA_CODES.some((c) => extras[c].text !== '')) extrasShown = true;
+	}
 
 	/** "Fat (g)" as its name and unit, for a row's two columns. */
 	const parts = (text: string) => {
@@ -351,7 +390,10 @@
 		class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
 		aria-labelledby="values-heading"
 	>
-		<h2 id="values-heading" class="text-[1.1875rem] font-bold">{m.food_values()}</h2>
+		<div class="-my-1 flex min-h-11 items-center justify-between gap-2">
+			<h2 id="values-heading" class="text-[1.1875rem] font-bold">{m.food_values()}</h2>
+			{#if valuesAction}<div class="-mr-3 shrink-0">{@render valuesAction()}</div>{/if}
+		</div>
 		<Chips
 			label={m.food_basis()}
 			bind:value={basis}
@@ -396,7 +438,7 @@
 			]}
 		/>
 		{#if valueNotes}{@render valueNotes()}{:else}
-			<p class="text-[0.8125rem] text-muted">{m.food_values_hint()}</p>
+			<p class="text-[0.8125rem] text-muted">{valuesHint ?? m.food_values_hint()}</p>
 		{/if}
 		<div class="flex flex-col">
 			{#each FIELDS as field (field)}

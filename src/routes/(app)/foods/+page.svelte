@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Foods (docs/ui.md, "Recipes and saved meals"): the person's own foods and scans, and a search that also reaches what
 	// the household shares and the curated foods. New food stays above the list: an import can bring hundreds.
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
@@ -18,7 +18,21 @@
 	let { data } = $props();
 
 	// More of the list is added to what the page loaded.
-	let own = $state<OwnFood[]>(untrack(() => data.own.foods));
+	// A food just saved from New food goes at the top when it isn't on the first page.
+	let own = $state<OwnFood[]>(
+		untrack(() => {
+			const { foods } = data.own;
+			const saved = data.saved;
+			return saved && !foods.some((f) => f.id === saved.id) ? [saved, ...foods] : foods;
+		})
+	);
+	let highlight = $state<string | null>(untrack(() => data.saved?.id ?? null));
+	onMount(() => {
+		if (!highlight) return;
+		document.querySelector('[data-highlight]')?.scrollIntoView({ block: 'nearest' });
+		const t = setTimeout(() => (highlight = null), 2500);
+		return () => clearTimeout(t);
+	});
 	let more = $state(untrack(() => data.own.more));
 	let loading = $state(false);
 	async function showMore() {
@@ -28,7 +42,7 @@
 				'GET',
 				`/api/v1/foods?mine=1&offset=${own.length}`
 			);
-			own.push(...page.foods);
+			own.push(...page.foods.filter((f) => !own.some((o) => o.id === f.id)));
 			more = page.more;
 		} finally {
 			loading = false;
@@ -83,6 +97,7 @@
 		detail={archived ? `${line} · ${m.foods_archived()}` : line}
 		kcal={energy(r)}
 		faded={archived}
+		highlight={r.id === highlight}
 	/>
 {/snippet}
 

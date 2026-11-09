@@ -62,16 +62,21 @@ Agreed and being fixed one commit at a time (`main`, next release):
 - Changed (owner approved in the review page): Scan opens as a sheet over Log, Check the label stays a page; the
   "Log it after saving" checkbox and its setting are gone (migration 0045). `scan.e2e.ts`.
 
-Checked 2026-11-09: lint, type-check, all Vitest projects (1052 tests), the full browser suite in the Playwright
-image (207 passed, 16 skipped by design; no screenshot changed) and the passkey journeys. Not yet released.
+- Added (owner approved in round 4 of the review page, after three rejected layouts): Scan inside New food. Foods
+  is unchanged (full-width New food, as on Recipes and Saved meals); the Nutrition card has a **Scan label** text
+  button on the right of its title (the style of the icon's Change) that opens the Scan sheet over the form and
+  fills the Nutrition card in place, name and brand kept; with values already typed it asks first ("Keep mine" /
+  "Scan and replace"). The notes replace the hint; the button becomes Show photo. Saving a new food (scanned or
+  not) goes to Foods with it highlighted (`?saved=`, shown at the top when not on the first page); nothing is
+  logged; a scanned one counts in the scan-correction totals. `scan.e2e.ts`, `catalog.e2e.ts`.
+- Test fixes: the busy-scanner test used one stand-in OCR answer for both browsers at once, so one sometimes got
+  the other's; each browser has its own photo width now. Scan tests open the sheet at `/log?scan=1` instead of
+  relying on `/scan` redirecting.
 
-Waiting on the owner (asked 2026-11-09):
+Checked 2026-11-09: lint, type-check, all Vitest projects, the full browser suite in the Playwright image and the
+passkey journeys (1052 Vitest; 209 browser tests passed, 16 skipped by design; no screenshot changed). Not yet released.
 
-- Scan inside New food (review page "obur Scan Review", round 2, verdict in db collection `review`, doc
-  `scan-foods-2`): Foods keeps New food as its one main button; the New food form has a "Have the pack? Scan its
-  label to fill this in." card that opens the Scan sheet and fills the form in place; Save food returns to Foods.
-
-Next step: the owner's answers above, then release `1.0.0-beta.6`.
+Next step: release `1.0.0-beta.6` (needs migration 0045), when the owner says so.
 
 ## Current phase
 

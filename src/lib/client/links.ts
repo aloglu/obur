@@ -38,3 +38,7 @@ export const journalHref = (day: string | null) =>
 
 /** Log with the Scan sheet open. */
 export const scanSheetHref = () => withQuery(resolve('/(app)/log'), { scan: '1' });
+
+/** Foods with a food just saved highlighted (and shown even when it is further down the list). */
+export const foodsSavedHref = (foodId: string) =>
+	withQuery(resolve('/(app)/foods'), { saved: foodId });

@@ -13,16 +13,30 @@
 		/** The words an icon is suggested from, when they aren't the row's name. */
 		iconFrom?: { name: string; brand: string | null };
 		faded?: boolean;
+		/** Just saved: tinted for a moment, then fading back. */
+		highlight?: boolean;
 	}
-	let { href, icon, name, brand = null, detail, kcal, iconFrom, faded = false }: Props = $props();
+	let {
+		href,
+		icon,
+		name,
+		brand = null,
+		detail,
+		kcal,
+		iconFrom,
+		faded = false,
+		highlight = false
+	}: Props = $props();
 </script>
 
 <li>
 	<!-- eslint-disable svelte/no-navigation-without-resolve -- every caller passes resolve(...) -->
 	<a
 		{href}
+		data-highlight={highlight || undefined}
 		class={[
-			'grid min-h-14 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-input px-2.5 py-1.5 hover:bg-surface2',
+			'grid min-h-14 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-input px-2.5 py-1.5 transition-colors duration-700',
+			highlight ? 'bg-soft' : 'hover:bg-surface2',
 			faded && 'opacity-60'
 		]}
 	>

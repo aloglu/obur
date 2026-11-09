@@ -109,7 +109,7 @@ test('Scan with a key: the copied table fills the form, read by the company and 
 		]
 	};
 	await nextAnswer(key, 200, { choices: [{ message: { content: JSON.stringify(table) } }] });
-	await page.goto('/scan');
+	await page.goto('/log?scan=1');
 	await expect(page.getByText('With your OpenAI key')).toBeVisible();
 	await page.waitForLoadState('networkidle');
 	await page
@@ -129,7 +129,9 @@ test('Scan with a key: the copied table fills the form, read by the company and 
 
 	// A refused key: one card, one fixing button, typing as the way on, and the server for this one photo.
 	await nextAnswer(key, 401, { error: { code: 'invalid_api_key' } });
-	await page.goto('/scan');
+	// The Scan sheet over Log (opening /scan without a reading lands here too).
+	await page.goto('/log?scan=1');
+	await expect(page.getByRole('dialog', { name: 'Scan a label' })).toBeVisible();
 	await page.waitForLoadState('networkidle');
 	await page
 		.getByLabel('Choose photo')
