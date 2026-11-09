@@ -40,6 +40,9 @@ Agreed and being fixed one commit at a time (`main`, next release):
 
 - Done: an empty Other amount or New weigh-in closes when its check is tapped (`WaterCard`, `WeighIn`; `body.e2e.ts`).
 - Done: name fields (food, brand, recipe, saved meal) ask phone keyboards to capitalise each word.
+- Fixed: Household's Personal AI keys switch failed more than 10 minutes after signing in. Its route let the
+  "recent passkey needed" error through as a 500 (now `respond`), and the page now asks for the passkey
+  (`withRecentAuth`). Passkey journey test in `auth.e2e.ts`.
 
 ## Current phase
 

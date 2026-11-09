@@ -143,6 +143,25 @@ test('the admin signs in again and adds a security key', async () => {
 	await admin.restore(phone, phoneCredentials);
 });
 
+test('an admin setting asks for the passkey again once the last check is old', async () => {
+	const { page } = admin;
+	// Owner report 2026-11-09: the Personal AI keys switch said "couldn't be saved" later in a session.
+	const sql = postgres(e2eEnv.DATABASE_MIGRATOR_URL, { max: 1, onnotice: () => {} });
+	await sql`update sessions set verified_at = now() - interval '1 hour'`;
+	await sql.end();
+	await page.goto('/household');
+	const keys = page.getByRole('switch', { name: 'Personal AI keys' });
+	await expect(keys).toBeChecked();
+	const saved = () =>
+		page.waitForResponse((r) => r.url().endsWith('/personal-keys') && r.status() === 200);
+	await Promise.all([saved(), keys.click()]);
+	await page.reload();
+	await expect(keys).not.toBeChecked();
+	await Promise.all([saved(), keys.click()]);
+	await page.reload();
+	await expect(keys).toBeChecked();
+});
+
 test('an invited member joins with their own passkey', async ({ browser }) => {
 	const { page } = admin;
 	await signIn(page, ADMIN);

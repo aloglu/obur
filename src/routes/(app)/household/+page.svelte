@@ -6,7 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { api, ApiError } from '#lib/client/api.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import { clockTime } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -47,11 +47,17 @@
 	let personalKeys = $state(untrack(() => data.personalKeys));
 	async function savePersonalKeys(allow: boolean) {
 		try {
-			await api('PUT', '/api/v1/household/personal-keys', { allow });
+			// An admin setting: the server asks for a passkey moments old (as for invites and deletions).
+			await withRecentAuth(() => api('PUT', '/api/v1/household/personal-keys', { allow }));
 			await invalidateAll();
-		} catch {
+		} catch (e) {
 			personalKeys = !allow;
-			showToast({ message: m.settings_save_failed() });
+			showToast({
+				message:
+					e instanceof ApiError || e instanceof DOMException
+						? describeError(e)
+						: m.settings_save_failed()
+			});
 		}
 	}
 	let invites = $state<Invite[]>([]);
