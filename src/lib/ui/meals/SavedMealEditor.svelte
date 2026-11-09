@@ -128,6 +128,7 @@
 		<TextField
 			label={m.meal_editor_name()}
 			bind:value={name}
+			autocapitalize="words"
 			maxlength={120}
 			aria-invalid={showErrors && !name.trim()}
 		/>

@@ -23,6 +23,7 @@ The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app an
 - **Fewer descriptions.** No explanatory text under titles and fields unless the owner kept it. Help carries explanations; no inline "?" links. Help's topics scroll sideways by finger (with a soft fade at the edge), and by dragging with a mouse.
 - **Checkbox.** One app-drawn style, for example "I've saved these codes", the pregnancy questions and delete confirmations.
 - **Inline fields** (Other amount, New weigh-in and so on): a tap on any non-interactive area closes them without saving, and so does opening another one or tapping the check with the field empty (owner, 2026-11-09). Only one is open at a time.
+- **Name fields capitalise each word on phone keyboards** (owner, 2026-11-09, as LoseIt does): food, brand, recipe and saved-meal names use `autocapitalize="words"`. It is only the keyboard's Shift: the person can turn it off for a word, and nothing is changed after typing.
 - **Examples and placeholders are in English,** in the English interface, although Turkish input works (including messages such as `speak_example`).
 - **Macro colours** do not follow the accent. Protein, carbs and fat change together, per theme, never protein alone.
 - **Keyboard.** An open sheet stays inside the area the on-screen keyboard leaves free, however tall its content grows (`ui/Sheet.svelte`, from `visualViewport`).

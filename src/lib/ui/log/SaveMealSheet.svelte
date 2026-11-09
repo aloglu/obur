@@ -51,7 +51,13 @@
 
 <Sheet title={m.saved_save_title()} {onclose}>
 	<form class="flex flex-col gap-4" onsubmit={save}>
-		<TextField label={m.saved_name()} bind:value={name} maxlength={120} autocomplete="off" />
+		<TextField
+			label={m.saved_name()}
+			bind:value={name}
+			maxlength={120}
+			autocomplete="off"
+			autocapitalize="words"
+		/>
 		<ItemChecklist label={m.saved_items()} items={entries} bind:chosen />
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<Button type="submit" wide disabled={busy || !valid}

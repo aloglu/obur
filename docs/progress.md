@@ -39,6 +39,7 @@ rows); the passphrase is in the owner's password manager. Released as `v1.0.0-be
 Agreed and being fixed one commit at a time (`main`, next release):
 
 - Done: an empty Other amount or New weigh-in closes when its check is tapped (`WaterCard`, `WeighIn`; `body.e2e.ts`).
+- Done: name fields (food, brand, recipe, saved meal) ask phone keyboards to capitalise each word.
 
 ## Current phase
 

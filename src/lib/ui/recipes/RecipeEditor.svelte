@@ -169,6 +169,7 @@
 		<TextField
 			label={m.recipe_name()}
 			bind:value={name}
+			autocapitalize="words"
 			maxlength={200}
 			aria-invalid={showErrors && !name.trim()}
 		/>

@@ -322,8 +322,14 @@
 
 <form class="flex flex-col gap-3" onsubmit={submit} novalidate>
 	<section class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
-		<TextField label={m.food_name()} bind:value={name} required maxlength={200} />
-		<TextField label={m.food_brand()} bind:value={brand} maxlength={120} />
+		<TextField
+			label={m.food_name()}
+			bind:value={name}
+			required
+			maxlength={200}
+			autocapitalize="words"
+		/>
+		<TextField label={m.food_brand()} bind:value={brand} maxlength={120} autocapitalize="words" />
 		<div class="flex items-center gap-3">
 			<FoodIcon {icon} name={name || '-'} {brand} />
 			<span class="flex min-w-0 flex-1 flex-col">
