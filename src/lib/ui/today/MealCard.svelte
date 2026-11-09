@@ -18,7 +18,7 @@
 	interface Props {
 		meal: Meal;
 		entries: DiaryEntry[];
-		highlight?: string;
+		highlight?: string[];
 		onadd: () => void;
 		/** Offered once the meal has entries on the server. */
 		onsave?: () => void;
@@ -93,7 +93,7 @@
 						aria-pressed={selecting ? on : undefined}
 						class={[
 							'grid min-h-14 w-full grid-cols-[auto_40px_minmax(0,1fr)_auto] items-center rounded-input px-2.5 py-1.5 text-left transition-colors duration-700',
-							on || e.id === highlight ? 'bg-soft' : 'hover:bg-surface2',
+							on || highlight?.includes(e.id) ? 'bg-soft' : 'hover:bg-surface2',
 							bulk?.lifted.has(e.id) && 'opacity-35'
 						]}
 					>

@@ -43,6 +43,8 @@ Agreed and being fixed one commit at a time (`main`, next release):
 - Fixed: Household's Personal AI keys switch failed more than 10 minutes after signing in. Its route let the
   "recent passkey needed" error through as a 500 (now `respond`), and the page now asks for the passkey
   (`withRecentAuth`). Passkey journey test in `auth.e2e.ts`.
+- Fixed: logging several items at once (saved meal, Type it, Speak) highlights every new row on Today, not only
+  the first (`highlight` takes a list; `saved-meals.e2e.ts`).
 
 ## Current phase
 

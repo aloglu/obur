@@ -124,7 +124,8 @@
 				i.preview.kind === 'diary' && i.preview.localDate === data.date && i.preview.meal === meal
 		);
 	let editing = $state<DiaryEntry | null>(null);
-	let highlight = $state<string | undefined>(page.url.searchParams.get('highlight') ?? undefined);
+	// Rows just saved: all of them when several were logged at once (a saved meal, Type it, Speak).
+	let highlight = $state<string[]>(page.url.searchParams.get('highlight')?.split(',') ?? []);
 
 	const eaten = $derived(data.totals.energy_kcal?.value ?? 0);
 	const byMeal = $derived(
@@ -134,8 +135,8 @@
 	);
 
 	$effect(() => {
-		if (!highlight) return;
-		const t = setTimeout(() => (highlight = undefined), 2500);
+		if (!highlight.length) return;
+		const t = setTimeout(() => (highlight = []), 2500);
 		return () => clearTimeout(t);
 	});
 	$effect(() => closeInlineOnOutsideTap());
@@ -145,7 +146,7 @@
 	async function saved(entry: DiaryEntry, movedTo?: Meal) {
 		editing = null;
 		await invalidateAll();
-		highlight = entry.id;
+		highlight = [entry.id];
 		showToast({ message: movedTo ? m.toast_moved({ meal: mealName(movedTo) }) : m.toast_saved() });
 	}
 
@@ -160,7 +161,7 @@
 			undo: async () => {
 				await api('POST', `/api/v1/diary/entries/${entry.id}?action=restore`, {});
 				await invalidateAll();
-				highlight = entry.id;
+				highlight = [entry.id];
 			}
 		});
 	}

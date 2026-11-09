@@ -14,9 +14,12 @@ const withQuery = (
 	return (query ? `${path}?${query}` : path) as ResolvedPathname;
 };
 
-/** Today view of a day, optionally highlighting a just-saved entry. */
-export const dayHref = (date: string, highlight?: string) =>
-	withQuery(resolve('/(app)'), { date, highlight });
+/** Today view of a day, optionally highlighting just-saved entries (all of them, when several were logged). */
+export const dayHref = (date: string, highlight?: string | string[]) =>
+	withQuery(resolve('/(app)'), {
+		date,
+		highlight: Array.isArray(highlight) ? highlight.join(',') || undefined : highlight
+	});
 
 /** The Log tab with a preset meal and day. */
 export const logHref = (meal: Meal, date: string) =>

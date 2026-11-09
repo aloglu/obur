@@ -1,5 +1,5 @@
 <script lang="ts">
-	// The phone Log tab (and the desktop Log item). After saving it returns to Today with the new row highlighted.
+	// The phone Log tab (and the desktop Log item). After saving it returns to Today with the new rows highlighted.
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -145,7 +145,7 @@
 		oncalories={() => ((typing = false), (quick = true))}
 		onlogged={async (logged) => {
 			typing = false;
-			await goto(dayHref(logged.date, logged.firstEntryId ?? undefined));
+			await goto(dayHref(logged.date, logged.entryIds));
 			showLoggedEntry(logged, () => goto(dayHref(logged.date), { invalidateAll: true }));
 		}}
 		onclose={() => (typing = false)}
@@ -159,7 +159,12 @@
 		meal={sheetMeal}
 		onlogged={async (entries) => {
 			openSaved = null;
-			await goto(dayHref(entries[0].localDate, entries[0].id));
+			await goto(
+				dayHref(
+					entries[0].localDate,
+					entries.map((e) => e.id)
+				)
+			);
 			showLoggedMeal(entries, () => goto(dayHref(entries[0].localDate), { invalidateAll: true }));
 		}}
 		onclose={() => (openSaved = null)}

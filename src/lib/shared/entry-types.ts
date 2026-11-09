@@ -54,8 +54,8 @@ export interface LoggedEntry {
 	count: number;
 	date: string;
 	undo: string[];
-	/** The first diary entry, to highlight. */
-	firstEntryId: string | null;
+	/** The diary entries it made, to highlight together. */
+	entryIds: string[];
 	/** Foods nothing was found for, left out of what was logged. */
 	skipped?: string[];
 }

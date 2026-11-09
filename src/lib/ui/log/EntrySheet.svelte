@@ -403,14 +403,14 @@
 		busy = true;
 		problem = '';
 		const undo: string[] = [];
-		let firstEntryId: string | null = null;
+		const entryIds: string[] = [];
 		const failed: Card[] = [];
 		const skipped = cards.filter(notFound).map((c) => (c.kind === 'food' ? c.text : ''));
 		for (const c of ready) {
 			try {
 				const r = await save(c);
 				undo.push(r.undo);
-				firstEntryId ??= r.diaryId ?? null;
+				if (r.diaryId) entryIds.push(r.diaryId);
 			} catch {
 				failed.push(c);
 			}
@@ -430,7 +430,7 @@
 				body: JSON.stringify({ first: 'voice' })
 			}).catch(() => {});
 		}
-		onlogged({ count: undo.length, date: day, undo, firstEntryId, skipped });
+		onlogged({ count: undo.length, date: day, undo, entryIds, skipped });
 	}
 	const rowMs = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
 	const action =

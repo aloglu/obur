@@ -44,7 +44,7 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 	await save.getByRole('button', { name: 'Save meal' }).click();
 	await expect(page.getByRole('status')).toContainText('Saved “Pazar kahvaltısı”');
 
-	// Log it from search (Turkish-insensitive) to Yesterday's dinner, without the tea.
+	// Log it from search (Turkish-insensitive) to Yesterday's dinner, first without the tea.
 	await page.goto('/log');
 	await page.getByRole('searchbox').fill('pazar kahvaltisi');
 	await page.getByRole('button', { name: /Pazar kahvaltısı.*2 items · 160 kcal/ }).click();
@@ -56,9 +56,25 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 	await expect(page.getByRole('heading', { level: 1, name: 'Yesterday' })).toBeVisible();
 	const dinner = page.getByRole('region', { name: 'Dinner' });
 	await expect(dinner).toContainText(`Beyaz Peynir ${tag}`);
+	await expect(dinner.getByRole('listitem').getByRole('button')).toHaveClass(/bg-soft/);
 	await expect(dinner).toContainText('100');
 	const toast = page.getByRole('status');
 	await expect(toast).toContainText('Logged 1 item');
+	await toast.getByRole('button', { name: 'Undo' }).click();
+	await expect(dinner.getByRole('listitem')).toHaveCount(0);
+
+	// Both items this time: every row that arrived is highlighted, not only the first (owner report 2026-11-09).
+	await page.goto('/log');
+	await page.getByRole('searchbox').fill('pazar kahvaltisi');
+	await page.getByRole('button', { name: /Pazar kahvaltısı.*2 items · 160 kcal/ }).click();
+	await choose(page.getByRole('dialog', { name: 'Pazar kahvaltısı' }), 'Day', 'Yesterday');
+	await choose(page.getByRole('dialog', { name: 'Pazar kahvaltısı' }), 'Meal', 'Dinner');
+	await page.getByRole('button', { name: 'Log 2 items · 160 kcal' }).click();
+	const rows = dinner.getByRole('listitem').getByRole('button');
+	await expect(rows).toHaveCount(2);
+	await expect(rows.nth(0)).toHaveClass(/bg-soft/);
+	await expect(rows.nth(1)).toHaveClass(/bg-soft/);
+	await expect(toast).toContainText('Logged 2 items');
 	await toast.getByRole('button', { name: 'Undo' }).click();
 	await expect(dinner.getByRole('listitem')).toHaveCount(0);
 
