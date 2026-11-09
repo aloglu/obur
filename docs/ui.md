@@ -371,6 +371,12 @@ The old `over` purple from the brief's "calm over-budget" rule is dropped.
 - Logo and browser tab icon (`static/brand/`, empty margin trimmed): the brown bowl in light, the cream bowl in dark
   (`AppLogo`; the tab icon follows the browser's scheme). The logo sits left of the wordmark on the sign-in screens
   (36 px) and the desktop sidebar (32 px).
+- **The logo follows the chosen icon (owner, 2026-11-09):** the desktop sidebar's logo is the transparent artwork with
+  only the O in the chosen icon's colour, the bowl brown in light and cream in dark (`static/app-icons/<id>/logo-light.png`
+  and `logo-dark.png`, from `brand-icons.sh`). The O keeps at least 3:1 against every theme's surface, so where the
+  icon's O is too faint the logo uses a deeper shade of it on light (Zerde, Patlıcan, Zeytin) or the icon's
+  background colour on dark (Kaset's teal, Sinyal's lime). The sign-in page shows the chosen icon itself (the tile,
+  read from this browser's cookie), which suits every background. The browser tab icon stays the brown/cream bowl.
 - **Choosing an icon (owner, 2026-11-07, review round 9):** Appearance offers nine Home Screen icons: Pazar (the
   default, the icon above), Pazar light, and one for each other theme. Each is the same artwork with only the
   background and the O in the theme's colours; the bowl and food never change. They are made from the SVG by

@@ -57,14 +57,14 @@ Agreed and being fixed one commit at a time (`main`, next release):
 - Changed: Today's Activity pill has a flame in the accent colour, so it reads as a button.
 - Added (was in the approved demo, missed in the build): tapping an earned badge replays its celebration
   (`achievements.e2e.ts`).
+- Added (owner agreed 2026-11-09): the sidebar logo follows the chosen app icon (transparent, the O in its colour,
+  light and dark); the sign-in page shows the chosen icon. `app-icon.e2e.ts`.
 
 Checked 2026-11-09: lint, type-check, all Vitest projects (1052 tests), the full browser suite in the Playwright
 image (207 passed, 16 skipped by design; no screenshot changed) and the passkey journeys. Not yet released.
 
 Waiting on the owner (asked 2026-11-09):
 
-- Sidebar icon: transparent logos with each app icon's O (two per icon, light and dark, where the O colour lacks
-  contrast on one of them), shown on a review page first.
 - Scanning to create a food without logging it: a Scan entry on Foods (no logging) and Log's Scan always logging,
   replacing the remembered "Log it after saving" checkbox; or keep the checkbox.
 - Scan as a sheet over Log or Foods, like Speak, instead of its own page (it has always been a page).

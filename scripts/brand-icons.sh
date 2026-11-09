@@ -58,3 +58,29 @@ for v in "${variants[@]}"; do
 	magick "$big" -filter Lanczos -resize 88% -background "$back" -gravity center -extent 1024x1024 \
 		-resize 512x512 -strip -define png:compression-level=9 "$out/app-icons/$id/icon-maskable-512.png"
 done
+
+# The sidebar logo for each chosen icon (docs/ui.md, "App icon"): the transparent artwork with only the O in the icon's
+# colour, the bowl brown on light and cream on dark, trimmed like the logo above. The O keeps at least 3:1 against
+# every theme's surface (owner, 2026-11-09): where the icon's own O is too faint, a deeper shade of it on light
+# (Zerde, Patlıcan, Zeytin), or the icon's background colour on dark (Kaset's teal, Sinyal's lime). Pazar uses
+# static/brand/logo-*.png.
+logos=(
+	'pazar-light #c2410c #c2410c'
+	'sade #3b74ef #3b74ef'
+	'zerde #b38301 #f5b301'
+	'patlican #d462b5 #e6a4d4'
+	'zeytin #889328 #cbd66a'
+	'disko #ff2e9a #ff2e9a'
+	'kaset #5b1fbf #6fe3d6'
+	'sinyal #0e0f0a #c6ff00'
+)
+for v in "${logos[@]}"; do
+	read -r id light dark <<<"$v"
+	for pair in "light:brown:$light" "dark:cream:$dark"; do
+		IFS=: read -r mode bowl letter <<<"$pair"
+		sed -e "s/fill=\"#bf4710\"/fill=\"$letter\"/" "$src/obur_transparent_${bowl}_bowl.svg" >"$svgtmp"
+		magick -background none -density 384 "$svgtmp" -resize 1024x1024 -trim +repage -gravity center \
+			-extent 812x812 "$big"
+		resize "$big" 128 "$out/app-icons/$id/logo-$mode.png"
+	done
+done

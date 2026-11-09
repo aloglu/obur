@@ -26,3 +26,12 @@ export const appIconDir = (id: AppIconId) => (id === DEFAULT_APP_ICON ? '' : `/a
 export const appIconFile = (id: AppIconId, file: string) => `${appIconDir(id)}/${file}`;
 export const manifestHref = (id: AppIconId) =>
 	id === DEFAULT_APP_ICON ? '/manifest.webmanifest' : `/manifest.webmanifest?icon=${id}`;
+
+/**
+ * The sidebar logo for an icon: the bowl without a background and only the O in the icon's colour, for light or dark
+ * (scripts/brand-icons.sh; owner, 2026-11-09). Pazar's is the original logo.
+ */
+export const appLogoFile = (id: AppIconId, mode: 'light' | 'dark') =>
+	id === DEFAULT_APP_ICON
+		? `/brand/logo-${mode === 'light' ? 'brown' : 'cream'}.png`
+		: `/app-icons/${id}/logo-${mode}.png`;

@@ -51,6 +51,12 @@ test('the app icon chosen on Appearance is what the Home Screen and the manifest
 	await expect(manifest).toHaveAttribute('href', at('/manifest.webmanifest?icon=zerde'));
 	await expect(icons.getByRole('radio', { name: 'Zerde' })).toHaveAttribute('aria-checked', 'true');
 
+	// The sidebar logo (desktop) and the sign-in page follow the chosen icon too (owner, 2026-11-09).
+	await page.setViewportSize({ width: 1280, height: 800 });
+	const logo = page.getByRole('navigation').first().locator('img[src*="logo"]:visible');
+	await expect(logo).toHaveAttribute('src', /\/app-icons\/zerde\/logo-(light|dark)\.png$/);
+	await page.setViewportSize({ width: 320, height: 640 });
+
 	// Kept with the account: another browser signed in as the same person (Safari, beside the Home Screen app,
 	// which keeps its own cookies) gets the same icon without ever choosing it there.
 	const safari = await browser.newPage();

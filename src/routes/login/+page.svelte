@@ -5,6 +5,8 @@
 	import KeyRound from '@lucide/svelte/icons/key-round';
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import { appIconFile, DEFAULT_APP_ICON } from '#lib/shared/app-icons.ts';
 	import { m } from '#lib/paraglide/messages.js';
 	import { waitingAccounts, type Waiting } from '#lib/client/offline/waiting.ts';
 	import { describeError, passkeysSupported, signIn } from '#lib/client/passkeys.ts';
@@ -43,7 +45,13 @@
 	<h1 class="sr-only">{m.login_title()}</h1>
 	<div class="spacer" aria-hidden="true"></div>
 	<div class="hero relative flex flex-col items-center gap-4">
-		<img src="/icon-512.png" alt="" width="112" height="112" class="rounded-[26px] shadow-card" />
+		<img
+			src={appIconFile(page.data.appIcon ?? DEFAULT_APP_ICON, 'icon-512.png')}
+			alt=""
+			width="112"
+			height="112"
+			class="rounded-[26px] shadow-card"
+		/>
 		<p class="font-display text-[2.75rem] leading-none font-extrabold tracking-[-0.03em]">
 			{m.app_name()}
 		</p>
