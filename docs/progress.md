@@ -65,9 +65,11 @@ image (207 passed, 16 skipped by design; no screenshot changed) and the passkey 
 
 Waiting on the owner (asked 2026-11-09):
 
-- Scanning to create a food without logging it: a Scan entry on Foods (no logging) and Log's Scan always logging,
-  replacing the remembered "Log it after saving" checkbox; or keep the checkbox.
-- Scan as a sheet over Log or Foods, like Speak, instead of its own page (it has always been a page).
+- Scan (review page "obur Scan Review", verdicts in its db collection `review`): taking the photo in a sheet
+  over Log or Foods (the approved review demo `docs/ui/review-2026-11/diary.html` had `#scanSheet`; the build made
+  it a page), Check the label stays a page; Foods gets "Scan a label" beside New food (Save food, back to Foods,
+  "Scan another", nothing logged); Log's Scan always goes on to the amount; the "Log it after saving" checkbox and
+  its account preference go. Build after the owner's verdicts.
 
 Next step: the owner's answers above, then release `1.0.0-beta.6`.
 
