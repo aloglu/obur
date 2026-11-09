@@ -1,6 +1,8 @@
 <script lang="ts">
-	// docs/ui.md, "Achievements, Journal and Help": search that ignores accents and Turkish letters, topic chips,
-	// short real answers that open in place.
+	// docs/ui.md, "Achievements, Journal and Help": search that ignores accents and Turkish letters, answers grouped
+	// by topic that slide open in place (the shared .collapse-row), one search match opened by itself.
+	import { untrack } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Search from '@lucide/svelte/icons/search';
 	import { m } from '#lib/paraglide/messages.js';
@@ -26,17 +28,23 @@
 	const topicName = (t: HelpTopic) => text(`help_topic_${t}`);
 
 	let query = $state('');
-	let topic = $state<HelpTopic | 'all'>('all');
 	const shown = $derived(
-		HELP.filter(
-			(h) =>
-				(topic === 'all' || h.topic === topic) &&
-				helpMatches(
-					query,
-					[text(`help_${h.id}_q`), ...paragraphs(h), text(`help_${h.id}_k`)].join(' ')
-				)
+		HELP.filter((h) =>
+			helpMatches(
+				query,
+				[text(`help_${h.id}_q`), ...paragraphs(h), text(`help_${h.id}_k`)].join(' ')
+			)
 		)
 	);
+	const opened = new SvelteSet<string>();
+	const open = (h: HelpEntry) => opened.has(h.id);
+	const toggle = (h: HelpEntry) => (opened.has(h.id) ? opened.delete(h.id) : opened.add(h.id));
+	// A search with one match opens it (and it can still be closed).
+	const single = $derived(query.trim() !== '' && shown.length === 1 ? shown[0].id : null);
+	$effect(() => {
+		const id = single;
+		if (id) untrack(() => opened.add(id));
+	});
 	const groups = $derived(HELP_TOPICS.filter((t) => shown.some((h) => h.topic === t)));
 	// A formula paragraph ("Budget = …") is set apart.
 	const formula = (p: string) => /^\S+ = /.test(p);
@@ -60,19 +68,6 @@
 			/>
 		</label>
 	</div>
-	<div class="flex flex-wrap gap-2" role="group" aria-label={m.help_topics()}>
-		{#each ['all' as const, ...HELP_TOPICS] as t (t)}
-			<button
-				type="button"
-				aria-pressed={topic === t}
-				onclick={() => (topic = t)}
-				class={[
-					'min-h-11 rounded-input px-4 text-[0.875rem] font-semibold',
-					topic === t ? 'bg-fill text-on-accent' : 'bg-surface2 text-text'
-				]}>{t === 'all' ? m.help_all() : topicName(t)}</button
-			>
-		{/each}
-	</div>
 
 	{#each groups as g (g)}
 		<section
@@ -87,43 +82,58 @@
 			</h2>
 			<div class="flex flex-col divide-y divide-line">
 				{#each shown.filter((h) => h.topic === g) as h (h.id)}
-					<details class="group" open={query.trim() !== '' && shown.length === 1}>
-						<summary
-							class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 py-2 text-[0.9375rem] font-semibold [&::-webkit-details-marker]:hidden"
-						>
-							{text(`help_${h.id}_q`)}
-							<ChevronDown
-								size={20}
-								aria-hidden="true"
-								class="shrink-0 text-muted transition-transform group-open:rotate-180 motion-reduce:transition-none"
-							/>
-						</summary>
-						<div class="flex flex-col gap-2.5 pb-4 text-[0.9375rem] leading-relaxed">
-							{#each paragraphs(h) as p, i (i)}
-								{#if formula(p)}
-									<p class="rounded-tile bg-surface2 px-3.5 py-2.5 text-[0.875rem] font-semibold">
-										{p}
-									</p>
-								{:else}
-									<p>{p}</p>
-								{/if}
-							{/each}
-							{#if h.id === 'rings'}
-								<ul class="flex flex-col gap-2.5">
-									{#each RING_EXAMPLES as example (example.status)}
-										<li
-											class="grid grid-cols-[36px_minmax(0,1fr)] items-center gap-3 text-[0.875rem]"
-										>
-											<span class="size-9"
-												><DayRing status={example.status} fill={example.fill} /></span
+					<div>
+						<h3>
+							<button
+								type="button"
+								aria-expanded={open(h)}
+								aria-controls="answer-{h.id}"
+								onclick={() => toggle(h)}
+								class="flex min-h-14 w-full items-center justify-between gap-3 py-2 text-left text-[0.9375rem] font-semibold"
+							>
+								{text(`help_${h.id}_q`)}
+								<ChevronDown
+									size={20}
+									aria-hidden="true"
+									class={[
+										'shrink-0 text-muted transition-transform duration-300 motion-reduce:transition-none',
+										open(h) && 'rotate-180'
+									]}
+								/>
+							</button>
+						</h3>
+						<div id="answer-{h.id}" class={['collapse-row', open(h) && 'open']}>
+							<div>
+								<div class="flex flex-col gap-2.5 pb-4 text-[0.9375rem] leading-relaxed">
+									{#each paragraphs(h) as p, i (i)}
+										{#if formula(p)}
+											<p
+												class="rounded-tile bg-surface2 px-3.5 py-2.5 text-[0.875rem] font-semibold"
 											>
-											{example.label()}
-										</li>
+												{p}
+											</p>
+										{:else}
+											<p>{p}</p>
+										{/if}
 									{/each}
-								</ul>
-							{/if}
+									{#if h.id === 'rings'}
+										<ul class="flex flex-col gap-2.5">
+											{#each RING_EXAMPLES as example (example.status)}
+												<li
+													class="grid grid-cols-[36px_minmax(0,1fr)] items-center gap-3 text-[0.875rem]"
+												>
+													<span class="size-9"
+														><DayRing status={example.status} fill={example.fill} /></span
+													>
+													{example.label()}
+												</li>
+											{/each}
+										</ul>
+									{/if}
+								</div>
+							</div>
 						</div>
-					</details>
+					</div>
 				{/each}
 			</div>
 		</section>

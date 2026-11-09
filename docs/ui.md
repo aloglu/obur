@@ -20,7 +20,7 @@ The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app an
   - **The unit sits inside the amount field:** "piece ⌄" opens a menu when there are several units; a single unit (g, ml) is plain text, not a button.
   - **Forms with two or three options filled in once** (Female / Male, Shared / Only me, Appearance mode) keep a segmented control with the usual corners. **Type it** has a toggle listing all four meals.
 - **One warning style.** A plain surface card: an icon tile coloured by severity (grey information, amber needs you, red failure, green done), a bold one-line title, a short line under it, actions below when there are any. Used for offline and back online, a refused entry, entries waiting while signed out, no microphone, Speak switched off, and the recovery-codes warning. The card itself is never tinted. Household's backup status keeps its own larger line.
-- **Fewer descriptions.** No explanatory text under titles and fields unless the owner kept it. Help carries explanations; no inline "?" links. Help's topics scroll sideways by finger (with a soft fade at the edge), and by dragging with a mouse.
+- **Fewer descriptions.** No explanatory text under titles and fields unless the owner kept it. Help carries explanations; no inline "?" links.
 - **Checkbox.** One app-drawn style, for example "I've saved these codes", the pregnancy questions and delete confirmations.
 - **Inline fields** (Other amount, New weigh-in and so on): a tap on any non-interactive area closes them without saving, and so does opening another one or tapping the check with the field empty (owner, 2026-11-09). Only one is open at a time.
 - **Name fields capitalise each word on phone keyboards** (owner, 2026-11-09, as LoseIt does): food, brand, recipe and saved-meal names use `autocapitalize="words"`. It is only the keyboard's Shift: the person can turn it off for a word, and nothing is changed after typing.
@@ -420,7 +420,7 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   recorded are left out; an empty month says so. Changing the month changes the highlights. No switch and no
   setting. Progress keeps the charts. Phone: calendar, then highlights; desktop: side by side, the calendar sticky.
   Highlights that aren't achievements sit in neutral circles with a line icon.
-- **Help:** its own page (search that ignores accents and Turkish letters, topic chips, short real answers), opened
+- **Help:** its own page (search that ignores accents and Turkish letters, answers grouped under topic headings with no topic chips (owner, 2026-11-09), short real answers that slide open with the shared `.collapse-row` motion), opened
   from More. No inline "?" or "How?" links (owner tried both and chose the page only). Built as `/help`, the "Help" row in More (and
   desktop Settings) after Security: a search box, topic chips (All, Logging, Budget, Weight, Progress, Reminders,
   Privacy) and the questions as disclosures grouped by topic; a search with a single match opens it. Words live in

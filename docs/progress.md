@@ -53,6 +53,7 @@ Agreed and being fixed one commit at a time (`main`, next release):
 - Fixed: signing in on a new device with a chosen app icon asked for the passkey twice (the account's icon arrived
   on the sign-in page, which reloaded for the Home Screen icon). Sign-in now loads Today once, the button busy
   until it arrives; `/login` forwards a signed-in visitor to Today. Journey test in `auth.e2e.ts`.
+- Changed: Help has no topic chips; answers slide open and shut (`help.e2e.ts`).
 
 ## Current phase
 

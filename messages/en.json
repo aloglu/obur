@@ -1260,8 +1260,6 @@
 	"achievement_celebration": "Achievement: {title}",
 	"help_title": "Help",
 	"help_search": "Search help",
-	"help_topics": "Topics",
-	"help_all": "All",
 	"help_none": "Nothing matches “{query}”.",
 	"more_help": "Help",
 	"help_topic_logging": "Logging",

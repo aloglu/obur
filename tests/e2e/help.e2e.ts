@@ -9,10 +9,15 @@ test('Help: from More, searched without Turkish letters, answers open in place',
 	await page.getByRole('link', { name: 'Help' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Help' })).toBeVisible();
 
-	// Topic chips narrow the list.
-	await page.getByRole('button', { name: 'Budget', exact: true }).click();
-	await expect(page.getByRole('region')).toHaveCount(1);
-	await page.getByRole('button', { name: 'All', exact: true }).click();
+	// Answers grouped by topic, with no topic chips (owner, 2026-11-09); a question slides its answer open and shut.
+	await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveCount(0);
+	const budget = page.getByRole('button', { name: 'How is my daily budget worked out?' });
+	await expect(budget).toHaveAttribute('aria-expanded', 'false');
+	await budget.click();
+	await expect(budget).toHaveAttribute('aria-expanded', 'true');
+	await expect(page.getByText(/Budget = base burn/)).toBeVisible();
+	await budget.click();
+	await expect(page.getByText(/Budget = base burn/)).toBeHidden();
 
 	// "hatirlatma" finds the reminders answer (its search words include "hatırlatma"); a single match opens.
 	await page.getByRole('searchbox', { name: 'Search help' }).fill('hatirlatma');
@@ -21,7 +26,7 @@ test('Help: from More, searched without Turkish letters, answers open in place',
 	await expect(page.getByText(/only if that thing is still missing/)).toBeVisible();
 
 	await page.getByRole('searchbox', { name: 'Search help' }).fill('budget');
-	await page.getByText('How is my daily budget worked out?').click();
+	await page.getByRole('button', { name: 'How is my daily budget worked out?' }).click();
 	await expect(
 		page.getByText('Budget = base burn (BMR × about 1,2) + activity − deficit')
 	).toBeVisible();
