@@ -45,7 +45,6 @@ export const profiles = pgTable(
 		timeFormat: text('time_format', { enum: ['device', '24', '12'] })
 			.notNull()
 			.default('device'),
-		scanLogAfter: boolean('scan_log_after').notNull().default(true),
 		weightView: text('weight_view', { enum: ['readings', 'trend'] })
 			.notNull()
 			.default('readings'),

@@ -18,5 +18,7 @@
 	</p>
 	<Button wide onclick={() => goto(resolve('/(app)/more/speak-and-scan'))}>{m.use_own_key()}</Button
 	>
-	<Button wide variant="ghost" onclick={ontype}>{m.speak_type_instead()}</Button>
+	<Button wide variant="ghost" onclick={ontype}
+		>{feature === 'speak' ? m.speak_type_instead() : m.scan_by_hand()}</Button
+	>
 </Sheet>

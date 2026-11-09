@@ -286,6 +286,7 @@ export const ProfileRecord = v.object({
 	themeMode: v.optional(v.picklist(['system', 'light', 'dark'])),
 	palette: v.optional(v.picklist(PALETTES.map((p) => p.id))),
 	timeFormat: v.optional(v.picklist(['device', '24', '12'])),
+	// No longer used (Scan always goes on to the amount, 2026-11-09); still read so older archives import.
 	scanLogAfter: v.optional(v.boolean()),
 	weightView: v.optional(v.picklist(['readings', 'trend'])),
 	voiceOffSeen: v.optional(v.boolean()),

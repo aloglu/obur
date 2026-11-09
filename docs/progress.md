@@ -59,17 +59,17 @@ Agreed and being fixed one commit at a time (`main`, next release):
   (`achievements.e2e.ts`).
 - Added (owner agreed 2026-11-09): the sidebar logo follows the chosen app icon (transparent, the O in its colour,
   light and dark); the sign-in page shows the chosen icon. `app-icon.e2e.ts`.
+- Changed (owner approved in the review page): Scan opens as a sheet over Log, Check the label stays a page; the
+  "Log it after saving" checkbox and its setting are gone (migration 0045). `scan.e2e.ts`.
 
 Checked 2026-11-09: lint, type-check, all Vitest projects (1052 tests), the full browser suite in the Playwright
 image (207 passed, 16 skipped by design; no screenshot changed) and the passkey journeys. Not yet released.
 
 Waiting on the owner (asked 2026-11-09):
 
-- Scan (review page "obur Scan Review", verdicts in its db collection `review`): taking the photo in a sheet
-  over Log or Foods (the approved review demo `docs/ui/review-2026-11/diary.html` had `#scanSheet`; the build made
-  it a page), Check the label stays a page; Foods gets "Scan a label" beside New food (Save food, back to Foods,
-  "Scan another", nothing logged); Log's Scan always goes on to the amount; the "Log it after saving" checkbox and
-  its account preference go. Build after the owner's verdicts.
+- Scan inside New food (review page "obur Scan Review", round 2, verdict in db collection `review`, doc
+  `scan-foods-2`): Foods keeps New food as its one main button; the New food form has a "Have the pack? Scan its
+  label to fill this in." card that opens the Scan sheet and fills the form in place; Save food returns to Foods.
 
 Next step: the owner's answers above, then release `1.0.0-beta.6`.
 

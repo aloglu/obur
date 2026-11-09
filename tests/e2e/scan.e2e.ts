@@ -70,7 +70,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 		data: { width: 3, status: 200, body: { lines: TABLE, ocrMs: 900, queueMs: 0 } }
 	});
 	await page.goto('/log');
-	await page.getByRole('link', { name: 'Scan a label' }).click();
+	await page.getByRole('button', { name: 'Scan a label' }).click();
 	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	await page.getByLabel('Choose photo').setInputFiles({
 		name: 'label.png',
@@ -137,13 +137,13 @@ test('a label that cannot be read says so and offers to fill it in by hand', asy
 		data: { width: 5, status: 200, body: { lines: [line('Net Miktar: 400 g', 20, 40)], ocrMs: 1 } }
 	});
 	await page.goto('/log');
-	await page.getByRole('link', { name: 'Scan a label' }).click();
+	await page.getByRole('button', { name: 'Scan a label' }).click();
 	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
 	await page
 		.getByLabel('Choose photo')
 		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE5 });
 	await expect(page.getByRole('alert')).toContainText('No nutrition table found');
-	await expect(page.getByRole('heading', { level: 1, name: 'Scan a label' })).toBeVisible();
+	await expect(page.getByRole('dialog', { name: 'Scan a label' })).toBeVisible();
 	// A scanner that stays busy: it waits in line, then gives up after two minutes.
 	await request.post(`${SPEECH_STUB}/next-ocr`, {
 		data: { width: 9, status: 503, body: { error: 'busy', ahead: 3 } }
@@ -163,7 +163,7 @@ test('a label that cannot be read says so and offers to fill it in by hand', asy
 	await expect(page.getByRole('button', { name: 'Retake' })).toBeVisible();
 });
 
-test('scanning several labels in a row: saving can stay on Scan instead of opening Log', async ({
+test('Scan opens as a sheet over Log; a corrected value is counted and admins see household totals', async ({
 	page,
 	request
 }, testInfo) => {
@@ -172,36 +172,34 @@ test('scanning several labels in a row: saving can stay on Scan instead of openi
 		data: { width: 7, status: 200, body: { lines: TABLE, ocrMs: 1 } }
 	});
 	await page.goto('/log');
-	await page.getByRole('link', { name: 'Scan a label' }).click();
-	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
-	const choose = () =>
-		page
-			.getByLabel('Choose photo')
-			.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE7 });
-	await choose();
-	await page.getByLabel('Log it after saving').uncheck();
-	await page.getByLabel('Name', { exact: true }).fill(`Gofret 1 ${testInfo.project.name}`);
-	await page.getByRole('button', { name: 'Save food' }).click();
-	await expect(page.getByText(`Saved “Gofret 1 ${testInfo.project.name}”`)).toBeVisible();
-	await expect(page.getByRole('heading', { level: 1, name: 'Scan a label' })).toBeVisible();
-	await expect(page.getByLabel('Name', { exact: true })).toBeHidden();
-	await expect(page.getByRole('dialog')).toHaveCount(0);
-	// The choice is remembered on this device.
-	await page.goto('/log');
-	await page.getByRole('link', { name: 'Scan a label' }).click();
-	await page.waitForLoadState('networkidle'); // the file input has no handler until the page is ready
-	await choose();
-	await expect(page.getByLabel('Log it after saving')).not.toBeChecked();
+	await page.getByRole('button', { name: 'Scan a label' }).click();
+	// A sheet like Speak and Type it (owner, 2026-11-09, as in the approved demo); closing it stays on Log.
+	const sheet = page.getByRole('dialog', { name: 'Scan a label' });
+	await expect(sheet).toContainText('Fill the frame with the nutrition table');
+	await expect(page).toHaveURL(/\/log/);
+	await sheet.getByRole('button', { name: 'Close' }).click();
+	await expect(sheet).toBeHidden();
+	await page.getByRole('button', { name: 'Scan a label' }).click();
+	await page.waitForLoadState('networkidle');
+	await sheet
+		.getByLabel('Choose photo')
+		.setInputFiles({ name: 'x.png', mimeType: 'image/png', buffer: WIDE7 });
+	await expect(page.getByRole('heading', { level: 1, name: 'Check the label' })).toBeVisible();
+	// No "Log it after saving" choice: from Log, saving always goes on to the amount.
+	await expect(page.getByLabel('Log it after saving')).toHaveCount(0);
 	// One value corrected before saving is counted as one change; admins see household totals.
 	await page.locator('#n-energy_kcal').fill('410');
 	await page.getByLabel('Name', { exact: true }).fill(`Gofret 2 ${testInfo.project.name}`);
-	await page.getByRole('button', { name: 'Save food' }).click();
-	await expect(page.getByText(`Saved “Gofret 2 ${testInfo.project.name}”`)).toBeVisible();
+	await page.getByRole('button', { name: 'Save and choose amount' }).click();
+	await expect(page.getByRole('dialog', { name: new RegExp(`Gofret 2`) })).toBeVisible();
 	expect(await scanEditsFor(`Gofret 2 ${testInfo.project.name}`)).toMatchObject({
 		changed: 1,
 		removed: 0,
 		added: 0
 	});
+	// Check the label opened without a reading (a reload) goes back to Log with the sheet open.
+	await page.goto('/scan');
+	await expect(page.getByRole('dialog', { name: 'Scan a label' })).toBeVisible();
 	await page.goto('/household');
 	await expect(page.getByTestId('scan-totals')).toContainText('Labels saved');
 });

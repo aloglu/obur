@@ -30,8 +30,8 @@
 		onclearpreset: () => void;
 		/** Opens Speak; without it (no speech service) the tile goes and a grey card says so. */
 		onspeak?: () => void;
-		/** Label scanning is configured: the Scan tile links to it. */
-		scan?: boolean;
+		/** Opens the Scan sheet; the Scan tile shows only when given (label scanning is configured). */
+		onscan?: () => void;
 		/** Opens Type it. */
 		ontype: () => void;
 		/** Opens a saved meal; saved meals are listed only when given. */
@@ -48,7 +48,7 @@
 		onclearpreset,
 		onpickmeal,
 		ontype,
-		scan = false,
+		onscan,
 		onspeak,
 		initialQuery = ''
 	}: Props = $props();
@@ -302,7 +302,7 @@
 			<div
 				class={[
 					'grid gap-2.5',
-					onspeak && scan ? 'grid-cols-3' : onspeak || scan ? 'grid-cols-2' : 'grid-cols-1'
+					onspeak && onscan ? 'grid-cols-3' : onspeak || onscan ? 'grid-cols-2' : 'grid-cols-1'
 				]}
 			>
 				{#if onspeak}
@@ -313,13 +313,13 @@
 						{m.log_speak()}
 					</button>
 				{/if}
-				{#if scan}
-					<a href={resolve('/(app)/scan')} class={tile}>
+				{#if onscan}
+					<button type="button" onclick={onscan} class={tile}>
 						<span class="grid size-12 place-items-center rounded-input bg-scan-bg text-scan"
 							><ScanLine size={24} aria-hidden="true" /></span
 						>
 						{m.log_scan()}
-					</a>
+					</button>
 				{/if}
 				<button type="button" onclick={ontype} class={tile}>
 					<span class="grid size-12 place-items-center rounded-input bg-soft text-accent"

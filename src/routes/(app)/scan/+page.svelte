@@ -1,236 +1,52 @@
 <script lang="ts">
-	// Scan a label (docs/ui.md, "Scan"): take or choose a photo of the nutrition table; it is made smaller on the
-	// phone (which also drops its location data) and read on the server. The values come back as a proposal in the
-	// food form beside the photo, to check and save; nothing is saved before that. The photo is never kept.
-	import { untrack } from 'svelte';
-	import { savePreferences } from '#lib/client/prefs.ts';
+	// Check the label (docs/ui.md, "Scan"): what the Scan sheet read, as the food form beside the photo, to check
+	// and save; then Log's amount sheet for the new food. Retake opens the sheet again in place. Opened without a
+	// reading (a reload, a bookmark), it goes to Log with the Scan sheet open. The photo is never kept.
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Camera from '@lucide/svelte/icons/camera';
-	import CloudOff from '@lucide/svelte/icons/cloud-off';
-	import Hourglass from '@lucide/svelte/icons/hourglass';
-	import CircleAlert from '@lucide/svelte/icons/circle-alert';
-	import Table2 from '@lucide/svelte/icons/table-2';
-	import Timer from '@lucide/svelte/icons/timer';
-	import ImageOff from '@lucide/svelte/icons/image-off';
-	import Focus from '@lucide/svelte/icons/focus';
-	import Button from '#lib/ui/Button.svelte';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
-	import ImageIcon from '@lucide/svelte/icons/image';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
-	import { logFoodHref } from '#lib/client/links.ts';
+	import { logFoodHref, scanSheetHref } from '#lib/client/links.ts';
+	import { takeOver, type ScanResult } from '#lib/client/scan-result.svelte.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
-	import type { NutrientValue } from '#lib/shared/nutrients.ts';
-	import Card from '#lib/ui/Card.svelte';
-	import Notice from '#lib/ui/Notice.svelte';
 	import { scanEdits } from '#lib/shared/scan-edits.ts';
+	import Button from '#lib/ui/Button.svelte';
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
 	import ScanNotes from '#lib/ui/food/ScanNotes.svelte';
-	import type { LabelNote } from '#lib/shared/label-notes.ts';
-	import { PROVIDER_NAME, type RemoteError } from '#lib/shared/remote-models.ts';
-	import { REMOTE_ERRORS, remoteProblem, type RemoteProblem } from '#lib/ui/remote-problem.ts';
+	import Notice from '#lib/ui/Notice.svelte';
+	import ScanSheet from '#lib/ui/scan/ScanSheet.svelte';
 
 	let { data } = $props();
 
-	interface Proposal {
-		basis: '100g' | '100ml' | 'serving' | null;
-		portion: { name: string; amount: number; unit: 'g' | 'ml' } | null;
-		nutrients: NutrientValue[];
-		layout: 'table' | 'text' | 'none';
-		notes: LabelNote[];
-	}
-
-	let photo = $state<string | null>(null);
-	let reading = $state(false);
-	/** Waiting in line while the scanner reads other photos: how many are ahead. */
-	let waiting = $state<number | null>(null);
-	/** Each photo's attempt; a newer photo or Fill in by hand ends the wait for an older one. */
-	let attempt = 0;
-	const RETRY_MS = 3000;
-	const GIVE_UP_MS = 120_000;
-	type Problem = { title: string; line: string; icon: typeof Camera; retake: boolean };
-	const P = {
-		noTable: () => ({
-			title: m.scan_no_table(),
-			line: m.scan_no_table_line(),
-			icon: Table2,
-			retake: true
-		}),
-		blurry: () => ({
-			title: m.scan_blurry(),
-			line: m.scan_blurry_line(),
-			icon: Focus,
-			retake: true
-		}),
-		photo: () => ({
-			title: m.scan_unreadable_photo(),
-			line: m.scan_unreadable_line(),
-			icon: ImageOff,
-			retake: true
-		}),
-		busy: () => ({ title: m.scan_busy(), line: m.scan_busy_line(), icon: Hourglass, retake: true }),
-		limited: () => ({
-			title: m.scan_limited(),
-			line: m.scan_limited_line(),
-			icon: Timer,
-			retake: false
-		}),
-		unavailable: () => ({
-			title: m.scan_unavailable(),
-			line: m.scan_unavailable_line(),
-			icon: CircleAlert,
-			retake: true
-		}),
-		offline: () => ({
-			title: m.scan_offline(),
-			line: m.scan_offline_line(),
-			icon: CloudOff,
-			retake: false
-		})
-	} satisfies Record<string, () => Problem>;
-
-	let problem = $state<Problem | null>(null);
-	/** A company's model gave no answer: its own card and fix. */
-	let remote = $state<RemoteProblem | null>(null);
-	/** The last photo, kept on the phone for Try again; the server never keeps it. */
-	let lastImage: Blob | null = null;
-	const source = $derived(data.scanSource);
-	let proposal = $state<Proposal | null>(null);
-	/** The photo looked blurry: values it read may be misread. */
-	let blurry = $state(false);
+	let result = $state<ScanResult | null>(null);
+	const proposal = $derived(result?.proposal ?? null);
+	const photo = $derived(result?.photo ?? null);
+	const blurry = $derived(result?.blurry ?? false);
 	let showPhoto = $state(false);
+	let retaking = $state(false);
 	let busy = $state(false);
 	let saveProblem = $state('');
 
-	// Whether saving opens Log for the new food, or stays here for the next label (scanning groceries in one go).
-	// Kept with the account; when it can't be saved, the choice still applies now.
-	let logAfter = $state(untrack(() => data.preferences?.scanLogAfter ?? true));
-	function rememberLogAfter() {
-		savePreferences({ scanLogAfter: logAfter }).catch(() => {});
-	}
+	onMount(() => {
+		result = takeOver();
+		if (!result && data.scan) void goto(scanSheetHref(), { replaceState: true });
+		return () => {
+			if (result?.photo) URL.revokeObjectURL(result.photo);
+		};
+	});
 
-	/** About 1600 px on the long side as JPEG: OCR gains nothing above that, and drawing drops the location data. */
-	async function shrink(file: File): Promise<Blob> {
-		const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-		const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
-		const canvas = document.createElement('canvas');
-		canvas.width = Math.round(bitmap.width * scale);
-		canvas.height = Math.round(bitmap.height * scale);
-		canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-		bitmap.close();
-		return new Promise((done, fail) =>
-			canvas.toBlob((b) => (b ? done(b) : fail(new Error('encode'))), 'image/jpeg', 0.88)
-		);
-	}
-
-	async function picked(event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
-		input.value = '';
-		if (!file) return;
-		const mine = ++attempt;
-		problem = null;
-		remote = null;
-		proposal = null;
-		reading = true;
-		waiting = null;
-		let image: Blob;
-		try {
-			image = await shrink(file);
-		} catch {
-			if (mine === attempt) {
-				problem = P.photo();
-				reading = false;
-			}
-			return;
-		}
-		if (photo) URL.revokeObjectURL(photo);
-		photo = URL.createObjectURL(image);
-		lastImage = image;
-		await send(image, mine);
-	}
-
-	/** The kept photo again (`viaServer`: this once on the server's add-on). */
-	function again(viaServer = false) {
-		if (!lastImage) return;
-		problem = null;
-		remote = null;
-		reading = true;
-		send(lastImage, ++attempt, viaServer);
-	}
-
-	async function send(image: Blob, mine: number, viaServer = false) {
-		try {
-			// A busy scanner: wait in line and ask again, for up to two minutes.
-			const started = Date.now();
-			let response: Response;
-			let body: { error?: string; ahead?: number; proposal?: Proposal; blurry?: boolean };
-			for (;;) {
-				response = await fetch(`/api/v1/scan${viaServer ? '?via=server' : ''}`, {
-					method: 'POST',
-					headers: { 'content-type': 'image/jpeg' },
-					body: image
-				});
-				body = await response.json().catch(() => ({}));
-				if (mine !== attempt) return;
-				if (response.ok || body.error !== 'busy' || Date.now() - started > GIVE_UP_MS) break;
-				waiting = body.ahead ?? 1;
-				await new Promise((done) => setTimeout(done, RETRY_MS));
-				if (mine !== attempt) return;
-			}
-			waiting = null;
-			if (!response.ok) {
-				if (
-					source &&
-					source !== 'server' &&
-					!viaServer &&
-					REMOTE_ERRORS.includes(body.error ?? '')
-				) {
-					remote = remoteProblem(body.error as RemoteError, source, 'scan');
-					return;
-				}
-				problem =
-					body.error === 'busy'
-						? P.busy()
-						: body.error === 'limited'
-							? P.limited()
-							: body.error === 'decode_failed'
-								? P.photo()
-								: P.unavailable();
-				return;
-			}
-			const read = body.proposal as Proposal;
-			if (read.nutrients.length === 0) {
-				problem = body.blurry ? P.blurry() : P.noTable();
-				return;
-			}
-			lastImage = null;
-			blurry = body.blurry === true;
-			proposal = read;
-			showPhoto = false;
-		} catch {
-			if (mine === attempt) problem = navigator.onLine ? P.unavailable() : P.offline();
-		} finally {
-			if (mine === attempt) {
-				reading = false;
-				waiting = null;
-			}
-		}
-	}
-
-	/** No photo to go on: the same form, empty. */
-	function byHand() {
-		attempt++;
-		blurry = false;
-		reading = false;
-		waiting = null;
-		problem = null;
-		remote = null;
-		proposal = { basis: '100g', portion: null, nutrients: [], layout: 'none', notes: [] };
+	function retaken(next: ScanResult) {
+		retaking = false;
+		if (result?.photo) URL.revokeObjectURL(result.photo);
+		result = next;
+		showPhoto = false;
+		window.scrollTo({ top: 0 });
 	}
 
 	/**
@@ -285,15 +101,7 @@
 				scanEdits: scanEditCounts
 			});
 			showToast({ message: m.scan_saved({ name: food.name }) });
-			if (logAfter) {
-				await goto(logFoodHref(id));
-				return;
-			}
-			// Ready for the next label.
-			proposal = null;
-			if (photo) URL.revokeObjectURL(photo);
-			photo = null;
-			window.scrollTo({ top: 0 });
+			await goto(logFoodHref(id));
 		} catch (e) {
 			saveProblem =
 				e instanceof ApiError && e.code === 'energy_required'
@@ -305,7 +113,7 @@
 	}
 </script>
 
-<svelte:head><title>{m.log_scan()} · {m.app_name()}</title></svelte:head>
+<svelte:head><title>{m.scan_check_title()} · {m.app_name()}</title></svelte:head>
 
 {#snippet scanNotes()}
 	{#if proposal && initial}
@@ -319,130 +127,17 @@
 	{/if}
 {/snippet}
 
-{#snippet camera(primary: boolean, label?: string)}
-	<label
-		class={[
-			'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button px-2 text-[1rem] font-[750]',
-			primary ? 'bg-fill text-on-accent' : 'bg-surface2'
-		]}
-	>
-		<Camera size={20} aria-hidden="true" />{label ??
-			(proposal || problem ? m.scan_retake() : m.scan_take())}
-		<input
-			type="file"
-			accept="image/*"
-			capture="environment"
-			class="sr-only"
-			disabled={reading}
-			onchange={picked}
-		/>
-	</label>
-{/snippet}
-
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<a href={resolve('/(app)/log')} class="flex items-center gap-1 self-start font-bold text-accent">
 		<ChevronLeft size={20} aria-hidden="true" />{m.nav_log()}
 	</a>
-	<h1 class="text-[1.5rem] font-[750]">
-		{proposal?.nutrients.length
-			? m.scan_check_title()
-			: proposal
-				? m.scan_new_food()
-				: m.log_scan()}
-	</h1>
 	{#if !data.scan}
+		<h1 class="text-[1.5rem] font-[750]">{m.log_scan()}</h1>
 		<Notice>{m.scan_off()}</Notice>
-	{:else if source === null && !proposal}
-		<Notice tone="info" title={m.scan_not_set_up()}>
-			{m.scan_not_set_up_line()}
-			{#snippet actions()}
-				<div class="flex flex-col gap-2">
-					<Button wide onclick={() => goto(resolve('/(app)/more/speak-and-scan'))}
-						>{m.use_own_key()}</Button
-					>
-					<Button variant="ghost" wide onclick={byHand}>{m.scan_by_hand()}</Button>
-				</div>
-			{/snippet}
-		</Notice>
-	{:else if !proposal}
-		<Card>
-			<!-- The frame says how to take the photo; the camera itself is the phone's. -->
-			<div
-				class="grid aspect-[4/3] place-items-center rounded-input border-2 border-dashed border-accent bg-soft px-6 text-center text-[0.9375rem] font-semibold text-accent"
-			>
-				{#if waiting !== null}
-					<span role="status" class="flex flex-col gap-1">
-						<span>{m.scan_waiting()}</span>
-						<span class="text-[0.875rem] font-medium text-muted">
-							{waiting === 1
-								? m.scan_waiting_one()
-								: m.scan_waiting_many({ count: String(waiting) })}
-						</span>
-					</span>
-				{:else if reading}<span role="status">{m.scan_reading()}</span>{:else}{m.scan_frame()}{/if}
-			</div>
-			<div class="grid grid-cols-2 gap-2">
-				{@render camera(true)}
-				<label
-					class="inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button bg-surface2 px-2 text-[1rem] font-[750]"
-				>
-					<ImageIcon size={20} aria-hidden="true" />{m.scan_choose()}
-					<input
-						type="file"
-						accept="image/jpeg,image/png,image/webp,image/heic"
-						class="sr-only"
-						disabled={reading}
-						onchange={picked}
-					/>
-				</label>
-			</div>
-		</Card>
-		{#if source && source !== 'server'}
-			<p class="text-center text-[0.8125rem] text-muted">
-				{m.speak_via({ provider: PROVIDER_NAME[source] })}
-			</p>
-		{/if}
-		{#if waiting !== null}
-			<Button variant="ghost" wide onclick={byHand}>{m.scan_by_hand()}</Button>
-		{/if}
-		{#if remote}
-			<Notice tone={remote.tone} title={remote.title}>
-				{remote.line}
-				{#snippet actions()}
-					<div class="flex flex-col gap-2">
-						{#if remote!.fix === 'again'}
-							{@render camera(true, remote!.fixLabel)}
-						{:else}
-							<Button
-								wide
-								onclick={() =>
-									remote!.fix === 'settings'
-										? goto(resolve('/(app)/more/speak-and-scan'))
-										: again()}>{remote!.fixLabel}</Button
-							>
-						{/if}
-						<Button variant="ghost" wide onclick={byHand}>{m.scan_by_hand()}</Button>
-						{#if data.local.scan}
-							<button
-								type="button"
-								onclick={() => again(true)}
-								class="min-h-11 text-[0.9375rem] font-[650] text-accent"
-								>{m.remote_via_server()}</button
-							>
-						{/if}
-					</div>
-				{/snippet}
-			</Notice>
-		{/if}
-		{#if problem}
-			<Notice tone="warn" title={problem.title} icon={problem.icon}>
-				{problem.line}
-				{#snippet actions()}
-					<Button variant="ghost" wide onclick={byHand}>{m.scan_by_hand()}</Button>
-				{/snippet}
-			</Notice>
-		{/if}
-	{:else}
+	{:else if proposal}
+		<h1 class="text-[1.5rem] font-[750]">
+			{proposal.nutrients.length ? m.scan_check_title() : m.scan_new_food()}
+		</h1>
 		{#if proposal.nutrients.length}
 			{#if photo}
 				<div class="rounded-card bg-surface px-[18px] py-1 shadow-card">
@@ -478,18 +173,27 @@
 			{#if !proposal.basis}<Notice>{m.scan_basis_unknown()}</Notice>{/if}
 		{/if}
 		{#if saveProblem}<Notice>{saveProblem}</Notice>{/if}
-		<label class="flex min-h-11 cursor-pointer items-center gap-3 px-1">
-			<input type="checkbox" bind:checked={logAfter} onchange={rememberLogAfter} />
-			<span class="text-[0.9375rem] font-semibold">{m.scan_log_after()}</span>
-		</label>
 		{#key proposal}<FoodForm
 				{initial}
 				{busy}
 				onsave={save}
 				unsaved
-				saveLabel={logAfter ? m.scan_save_and_amount() : undefined}
+				saveLabel={m.scan_save_and_amount()}
 				valueNotes={proposal.nutrients.length && initial ? scanNotes : undefined}
 			/>{/key}
-		{@render camera(false)}
+		{#if data.scanSource}
+			<Button variant="ghost" wide onclick={() => (retaking = true)}
+				><Camera size={20} aria-hidden="true" />{m.scan_retake()}</Button
+			>
+		{/if}
 	{/if}
 </main>
+
+{#if retaking && data.scanSource}
+	<ScanSheet
+		source={data.scanSource}
+		local={data.local.scan}
+		onread={retaken}
+		onclose={() => (retaking = false)}
+	/>
+{/if}

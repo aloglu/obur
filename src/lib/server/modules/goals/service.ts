@@ -86,7 +86,6 @@ const toPreferences = (r: ProfileRow): Preferences => ({
 	palette: isPalette(r.palette) ? r.palette : DEFAULT_PREFERENCES.palette,
 	appIcon: isAppIcon(r.appIcon) ? r.appIcon : DEFAULT_APP_ICON,
 	timeFormat: r.timeFormat,
-	scanLogAfter: r.scanLogAfter,
 	weightView: r.weightView,
 	voiceOffSeen: r.voiceOffSeen,
 	holdHintSeen: r.holdHintSeen

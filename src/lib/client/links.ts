@@ -35,3 +35,6 @@ export const logFoodHref = (foodId: string) => withQuery(resolve('/(app)/log'), 
 /** The Journal, opened on a day when coming from one in the past. */
 export const journalHref = (day: string | null) =>
 	day ? withQuery(resolve('/(app)/journal'), { day }) : resolve('/(app)/journal');
+
+/** Log with the Scan sheet open. */
+export const scanSheetHref = () => withQuery(resolve('/(app)/log'), { scan: '1' });

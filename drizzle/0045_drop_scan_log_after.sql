@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" DROP COLUMN "scan_log_after";

@@ -1,5 +1,6 @@
 <script lang="ts">
 	// The phone Log tab (and the desktop Log item). After saving it returns to Today with the new rows highlighted.
+	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -20,6 +21,8 @@
 	import EntrySheet from '#lib/ui/log/EntrySheet.svelte';
 	import SpeakSheet from '#lib/ui/log/SpeakSheet.svelte';
 	import NotSetUpSheet from '#lib/ui/log/NotSetUpSheet.svelte';
+	import ScanSheet from '#lib/ui/scan/ScanSheet.svelte';
+	import { BY_HAND, handOver, type ScanResult } from '#lib/client/scan-result.svelte.ts';
 	import type { ParsedEntry } from '#lib/shared/entry-types.ts';
 
 	let { data } = $props();
@@ -46,7 +49,15 @@
 	let typedEntry = $state<ParsedEntry | null>(null);
 	let speaking = $state(false);
 	let heard = $state(false);
+	// Scan a label opens as a sheet, like Speak; "?scan=1" opens it (Check the label opened without a reading).
+	let scanning = $state(untrack(() => data.scan) && params.get('scan') === '1');
 	const sheetMeal = $derived(preset ?? defaultMeal(new Date(), deviceZone()));
+
+	/** What the Scan sheet read (or Fill in by hand) goes to Check the label. */
+	function read(result: ScanResult) {
+		handOver(result);
+		void goto(resolve('/(app)/scan'));
+	}
 
 	async function logged(entry: DiaryEntry | null) {
 		// Close the sheet first: a toast cannot be seen over an open dialog.
@@ -87,7 +98,7 @@
 		onpickmeal={(id) => (openSaved = id)}
 		ontype={() => ((heard = false), (typedEntry = null), (typing = true))}
 		onspeak={data.speech ? () => (speaking = true) : undefined}
-		scan={data.scan}
+		onscan={data.scan ? () => (scanning = true) : undefined}
 		initialQuery={params.get('q') ?? ''}
 	/>
 </main>
@@ -110,6 +121,19 @@
 		onsaved={logged}
 		onclose={() => (quick = false)}
 	/>
+{/if}
+
+{#if scanning}
+	{#if data.scanSource === null}
+		<NotSetUpSheet feature="scan" ontype={() => read(BY_HAND)} onclose={() => (scanning = false)} />
+	{:else}
+		<ScanSheet
+			source={data.scanSource}
+			local={data.local.scan}
+			onread={read}
+			onclose={() => (scanning = false)}
+		/>
+	{/if}
 {/if}
 
 {#if speaking}

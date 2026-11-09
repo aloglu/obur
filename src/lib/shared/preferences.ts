@@ -12,7 +12,6 @@ export interface Preferences {
 	appIcon: AppIconId;
 	timeFormat: 'device' | '24' | '12';
 	/** Scan: saving a label opens Log for it. */
-	scanLogAfter: boolean;
 	/** Progress: the weight chart shows readings or the trend. */
 	weightView: 'readings' | 'trend';
 	/** The grey "Speak is off" card was dismissed. */
@@ -26,7 +25,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	palette: DEFAULT_PALETTE,
 	appIcon: DEFAULT_APP_ICON,
 	timeFormat: 'device',
-	scanLogAfter: true,
 	weightView: 'readings',
 	voiceOffSeen: false,
 	holdHintSeen: false
@@ -38,7 +36,6 @@ export const PreferencesInput = v.strictObject({
 	palette: v.optional(v.picklist(PALETTES.map((p) => p.id))),
 	appIcon: v.optional(v.picklist(APP_ICONS.map((i) => i.id))),
 	timeFormat: v.optional(v.picklist(['device', '24', '12'])),
-	scanLogAfter: v.optional(v.boolean()),
 	weightView: v.optional(v.picklist(['readings', 'trend'])),
 	voiceOffSeen: v.optional(v.boolean()),
 	holdHintSeen: v.optional(v.boolean())

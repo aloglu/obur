@@ -189,7 +189,7 @@ test('a server without the add-ons keeps Speak and Scan and offers the person’
 }, testInfo) => {
 	await signedInAs(page, `Eklentisiz ${testInfo.project.name}`);
 	await page.goto(`${NO_ADDONS}/log`);
-	await expect(page.getByRole('link', { name: 'Scan a label' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Scan a label' })).toBeVisible();
 	await page.getByRole('button', { name: 'Speak' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Speak isn’t set up on this server' });
 	await expect(sheet).toContainText('your own OpenAI or OpenRouter key');

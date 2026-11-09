@@ -9,7 +9,7 @@ test('without a speech or OCR service, the tiles go, a grey card says so once, a
 	await page.goto(`${FEATURES_OFF}/log`);
 	await expect(page.getByRole('button', { name: 'Type it' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Speak' })).toHaveCount(0);
-	await expect(page.getByRole('link', { name: 'Scan a label' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Scan a label' })).toHaveCount(0);
 	const card = page.getByText('Speak is off on this server');
 	await expect(card).toBeVisible();
 	await expect(page.getByText('Scan a label and Type it work as usual.')).toBeVisible();

@@ -176,7 +176,6 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 						themeMode: profile.themeMode,
 						palette: isPalette(profile.palette) ? profile.palette : DEFAULT_PALETTE,
 						timeFormat: profile.timeFormat,
-						scanLogAfter: profile.scanLogAfter,
 						weightView: profile.weightView,
 						voiceOffSeen: profile.voiceOffSeen,
 						holdHintSeen: profile.holdHintSeen
@@ -689,7 +688,10 @@ async function plan(
 			importProfile = true;
 			counts.profile.new = 1;
 		} else {
-			const fields = Object.keys(incoming) as (keyof typeof incoming)[];
+			// Fields this version no longer keeps (scanLogAfter) don't count as a difference.
+			const fields = (Object.keys(incoming) as (keyof typeof incoming)[]).filter(
+				(f): f is Exclude<typeof f, 'scanLogAfter'> => f !== 'scanLogAfter'
+			);
 			if (fields.every((f) => currentProfile[f] === incoming[f])) counts.profile.unchanged = 1;
 			else {
 				counts.profile.skipped = 1;
@@ -1011,7 +1013,9 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 		newTargets.forEach((t) => remember('target', t.id));
 	}
 	if (p.importProfile && data.account.profile) {
-		const profile = data.account.profile;
+		// "Log it after saving" (scanLogAfter) is in older archives; Scan no longer has it (owner, 2026-11-09).
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { scanLogAfter, ...profile } = data.account.profile;
 		// Settings that came with the archive count as saved, so a browser's own choices don't replace them.
 		await tx.insert(profiles).values({
 			userId,
