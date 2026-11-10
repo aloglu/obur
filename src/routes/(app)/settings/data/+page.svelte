@@ -96,8 +96,13 @@
 			'/api/v1/foods/imported'
 		).catch(() => imported);
 	};
+	// Deleting the account asks about shared foods only when there are some.
+	let sharedFoods = $state(0);
 	onMount(() => {
 		ready = true;
+		void api<{ sharedFoods: number }>('GET', '/api/v1/account')
+			.then((r) => (sharedFoods = r.sharedFoods))
+			.catch(() => {});
 		void loadImported();
 	});
 	const archiveImported = (archived: boolean) =>
@@ -478,15 +483,19 @@
 
 	<Card title={m.data_delete_title()}>
 		<p class="text-[0.8125rem] text-muted">{m.data_delete_body()}</p>
-		<Chips
-			label={m.data_delete_shared()}
-			bind:value={removeShared}
-			options={[
-				{ value: 'keep', label: m.data_delete_keep() },
-				{ value: 'remove', label: m.data_delete_remove() }
-			]}
-		/>
-		<p class="text-[0.8125rem] text-muted">{m.data_delete_shared_note()}</p>
+		{#if sharedFoods > 0}
+			<Chips
+				label={sharedFoods === 1
+					? m.data_delete_shared_one()
+					: m.data_delete_shared({ count: String(sharedFoods) })}
+				bind:value={removeShared}
+				options={[
+					{ value: 'keep', label: m.data_delete_keep() },
+					{ value: 'remove', label: m.data_delete_remove() }
+				]}
+			/>
+			<p class="text-[0.8125rem] text-muted">{m.data_delete_shared_note()}</p>
+		{/if}
 		<p class="text-[0.8125rem] text-muted">{m.data_delete_backups()}</p>
 		<button
 			type="button"
@@ -502,7 +511,9 @@
 	<Sheet title={m.data_delete_confirm_title()} onclose={() => (confirming = false)}>
 		<p class="text-[0.9375rem]">
 			{m.data_delete_confirm_body()}
-			{removeShared === 'keep' ? m.data_delete_confirm_keep() : m.data_delete_confirm_remove()}
+			{#if sharedFoods > 0}
+				{removeShared === 'keep' ? m.data_delete_confirm_keep() : m.data_delete_confirm_remove()}
+			{/if}
 		</p>
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<label class="flex min-h-11 items-center gap-3 text-[0.9375rem] font-semibold">

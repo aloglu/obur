@@ -5,6 +5,10 @@ import { clearSessionCookie, readJson } from '#lib/server/http.ts';
 import { portability, respondPortability } from '#lib/server/portability.ts';
 import type { RequestHandler } from './$types';
 
+// What deleting the account needs to ask: how many foods the person has shared.
+export const GET: RequestHandler = async ({ locals }) =>
+	json({ sharedFoods: await portability.sharedFoodCount(locals.session!.userId) });
+
 // Deletes the signed-in person's account (after a recent passkey check) and ends this session.
 export const DELETE: RequestHandler = ({ request, locals, cookies }) =>
 	respondPortability(async () => {

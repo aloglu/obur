@@ -32,6 +32,7 @@
 		displayName: string;
 		role: 'admin' | 'member';
 		createdAt: string;
+		sharedFoods: number;
 	}
 	interface Deletion {
 		accountId: string;
@@ -405,14 +406,23 @@
 		onclose={() => (deleting = null)}
 	>
 		<p class="text-[0.9375rem]">{m.household_delete_body()}</p>
-		<Chips
-			label={m.data_delete_shared()}
-			bind:value={removeShared}
-			options={[
-				{ value: 'keep', label: m.data_delete_keep() },
-				{ value: 'remove', label: m.data_delete_remove() }
-			]}
-		/>
+		<!-- Asked only when there is something to decide (owner, 2026-11-10). -->
+		{#if member.sharedFoods > 0}
+			<Chips
+				label={member.sharedFoods === 1
+					? m.household_delete_shared_one({ name: member.displayName })
+					: m.household_delete_shared({
+							name: member.displayName,
+							count: String(member.sharedFoods)
+						})}
+				bind:value={removeShared}
+				options={[
+					{ value: 'keep', label: m.data_delete_keep() },
+					{ value: 'remove', label: m.data_delete_remove() }
+				]}
+			/>
+			<p class="text-[0.8125rem] text-muted">{m.data_delete_shared_note()}</p>
+		{/if}
 		<p class="text-[0.8125rem] text-muted">{m.data_delete_backups()}</p>
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<label class="flex min-h-11 items-center gap-3 text-[0.9375rem] font-semibold">

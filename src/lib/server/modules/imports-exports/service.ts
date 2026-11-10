@@ -1190,7 +1190,10 @@ export function createPortability(db: Database) {
 			}
 		},
 
-		/** The household's accounts, for an admin (RLS shows others only to admins). */
+		/**
+		 * The household's accounts, for an admin (RLS shows others only to admins), with how many foods each has
+		 * shared: deleting the account asks about those only when there are some.
+		 */
 		async members(userId: string) {
 			const rows = await withUser(db, userId, (tx) =>
 				tx
@@ -1198,12 +1201,26 @@ export function createPortability(db: Database) {
 						id: users.id,
 						displayName: users.displayName,
 						role: users.role,
-						createdAt: users.createdAt
+						createdAt: users.createdAt,
+						// Qualified by hand: inside a subquery Drizzle leaves column names bare.
+						sharedFoods: sql<number>`(select count(*) from foods f
+							where f.owner_id = users.id and f.visibility = 'shared')::int`
 					})
 					.from(users)
 					.orderBy(users.createdAt)
 			);
 			return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
+		},
+
+		/** How many foods the person has shared (deleting their account asks about those). */
+		async sharedFoodCount(userId: string): Promise<number> {
+			const [row] = await withUser(db, userId, (tx) =>
+				tx
+					.select({ n: sql<number>`count(*)::int` })
+					.from(foods)
+					.where(and(eq(foods.ownerId, userId), eq(foods.visibility, 'shared')))
+			);
+			return row.n;
 		},
 
 		/** Deleted accounts, newest first: opaque ID and date only (admins; RLS returns nothing to others). */

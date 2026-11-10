@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import { apiAs, signedInAs, staleSessions } from './fixtures.ts';
+import { apiAs, createFood, signedInAs, staleSessions } from './fixtures.ts';
 
 const DAY = '2026-10-20';
 
@@ -76,8 +76,23 @@ test('a file that is not an intact export is refused', async ({ page }) => {
 test('a person deletes their own account after confirming', async ({ page }) => {
 	await signedInAs(page, 'Kerem');
 	await page.goto('/settings/data');
+	// Nothing shared: no question about shared foods (owner, 2026-11-10).
+	await expect(page.getByText('Delete account', { exact: true })).toBeVisible();
+	await expect(page.getByRole('radiogroup', { name: /shared/ })).toHaveCount(0);
+	await createFood(page, {
+		name: 'Kerem’s soup',
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 56, qualifier: 'reported' }]
+	});
+	await page.reload();
+	await expect(
+		page.getByRole('radiogroup', {
+			name: "You shared 1 food with the household. Keep it in everyone's search?"
+		})
+	).toBeVisible();
 	await page.getByRole('button', { name: 'Delete my account' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Delete your account?' });
+	await expect(sheet).toContainText('Foods you shared stay for the household.');
 	const confirm = sheet.getByRole('button', { name: 'Delete account' });
 	await expect(confirm).toBeDisabled();
 	await sheet.getByLabel("I understand this can't be undone").check();
@@ -96,6 +111,12 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	const memberPage = await member.newPage();
 	const name = `Burak ${memberPage.viewportSize()?.width ?? ''}-${Date.now()}`;
 	const memberId = await signedInAs(memberPage, name);
+	for (const food of ['Lentil soup', 'Flatbread'])
+		await createFood(memberPage, {
+			name: `${food} ${name}`,
+			basis: '100g',
+			nutrients: [{ code: 'energy_kcal', value: 100, qualifier: 'reported' }]
+		});
 	await member.close();
 
 	const adminId = await signedInAs(page, 'Gül', 'admin');
@@ -118,6 +139,14 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 		.getByRole('button', { name: 'Delete account' })
 		.click();
 	const sheet = page.getByRole('dialog', { name: `Delete ${name}'s account?` });
+	// The question names the person and the count (it once said "Foods you shared", meaning the admin).
+	await sheet
+		.getByRole('radiogroup', {
+			name: `${name} shared 2 foods with the household. Keep them in everyone's search?`
+		})
+		.getByRole('radio', { name: 'Remove' })
+		.click();
+	await expect(sheet).toContainText("Meals already logged don't change either way.");
 	await expect(sheet.getByRole('button', { name: 'Delete account' })).toBeDisabled();
 	await sheet.getByRole('checkbox').check();
 	await sheet.getByRole('button', { name: 'Delete account' }).click();
@@ -125,7 +154,7 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	// Listed under Backups (it matters only for a restore), by ID and who deleted it, never by name.
 	const deletions = page.getByRole('region', { name: 'Backups' }).getByTestId('deletions');
 	await expect(deletions).toContainText(memberId);
-	await expect(deletions).toContainText('Deleted by an admin');
+	await expect(deletions).toContainText('Deleted by an admin · Shared foods removed too');
 	await expect(deletions).not.toContainText(name);
 });
 

@@ -622,6 +622,12 @@ describe('account deletion', () => {
 			300,
 			grams
 		);
+		// Deleting asks about shared foods only when there are some: the admin and the person see the count.
+		expect(await portability.sharedFoodCount(MEHMET)).toBe(1);
+		expect(await portability.sharedFoodCount(ZEYNEP)).toBe(0);
+		const members = await portability.members(AYSE);
+		expect(members.find((m) => m.id === MEHMET)?.sharedFoods).toBe(1);
+		expect(members.find((m) => m.id === ZEYNEP)?.sharedFoods).toBe(0);
 		await admin`insert into credentials (id, user_id, public_key, device_type, backed_up, label)
 			values ('cred-m', ${MEHMET}, 'pk', 'multiDevice', true, 'iPhone')`;
 		expect(await count('credentials', MEHMET)).toBe(1);
