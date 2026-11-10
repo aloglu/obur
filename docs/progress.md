@@ -120,7 +120,7 @@ Agreed (owner, 2026-11-10), one commit each, `main`, next release:
   `portability.db.test.ts`, `data.e2e.ts`.
 
 Checked 2026-11-10: lint, type-check, all Vitest projects (1053), the full browser suite in the Playwright image
-(209 passed, 16 skipped by design, passkey journeys included). Not yet released.
+(209 passed, 16 skipped by design, passkey journeys included). Released as `v1.0.0-beta.8` (2026-11-10), no migration.
 
 Next step: the open archiving issue above (WAL stops reaching the local repository when the off-site one is unreachable).
 
