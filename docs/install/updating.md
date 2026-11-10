@@ -12,6 +12,9 @@ docker compose pull
 docker compose up -d
 ```
 
+If `.env` sets `OBUR_VERSION` (as it must for a test release such as `1.0.0-beta.8`, which is never `latest`),
+change it to the new version first, or `pull` fetches the same version again.
+
 `docker image prune` afterwards removes the old downloads.
 
 ## Unraid (obur only)
