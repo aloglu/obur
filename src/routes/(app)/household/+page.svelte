@@ -1,8 +1,6 @@
 <script lang="ts">
 	import Check from '@lucide/svelte/icons/check';
 	import Link from '@lucide/svelte/icons/link';
-	import Link2Off from '@lucide/svelte/icons/link-2-off';
-	import UserCheck from '@lucide/svelte/icons/user-check';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
@@ -22,13 +20,11 @@
 	import { untrack } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 
+	// Only invites still waiting: used, cancelled and expired ones are not listed.
 	interface Invite {
 		id: string;
 		note: string | null;
 		expiresAt: string;
-		usedAt: string | null;
-		revokedAt: string | null;
-		usedByName: string | null;
 	}
 
 	interface Member {
@@ -74,13 +70,6 @@
 
 	const date = (iso: string) => shortDate(iso.slice(0, 10));
 
-	function status(i: Invite): string {
-		if (i.usedAt) return m.household_status_used({ name: i.usedByName ?? '' });
-		if (i.revokedAt) return m.household_status_revoked();
-		if (new Date(i.expiresAt) < new Date()) return m.household_status_expired();
-		return m.household_status_pending({ date: date(i.expiresAt) });
-	}
-
 	const refresh = async () => {
 		invites = (await api<{ invites: Invite[] }>('GET', '/api/v1/auth/invites')).invites;
 		({ members, deletions, backups } = await api<{
@@ -125,7 +114,6 @@
 		offsite_restore_stale: m.backup_offsite_restore_stale,
 		no_offsite: m.backup_no_offsite
 	};
-	const live = (i: Invite) => !i.usedAt && !i.revokedAt && new Date(i.expiresAt) > new Date();
 	const when = (iso: string | null) =>
 		iso
 			? `${date(iso)}, ${clockTime(iso, data.timeFormat ?? 'device')}`
@@ -255,12 +243,11 @@
 					</h3>
 					<ul class="flex flex-col divide-y divide-line">
 						{#each invites as i (i.id)}
-							{@const Icon = live(i) ? Link : i.usedAt ? UserCheck : Link2Off}
 							<li
 								class="grid min-h-16 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 py-2 large:grid-cols-[40px_minmax(0,1fr)]"
 							>
 								<span class="grid size-10 place-items-center rounded-small bg-surface2 text-muted"
-									><Icon size={18} aria-hidden="true" /></span
+									><Link size={18} aria-hidden="true" /></span
 								>
 								<span class="min-w-0">
 									<b class="block truncate text-[0.9375rem] font-semibold"
@@ -268,17 +255,17 @@
 											? m.household_invite_for({ name: i.note })
 											: m.household_invite_any()}</b
 									>
-									<small class="block text-[0.8125rem] text-muted">{status(i)}</small>
-								</span>
-								{#if live(i)}
-									<button
-										type="button"
-										disabled={busy}
-										aria-label={m.household_revoke()}
-										onclick={() => revoke(i)}
-										class="min-h-11 text-[0.875rem] font-bold text-bad">{m.common_cancel()}</button
+									<small class="block text-[0.8125rem] text-muted"
+										>{m.household_status_pending({ date: date(i.expiresAt) })}</small
 									>
-								{/if}
+								</span>
+								<button
+									type="button"
+									disabled={busy}
+									aria-label={m.household_revoke()}
+									onclick={() => revoke(i)}
+									class="min-h-11 text-[0.875rem] font-bold text-bad">{m.common_cancel()}</button
+								>
 							</li>
 						{/each}
 					</ul>

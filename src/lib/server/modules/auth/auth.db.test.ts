@@ -117,8 +117,23 @@ describe('invites', () => {
 		expect(await errorCode(store.redeemInvite(token, randomUUID(), 'Twice', credential()))).toBe(
 			'invite_unavailable'
 		);
-		const list = await store.listInvites(a.id);
-		expect(list).toMatchObject([{ note: 'for Ayşe', usedByName: 'Ayşe' }]);
+	});
+
+	it('lists only invites still waiting to be used', async () => {
+		const a = await setUpAdmin();
+		await store.redeemInvite(
+			await store.createInvite(a.id, 'used'),
+			randomUUID(),
+			'Ayşe',
+			credential()
+		);
+		await store.createInvite(a.id, 'cancelled');
+		const [{ id }] = await admin`select id from invites where note = 'cancelled'`;
+		await store.revokeInvite(a.id, id);
+		await store.createInvite(a.id, 'expired');
+		await admin`update invites set expires_at = now() - interval '1 second' where note = 'expired'`;
+		await store.createInvite(a.id, 'waiting');
+		expect((await store.listInvites(a.id)).map((i) => i.note)).toEqual(['waiting']);
 	});
 
 	it('redeems an invite only once under concurrency', async () => {

@@ -103,7 +103,20 @@ Released as `v1.0.0-beta.7` (2026-11-09) with the backup fix.
 
 The owner updated to beta.7 the same day: it started and is serving (the fixed pre-upgrade backup ran with R2 configured and 0045 applied).
 
-Next step: the owner goes through the beta.6 changes; then the open archiving issue above.
+## Owner's questions after removing a member, 2026-11-10
+
+Agreed (owner, 2026-11-10), one commit each, `main`, next release:
+
+- Done: Household → Invites lists only invites still waiting; used, cancelled and expired ones drop off (a used
+  one's person is under People). A deleted member's used invite had read "Joined as" with no name.
+  `auth.db.test.ts`, `auth.e2e.ts`.
+- Next: Deleted accounts moves into the Backups card with an explanation (the code is the account's ID, kept
+  without a name so a restore can delete it again) and who deleted it.
+- Then: the delete-member dialog counts the person's shared foods, asks only when there are some, names them
+  ("Alex shared 4 foods. Keep them in everyone's search?") and says logged meals don't change; the same wording
+  fix on deleting your own account.
+
+Next step: the two items above; then the open archiving issue above.
 
 ## Current phase
 

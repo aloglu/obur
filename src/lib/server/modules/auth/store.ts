@@ -3,7 +3,7 @@
 import { and, asc, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { withUser, type Database } from '../../db/identity.ts';
 import { POLICY } from './policy.ts';
-import { credentials, invites, recoveryCodes, sessions, users } from './schema.ts';
+import { credentials, invites, recoveryCodes, sessions } from './schema.ts';
 import { hashRecoveryCode, hashToken, newRecoveryCodes, newToken } from './tokens.ts';
 
 export type AuthErrorCode =
@@ -317,6 +317,7 @@ export function createAuthStore(db: Database, now: () => Date = () => new Date()
 			return token;
 		},
 
+		/** Invites still waiting to be used: a used one's person is listed under People instead. */
 		async listInvites(adminId: string) {
 			return withUser(db, adminId, (tx) =>
 				tx
@@ -324,13 +325,16 @@ export function createAuthStore(db: Database, now: () => Date = () => new Date()
 						id: invites.id,
 						note: invites.note,
 						createdAt: invites.createdAt,
-						expiresAt: invites.expiresAt,
-						usedAt: invites.usedAt,
-						revokedAt: invites.revokedAt,
-						usedByName: users.displayName
+						expiresAt: invites.expiresAt
 					})
 					.from(invites)
-					.leftJoin(users, eq(users.id, invites.usedBy))
+					.where(
+						and(
+							isNull(invites.usedAt),
+							isNull(invites.revokedAt),
+							sql`${invites.expiresAt} > now()`
+						)
+					)
 					.orderBy(desc(invites.createdAt))
 			);
 		},

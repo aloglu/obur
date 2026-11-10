@@ -217,7 +217,9 @@ test('an invited member joins with their own passkey', async ({ browser }) => {
 	await member.context.close();
 
 	await page.goto('/household');
-	await expect(page.getByText('Joined as Mehmet Öztürk')).toBeVisible();
+	// The person is under People; their used invite is no longer listed.
+	await expect(page.getByRole('region', { name: 'People' })).toContainText('Mehmet Öztürk');
+	await expect(page.getByText('For Mehmet')).toHaveCount(0);
 });
 
 test('a lost phone is replaced with a recovery code, and the old passkey stops working', async () => {
