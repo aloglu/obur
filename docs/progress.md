@@ -110,13 +110,14 @@ Agreed (owner, 2026-11-10), one commit each, `main`, next release:
 - Done: Household → Invites lists only invites still waiting; used, cancelled and expired ones drop off (a used
   one's person is under People). A deleted member's used invite had read "Joined as" with no name.
   `auth.db.test.ts`, `auth.e2e.ts`.
-- Next: Deleted accounts moves into the Backups card with an explanation (the code is the account's ID, kept
-  without a name so a restore can delete it again) and who deleted it.
+- Done: Deleted accounts is inside the Backups card, says why it exists (a restore must delete these accounts
+  again; only the code is kept, not the name), shows who deleted each one, and **Copy list** copies the entries as
+  `obur restore finish` takes them. `data.e2e.ts`; `docs/restore.md` and `docs/ui.md` updated.
 - Then: the delete-member dialog counts the person's shared foods, asks only when there are some, names them
   ("Alex shared 4 foods. Keep them in everyone's search?") and says logged meals don't change; the same wording
   fix on deleting your own account.
 
-Next step: the two items above; then the open archiving issue above.
+Next step: the shared-foods question above; then the open archiving issue above.
 
 ## Current phase
 

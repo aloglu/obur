@@ -122,8 +122,11 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	await sheet.getByRole('checkbox').check();
 	await sheet.getByRole('button', { name: 'Delete account' }).click();
 	await expect(people).not.toContainText(name);
-	await expect(page.getByTestId('deletions')).toContainText(memberId);
-	await expect(page.getByTestId('deletions')).not.toContainText(name);
+	// Listed under Backups (it matters only for a restore), by ID and who deleted it, never by name.
+	const deletions = page.getByRole('region', { name: 'Backups' }).getByTestId('deletions');
+	await expect(deletions).toContainText(memberId);
+	await expect(deletions).toContainText('Deleted by an admin');
+	await expect(deletions).not.toContainText(name);
 });
 
 test('a LoseIt export imports after a preview that checks it against LoseIt’s own totals', async ({

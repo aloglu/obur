@@ -36,6 +36,7 @@
 	interface Deletion {
 		accountId: string;
 		deletedAt: string;
+		by: 'self' | 'admin';
 		removedSharedFoods: boolean;
 	}
 
@@ -130,14 +131,27 @@
 
 	const revoke = (i: Invite) => run(() => api('POST', '/api/v1/auth/invites/revoke', { id: i.id }));
 
-	async function copy() {
+	async function copyText(text: string, message: string, detail: string) {
 		try {
-			await navigator.clipboard.writeText(link);
-			showToast({ message: m.household_copied(), detail: m.household_copied_detail() });
+			await navigator.clipboard.writeText(text);
+			showToast({ message, detail });
 		} catch {
 			showToast({ message: m.household_copy_failed(), detail: m.household_copy_failed_detail() });
 		}
 	}
+	const copy = () => copyText(link, m.household_copied(), m.household_copied_detail());
+	// The entries as `obur restore finish` takes them: <ID>[:shared]@<deletion date>.
+	const copyDeletions = () =>
+		copyText(
+			deletions
+				.map(
+					(d) =>
+						`${d.accountId}${d.removedSharedFoods ? ':shared' : ''}@${d.deletedAt.slice(0, 10)}`
+				)
+				.join(' '),
+			m.household_deletions_copied(),
+			m.household_deletions_copied_detail()
+		);
 </script>
 
 <svelte:head><title>{m.household_title()} · {m.app_name()}</title></svelte:head>
@@ -300,6 +314,40 @@
 						? [m.household_backups_offsite_check(), when(backups.lastOffsiteRestoreCheckAt)]
 						: [m.household_backups_offsite(), m.household_backups_offsite_none()]
 				])}
+				<div class="flex flex-col gap-1.5 border-t border-line pt-3" data-testid="deleted-accounts">
+					<div class="flex items-center justify-between gap-3">
+						<h3 class="text-[0.9375rem] font-semibold">{m.household_deletions()}</h3>
+						{#if deletions.length > 0}
+							<button
+								type="button"
+								onclick={copyDeletions}
+								class="min-h-11 shrink-0 text-[0.875rem] font-bold text-accent"
+								>{m.household_deletions_copy()}</button
+							>
+						{/if}
+					</div>
+					<p class="text-[0.8125rem] leading-snug text-muted">{m.household_deletions_body()}</p>
+					{#if deletions.length === 0}
+						<p class="py-1 text-[0.875rem] text-muted">{m.household_deletions_none()}</p>
+					{:else}
+						<ul class="flex flex-col divide-y divide-line" data-testid="deletions">
+							{#each deletions as d (d.accountId)}
+								<li class="flex flex-col py-2">
+									<span class="font-mono text-[0.8125rem] break-all">{d.accountId}</span>
+									<span class="text-[0.8125rem] text-muted"
+										>{[
+											date(d.deletedAt),
+											d.by === 'self'
+												? m.household_deletions_by_self()
+												: m.household_deletions_by_admin(),
+											...(d.removedSharedFoods ? [m.household_deletions_shared_removed()] : [])
+										].join(' · ')}</span
+									>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				</div>
 			</div>
 		</section>
 	{/if}
@@ -346,29 +394,6 @@
 					'scan-totals'
 				)}
 			{/if}
-		</div>
-	</section>
-
-	<section aria-labelledby="deleted-label">
-		{@render label(m.household_deletions(), 'deleted-label')}
-		<div class="flex flex-col gap-2 rounded-card bg-surface p-[18px] shadow-card">
-			{#if deletions.length === 0}
-				<p class="text-[0.9375rem] font-semibold">{m.household_deletions_none()}</p>
-			{:else}
-				<ul class="flex flex-col divide-y divide-line" data-testid="deletions">
-					{#each deletions as d (d.accountId)}
-						<li class="flex flex-col py-2">
-							<span class="font-mono text-[0.8125rem] break-all">{d.accountId}</span>
-							<span class="text-[0.8125rem] text-muted"
-								>{date(d.deletedAt)}{d.removedSharedFoods
-									? ` · ${m.household_deletions_shared_removed()}`
-									: ''}</span
-							>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-			<p class="text-[0.8125rem] text-muted">{m.household_deletions_body()}</p>
 		</div>
 	</section>
 </main>

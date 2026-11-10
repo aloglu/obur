@@ -13,8 +13,9 @@ backup, and taken a fresh full backup. obur never reopens with restored sessions
 
 - **The backup passphrase** (`OBUR_BACKUP_PASSPHRASE`). Without it no backup can be read.
 - **The off-site credentials** (`OBUR_OFFSITE_*`), if the server's own backups are lost too.
-- **The deleted-accounts list** from Household → Deleted accounts. Copy it whenever an account is deleted. Each entry
-  is an account ID, the date and whether shared foods were removed. It never contains diary content.
+- **The deleted-accounts list** from Household → Backups → Deleted accounts. Copy it whenever an account is deleted
+  (**Copy list** gives the entries in the form `finish` takes below). Each entry is an account ID, the date and
+  whether shared foods were removed. It never contains diary content.
 
 Deleted accounts remain in backups until those expire (`OBUR_BACKUP_KEEP_WEEKS`, 5 weeks by default). That is why
 their deletions are applied again after every restore.
