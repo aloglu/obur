@@ -1,14 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	RADIUS,
-	STILL,
-	countFor,
-	pageGravity,
-	scatter,
-	step,
-	stir,
-	type Piece
-} from './confetti.ts';
+import { RADIUS, STILL, countFor, scatter, step, stir, type Piece } from './confetti.ts';
 
 /** The same "random" numbers every run. */
 function seeded(seed = 7) {
@@ -49,7 +40,7 @@ describe('confetti', () => {
 		expect(Math.min(...pieces.map((p) => p.y))).toBeLessThan(box.height - 3 * RADIUS);
 	});
 
-	it('slides to whichever side is down when the phone tilts', () => {
+	it('piles against whichever side is down', () => {
 		const pieces = scatter(60, box, 5, seeded());
 		run(pieces, down, 6);
 		run(pieces, { x: 1, y: 0 }, 6);
@@ -67,17 +58,5 @@ describe('confetti', () => {
 		run(pieces, down, 0.6);
 		expect(pieces.every((p) => p.y >= RADIUS - 0.01 && p.x >= RADIUS - 0.01)).toBe(true);
 		expect(run(pieces, down, 8)).toBeLessThan(STILL);
-	});
-
-	it('reads which way is down from either kind of phone, and when the page is turned', () => {
-		// Held upright: Android reports +9.81 on y, an iPhone -9.81.
-		expect(pageGravity({ x: 0, y: 9.81 }, 0, false).y).toBeCloseTo(1);
-		expect(pageGravity({ x: 0, y: -9.81 }, 0, true).y).toBeCloseTo(1);
-		// Right edge down (Android: x = -9.81): down is to the page's right.
-		expect(pageGravity({ x: -9.81, y: 0 }, 0, false).x).toBeCloseTo(1);
-		// Turned a quarter anticlockwise, the phone's natural left edge is the bottom of the page.
-		const turned = pageGravity({ x: 9.81, y: 0 }, 90, false);
-		expect(turned.x).toBeCloseTo(0);
-		expect(turned.y).toBeCloseTo(1);
 	});
 });

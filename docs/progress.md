@@ -7,10 +7,8 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Back button: one `ui/PageHead.svelte` on every nested page, an accent "<" beside the title (was a text link above
   it, hand-copied on some pages, a grey circle on Achievements, missing on Help). e2e: `diary.e2e.ts`.
 - Celebration: the page behind is held still (no scroll bar showing through); confetti is a small physics pile on a
-  canvas (`client/confetti.ts`, unit tests; e2e in `achievements.e2e.ts`): falls in from off-screen, stays, a tap on
-  the background stirs it, tilt and shake move it once motion is allowed. **Not checked on a real phone:** the
-  iPhone's motion question, the tilt direction (especially with the phone turned sideways) and how hard a shake
-  has to be (`jolt > 14` in `Celebration.svelte`).
+  canvas (`client/confetti.ts`, unit tests; e2e in `achievements.e2e.ts`): falls in from off-screen, stays, and a
+  tap on the background throws it up. Tilt and shake were built and removed (owner, 2026-11-13: too much friction).
 - Rolling numbers no longer snap sideways when the digit count changes (`ui/Roll.svelte`).
 - Budget card: equal room above and below.
 

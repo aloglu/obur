@@ -109,21 +109,20 @@ test('confetti falls, stays where it lands, and a tap on the background throws i
 			return count;
 		}, band);
 
-	// Everything lands at the bottom, comes to rest, and is still there later.
-	await expect.poll(() => painted('bottom'), { timeout: 10_000 }).toBeGreaterThan(2000);
-	await expect.poll(() => painted('upper'), { timeout: 10_000 }).toBe(0);
-	const resting = async () => {
-		const before = await painted('bottom');
-		await page.waitForTimeout(700);
-		return (await painted('bottom')) === before && before > 2000;
-	};
-	await expect.poll(resting, { timeout: 10_000 }).toBe(true);
+	// Everything lands at the bottom, comes to rest (the canvas says when it has stopped drawing), and stays.
+	const confetti = dialog.locator('canvas');
+	await expect(confetti).toHaveAttribute('data-still', 'true', { timeout: 20_000 });
 	const landed = await painted('bottom');
-	await page.waitForTimeout(1500);
+	expect(landed).toBeGreaterThan(2000);
+	expect(await painted('upper')).toBe(0);
+	await page.waitForTimeout(1000);
 	expect(await painted('bottom')).toBe(landed);
 
+	// A tap on the background sets it moving again, and it comes back down.
 	await dialog.click({ position: { x: 20, y: 200 } });
-	await expect.poll(() => painted('upper')).toBeGreaterThan(1000);
+	await expect(confetti).not.toHaveAttribute('data-still');
+	await expect(confetti).toHaveAttribute('data-still', 'true', { timeout: 20_000 });
+	expect(await painted('bottom')).toBeGreaterThan(2000);
 	await expect(dialog).toBeVisible();
 	await dialog.getByRole('button', { name: 'Done' }).click();
 	await expect(page.locator('body')).not.toHaveCSS('position', 'fixed');

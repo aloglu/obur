@@ -1,6 +1,6 @@
-// The celebration's confetti (docs/ui.md, "Achievements"): paper that falls, lands and stays, slides wherever "down"
-// is when the phone tilts, and flies up like a snow globe when stirred. Plain numbers in, plain numbers out: the
-// component draws it and feeds it the phone's motion. Lengths are CSS pixels, times seconds.
+// The celebration's confetti (docs/ui.md, "Achievements"): paper that falls, lands and stays, and flies up like a
+// snow globe when stirred. Plain numbers in, plain numbers out: the component draws it. Lengths are CSS pixels,
+// times seconds.
 
 export interface Piece {
 	x: number;
@@ -51,7 +51,7 @@ export function scatter(count: number, box: Box, colours: number, random = Math.
 }
 
 /**
- * Moves everything on by `dt`. `gravity` is in g: (0, 1) is a phone held upright. Returns the fastest piece's speed,
+ * Moves everything on by `dt`. `gravity` is in g: (0, 1) is straight down the page. Returns the fastest piece's speed,
  * so the caller can stop drawing once the pile is still.
  *
  * Pieces are moved, then pushed out of each other and back inside the edges, and their speed is whatever movement
@@ -144,20 +144,4 @@ export function stir(pieces: Piece[], gravity: Vector, strength = 2000, random =
 		p.vy += Math.sin(direction) * push * 0.6 + up.y * push;
 		p.spin = (random() - 0.5) * 16;
 	}
-}
-
-/**
- * Which way is down on the page, in g, from a `devicemotion` reading (`accelerationIncludingGravity`, m/s²).
- * Android reports the push holding the phone up; iPhones report the opposite sign (`inverted`). `angle` is how far the
- * page is turned from the phone's natural way up (`screen.orientation.angle`).
- */
-export function pageGravity(reading: Vector, angle: number, inverted: boolean): Vector {
-	const sign = inverted ? -1 : 1;
-	const dx = (-reading.x * sign) / 9.81;
-	const dy = (reading.y * sign) / 9.81;
-	const turn = (angle * Math.PI) / 180;
-	return {
-		x: dx * Math.cos(turn) + dy * Math.sin(turn),
-		y: -dx * Math.sin(turn) + dy * Math.cos(turn)
-	};
 }

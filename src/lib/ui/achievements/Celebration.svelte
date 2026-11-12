@@ -1,22 +1,13 @@
 <script lang="ts">
 	// The full-screen celebration, opened from the achievement toast: the number counting up, the picture dropping in,
 	// the comparison and its line, and confetti that falls and stays (client/confetti.ts). A tap on the background
-	// throws it up like a snow globe; after that tap the phone's tilt moves it and a shake stirs it, where the phone
-	// allows. Reduced motion shows the same screen still, without confetti. Done or Escape closes it; nothing else
-	// waits on it, and the page behind is held still.
+	// throws it up like a snow globe. Reduced motion shows the same screen still, without confetti. Done or Escape
+	// closes it; nothing else waits on it, and the page behind is held still.
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { page } from '$app/state';
 	import { celebration, closeCelebration } from '#lib/client/celebration.svelte.ts';
-	import {
-		STILL,
-		countFor,
-		pageGravity,
-		scatter,
-		step,
-		stir,
-		type Piece
-	} from '#lib/client/confetti.ts';
+	import { STILL, countFor, scatter, step, stir, type Piece } from '#lib/client/confetti.ts';
 	import { lockPageScroll } from '#lib/client/scroll-lock.ts';
 	import Picture from './Picture.svelte';
 	import {
@@ -37,29 +28,13 @@
 	let shown = $state(0);
 	let done = $state<HTMLButtonElement>();
 	let canvas = $state<HTMLCanvasElement>();
+	const TICK = 1 / 60;
 	const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-	// iPhones only hand out motion readings after the person agrees, asked from a tap. The answer lasts while the app
-	// stays open, so later celebrations tilt straight away.
-	type MotionAccess = { requestPermission?: () => Promise<'granted' | 'denied'> };
-	let motionAllowed = false;
 	let stirConfetti: (() => void) | undefined;
-	let startMotion: (() => void) | undefined;
 
-	// On click, not on touching down: an iPhone only lets a finished tap ask.
 	function poke(event: MouseEvent) {
-		if ((event.target as Element).closest('a, button')) return;
-		stirConfetti?.();
-		if (motionAllowed || !('DeviceMotionEvent' in window)) return;
-		const access = DeviceMotionEvent as unknown as MotionAccess;
-		if (!access.requestPermission) return;
-		access
-			.requestPermission()
-			.then((answer) => {
-				motionAllowed = answer === 'granted';
-				if (motionAllowed) startMotion?.();
-			})
-			.catch(() => {});
+		if (!(event.target as Element).closest('a, button')) stirConfetti?.();
 	}
 
 	$effect(() => {
@@ -76,11 +51,20 @@
 		const colours = CONFETTI.map((name) => style.getPropertyValue(name).trim());
 		const box = { width: node.clientWidth, height: node.clientHeight };
 		let pieces: Piece[] = scatter(countFor(box.width), box, colours.length);
-		let gravity = { x: 0, y: 1 };
+		const down = { x: 0, y: 1 };
+		let owed = 0;
 		let frame = 0;
 		let last = 0;
 		let quiet = 0;
 
+		const wake = () => {
+			quiet = 0;
+			delete node.dataset.still;
+			if (!frame) {
+				last = 0;
+				frame = requestAnimationFrame(tick);
+			}
+		};
 		const fit = () => {
 			const ratio = Math.min(devicePixelRatio || 1, 3);
 			box.width = node.clientWidth;
@@ -106,53 +90,21 @@
 			}
 		};
 		const tick = (now: number) => {
-			// A long gap (the app was in the background) is one ordinary step, not a leap.
-			const dt = Math.min((now - (last || now)) / 1000, 1 / 30) || 1 / 60;
+			// Always moved on in sixtieths of a second, however often the screen draws: the pile settles the same on a
+			// slow phone. A long gap (the app was in the background) is a couple of steps, not a leap.
+			owed = Math.min(owed + (now - (last || now)) / 1000, 3 * TICK);
 			last = now;
-			quiet = step(pieces, box, gravity, dt) < STILL ? quiet + 1 : 0;
+			for (; owed >= TICK; owed -= TICK) {
+				quiet = step(pieces, box, down, TICK) < STILL ? quiet + 1 : 0;
+			}
 			draw();
 			// Still for half a second: stop drawing until something moves it.
 			frame = quiet < 30 ? requestAnimationFrame(tick) : 0;
+			if (!frame) node.dataset.still = 'true';
 		};
-		function wake() {
-			quiet = 0;
-			if (!frame) {
-				last = 0;
-				frame = requestAnimationFrame(tick);
-			}
-		}
 
-		const inverted = 'requestPermission' in (globalThis.DeviceMotionEvent ?? {});
-		let before: { x: number; y: number; z: number } | undefined;
-		let stirredAt = 0;
-		const motion = (event: DeviceMotionEvent) => {
-			const g = event.accelerationIncludingGravity;
-			if (!g || g.x === null || g.y === null) return;
-			const reading = { x: g.x, y: g.y, z: g.z ?? 0 };
-			const next = pageGravity(reading, screen.orientation?.angle ?? 0, inverted);
-			if (Math.hypot(next.x - gravity.x, next.y - gravity.y) > 0.04) wake();
-			gravity = next;
-			// A shake: the reading jumps between two events far more than a tilt can move it.
-			const jolt = before
-				? Math.hypot(reading.x - before.x, reading.y - before.y, reading.z - before.z)
-				: 0;
-			before = reading;
-			if (jolt > 14 && event.timeStamp - stirredAt > 250) {
-				stirredAt = event.timeStamp;
-				stir(pieces, gravity, 1400);
-				wake();
-			}
-		};
-		let listening = false;
-		startMotion = () => {
-			if (listening || !('DeviceMotionEvent' in window)) return;
-			listening = true;
-			window.addEventListener('devicemotion', motion);
-		};
-		// Phones that don't ask (Android) tilt from the start; iPhones once the person has agreed.
-		if (motionAllowed || !inverted) startMotion();
 		stirConfetti = () => {
-			stir(pieces, gravity);
+			stir(pieces, down);
 			wake();
 		};
 
@@ -162,8 +114,7 @@
 		return () => {
 			cancelAnimationFrame(frame);
 			sized.disconnect();
-			window.removeEventListener('devicemotion', motion);
-			stirConfetti = startMotion = undefined;
+			stirConfetti = undefined;
 			pieces = [];
 		};
 	});
