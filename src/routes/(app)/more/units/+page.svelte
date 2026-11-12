@@ -1,8 +1,8 @@
 <script lang="ts">
 	// docs/ui.md "More and settings": Time follows the account. Weight is kilograms until pounds are built.
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
-	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
 	import { savePreferences, setTimeFormat, type TimeFormat } from '#lib/client/prefs.ts';
@@ -29,13 +29,11 @@
 <svelte:head><title>{m.more_units()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a
+	<PageHead
 		href={resolve('/(app)/more/settings')}
-		class="flex items-center gap-1 self-start font-bold text-accent"
-	>
-		<ChevronLeft size={20} aria-hidden="true" />{m.settings_title()}
-	</a>
-	<h1 class="text-[1.5rem] font-[750]">{m.more_units()}</h1>
+		label={m.settings_title()}
+		title={m.more_units()}
+	/>
 	<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
 		<div class="flex min-h-14 items-center justify-between gap-3 text-[0.9375rem] font-semibold">
 			{m.units_weight()}<span class="text-[0.875rem] font-medium text-muted">kg</span>

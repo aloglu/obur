@@ -2,10 +2,10 @@
 	// More → Speak and Scan (docs/ui.md, "Your own AI key for Speak and Scan"): what reads this person's recordings and
 	// label photos, their own keys (last four characters only) and this month's counts. Only they see this page's
 	// choices and keys.
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import { untrack } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -110,13 +110,11 @@
 {/snippet}
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a
+	<PageHead
 		href={resolve('/(app)/more/settings')}
-		class="flex items-center gap-1 self-start font-bold text-accent"
-	>
-		<ChevronLeft size={20} aria-hidden="true" />{m.settings_title()}
-	</a>
-	<h1 class="text-[1.5rem] font-[750]">{m.more_speak_scan()}</h1>
+		label={m.settings_title()}
+		title={m.more_speak_scan()}
+	/>
 	<p class="text-[0.9375rem] text-muted">{m.models_intro()}</p>
 	{#if !s.allowed}
 		<Notice tone="info">{s.householdOff ? m.models_off_household() : m.models_off_server()}</Notice>

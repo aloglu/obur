@@ -77,7 +77,9 @@
 				style:width="{fraction * 100}%"
 			></div>
 		</div>
-		<div class="flex items-center justify-between gap-3 text-[0.875rem] text-muted">
+		<!-- The Budget button is 44 px tall for the thumb; the row gives back what that adds under the text, so the card
+		     has the same room below as above. -->
+		<div class="-mb-3 flex items-center justify-between gap-3 text-[0.875rem] text-muted">
 			<span class="flex items-center gap-1.5 whitespace-nowrap"
 				>{m.budget_eaten()}<b class="font-bold text-text tabular-nums"
 					><Roll value={kcal(eaten)} /></b
@@ -103,7 +105,7 @@
 		</div>
 		<div class={['collapse-row', showBreakdown && 'open']}>
 			<div>
-				<dl id="budget-breakdown" class="flex flex-col pt-2 text-[0.875rem]">
+				<dl id="budget-breakdown" class="-mb-2 flex flex-col pt-5 text-[0.875rem]">
 					<div class="flex justify-between gap-3 py-2">
 						<dt>{manual ? m.budget_row_own() : m.budget_row_base()}</dt>
 						<dd class="tabular-nums">{kcal(budget.baseKcal)}</dd>

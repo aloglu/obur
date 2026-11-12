@@ -2,6 +2,18 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Owner's reports, 2026-11-13 (in `main`, not yet released)
+
+- Back button: one `ui/PageHead.svelte` on every nested page, an accent "<" beside the title (was a text link above
+  it, hand-copied on some pages, a grey circle on Achievements, missing on Help). e2e: `diary.e2e.ts`.
+- Celebration: the page behind is held still (no scroll bar showing through); confetti is a small physics pile on a
+  canvas (`client/confetti.ts`, unit tests; e2e in `achievements.e2e.ts`): falls in from off-screen, stays, a tap on
+  the background stirs it, tilt and shake move it once motion is allowed. **Not checked on a real phone:** the
+  iPhone's motion question, the tilt direction (especially with the phone turned sideways) and how hard a shake
+  has to be (`jolt > 14` in `Celebration.svelte`).
+- Rolling numbers no longer snap sideways when the digit count changes (`ui/Roll.svelte`).
+- Budget card: equal room above and below.
+
 ## In daily use since 2026-11-08
 
 The owner imported their LoseIt export on the VPS and uses obur as their real tracker from 2026-11-08; their data

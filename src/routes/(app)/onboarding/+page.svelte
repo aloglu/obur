@@ -4,7 +4,7 @@
 	// Estimates, not medical advice. Minors, pregnancy and breastfeeding get no calculated targets: they can enter a number
 	// they were given, or just log.
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
-	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import { untrack } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -185,13 +185,7 @@
 <svelte:head><title>{m.onb_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a
-		href={back.href}
-		class="-mb-1 flex min-h-11 items-center gap-0.5 self-start font-[650] text-accent"
-	>
-		<ChevronLeft size={22} aria-hidden="true" />{back.label}
-	</a>
-	<h1 class="text-[1.5rem] font-[750]">{m.onb_title()}</h1>
+	<PageHead href={back.href} label={back.label} title={m.onb_title()} />
 	{#if step !== 'manual'}
 		<div class="grid grid-cols-3 gap-1.5" aria-hidden="true">
 			{#each [1, 2, 3] as s (s)}

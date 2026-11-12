@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHead from '#lib/ui/PageHead.svelte';
 	// Check the label (docs/ui.md, "Scan"): what the Scan sheet read, as the food form beside the photo, to check
 	// and save; then Log's amount sheet for the new food. Retake opens the sheet again in place. Opened without a
 	// reading (a reload, a bookmark), it goes to Log with the Scan sheet open. The photo is never kept.
@@ -7,7 +8,6 @@
 	import { resolve } from '$app/paths';
 	import Camera from '@lucide/svelte/icons/camera';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
-	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
 	import { logFoodHref, scanSheetHref } from '#lib/client/links.ts';
@@ -92,16 +92,20 @@
 {/snippet}
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a href={resolve('/(app)/log')} class="flex items-center gap-1 self-start font-bold text-accent">
-		<ChevronLeft size={20} aria-hidden="true" />{m.nav_log()}
-	</a>
+	<PageHead
+		href={resolve('/(app)/log')}
+		label={m.nav_log()}
+		title={!data.scan
+			? m.log_scan()
+			: proposal
+				? proposal.nutrients.length
+					? m.scan_check_title()
+					: m.scan_new_food()
+				: undefined}
+	/>
 	{#if !data.scan}
-		<h1 class="text-[1.5rem] font-[750]">{m.log_scan()}</h1>
 		<Notice>{m.scan_off()}</Notice>
 	{:else if proposal}
-		<h1 class="text-[1.5rem] font-[750]">
-			{proposal.nutrients.length ? m.scan_check_title() : m.scan_new_food()}
-		</h1>
 		{#if proposal.nutrients.length}
 			{#if photo}
 				<div class="rounded-card bg-surface px-[18px] py-1 shadow-card">

@@ -1,6 +1,7 @@
 <script lang="ts">
 	// A number that rolls digit by digit when it changes (docs/ui.md, "Motion"). Only the digits that changed move, the
-	// lowest first; up rolls upward, down rolls downward. Always ends as plain text.
+	// lowest first; up rolls upward, down rolls downward. A place that appears or goes away opens or closes its width as
+	// it rolls, so the rest never jumps when the number gains or loses a digit. Always ends as plain text.
 	let { value }: { value: string } = $props();
 	let el = $state<HTMLSpanElement>();
 	let shown: string | undefined;
@@ -49,6 +50,11 @@
 				easing: 'cubic-bezier(0.3, 0.75, 0.1, 1)',
 				fill: 'both'
 			} as const;
+			// A digit or separator that comes or goes takes its room with it.
+			if (from[i] === ' ' || to[i] === ' ') {
+				const full = `${slot.getBoundingClientRect().width}px`;
+				moves.push(slot.animate({ width: to[i] === ' ' ? [full, '0px'] : ['0px', full] }, timing));
+			}
 			moves.push(
 				out.animate(
 					[
@@ -84,6 +90,6 @@
 	}
 	span :global(.roll-slot > span) {
 		grid-area: 1 / 1;
-		text-align: center;
+		justify-self: center;
 	}
 </style>

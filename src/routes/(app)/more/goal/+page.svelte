@@ -3,7 +3,7 @@
 	// day, follows along. A change makes a new budget version from today; past days keep theirs. A budget set by hand
 	// takes a goal weight too (owner, 2026-11-08), for the weight chart and achievements only; without a budget, the way
 	// to set one up.
-	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -69,13 +69,11 @@
 <svelte:head><title>{m.more_goal()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a
+	<PageHead
 		href={resolve('/(app)/more/settings')}
-		class="flex items-center gap-1 self-start font-bold text-accent"
-	>
-		<ChevronLeft size={20} aria-hidden="true" />{m.settings_title()}
-	</a>
-	<h1 class="text-[1.5rem] font-[750]">{m.more_goal()}</h1>
+		label={m.settings_title()}
+		title={m.more_goal()}
+	/>
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if manual && !data.goalAllowed}
 		<Notice tone="info">{m.goal_not_offered()}</Notice>

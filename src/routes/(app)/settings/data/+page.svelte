@@ -15,7 +15,7 @@
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import Download from '@lucide/svelte/icons/download';
 	import FileArchive from '@lucide/svelte/icons/file-archive';
-	import BackLink from '#lib/ui/BackLink.svelte';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Card from '#lib/ui/Card.svelte';
 	import Chips from '#lib/ui/Chips.svelte';
@@ -295,8 +295,11 @@
 <svelte:head><title>{m.data_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<BackLink href={resolve('/(app)/more/settings')} label={m.settings_title()} />
-	<h1 class="text-[1.5rem] font-[750]">{m.data_title()}</h1>
+	<PageHead
+		href={resolve('/(app)/more/settings')}
+		label={m.settings_title()}
+		title={m.data_title()}
+	/>
 	{#if problem && !confirming}<Notice>{problem}</Notice>{/if}
 
 	<Card title={m.data_export_title()}>

@@ -15,7 +15,7 @@
 		type ReminderSettings
 	} from '#lib/shared/reminders.ts';
 	import { resolve } from '$app/paths';
-	import BackLink from '#lib/ui/BackLink.svelte';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Card from '#lib/ui/Card.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
@@ -108,8 +108,11 @@
 <svelte:head><title>{m.reminders_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<BackLink href={resolve('/(app)/more/settings')} label={m.settings_title()} />
-	<h1 class="text-[1.5rem] font-[750]">{m.reminders_title()}</h1>
+	<PageHead
+		href={resolve('/(app)/more/settings')}
+		label={m.settings_title()}
+		title={m.reminders_title()}
+	/>
 
 	{#if device === 'install'}
 		<Card title={m.reminders_install_title()}>

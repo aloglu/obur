@@ -1,9 +1,9 @@
 <script lang="ts">
 	// docs/ui.md "Themes" and "App icon": mode, then themes, then the app icon, kept with the account (on every device
 	// and in the backup). Mode and theme apply at once; the icon shows the next time obur is added to the Home Screen.
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
-	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		savePreferences,
@@ -71,13 +71,11 @@
 <svelte:head><title>{m.more_appearance()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a
+	<PageHead
 		href={resolve('/(app)/more/settings')}
-		class="flex items-center gap-1 self-start font-bold text-accent"
-	>
-		<ChevronLeft size={20} aria-hidden="true" />{m.settings_title()}
-	</a>
-	<h1 class="text-[1.5rem] font-[750]">{m.more_appearance()}</h1>
+		label={m.settings_title()}
+		title={m.more_appearance()}
+	/>
 	<Card>
 		<Chips
 			label={m.more_mode()}

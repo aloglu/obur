@@ -7,7 +7,7 @@
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
-	import BackLink from '#lib/ui/BackLink.svelte';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import Card from '#lib/ui/Card.svelte';
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
@@ -111,10 +111,11 @@
 {/snippet}
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<BackLink href={resolve('/(app)/foods')} label={m.foods_title()} />
-	<h1 class="text-[1.5rem] font-[750] break-words">
-		{#if editing}{m.food_edit_title()}{:else}{food.brand ? `${food.brand} ` : ''}{food.name}{/if}
-	</h1>
+	<PageHead
+		href={resolve('/(app)/foods')}
+		label={m.foods_title()}
+		title={editing ? m.food_edit_title() : `${food.brand ? `${food.brand} ` : ''}${food.name}`}
+	/>
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if food.archived}<Notice tone="info">{m.food_archived()}</Notice>{/if}
 	{#if food.curatedDataset}<p class="text-[0.875rem] text-muted">

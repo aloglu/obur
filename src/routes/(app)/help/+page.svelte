@@ -6,6 +6,8 @@
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Search from '@lucide/svelte/icons/search';
 	import { m } from '#lib/paraglide/messages.js';
+	import { resolve } from '$app/paths';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import DayRing from '#lib/ui/progress/DayRing.svelte';
 	import {
 		HELP,
@@ -53,7 +55,7 @@
 <svelte:head><title>{m.help_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<h1 class="text-[1.5rem] font-[750]">{m.help_title()}</h1>
+	<PageHead href={resolve('/(app)/more')} label={m.nav_more()} title={m.help_title()} />
 	<div class="pinned-search">
 		<label
 			class="flex min-h-12 items-center gap-2.5 rounded-input border border-line bg-surface px-3.5 focus-within:outline-3 focus-within:outline-offset-1 focus-within:outline-accent"

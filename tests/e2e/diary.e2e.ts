@@ -421,3 +421,40 @@ test('an empty note opens at full height at once, so iOS can scroll its field ab
 	await expect(note.locator('.collapse-row')).not.toHaveCSS('transition-duration', '0s');
 	await expect(field).toBeHidden();
 });
+
+test('every nested page has the same "<" beside its title, leading one level up', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Geri ${testInfo.project.name}`);
+	const pages: [path: string, up: string, lands: RegExp][] = [
+		['/foods', 'More', /\/more$/],
+		['/foods/new', 'Foods', /\/foods$/],
+		['/recipes', 'More', /\/more$/],
+		['/recipes/new', 'Recipes', /\/recipes$/],
+		['/saved-meals', 'More', /\/more$/],
+		['/saved-meals/new', 'Saved meals', /\/saved-meals$/],
+		['/more/deleted', 'More', /\/more$/],
+		['/help', 'More', /\/more$/],
+		['/more/settings', 'More', /\/more$/],
+		['/profile', 'Settings', /\/more\/settings$/],
+		['/more/goal', 'Settings', /\/more\/settings$/],
+		['/more/units', 'Settings', /\/more\/settings$/],
+		['/more/appearance', 'Settings', /\/more\/settings$/],
+		['/settings/data', 'Settings', /\/more\/settings$/],
+		['/settings/security', 'Settings', /\/more\/settings$/],
+		['/achievements', 'Progress', /\/progress$/]
+	];
+	for (const [path, up, lands] of pages) {
+		await page.goto(path);
+		const title = page.getByRole('heading', { level: 1 });
+		const back = page.getByRole('main').getByRole('link', { name: up, exact: true });
+		await expect(back, path).toBeVisible();
+		// Beside the title, left of it, and a full-size target.
+		const [arrow, heading] = [(await back.boundingBox())!, (await title.boundingBox())!];
+		expect(arrow.x + arrow.width, path).toBeLessThanOrEqual(heading.x + 1);
+		expect(Math.abs(arrow.y + arrow.height / 2 - (heading.y + 22)), path).toBeLessThan(6);
+		expect(arrow.width, path).toBeGreaterThanOrEqual(44);
+		await back.click();
+		await expect(page, path).toHaveURL(lands);
+	}
+});

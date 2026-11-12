@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { kcal } from '#lib/shared/format.ts';
-	import BackLink from '#lib/ui/BackLink.svelte';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import ListCard from '#lib/ui/items/ListCard.svelte';
 	import ListRow from '#lib/ui/items/ListRow.svelte';
 
@@ -14,8 +14,7 @@
 <svelte:head><title>{m.saved_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<BackLink href={resolve('/(app)/more')} label={m.nav_more()} />
-	<h1 class="text-[1.5rem] font-[750]">{m.saved_title()}</h1>
+	<PageHead href={resolve('/(app)/more')} label={m.nav_more()} title={m.saved_title()} />
 	{#if data.meals.length === 0}
 		<p class="text-[0.9375rem] text-muted">{m.saved_none()}</p>
 	{:else}

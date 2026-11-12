@@ -1,8 +1,8 @@
 <script lang="ts">
 	// docs/ui.md "Recently deleted": entries wait here for 30 days. Restore puts one back in its meal and day.
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -37,10 +37,7 @@
 <svelte:head><title>{m.deleted_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<a href={resolve('/(app)/more')} class="flex items-center gap-1 self-start font-bold text-accent">
-		<ChevronLeft size={20} aria-hidden="true" />{m.nav_more()}
-	</a>
-	<h1 class="text-[1.5rem] font-[750]">{m.deleted_title()}</h1>
+	<PageHead href={resolve('/(app)/more')} label={m.nav_more()} title={m.deleted_title()} />
 	<div class="rounded-card bg-surface px-[18px] py-1.5 shadow-card">
 		{#if data.entries.length === 0}
 			<p class="py-3.5 text-[0.9375rem] text-muted">{m.deleted_empty()}</p>

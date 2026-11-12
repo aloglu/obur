@@ -83,3 +83,48 @@ test('without a goal below the start, weight achievements stay off and say why',
 		'Weight achievements need a goal weight below where you started'
 	);
 });
+
+test('confetti falls, stays where it lands, and a tap on the background throws it up again', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Konfeti ${testInfo.project.name}`);
+	await page.goto('/progress');
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: daysAgo(5), zone, value: 90 });
+	await page.goto('/achievements');
+	await page.getByRole('button', { name: /First weigh-in/ }).click();
+	const dialog = page.getByRole('dialog', { name: /Achievement/ });
+	await expect(dialog).toBeVisible();
+	// The page behind is held still, so its scroll bar doesn't show through.
+	await expect(page.locator('body')).toHaveCSS('position', 'fixed');
+
+	/** How many painted pixels the confetti has in a band: the bottom 70 px, or everything above the bottom third. */
+	const painted = (band: 'bottom' | 'upper') =>
+		dialog.locator('canvas').evaluate((canvas: HTMLCanvasElement, band) => {
+			const ratio = canvas.width / canvas.clientWidth;
+			const top = band === 'bottom' ? canvas.height - 70 * ratio : 0;
+			const height = band === 'bottom' ? 70 * ratio : (canvas.height * 2) / 3;
+			const { data } = canvas.getContext('2d')!.getImageData(0, top, canvas.width, height);
+			let count = 0;
+			for (let i = 3; i < data.length; i += 4) if (data[i] > 0) count++;
+			return count;
+		}, band);
+
+	// Everything lands at the bottom, comes to rest, and is still there later.
+	await expect.poll(() => painted('bottom'), { timeout: 10_000 }).toBeGreaterThan(2000);
+	await expect.poll(() => painted('upper'), { timeout: 10_000 }).toBe(0);
+	const resting = async () => {
+		const before = await painted('bottom');
+		await page.waitForTimeout(700);
+		return (await painted('bottom')) === before && before > 2000;
+	};
+	await expect.poll(resting, { timeout: 10_000 }).toBe(true);
+	const landed = await painted('bottom');
+	await page.waitForTimeout(1500);
+	expect(await painted('bottom')).toBe(landed);
+
+	await dialog.click({ position: { x: 20, y: 200 } });
+	await expect.poll(() => painted('upper')).toBeGreaterThan(1000);
+	await expect(dialog).toBeVisible();
+	await dialog.getByRole('button', { name: 'Done' }).click();
+	await expect(page.locator('body')).not.toHaveCSS('position', 'fixed');
+});

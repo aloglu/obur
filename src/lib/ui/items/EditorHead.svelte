@@ -3,7 +3,7 @@
 	// a … menu beside it, and the menu's confirmation opening under the title.
 	import { m } from '#lib/paraglide/messages.js';
 	import ActionMenu from '../ActionMenu.svelte';
-	import BackLink from '../BackLink.svelte';
+	import PageHead from '../PageHead.svelte';
 	import Button from '../Button.svelte';
 
 	interface Props {
@@ -24,13 +24,8 @@
 	]);
 </script>
 
-<BackLink href={backHref} label={backLabel} />
-<div class="flex items-center justify-between gap-2">
-	<h1 class="min-w-0 text-[1.5rem] font-[750]">{title}</h1>
-	{#if items.length > 0}
-		<div class="-mr-2 shrink-0"><ActionMenu label={m.editor_actions()} {items} /></div>
-	{/if}
-</div>
+{#snippet menu()}<ActionMenu label={m.editor_actions()} {items} />{/snippet}
+<PageHead href={backHref} label={backLabel} {title} end={items.length > 0 ? menu : undefined} />
 {#if remove}
 	<!-- Takes no room while closed; the padding gives the card's shadow somewhere to fall. -->
 	<div class={['collapse-row -mx-3.5 -mt-3', confirming && 'open']}>

@@ -9,7 +9,7 @@
 	import { clockTime } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { shortDate } from '#lib/shared/format.ts';
-	import BackLink from '#lib/ui/BackLink.svelte';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Chips from '#lib/ui/Chips.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -173,8 +173,7 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-4 px-3.5 py-4 desk:px-7">
 	<div class="flex flex-col gap-3">
-		<BackLink href={resolve('/(app)/more')} label={m.nav_more()} />
-		<h1 class="text-[1.5rem] font-[750]">{m.household_title()}</h1>
+		<PageHead href={resolve('/(app)/more')} label={m.nav_more()} title={m.household_title()} />
 	</div>
 	{#if problem && !deleting}<Notice>{problem}</Notice>{/if}
 

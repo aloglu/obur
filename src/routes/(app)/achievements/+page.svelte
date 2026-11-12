@@ -1,7 +1,7 @@
 <script lang="ts">
 	// docs/ui.md, "Achievements, Journal and Help": the badge page. Kilos lost and streaks newest first after the one
 	// next mark; the goal and firsts only once reached. Tapping an earned badge plays its celebration again.
-	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { Achievement } from '#lib/shared/achievements.ts';
@@ -31,14 +31,11 @@
 <svelte:head><title>{m.achievements_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[760px] flex-col gap-3 px-3.5 py-4 desk:gap-5 desk:px-7">
-	<div class="flex items-center gap-2">
-		<a
-			href={resolve('/(app)/progress')}
-			class="grid size-11 place-items-center rounded-full bg-surface2"
-			aria-label={m.nav_progress()}><ChevronLeft size={22} aria-hidden="true" /></a
-		>
-		<h1 class="text-[1.5rem] font-[750]">{m.achievements_title()}</h1>
-	</div>
+	<PageHead
+		href={resolve('/(app)/progress')}
+		label={m.nav_progress()}
+		title={m.achievements_title()}
+	/>
 
 	<section class={card} aria-labelledby="weight-title">
 		<div>

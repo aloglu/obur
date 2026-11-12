@@ -15,7 +15,7 @@
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
 	import { scanEdits } from '#lib/shared/scan-edits.ts';
-	import BackLink from '#lib/ui/BackLink.svelte';
+	import PageHead from '#lib/ui/PageHead.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
 	import ScanNotes from '#lib/ui/food/ScanNotes.svelte';
@@ -155,8 +155,7 @@
 {/snippet}
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<BackLink href={resolve('/(app)/foods')} label={m.foods_title()} />
-	<h1 class="text-[1.5rem] font-[750]">{m.food_new_title()}</h1>
+	<PageHead href={resolve('/(app)/foods')} label={m.foods_title()} title={m.food_new_title()} />
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	<FoodForm
 		bind:this={form}
