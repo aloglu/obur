@@ -2,7 +2,10 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Owner's reports, 2026-11-13 (in `main`, not yet released)
+## Owner's reports, 2026-11-13 (released as `v1.0.0-beta.9`, no migration)
+
+Checks before the tag: type-check, lint, 1057 unit and database tests, e2e 213 passed (16 skipped by design). The owner
+checks it on their phone after updating.
 
 - Back button: one `ui/PageHead.svelte` on every nested page, an accent "<" beside the title (was a text link above
   it, hand-copied on some pages, a grey circle on Achievements, missing on Help). e2e: `diary.e2e.ts`.
