@@ -107,6 +107,9 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
 - **"set PUBLIC_ORIGIN …" / "set OBUR_BACKUP_PASSPHRASE …":** a required setting is missing; add it and start again.
 - **"OBUR_BACKUP_PASSPHRASE is still the example value":** let the person choose their own phrase (or generate one)
   and save it in their password manager; see `troubleshooting.md` if backups already exist.
+- **New versions:** obur does not look for them unless an admin turns on Household → Updates → "Check for new
+  versions" (it then reads GitHub's public tag list once a day; `updates: the published versions could not be read`
+  in the log means GitHub was unreachable, which is harmless). It never updates itself.
 - **"the off-site store cannot be reached; WAL is waiting for it"** (log) or **"The off-site store can't be
   reached"** (Household → Backups): the off-site storage is not answering. Local backups continue; changes wait in
   `/data/offsite-queue` (limit `OBUR_OFFSITE_QUEUE_MAX_MB`, default 1024) and are sent when it answers ("the off-site

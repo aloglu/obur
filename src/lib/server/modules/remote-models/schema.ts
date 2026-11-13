@@ -95,6 +95,13 @@ export const householdSettings = pgTable(
 		singleton: boolean('singleton').primaryKey().default(true),
 		/** People may use their own OpenAI or OpenRouter key for Speak and Scan. */
 		personalKeys: boolean('personal_keys').notNull().default(true),
+		/**
+		 * Ask GitHub which versions of obur are published (updates module). Off until an admin turns it on: it is the
+		 * one thing obur asks an outside service by itself. The answer is kept so the question is asked once a day.
+		 */
+		updateCheck: boolean('update_check').notNull().default(false),
+		latestVersion: text('latest_version'),
+		latestCheckedAt: timestamp('latest_checked_at', { withTimezone: true }),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [check('household_settings_singleton', sql`${t.singleton}`)]

@@ -3,6 +3,13 @@
 An update replaces the program, never your data. Before changing the database, obur takes a backup by itself, and
 if the database change fails, nothing is changed and the error is in the log.
 
+## Knowing when there is a new version
+
+obur can tell you: as an admin, turn on **More → Household → Updates → Check for new versions**. It then asks
+GitHub once a day which versions are published (nothing about your household is sent) and shows "Version … is
+available" there, and "Update available" on More. It is off until you turn it on, and obur never updates itself.
+You can also watch the repository's releases on GitHub.
+
 ## Docker Compose (VPS, Unraid's Compose Manager)
 
 In the folder with `compose.yaml`:

@@ -30,6 +30,8 @@ export const e2eEnv = {
 	// People's own keys: encrypted with a test key, and OpenAI and OpenRouter played by the stand-in.
 	OBUR_SECRETS_KEY: 'a1'.repeat(32),
 	AI_PROVIDER_TEST_URL: SPEECH_STUB,
+	// The list of published versions, played by the stand-in too.
+	UPDATES_TEST_URL: SPEECH_STUB,
 	WEBAUTHN_RP_ID: 'localhost',
 	// A throwaway Web Push public key so the Reminders page is offered; no worker sends anything in tests.
 	VAPID_PUBLIC_KEY:

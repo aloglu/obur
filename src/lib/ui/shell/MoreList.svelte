@@ -19,9 +19,19 @@
 		mealCount: number;
 		/** Reminders are configured on this server (signing out stops them on this device). */
 		reminders: boolean;
+		/** A newer published version, for an admin who turned the check on (Household). */
+		newerVersion?: string | null;
 	}
-	let { isAdmin, displayName, deletedCount, foodCount, recipeCount, mealCount, reminders }: Props =
-		$props();
+	let {
+		isAdmin,
+		displayName,
+		deletedCount,
+		foodCount,
+		recipeCount,
+		mealCount,
+		reminders,
+		newerVersion = null
+	}: Props = $props();
 
 	async function signOut() {
 		// Try to send anything waiting; never discard unsent entries without asking (docs/design.md, offline scope).
@@ -53,7 +63,11 @@
 <div class={group}>
 	<NavRow href={resolve('/(app)/more/settings')} label={m.settings_title()} />
 	{#if isAdmin}
-		<NavRow href={resolve('/(app)/household')} label={m.more_household()} />
+		<NavRow
+			href={resolve('/(app)/household')}
+			label={m.more_household()}
+			value={newerVersion ? m.more_household_update() : undefined}
+		/>
 	{/if}
 	<NavRow href={resolve('/(app)/help')} label={m.more_help()} />
 </div>

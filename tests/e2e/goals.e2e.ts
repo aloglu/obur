@@ -300,6 +300,9 @@ async function reachedGoal(page: Page, name: string) {
 	await expect(page.getByRole('region', { name: "You've reached your goal weight" })).toHaveCount(
 		0
 	);
+	// The page must have finished loading its scripts: leaving it mid-load makes it reload itself, which collides
+	// with the next page change.
+	await page.waitForLoadState('networkidle');
 	await apiAs(page, 'POST', '/api/v1/body/weight', { date: await day(0), zone, value: 79.8 });
 	await page.goto('/');
 }

@@ -17,5 +17,6 @@
 		recipeCount={data.recipeCount}
 		mealCount={data.mealCount}
 		reminders={data.pushKey !== null}
+		newerVersion={data.newerVersion}
 	/>
 </main>

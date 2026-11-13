@@ -12,13 +12,30 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   `deploy/obur/offsite-test.sh` (passes on the new image, fails on beta.6; in the release workflow),
   `backup-health.test.ts`. Not checked against a real S3 store going away (a folder stands in for it); a store that
   hangs rather than refuses holds PostgreSQL's archiver for pgBackRest's 60 s timeout once, then files queue.
+- Fixed (older than today, found by repeating the outage test): the restore check failed on a quiet database whose
+  WAL position sat exactly at the start of a file ("WAL up to … was not archived within two minutes": closing the
+  file does nothing when nothing was written). It now writes a restore-point marker first. The queue listing also
+  tolerates files arriving or leaving while it looks. Outage test repeated 8 times on the fixed image, all passed.
 - Done: goal weight reached offers "Switch to maintain". The setting already existed on the Goal page ("When I
   reach my goal weight", default Keep deficit); the offer flips it at the right moment and never by itself. A card
   on Today and a button in the goal's celebration (`MaintainOffer.svelte`, `Celebration.svelte`,
   `client/maintain.ts`, rule `maintainOffer` in `shared/goals.ts`, worked out in the app layout's load). Declined:
   remembered by goal weight on the profile (migrations 0046–0047), exported and imported. A Help answer. Tests:
   `goals.test.ts`, `goals.db.test.ts`, `goals.e2e.ts` (two journeys, both browsers).
-- Next: Household tells admins when a newer version exists (off until the admin turns it on; it asks GitHub).
+- Done: Household → Updates tells admins when a newer version is published (it did not exist before). Off until
+  an admin turns on "Check for new versions"; then GitHub's public tag list is read at most once a day, when an
+  admin opens Household or More (no background job). The notice links to the updating guide; More's Household row
+  says "Update available". `shared/version.ts` (full releases hear of full releases only), `modules/updates`
+  (answer kept in `household_settings`, migrations 0048–0049; only admins can store it), route
+  `PUT /api/v1/household/update-check`, version from `package.json` at build (`__OBUR_VERSION__`). Tests:
+  `version.test.ts`, `updates.db.test.ts`, `updates.e2e.ts` (desktop Chromium only: one installation-wide switch;
+  GitHub played by the stand-in through `UPDATES_TEST_URL`). The real tag list was read once from the
+  development machine with the same request (beta.8 is told of beta.9; beta.9 and 1.0.0 of nothing).
+  It reads tags, not GitHub Releases (the release workflow creates none); past 100 tags it would need paging.
+
+Checked 2026-11-13 after the three changes: type-check, lint, 1069 unit and database tests, e2e 218 passed (17
+skipped by design), image built, smoke test, off-site outage test, and an upgrade from the published beta.9 image
+(backup first, migrations 0046–0049 applied). Not released yet; the owner has a question and a request first.
 
 ## Owner's reports, 2026-11-13 (released as `v1.0.0-beta.9`, no migration)
 

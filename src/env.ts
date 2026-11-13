@@ -81,6 +81,17 @@ export const variables = defineEnvVars({
 			return url.origin;
 		}
 	},
+	UPDATES_TEST_URL: {
+		description:
+			'Browser tests only: a stand-in for the list of published versions. Never set it on a real server.',
+		schema: (value) => {
+			if (!value) return null;
+			const url = new URL(value);
+			if (url.protocol !== 'http:' && url.protocol !== 'https:')
+				throw new Error('UPDATES_TEST_URL must be http(s)');
+			return url.origin;
+		}
+	},
 	OBUR_STATUS_DIR: {
 		description:
 			'Folder with the backup status file and the restore mark, written by the backup tools (read-only here).',

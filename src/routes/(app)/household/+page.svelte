@@ -14,6 +14,7 @@
 	import Chips from '#lib/ui/Chips.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { BackupProblem, BackupReport } from '#lib/shared/backup-health.ts';
+	import type { UpdateStatus } from '#lib/server/modules/updates/index.ts';
 	import Notice from '#lib/ui/Notice.svelte';
 	import Switch from '#lib/ui/Switch.svelte';
 	import TextField from '#lib/ui/TextField.svelte';
@@ -43,6 +44,23 @@
 
 	let { data } = $props();
 	let personalKeys = $state(untrack(() => data.personalKeys));
+	// The check for new versions: off until an admin turns it on (it asks GitHub). Turning it on asks at once.
+	let updates = $state(untrack(() => data.updates));
+	let updateCheck = $state(untrack(() => data.updates.check));
+	let checking = $state(false);
+	async function saveUpdateCheck(on: boolean) {
+		checking = true;
+		try {
+			({ updates } = await api<{ updates: UpdateStatus }>('PUT', '/api/v1/household/update-check', {
+				on
+			}));
+		} catch {
+			updateCheck = !on;
+			showToast({ message: m.settings_save_failed() });
+		} finally {
+			checking = false;
+		}
+	}
 	async function savePersonalKeys(allow: boolean) {
 		try {
 			// An admin setting: the server asks for a passkey moments old (as for invites and deletions).
@@ -353,6 +371,46 @@
 			</div>
 		</section>
 	{/if}
+
+	<section aria-labelledby="updates-label">
+		{@render label(m.household_updates(), 'updates-label')}
+		<div class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
+			{#if updates.latest}
+				<Notice tone="info" title={m.household_updates_newer({ version: updates.latest })}>
+					<a
+						href="https://github.com/aloglu/obur/blob/main/docs/install/updating.md"
+						target="_blank"
+						rel="noreferrer"
+						class="font-semibold text-accent underline">{m.household_updates_how()}</a
+					>
+				</Notice>
+			{/if}
+			<Switch
+				label={m.household_updates_check()}
+				detail={m.household_updates_check_line()}
+				bind:checked={updateCheck}
+				onchange={saveUpdateCheck}
+			/>
+			{@render facts(
+				[
+					[m.household_updates_current(), updates.current],
+					...(updates.check && !checking
+						? [
+								[
+									m.household_updates_checked(),
+									updates.checkedAt
+										? updates.latest
+											? when(updates.checkedAt)
+											: m.household_updates_none({ when: when(updates.checkedAt) })
+										: m.household_updates_unreachable()
+								] as [string, string]
+							]
+						: [])
+				],
+				'update-facts'
+			)}
+		</div>
+	</section>
 
 	<section aria-labelledby="keys-label">
 		{@render label(m.household_personal_keys(), 'keys-label')}
