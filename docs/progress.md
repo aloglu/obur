@@ -2,6 +2,13 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Turkish interface (planned 2026-11-14)
+
+- Agreed plan: design.md, "Interface language". Nothing built in the app.
+- Current: a cloud session builds the review page (stops listed in design.md) into the existing review artifact
+  (https://claude.ai/artifact/1D6vQwDnAYtRhHLxccs5ii, db collection `review`, new doc ids prefixed `tr-`).
+- Next: read the owner's verdicts there; go or stop. If go: glossary first.
+
 ## After beta.12 (2026-11-13), released as `v1.0.0-beta.13`
 
 Checks before the tag: type-check, lint, 1096 unit and database tests, e2e 227 passed (18 skipped by design), image
