@@ -7,6 +7,10 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 Checks before the tag (2026-11-13): type-check, lint, 1080 unit and database tests, e2e 220 passed (17 skipped by
 design), image built, smoke test, off-site outage test. Migrations 0046–0049 run on update (upgrade from beta.9
 rehearsed earlier the same day). The owner checks page speed and headers on their iPhone after updating.
+Published 2026-11-13 (all three images). The first release run failed on a LoseIt test that compared two zips built a
+moment apart (zip stores the time, so their hashes could differ); a re-run of the same tag passed. The test zips now
+carry a fixed time (`1cae1ca`, after the tag; app code unchanged). One more unexplained local run had 2 failing tests
+that 26 later full runs never repeated; not identified yet, watch for it.
 
 - Last item before getting ready for production (owner, 2026-11-13): a review of the whole codebase, done after
   every other change so it also catches what those changes break.
