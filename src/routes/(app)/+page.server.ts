@@ -3,11 +3,13 @@ import { body } from '#lib/server/body.ts';
 import { diary } from '#lib/server/diary.ts';
 import { goals } from '#lib/server/goals.ts';
 import { budgetForDay, macroTargetsFor } from '#lib/shared/goals.ts';
-import { dayTotals, isIsoDate } from '#lib/shared/diary-rules.ts';
+import { dayTotals, isIsoDate, localDate } from '#lib/shared/diary-rules.ts';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ url, locals, parent }) => {
-	const { today } = await parent();
+export const load: PageServerLoad = async ({ url, locals }) => {
+	// Worked out here rather than taken from the layout: the layout's data refreshes on its own, and a page that
+	// read it would be loaded again with it.
+	const today = localDate(new Date(), locals.zone);
 	const requested = url.searchParams.get('date');
 	if (requested !== null && (!isIsoDate(requested) || requested > today)) redirect(303, '/');
 	const date = requested ?? today;

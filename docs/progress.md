@@ -2,6 +2,18 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Owner's reports on beta.10 (2026-11-13), `main`, next release
+
+- Fixed: Today's date title flashed on every visit, desktop too. Cause (mine, in beta.10): the shared-data refresh a
+  moment after each page change also reloaded Today (its load read today's date from the layout), and the title's
+  animation class was worked out again on every refresh. Page loads now work out today themselves; the shared data
+  refreshes after a page change only once it is 30 s old, and when the app returns to the foreground; the title
+  decides once, as it appears, whether to move in (only when the day changes).
+- Fixed: Log fetched Recent from empty on every visit (also before beta.10). It keeps recent foods and saved meals
+  per account between visits, shows them at once and updates them behind. e2e: `app-shell.e2e.ts` (Recent shows
+  within 1.5 s with the server slowed to 4 s; the title does not animate on arrival, re-tap or refresh, and does on
+  moving a day).
+
 ## Before version 1 (owner agreed 2026-11-13), one commit each, `main`; released as `v1.0.0-beta.10`
 
 Checks before the tag (2026-11-13): type-check, lint, 1080 unit and database tests, e2e 220 passed (17 skipped by

@@ -1,3 +1,13 @@
+<script lang="ts" module>
+	import type { FoodSearchResult as Result } from '#lib/shared/food-types.ts';
+	import type { SavedMealSummary as Summary } from '#lib/shared/diary-types.ts';
+	/**
+	 * Recent foods and saved meals as Log last showed them, kept while the person is on other pages, so Log opens
+	 * with them at once and only updates them. Per account: someone else signing in on this device starts empty.
+	 */
+	const kept: { userId?: string; recent?: Result[]; savedMeals: Summary[] } = { savedMeals: [] };
+</script>
+
 <script lang="ts">
 	// docs/ui.md "Logging": search on top; Speak, Scan and Type it tiles; Recent always there, filling the room it has;
 	// typing shows results; the meal preset pill. Calories alone stay one tap from search, also offline.
@@ -55,7 +65,9 @@
 
 	let query = $state(untrack(() => initialQuery));
 	let focused = $state(false);
-	let recent = $state<FoodSearchResult[] | undefined>();
+	const userId = untrack(() => page.data.user?.id);
+	const mine = userId !== undefined && kept.userId === userId;
+	let recent = $state<FoodSearchResult[] | undefined>(mine ? kept.recent : undefined);
 	let results = $state<FoodSearchResult[]>([]);
 	let searchedFor = $state('');
 	let searchFailed = $state(false);
@@ -79,6 +91,7 @@
 		if (onpickmeal) void loadSavedMeals();
 		try {
 			recent = (await api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')).results;
+			keep({ recent });
 		} catch {
 			// Keep what was shown; offline, the saved copy normally answers.
 		}
@@ -100,16 +113,24 @@
 		for (let i = rows.length; i > MIN_RECENT && bottom() > limit; i--) rows[i - 1].hidden = true;
 	}
 
-	let savedMeals = $state<SavedMealSummary[]>([]);
+	let savedMeals = $state<SavedMealSummary[]>(mine ? kept.savedMeals : []);
+	function keep(lists: { recent?: FoodSearchResult[]; savedMeals?: SavedMealSummary[] }) {
+		if (userId === undefined) return;
+		if (kept.userId !== userId) Object.assign(kept, { userId, recent: undefined, savedMeals: [] });
+		Object.assign(kept, lists);
+	}
 	async function loadSavedMeals() {
 		try {
 			savedMeals = (await api<{ meals: SavedMealSummary[] }>('GET', '/api/v1/saved-meals')).meals;
+			keep({ savedMeals });
 		} catch {
 			// Offline: saved meals need a connection to log anyway.
 		}
 	}
 	// Also on mount: a search typed before the page finished loading never saw the focus event.
 	onMount(() => {
+		// Shown at once from what was kept, laid out for this window, then brought up to date.
+		if (recent) void fitRecent();
 		void loadRecent();
 		const refit = () => void fitRecent();
 		addEventListener('resize', refit);

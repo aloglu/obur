@@ -5,14 +5,16 @@ import { goals } from '#lib/server/goals.ts';
 import { progress } from '#lib/server/progress.ts';
 import { calendarDays, monthDays } from '#lib/shared/calendar.ts';
 import { journal } from '#lib/shared/journal.ts';
-import { isIsoDate } from '#lib/shared/diary-rules.ts';
+import { isIsoDate, localDate } from '#lib/shared/diary-rules.ts';
 import type { PageServerLoad } from './$types';
 
 /** Weigh-ins from the start of time, for "new lowest" and the change into the month's first week. */
 const EARLIEST = '0001-01-01';
 
-export const load: PageServerLoad = async ({ url, locals, parent }) => {
-	const { today } = await parent();
+export const load: PageServerLoad = async ({ url, locals }) => {
+	// Worked out here rather than taken from the layout: the layout's data refreshes on its own, and a page that
+	// read it would be loaded again with it.
+	const today = localDate(new Date(), locals.zone);
 	const current = today.slice(0, 7);
 	// Coming from a past day on Today: its month, with that day picked.
 	const dayParam = url.searchParams.get('day');

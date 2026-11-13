@@ -124,13 +124,9 @@ test('settings follow the account: an open tab picks up a change made elsewhere 
 	]);
 	await app.close();
 
-	// The first tab moves to another page, no reload: the head and the look follow the account.
-	await page
-		.getByRole('navigation', { name: 'Main' })
-		.filter({ visible: true })
-		.getByRole('link', { name: 'Journal' })
-		.click();
-	await expect(page.getByRole('heading', { level: 1, name: 'Journal' })).toBeVisible();
+	// Back in the first tab (as when Safari comes to the front again), no reload: the head and the look follow the
+	// account.
+	await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 	await expect(touch).toHaveAttribute('href', at('/app-icons/disko/icon-180.png'));
 	await expect(page.locator('html')).toHaveAttribute('data-palette', 'zeytin');
 });

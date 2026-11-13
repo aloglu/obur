@@ -10,11 +10,15 @@
 		$props();
 	const heading = $derived(dayHeading(date, today));
 	// The title moves in when the day changes, not when the page opens (the title stays still then, as on every
-	// page). Deliberately not reactive: only a title made after the first one reads it as true.
-	const shown = { once: false };
+	// page) or when the page's data refreshes. Decided once, as each title is made: a class worked out in the markup
+	// would be worked out again on every refresh and start the animation then.
+	let mounted = false;
 	onMount(() => {
-		shown.once = true;
+		mounted = true;
 	});
+	function moveIn(node: HTMLElement) {
+		if (mounted) node.classList.add('day-title-in');
+	}
 
 	$effect(() => {
 		const keys = (event: KeyboardEvent) => {
@@ -41,7 +45,7 @@
 		<ChevronLeft size={24} aria-hidden="true" />
 	</button>
 	{#key heading.title}
-		<div class={['min-w-0', shown.once && 'title-in']}>
+		<div class="min-w-0" use:moveIn>
 			<h1 class="text-[1.5rem] leading-tight font-[750]">{heading.title}</h1>
 			<p class="mt-0.5 text-[0.8125rem] text-muted">{heading.detail}</p>
 		</div>
@@ -58,17 +62,17 @@
 </header>
 
 <style>
-	.title-in {
-		animation: title-in 200ms var(--ui);
+	:global(.day-title-in) {
+		animation: day-title-in 200ms var(--ui);
 	}
-	@keyframes title-in {
+	@keyframes -global-day-title-in {
 		from {
 			opacity: 0;
 			transform: translateY(4px);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.title-in {
+		:global(.day-title-in) {
 			animation: none;
 		}
 	}

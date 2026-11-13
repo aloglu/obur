@@ -25,11 +25,18 @@
 	$effect(() => offer(data.celebrate));
 
 	// A page change loads only the page. What every page shares (settings, today's date, celebrations) is asked for
-	// again a moment later, in the background, so a change made on another device still arrives without a reload.
+	// again in the background: after a page change once it is half a minute old, and when the app comes back to the
+	// foreground, so a change made on another device still arrives without a reload. Saves refresh it at once.
+	const ACCOUNT_STALE_MS = 30_000;
+	let accountAt = Date.now();
+	$effect(() => {
+		// Any refresh of it counts, including the one every save makes (a fresh list each time it loads).
+		void data.celebrate;
+		accountAt = Date.now();
+	});
 	let accountTimer: ReturnType<typeof setTimeout> | undefined;
-	afterNavigate(({ type }) => {
-		// The first page arrives with all of it.
-		if (type === 'enter') return;
+	function refreshAccount(always = false) {
+		if (!always && Date.now() - accountAt < ACCOUNT_STALE_MS) return;
 		clearTimeout(accountTimer);
 		accountTimer = setTimeout(async () => {
 			if (recentlyUnreachable()) return;
@@ -37,8 +44,21 @@
 			// losing what is being typed). The service worker answers "nothing new" when the server cannot; without
 			// one (the very first visit, before it has taken over), ask only once the server is known to be there.
 			if (!navigator.serviceWorker?.controller && !(await serverReachable())) return;
+			accountAt = Date.now();
 			void invalidate(ACCOUNT_DATA, true);
 		}, 250);
+	}
+	afterNavigate(({ type }) => {
+		// The first page arrives with all of it.
+		if (type !== 'enter') refreshAccount();
+	});
+	$effect(() => {
+		const back = () => {
+			// Back from another app (where a setting may just have changed): always.
+			if (document.visibilityState === 'visible') refreshAccount(true);
+		};
+		document.addEventListener('visibilitychange', back);
+		return () => document.removeEventListener('visibilitychange', back);
 	});
 
 	onMount(() => {

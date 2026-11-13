@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { signedInAs } from './fixtures.ts';
+import { apiAs, createFood, signedInAs } from './fixtures.ts';
 
 test('signed-out visitors land on sign-in, served with self-hosted assets only', async ({
 	page,
@@ -129,4 +129,62 @@ test('every page title sits at the same height and stays there while a page open
 		);
 		expect(await titleTop()).toBe(tops['/more']);
 	}
+});
+
+test('Log keeps its recent foods between visits, and Today’s title stays still unless the day changes', async ({
+	page
+}, testInfo) => {
+	const name = `Keep Toast ${testInfo.project.name}`;
+	await page.goto('/login');
+	await signedInAs(page, 'Quick Return');
+	const foodId = await createFood(page, {
+		name,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }]
+	});
+	await apiAs(page, 'POST', '/api/v1/diary/entries', {
+		date: '2026-10-20',
+		zone: 'Europe/London',
+		kind: 'food',
+		meal: 'breakfast',
+		foodId,
+		amount: 100,
+		unit: { kind: 'mass', unit: 'g' }
+	});
+	const tabs = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
+	const recentFood = page.getByRole('region', { name: 'Recent' }).getByRole('button', {
+		name: new RegExp(name)
+	});
+
+	await page.goto('/');
+	await tabs.getByRole('link', { name: 'Log' }).click();
+	await expect(recentFood).toBeVisible();
+	await tabs.getByRole('link', { name: 'Today' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+
+	// The server is slow now: Log shows what it had at once, rather than starting empty and waiting.
+	await page.route('**/api/v1/diary/recent', async (route) => {
+		await new Promise((r) => setTimeout(r, 4000));
+		await route.continue().catch(() => {});
+	});
+	await tabs.getByRole('link', { name: 'Log' }).click();
+	await expect(recentFood).toBeVisible({ timeout: 1500 });
+	await page.unroute('**/api/v1/diary/recent');
+
+	// Today's title animates when the day changes, never on arriving, on tapping Today again, or on a refresh.
+	const titleMoved = () =>
+		page.evaluate(() =>
+			document.getAnimations().some((a) => (a as CSSAnimation).animationName === 'day-title-in')
+		);
+	await tabs.getByRole('link', { name: 'Today' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	expect(await titleMoved()).toBe(false);
+	const reload = page.waitForResponse((r) => r.url().includes('__data.json'));
+	await tabs.getByRole('link', { name: 'Today' }).click();
+	await reload;
+	await page.waitForTimeout(100);
+	expect(await titleMoved()).toBe(false);
+	await page.getByRole('button', { name: 'Previous day' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Yesterday' })).toBeVisible();
+	expect(await titleMoved()).toBe(true);
 });
