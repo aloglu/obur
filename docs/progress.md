@@ -2,7 +2,10 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Owner's reports on beta.10 (2026-11-13), `main`, next release
+## Owner's reports on beta.10 (2026-11-13), released as `v1.0.0-beta.11`
+
+Checks before the tag: type-check, lint, 1089 unit and database tests, e2e 227 passed (18 skipped by design), image
+built, smoke test, off-site outage test. No migration. The owner checks it on their iPhone.
 
 - Done (owner's choice, 2026-11-13: options 2 and 5 of six laid out; easy to reverse): pages prepared ahead in the
   service worker, so every tab and More section opens at once with data seconds old, and nothing changes on screen
