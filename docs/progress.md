@@ -2,6 +2,14 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## After beta.11 (2026-11-13), `main`, next release
+
+- Done: page changes (owner's report: going into More's sections and deeper felt inconsistent and not in line with
+  Stageshow). Found by filming: an empty frame between pages, the title blinking, and no difference between going in
+  and coming out. Demo artifact https://claude.ai/artifact/CHUPNz27wfDy4sP4tUUHdr (Current / A Dissolve / B Push);
+  owner picked B. Built with view transitions: push on phones down and up `shared/page-tree.ts` (unit tests), dissolve
+  for everything else and on desktop. docs/ui.md, "Page changes".
+
 ## Owner's reports on beta.10 (2026-11-13), released as `v1.0.0-beta.11`
 
 Checks before the tag: type-check, lint, 1089 unit and database tests, e2e 227 passed (18 skipped by design), image

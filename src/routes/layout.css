@@ -193,31 +193,80 @@ input[type='checkbox']:disabled {
 	}
 }
 
-/* A new page rises into place (from the reviewed demos). Every page has its own <main>. */
-main {
-	animation: page-rise 220ms var(--ui);
+/* Page changes (owner's pick "Push", 2026-11-13; docs/ui.md, "Page changes"), drawn by the browser's view
+   transitions from a picture of the old screen and the live new one, so there is never an empty frame. The app layout
+   sets data-nav for the length of one change: `in` (down the page tree, phones) slides the new screen in from the
+   right over the old one, which drifts left and dims; `back` slides the top screen away to the right; `across` (tabs,
+   anything else, and every change on desktop) fades the new screen in over the old, which stays solid underneath.
+   The tab bar and the side navigation stay where they are. Without view transitions, or with reduced motion, pages
+   change at once. */
+:root {
+	--nav-edge: rgba(0, 0, 0, 0.14);
 }
-@keyframes page-rise {
+[data-tabbar] {
+	view-transition-name: nav-tabbar;
+}
+[data-sidenav] {
+	view-transition-name: nav-side;
+}
+::view-transition-group(nav-tabbar),
+::view-transition-group(nav-side),
+::view-transition-new(nav-tabbar),
+::view-transition-new(nav-side) {
+	animation: none;
+}
+::view-transition-old(nav-tabbar),
+::view-transition-old(nav-side) {
+	display: none;
+}
+:root[data-nav]::view-transition-old(root),
+:root[data-nav]::view-transition-new(root) {
+	animation: none;
+	mix-blend-mode: normal;
+}
+:root[data-nav='across']::view-transition-new(root) {
+	animation: nav-fade 220ms ease-out both;
+}
+:root[data-nav='in']::view-transition-new(root) {
+	box-shadow: -10px 0 24px var(--nav-edge);
+	animation: nav-push-in 380ms var(--ui) both;
+}
+:root[data-nav='in']::view-transition-old(root) {
+	animation: nav-push-under 380ms var(--ui) both;
+}
+:root[data-nav='back']::view-transition-old(root) {
+	z-index: 1;
+	box-shadow: -10px 0 24px var(--nav-edge);
+	animation: nav-pop-out 340ms var(--ui) both;
+}
+:root[data-nav='back']::view-transition-new(root) {
+	animation: nav-pop-under 340ms var(--ui) both;
+}
+@keyframes nav-fade {
 	from {
 		opacity: 0;
-		transform: translateY(8px);
 	}
 }
-/* The page's title does not rise with it: titles sit at one height on every page, so a moving one reads as the
-   header jumping on each page change (owner, 2026-11-13). It moves against the page by the same amount, and only
-   fades in. */
-.page-head {
-	animation: page-head-hold 220ms var(--ui);
-}
-@keyframes page-head-hold {
+@keyframes nav-push-in {
 	from {
-		transform: translateY(-8px);
+		transform: translateX(100%);
 	}
 }
-@media (prefers-reduced-motion: reduce) {
-	main,
-	.page-head {
-		animation: none;
+@keyframes nav-push-under {
+	to {
+		transform: translateX(-25%);
+		filter: brightness(0.9);
+	}
+}
+@keyframes nav-pop-out {
+	to {
+		transform: translateX(100%);
+	}
+}
+@keyframes nav-pop-under {
+	from {
+		transform: translateX(-25%);
+		filter: brightness(0.9);
 	}
 }
 

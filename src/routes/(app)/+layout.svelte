@@ -2,7 +2,13 @@
 	import Cloud from '@lucide/svelte/icons/cloud';
 	import CloudOff from '@lucide/svelte/icons/cloud-off';
 	import { onMount } from 'svelte';
-	import { afterNavigate, invalidate, invalidateAll, preloadCode } from '$app/navigation';
+	import {
+		afterNavigate,
+		invalidate,
+		invalidateAll,
+		onNavigate,
+		preloadCode
+	} from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
@@ -17,6 +23,7 @@
 	import { syncZoneCookie } from '#lib/client/prefs.ts';
 	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import { forgetPrepared, startPreparing } from '#lib/client/prepare.ts';
+	import { pageDirection } from '#lib/shared/page-tree.ts';
 	import AppShell from '#lib/ui/shell/AppShell.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 
@@ -49,6 +56,32 @@
 			void invalidate(ACCOUNT_DATA, true);
 		}, 250);
 	}
+	// Page changes move (routes/layout.css, "Page changes"): into a page and back out slide on phones, anything else
+	// dissolves. Not for a change within one page (another day on Today), not for the browser's own back and forward
+	// (Safari's swipe already moves the page), and not with reduced motion.
+	onNavigate((navigation) => {
+		const from = navigation.from?.url.pathname;
+		const to = navigation.to?.url.pathname;
+		if (!document.startViewTransition || !from || !to || from === to) return;
+		if (navigation.type === 'popstate' || navigation.willUnload) return;
+		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const phone = matchMedia('(max-width: 759.98px)').matches;
+		const direction = phone ? pageDirection(from, to) : 'across';
+		return new Promise<void>((ready) => {
+			document.documentElement.dataset.nav = direction;
+			const transition = document.startViewTransition(async () => {
+				ready();
+				// A page change that fails or is replaced by another simply ends the movement.
+				await navigation.complete.catch(() => {});
+			});
+			transition.ready.catch(() => {});
+			transition.finished.finally(() => {
+				if (document.documentElement.dataset.nav === direction)
+					delete document.documentElement.dataset.nav;
+			});
+		});
+	});
+
 	// The pages likely to be opened next are prepared ahead (client/prepare.ts), so a tap shows them at once.
 	let preparer: ReturnType<typeof startPreparing> | undefined;
 	afterNavigate(({ type }) => {
