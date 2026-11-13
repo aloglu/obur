@@ -56,17 +56,18 @@
 			void invalidate(ACCOUNT_DATA, true);
 		}, 250);
 	}
-	// Page changes move (routes/layout.css, "Page changes"): into a page and back out slide on phones, anything else
-	// dissolves. Not for a change within one page (another day on Today), not for the browser's own back and forward
-	// (Safari's swipe already moves the page), and not with reduced motion.
+	// Page changes move on phones only (routes/layout.css, "Page changes"): into a page and back out push, another tab
+	// slides in tab order. Not on desktop, not for a change within one page (another day on Today), not for the
+	// browser's own back and forward (Safari's swipe already moves the page), and not with reduced motion.
 	onNavigate((navigation) => {
 		const from = navigation.from?.url.pathname;
 		const to = navigation.to?.url.pathname;
 		if (!document.startViewTransition || !from || !to || from === to) return;
 		if (navigation.type === 'popstate' || navigation.willUnload) return;
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		const phone = matchMedia('(max-width: 759.98px)').matches;
-		const direction = phone ? pageDirection(from, to) : 'across';
+		if (!matchMedia('(max-width: 759.98px)').matches) return;
+		const direction = pageDirection(from, to);
+		if (!direction) return;
 		return new Promise<void>((ready) => {
 			document.documentElement.dataset.nav = direction;
 			const transition = document.startViewTransition(async () => {

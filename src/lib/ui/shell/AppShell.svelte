@@ -54,7 +54,7 @@
 >
 	<!-- The column carries the background so it spans the full page height; the nav inside stays sticky. -->
 	<div class="hidden border-r border-line bg-surface desk:block">
-		<nav aria-label={m.nav_main()} data-sidenav class="sticky top-0 flex h-dvh flex-col gap-1 p-3">
+		<nav aria-label={m.nav_main()} class="sticky top-0 flex h-dvh flex-col gap-1 p-3">
 			<a
 				href={resolve('/(app)')}
 				class="flex items-center justify-center gap-2.5 pt-2 pb-6 font-display text-[1.875rem] font-extrabold tracking-[-0.02em] text-accent wide:justify-start wide:px-3"

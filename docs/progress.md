@@ -2,6 +2,16 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## After beta.12 (2026-11-13)
+
+- Done: page changes, second round. Owner on beta.12: liked only the push into More's sections; disliked the tab
+  dissolve, and that desktop dissolved every change. A wider demo (same artifact, version 4: none, dissolve, slide
+  by tab order, follow the menu, push, small shift, zoom, grow from the tap, cascade, focus pull). Owner's picks:
+  phone tabs "Slide by tab order", sections "Push", other deeper screens like More's; desktop none for tabs and
+  sections. `pageDirection` now gives `right`/`left` by tab (`tabOf`) or null (no movement); desktop has no view
+  transition. docs/ui.md, "Page changes". Checks: type-check, lint, 1096 unit and database tests, e2e 227 passed (18 skipped by design).
+- Next: tag for the owner's phone check when they ask.
+
 ## After beta.11 (2026-11-13), released as `v1.0.0-beta.12`
 
 Checks before the tag: type-check, lint, 1094 unit and database tests, e2e 227 passed (18 skipped by design), image

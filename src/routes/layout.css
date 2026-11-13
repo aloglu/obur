@@ -193,39 +193,29 @@ input[type='checkbox']:disabled {
 	}
 }
 
-/* Page changes (owner's pick "Push", 2026-11-13; docs/ui.md, "Page changes"), drawn by the browser's view
-   transitions from a picture of the old screen and the live new one, so there is never an empty frame. The app layout
-   sets data-nav for the length of one change: `in` (down the page tree, phones) slides the new screen in from the
-   right over the old one, which drifts left and dims; `back` slides the top screen away to the right; `across` (tabs,
-   anything else, and every change on desktop) fades the new screen in over the old, which stays solid underneath.
-   The tab bar and the side navigation stay where they are. Without view transitions, or with reduced motion, pages
-   change at once. */
+/* Page changes on phones (owner's picks from a demo, 2026-11-13: "Push" into sections, "Slide by tab order" between
+   tabs, nothing on desktop; docs/ui.md, "Page changes"), drawn by the browser's view transitions from a picture of the
+   old screen and the live new one, so there is never an empty frame. The app layout sets data-nav for the length of
+   one change: `in` (down the page tree) slides the new screen in from the right over the old one, which drifts left
+   and dims; `back` slides the top screen away to the right; `right` and `left` (to another tab) move both screens
+   sideways together, the new one coming from the side its tab sits on. The tab bar stays where it is. */
 :root {
 	--nav-edge: rgba(0, 0, 0, 0.14);
 }
 [data-tabbar] {
 	view-transition-name: nav-tabbar;
 }
-[data-sidenav] {
-	view-transition-name: nav-side;
-}
 ::view-transition-group(nav-tabbar),
-::view-transition-group(nav-side),
-::view-transition-new(nav-tabbar),
-::view-transition-new(nav-side) {
+::view-transition-new(nav-tabbar) {
 	animation: none;
 }
-::view-transition-old(nav-tabbar),
-::view-transition-old(nav-side) {
+::view-transition-old(nav-tabbar) {
 	display: none;
 }
 :root[data-nav]::view-transition-old(root),
 :root[data-nav]::view-transition-new(root) {
 	animation: none;
 	mix-blend-mode: normal;
-}
-:root[data-nav='across']::view-transition-new(root) {
-	animation: nav-fade 220ms ease-out both;
 }
 :root[data-nav='in']::view-transition-new(root) {
 	box-shadow: -10px 0 24px var(--nav-edge);
@@ -242,10 +232,17 @@ input[type='checkbox']:disabled {
 :root[data-nav='back']::view-transition-new(root) {
 	animation: nav-pop-under 340ms var(--ui) both;
 }
-@keyframes nav-fade {
-	from {
-		opacity: 0;
-	}
+:root[data-nav='right']::view-transition-new(root) {
+	animation: nav-from-right 360ms var(--ui) both;
+}
+:root[data-nav='right']::view-transition-old(root) {
+	animation: nav-to-left 360ms var(--ui) both;
+}
+:root[data-nav='left']::view-transition-new(root) {
+	animation: nav-from-left 360ms var(--ui) both;
+}
+:root[data-nav='left']::view-transition-old(root) {
+	animation: nav-to-right 360ms var(--ui) both;
 }
 @keyframes nav-push-in {
 	from {
@@ -267,6 +264,26 @@ input[type='checkbox']:disabled {
 	from {
 		transform: translateX(-25%);
 		filter: brightness(0.9);
+	}
+}
+@keyframes nav-from-right {
+	from {
+		transform: translateX(100%);
+	}
+}
+@keyframes nav-from-left {
+	from {
+		transform: translateX(-100%);
+	}
+}
+@keyframes nav-to-left {
+	to {
+		transform: translateX(-100%);
+	}
+}
+@keyframes nav-to-right {
+	to {
+		transform: translateX(100%);
 	}
 }
 
