@@ -4,6 +4,9 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 ## Before version 1 (owner agreed 2026-11-13), one commit each, `main`, next release
 
+- Last item before getting ready for production (owner, 2026-11-13): a review of the whole codebase, done after
+  every other change so it also catches what those changes break.
+
 - Done: local backups no longer wait for the off-site store (the issue open since 2026-11-09). `obur-backup
   archive-push` sends each WAL file to the local repository first; one the off-site store cannot take waits in
   `/data/offsite-queue` (gzip, 1 GB limit, dropped and reported over it) and a loop beside the scheduler sends it
