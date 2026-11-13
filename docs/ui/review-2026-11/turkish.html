@@ -1,0 +1,859 @@
+<title>obur Turkish Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Inter:wght@400..800&display=swap">
+<style>
+/* Layout: a rail of numbered stops beside one stage; each stop shows the app (obur's Pazar tokens) in Turkish beside English, in a phone or desktop frame. */
+:root {
+  --bg: #f6f3ee; --surface: #ffffff; --surface2: #f1ebe3; --line: #e5ddd2; --text: #1e1a16; --muted: #665d53;
+  --accent: #c2410c; --on-accent: #ffffff; --soft: #fdf0e7; --good: #2e7d3b; --bad: #c62f3a; --warn: #8a4b00; --warn-soft: #fcefd9;
+  --track: #efe6db; --icon-tile: #f3ece3; --protein: #c2410c; --carb: #9e6510; --fat: #5e7f3f;
+  --voice: #4f6e33; --voice-bg: #e7eedd; --scan: #8a5a00; --scan-bg: #f8e9cc; --toast-bg: #2a241f; --toast-text: #ffffff;
+  --scrim: rgba(30,26,22,.42); --tabbar-border: transparent;
+  --shadow: 0 1px 2px rgba(60,40,20,.06), 0 8px 24px rgba(60,40,20,.08); --shadow-tab: 0 8px 30px rgba(60,40,20,.16);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif; --font-display: 'Bricolage Grotesque', 'Inter', system-ui, sans-serif;
+  --r-small: 10px; --r-input: 14px; --r-tile: 18px; --r-card: 22px; --r-sheet: 26px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #161310; --surface: #211d19; --surface2: #2c2722; --line: #3a332c; --text: #f4eee7; --muted: #b6ab9f;
+  --accent: #ff8f55; --on-accent: #2a1304; --soft: #3d2619; --good: #6ccb7a; --bad: #ff6b6b; --warn: #f2b65a; --warn-soft: #3a2c14;
+  --track: #342d26; --icon-tile: #332c26; --protein: #ff8f55; --carb: #e7b45c; --fat: #9cc77a;
+  --voice: #b3d392; --voice-bg: #2a3322; --scan: #edbe66; --scan-bg: #3b2f18; --toast-bg: #f4eee7; --toast-text: #1e1a16;
+  --scrim: rgba(0,0,0,.6); --tabbar-border: #3a332c; --shadow: 0 1px 2px rgba(0,0,0,.5); --shadow-tab: 0 8px 30px rgba(0,0,0,.5); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #161310; --surface: #211d19; --surface2: #2c2722; --line: #3a332c; --text: #f4eee7; --muted: #b6ab9f;
+  --accent: #ff8f55; --on-accent: #2a1304; --soft: #3d2619; --good: #6ccb7a; --bad: #ff6b6b; --warn: #f2b65a; --warn-soft: #3a2c14;
+  --track: #342d26; --icon-tile: #332c26; --protein: #ff8f55; --carb: #e7b45c; --fat: #9cc77a;
+  --voice: #b3d392; --voice-bg: #2a3322; --scan: #edbe66; --scan-bg: #3b2f18; --toast-bg: #f4eee7; --toast-text: #1e1a16;
+  --scrim: rgba(0,0,0,.6); --tabbar-border: #3a332c; --shadow: 0 1px 2px rgba(0,0,0,.5); --shadow-tab: 0 8px 30px rgba(0,0,0,.5); color-scheme: dark }
+/* The app inside a frame follows the frame's own Light/Dark switch, not the page. */
+.app.th-light {
+  --bg: #f6f3ee; --surface: #ffffff; --surface2: #f1ebe3; --line: #e5ddd2; --text: #1e1a16; --muted: #665d53;
+  --accent: #c2410c; --on-accent: #ffffff; --soft: #fdf0e7; --good: #2e7d3b; --bad: #c62f3a; --warn: #8a4b00; --warn-soft: #fcefd9;
+  --track: #efe6db; --icon-tile: #f3ece3; --protein: #c2410c; --carb: #9e6510; --fat: #5e7f3f;
+  --voice: #4f6e33; --voice-bg: #e7eedd; --scan: #8a5a00; --scan-bg: #f8e9cc; --toast-bg: #2a241f; --toast-text: #ffffff;
+  --scrim: rgba(30,26,22,.42); --tabbar-border: transparent;
+  --shadow: 0 1px 2px rgba(60,40,20,.06), 0 8px 24px rgba(60,40,20,.08); --shadow-tab: 0 8px 30px rgba(60,40,20,.16); color-scheme: light }
+.app.th-dark {
+  --bg: #161310; --surface: #211d19; --surface2: #2c2722; --line: #3a332c; --text: #f4eee7; --muted: #b6ab9f;
+  --accent: #ff8f55; --on-accent: #2a1304; --soft: #3d2619; --good: #6ccb7a; --bad: #ff6b6b; --warn: #f2b65a; --warn-soft: #3a2c14;
+  --track: #342d26; --icon-tile: #332c26; --protein: #ff8f55; --carb: #e7b45c; --fat: #9cc77a;
+  --voice: #b3d392; --voice-bg: #2a3322; --scan: #edbe66; --scan-bg: #3b2f18; --toast-bg: #f4eee7; --toast-text: #1e1a16;
+  --scrim: rgba(0,0,0,.6); --tabbar-border: #3a332c; --shadow: 0 1px 2px rgba(0,0,0,.5); --shadow-tab: 0 8px 30px rgba(0,0,0,.5); color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 15px; line-height: 1.45; margin: 0 }
+button { font: inherit; color: inherit; cursor: pointer }
+button:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; display: grid; grid-template-columns: 240px minmax(0,1fr); gap: 24px }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0,1fr); gap: 16px } }
+header.top { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: 2rem; letter-spacing: -.02em; margin: 0; text-wrap: balance }
+.lede { color: var(--muted); margin: 4px 0 0; max-width: 62ch }
+.count { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums }
+.choices { grid-column: 1 / -1; background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 4px 20px }
+.choices summary { font-family: var(--font-display); font-weight: 750; font-size: 1.15rem; padding: 12px 0; cursor: pointer; min-height: 44px }
+.choices ol { margin: 0 0 16px; padding-left: 22px; display: grid; gap: 6px; max-width: 80ch }
+nav.stops { display: flex; flex-direction: column; gap: 4px; align-self: start; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px) }
+@media (max-width: 900px) { nav.stops { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin } }
+.stop { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 10px; align-items: center; text-align: left; background: transparent; border: 0; border-radius: var(--r-input); padding: 8px 10px; min-height: 48px; flex: none }
+.stop[aria-current="step"] { background: var(--surface); box-shadow: var(--shadow) }
+.stop .n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); font-weight: 800; font-size: .85rem }
+.stop .t { font-weight: 650; font-size: .92rem }
+@media (max-width: 900px) { .stop .t { white-space: nowrap } }
+.stop.ok .n { background: var(--good); color: var(--surface) }
+.stop.change .n { background: var(--warn); color: var(--surface) }
+.stop.stopv .n { background: var(--bad); color: var(--surface) }
+main { min-width: 0; display: flex; flex-direction: column; gap: 16px }
+.card { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 20px; min-width: 0 }
+.card h2 { font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; margin: 0 0 6px; letter-spacing: -.01em; text-wrap: balance }
+.card h3 { font-size: 1rem; margin: 0 0 8px }
+.card p { margin: 0 0 8px; max-width: 68ch }
+.card ul.points { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 68ch }
+.tag { display: inline-block; font-size: .72rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.seg { display: inline-flex; background: var(--surface2); border-radius: var(--r-input); padding: 3px; flex-wrap: wrap }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 11px; font-weight: 650; min-height: 40px; font-size: .9rem }
+.seg button[aria-pressed="true"] { background: var(--surface); box-shadow: var(--shadow) }
+.stagebox { display: grid; gap: 14px; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); align-items: start }
+.col { min-width: 0; display: flex; flex-direction: column; gap: 6px }
+.col .cap { font-size: .78rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
+.fit { width: 100%; position: relative; overflow: hidden }
+.fit > .frame { transform-origin: top left; position: absolute; top: 0; left: 0 }
+.hint { font-size: .82rem; color: var(--muted) }
+.tablebox { overflow-x: auto; border-radius: var(--r-input); border: 1px solid var(--line) }
+table { border-collapse: collapse; width: 100%; font-size: .9rem }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-size: .74rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--surface2); font-weight: 750 }
+tr:last-child td { border-bottom: 0 }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap }
+td .why { display: block; color: var(--muted); font-size: .82rem; margin-top: 2px }
+.pill { display: inline-block; font-size: .74rem; font-weight: 750; padding: 2px 8px; border-radius: 8px; white-space: nowrap }
+.pill.fits { background: var(--surface2); color: var(--good) }
+.pill.tight { background: var(--warn-soft); color: var(--warn) }
+.pill.over { background: var(--warn-soft); color: var(--bad) }
+.naive { color: var(--bad); text-decoration: line-through; text-decoration-thickness: 1px }
+.tr { font-weight: 650 }
+
+/* The app frame */
+.frame { width: var(--fw); height: var(--fh); border-radius: 40px; border: 8px solid #1e1a16; background: #1e1a16; overflow: hidden }
+.frame.phone { --fw: 375px; --fh: 760px }
+.frame.desk { --fw: 1100px; --fh: 700px; border-radius: 16px; border-width: 8px }
+.app { position: relative; width: 100%; height: 100%; display: flex; background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 15px; line-height: 1.4; overflow: hidden; border-radius: 32px }
+.desk .app { border-radius: 8px }
+.side { display: none; width: 232px; flex: none; background: var(--surface); border-right: 1px solid var(--line); padding: 12px; flex-direction: column; gap: 4px }
+.desk .side { display: flex }
+.side .brand { display: flex; gap: 10px; align-items: center; font-family: var(--font-display); font-weight: 800; font-size: 1.875rem; letter-spacing: -.02em; color: var(--accent); padding: 8px 12px 24px }
+.side .it { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 12px; border-radius: var(--r-input); font-weight: 600; font-size: 1rem; white-space: nowrap }
+.side .it.on { background: var(--soft); color: var(--accent) }
+.screen { flex: 1; min-width: 0; overflow: hidden; padding: 46px 16px 100px; display: flex; flex-direction: column; gap: 12px }
+.desk .screen { padding: 18px 32px 24px }
+.cols2 { display: flex; flex-direction: column; gap: 12px }
+.desk .cols2 { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start }
+.desk .cols2 > div { display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.cols2 > div { display: contents }
+.desk .cols2 > div { display: flex }
+.narrow { max-width: 620px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 12px }
+.tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; background: var(--surface); border: 1px solid var(--tabbar-border); border-radius: var(--r-card); box-shadow: var(--shadow-tab); display: flex; gap: 4px; padding: 6px; z-index: 4 }
+.tabs a { flex: 1; min-width: 0; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: var(--r-input); font-size: .71875rem; font-weight: 700; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis }
+.tabs a.on { color: var(--accent); background: var(--soft) }
+.desk .tabs { display: none }
+svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none }
+svg.s { width: 16px; height: 16px }
+.dayhead { display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; text-align: center; min-height: 60px }
+.dayhead .h { font-size: 1.5rem; font-weight: 750; line-height: 1.2 }
+.dayhead .d { font-size: .8125rem; color: var(--muted); margin-top: 2px }
+.ib { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50% }
+.pagetitle { font-family: var(--font-display); font-weight: 750; font-size: 1.75rem; letter-spacing: -.01em; margin: 6px 0 2px }
+.c { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 18px }
+.big { font-family: var(--font-display); font-weight: 800; font-size: 2.875rem; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums }
+.desk .big { font-size: 3rem }
+.bl { margin-left: 4px; font-size: .9375rem; font-weight: 650; color: var(--muted) }
+.actpill { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px; border-radius: var(--r-small); background: var(--surface2); color: var(--muted); font-size: .84375rem; font-weight: 600; white-space: nowrap; flex: none }
+.actpill svg { color: var(--accent); width: 15px; height: 15px }
+.actpill b { color: var(--text) }
+.bar { height: 12px; border-radius: 999px; background: var(--track); overflow: hidden; margin: 16px 0 4px }
+.bar i { display: block; height: 100%; background: var(--good); border-radius: 999px }
+.brow { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: .875rem; color: var(--muted); min-height: 32px }
+.brow b { color: var(--text); margin-left: 6px; font-variant-numeric: tabular-nums }
+.meals { padding: 10px 8px }
+.meal + .meal { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 8px }
+.mh { display: flex; justify-content: space-between; align-items: center; min-height: 44px; padding: 0 10px }
+.mh h4 { margin: 0; font-size: 1.1875rem; font-weight: 700 }
+.mh span { font-weight: 750; font-size: .9375rem; font-variant-numeric: tabular-nums }
+.ent { display: grid; grid-template-columns: 40px minmax(0,1fr) auto; gap: 12px; align-items: center; min-height: 56px; padding: 6px 10px; border-radius: var(--r-input) }
+.fi { width: 40px; height: 40px; border-radius: var(--r-small); background: var(--icon-tile); display: grid; place-items: center; font-weight: 800; color: var(--muted); font-size: .95rem }
+.en { display: block; font-weight: 600; font-size: .9375rem; line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.eq { display: block; font-size: .8125rem; color: var(--muted) }
+.ek { font-weight: 650; font-size: .9375rem; font-variant-numeric: tabular-nums; text-align: right; min-width: 44px }
+.addrow { display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 10px; border-radius: var(--r-input) }
+.addrow .a { display: flex; align-items: center; gap: 12px; color: var(--accent); font-weight: 650; min-width: 0 }
+.addrow .a i { width: 40px; height: 40px; border-radius: var(--r-small); background: var(--soft); display: grid; place-items: center; flex: none }
+.addrow .dots { width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted) }
+.pair2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+.desk .pair2 { grid-template-columns: 1fr 1fr }
+.cardt { display: flex; justify-content: space-between; align-items: center; font-weight: 750; font-size: 1.0625rem; min-height: 28px }
+.cardt a { font-size: .875rem; font-weight: 650; color: var(--accent) }
+.wv { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; letter-spacing: -.02em; margin: 6px 0 0; font-variant-numeric: tabular-nums }
+.wsub { font-size: .8125rem; color: var(--muted); min-height: 1.2em }
+.btn { border: 0; border-radius: var(--r-input); min-height: 44px; padding: 0 12px; font-weight: 700; font-size: .9375rem; display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--surface2); color: var(--text); text-align: center; line-height: 1.15 }
+.btn.fill { background: var(--accent); color: var(--on-accent) }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line) }
+.btn.full { width: 100% }
+.btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px }
+.stack { display: grid; gap: 8px; margin-top: 8px }
+.spark { height: 26px; margin-top: 4px; color: var(--accent) }
+.nut { display: grid; gap: 12px }
+.nrow .l { display: flex; justify-content: space-between; font-size: .875rem; font-weight: 600 }
+.nrow .l span { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums }
+.nbar { height: 8px; border-radius: 999px; background: var(--track); overflow: hidden; margin-top: 6px }
+.nbar i { display: block; height: 100% }
+.ngrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-top: 4px; font-size: .84rem }
+.ngrid div { display: flex; justify-content: space-between; gap: 6px; color: var(--muted) }
+.ngrid b { color: var(--text); font-weight: 650; font-variant-numeric: tabular-nums }
+.complete { display: flex; align-items: center; justify-content: space-between; gap: 12px }
+.sw { width: 51px; height: 31px; border-radius: 999px; background: var(--line); position: relative; flex: none }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 25px; height: 25px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3) }
+.search { min-height: 50px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-input); padding: 0 14px; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 1rem }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+.tile { background: var(--surface); box-shadow: var(--shadow); border-radius: var(--r-tile); padding: 14px 6px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-weight: 700; font-size: .875rem; min-height: 92px; text-align: center; line-height: 1.2 }
+.tile i { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-style: normal }
+.tile.sp i { background: var(--voice-bg); color: var(--voice) }
+.tile.sc i { background: var(--scan-bg); color: var(--scan) }
+.tile.ty i { background: var(--surface2); color: var(--text) }
+.label { font-size: .75rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 4px 4px 0 }
+.list { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 4px 8px }
+.list .ent + .ent { border-top: 1px solid var(--line); border-radius: 0 }
+.presetpill { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 6px 0 12px; border-radius: var(--r-small); background: var(--soft); color: var(--accent); font-weight: 650; font-size: .875rem; max-width: 100% }
+.presetpill span.x { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center }
+.toast { position: absolute; left: 16px; right: 16px; bottom: 96px; background: var(--toast-bg); color: var(--toast-text); border-radius: var(--r-tile); padding: 12px 10px 12px 16px; display: flex; gap: 10px; align-items: center; justify-content: space-between; font-size: .875rem; z-index: 6 }
+.desk .toast { left: 256px; right: auto; bottom: 24px; width: 380px }
+.toast b { display: block; font-size: .9375rem }
+.toast .u { font-weight: 800; text-decoration: underline; padding: 0 6px; white-space: nowrap }
+.scrim { position: absolute; inset: 0; background: var(--scrim); display: flex; align-items: flex-end; z-index: 5 }
+.desk .scrim { align-items: center; justify-content: center }
+.sheet { width: 100%; background: var(--surface); border-radius: var(--r-sheet) var(--r-sheet) 0 0; padding: 8px 18px 30px; display: flex; flex-direction: column; gap: 12px }
+.desk .sheet { width: 460px; border-radius: var(--r-sheet); padding: 20px 22px 22px }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 4px }
+.desk .grab { display: none }
+.sh { display: flex; justify-content: space-between; align-items: center; gap: 10px }
+.sh b { font-family: var(--font-display); font-size: 1.25rem; font-weight: 750 }
+.x { width: 40px; height: 40px; border-radius: 50%; background: var(--surface2); display: grid; place-items: center; flex: none }
+.muted { color: var(--muted) }
+.small { font-size: .84rem }
+.fld { min-height: 48px; border-radius: var(--r-input); background: var(--surface2); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-weight: 650; gap: 8px }
+.opts { border: 1px solid var(--line); border-radius: var(--r-input); overflow: hidden }
+.opts div { display: flex; justify-content: space-between; gap: 10px; padding: 10px 14px; font-size: .9rem; border-top: 1px solid var(--line) }
+.opts div:first-child { border-top: 0 }
+.opts div.on { background: var(--soft); color: var(--accent); font-weight: 650 }
+.opts span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap }
+.pv { font-family: var(--font-display); font-weight: 800; font-size: 2.25rem; font-variant-numeric: tabular-nums }
+.pv small { font-family: var(--font-sans); font-size: .9rem; color: var(--muted); font-weight: 650 }
+.macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: .8125rem; color: var(--muted) }
+.macros b { display: block; color: var(--text); font-size: .9375rem; font-variant-numeric: tabular-nums }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px 2px; text-align: center }
+.cal .wd { font-size: .72rem; font-weight: 700; color: var(--muted); padding-bottom: 4px }
+.cal .dd { display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: .78rem; font-variant-numeric: tabular-nums; min-height: 46px; justify-content: center; border-radius: 12px }
+.cal .dd.sel { background: var(--soft); color: var(--accent); font-weight: 700 }
+.ring { width: 26px; height: 26px }
+.monthhead { display: flex; justify-content: space-between; align-items: center; min-height: 48px }
+.monthhead b { font-size: 1.25rem; font-weight: 750 }
+.daybox h5 { margin: 0 0 4px; font-size: 1.125rem; font-weight: 750 }
+.daybox .k { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; font-variant-numeric: tabular-nums }
+.hl { display: grid; gap: 6px; font-size: .875rem }
+.hl div { display: flex; gap: 8px; align-items: baseline }
+.hl div::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; transform: translateY(-2px) }
+.chart svg { width: 100%; height: auto; display: block }
+.ax { fill: var(--muted); font-size: 11px; font-family: var(--font-sans); font-variant-numeric: tabular-nums }
+.rangeseg { display: inline-flex; background: var(--surface2); border-radius: var(--r-input); padding: 3px; gap: 2px; font-size: .8125rem; font-weight: 650 }
+.rangeseg span { padding: 6px 10px; border-radius: 11px }
+.rangeseg span.on { background: var(--surface); box-shadow: var(--shadow) }
+.helpq { font-weight: 750; font-size: 1.0625rem; line-height: 1.3 }
+.helpa p { margin: 8px 0 0; font-size: .9375rem; line-height: 1.5 }
+.formula { background: var(--surface2); border-radius: var(--r-input); padding: 10px 12px; font-weight: 650; font-size: .9rem; margin-top: 8px }
+.morelist .row { display: flex; justify-content: space-between; align-items: center; min-height: 52px; padding: 0 6px; border-top: 1px solid var(--line); font-weight: 600; gap: 8px }
+.morelist .row:first-child { border-top: 0 }
+.morelist .row span { color: var(--muted); font-weight: 500; font-size: .875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.secttl { font-size: .75rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 4px 0 }
+.hot { outline: 2px dashed var(--accent); outline-offset: 2px }
+
+/* Verdict */
+.verdict { display: flex; flex-direction: column; gap: 10px }
+.verdict .btns { display: flex; flex-wrap: wrap; gap: 8px }
+.verdict button.v { border: 2px solid var(--line); background: var(--surface); border-radius: var(--r-input); padding: 0 16px; min-height: 46px; font-weight: 700 }
+.verdict button.v[aria-pressed="true"].ok { border-color: var(--good); color: var(--good) }
+.verdict button.v[aria-pressed="true"].change { border-color: var(--warn); color: var(--warn) }
+.verdict button.v[aria-pressed="true"].deal { border-color: var(--bad); color: var(--bad) }
+.verdict label { font-weight: 650; font-size: .9rem }
+.verdict textarea { width: 100%; min-height: 84px; border: 1px solid var(--line); background: var(--surface2); color: var(--text); border-radius: var(--r-input); padding: 10px 12px; font: inherit; resize: vertical }
+.saved { font-size: .82rem; color: var(--muted); min-height: 1.2em }
+.nav2 { display: flex; justify-content: space-between; gap: 8px }
+.ghostb { border: 0; background: var(--surface2); border-radius: var(--r-input); padding: 8px 16px; font-weight: 650; min-height: 44px }
+.sum { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none }
+.sum li { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 10px; align-items: start }
+.sum .n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); font-weight: 800; font-size: .85rem }
+.sum .q { color: var(--muted); font-size: .9rem }
+.decide { border-radius: var(--r-input); padding: 12px 14px; background: var(--surface2); font-weight: 650 }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Turkish interface review</h1>
+      <p class="lede">Eight stops, each showing Turkish beside English in the app's own look. Give each stop a verdict. If enough looks right, the full translation goes ahead; a dealbreaker stops it.</p>
+    </div>
+    <span class="count" id="count" aria-live="polite">0 of 8 reviewed</span>
+  </header>
+  <details class="choices" id="choices" open>
+    <summary>Choices I made overnight</summary>
+    <ol>
+      <li>The Log tab is <b>Ekle</b> ("Add"). "Kaydet" is already the Save button.</li>
+      <li>The Journal tab is <b>Takvim</b> ("Calendar"). "Günlük" also means "daily", as in the daily budget.</li>
+      <li>Meals are written in full: Kahvaltı, Öğle yemeği, Akşam yemeği, Ara öğün. They fit everywhere I checked.</li>
+      <li>A name that is filled in goes after a colon or before "için", so Turkish never needs an ending on it.</li>
+      <li>The percent sign goes first in Turkish: %30.</li>
+      <li>No thousands separator in either language, as today: 1850 kcal.</li>
+      <li>English screens today show 72,5. The plan switches English to 72.5, including the help text and the food portions.</li>
+      <li>"kcal" stays "kcal" in Turkish.</li>
+      <li>Food pictures appear as letter tiles on this page only. The app keeps its food icons.</li>
+      <li>Built-in food names follow what the values are, even where people search for something else (cheddar is "Çedar peyniri", and searching "kaşar" still finds it).</li>
+    </ol>
+  </details>
+  <nav class="stops" aria-label="Stops" id="stops"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ---------- Data ---------- */
+const TODAY = '2026-11-13';
+const WD = { en: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], tr: ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'] };
+const WD3 = { en: WD.en.map((w) => w.slice(0, 3)), tr: ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'] };
+const MO = { en: ['January','February','March','April','May','June','July','August','September','October','November','December'], tr: ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'] };
+const MO3 = { en: MO.en.map((m) => m.slice(0, 3)), tr: ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'] };
+
+const S = {
+  en: { lang: 'en', today: 'Today', yesterday: 'Yesterday', log: 'Log', journal: 'Journal', progress: 'Progress', more: 'More',
+    left: 'kcal left', activity: 'Activity', eaten: 'Eaten', budget: 'Budget',
+    meals: { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' },
+    addFood: 'Add food', water: 'Water', weight: 'Weight', edit: 'Edit', other: 'Other amount', newWeigh: 'New weigh-in',
+    lastAdded: 'Last added 14:20', since: (d) => `since ${d}`, nutrients: 'Nutrients', protein: 'Protein', carbs: 'Carbs', fat: 'Fat',
+    fibre: 'Fibre', sugars: 'Sugars', satfat: 'Saturated fat', salt: 'Salt', partial: 'Partial · 1 unknown',
+    notes: 'Notes', noteTap: 'Tap to write a note for this day.', complete: 'Day complete', completeHint: 'Only complete days count as under budget in your calendar.',
+    search: 'Search foods', speak: 'Speak', scan: 'Scan a label', type: 'Type it', recent: 'Recent', saved: 'Saved meals', quick: 'Log calories only',
+    adding: (m, d) => `Adding to ${m} · ${d}`, logged: 'Logged', loggedDetail: (m, k) => `Logged to ${m} · ${k} kcal`, undo: 'Undo',
+    delAsk: (n) => `Delete “${n}”?`, delBody: 'Entries you logged from it stay in your diary.', del: 'Delete', cancel: 'Cancel',
+    journalTitle: 'Journal', highlights: (m) => `${m}'s highlights`, kcalDay: 'kcal a day', ofBudget: (b) => `of ${b}`, lowest: (k) => `New lowest weight: ${k} kg`, budgetChanged: (k) => `Budget changed to ${k} kcal`, streak: '7 complete days in a row', open: 'Open',
+    weightTitle: 'Weight', latest: 'Latest weigh-in', smoothed: 'Smoothed', pace: (p) => `Pace ${p} kg a week`,
+    help: 'Help', helpSearch: 'Search help', moreTitle: 'More', settings: 'Settings',
+    amountTitle: 'Feta cheese', amount: 'Amount', unit: 'Unit', logTo: (m) => `Log to ${m}`, per100: 'Values per 100 g from USDA'
+  },
+  tr: { lang: 'tr', today: 'Bugün', yesterday: 'Dün', log: 'Ekle', journal: 'Takvim', progress: 'Gelişim', more: 'Diğer',
+    left: 'kcal kaldı', activity: 'Aktivite', eaten: 'Yenen', budget: 'Bütçe',
+    meals: { breakfast: 'Kahvaltı', lunch: 'Öğle yemeği', dinner: 'Akşam yemeği', snacks: 'Ara öğün' },
+    addFood: 'Yiyecek ekle', water: 'Su', weight: 'Kilo', edit: 'Düzenle', other: 'Başka miktar', newWeigh: 'Yeni tartı',
+    lastAdded: 'Son ekleme 14:20', since: (d) => `${d} gününden beri`, nutrients: 'Besin değerleri', protein: 'Protein', carbs: 'Karbonhidrat', fat: 'Yağ',
+    fibre: 'Lif', sugars: 'Şeker', satfat: 'Doymuş yağ', salt: 'Tuz', partial: 'Eksik · 1 bilinmiyor',
+    notes: 'Notlar', noteTap: 'Bu güne not yazmak için dokun.', complete: 'Gün tamam', completeHint: 'Takviminde yalnızca tamamlanan günler bütçe altı sayılır.',
+    search: 'Yiyecek ara', speak: 'Söyle', scan: 'Etiket tara', type: 'Yaz', recent: 'Son yenenler', saved: 'Kayıtlı öğünler', quick: 'Yalnızca kalori kaydet',
+    adding: (m, d) => `Ekleniyor: ${m} · ${d}`, logged: 'Kaydedildi', loggedDetail: (m, k) => `${m} · ${k} kcal`, undo: 'Geri al',
+    delAsk: (n) => `“${n}” silinsin mi?`, delBody: 'Bundan kaydettiğin girişler günlüğünde kalır.', del: 'Sil', cancel: 'Vazgeç',
+    journalTitle: 'Takvim', highlights: (m) => `${m} ayında öne çıkanlar`, kcalDay: 'kcal/gün', ofBudget: (b) => `bütçe ${b}`, lowest: (k) => `En düşük kilo: ${k} kg`, budgetChanged: (k) => `Bütçe değişti: ${k} kcal`, streak: 'Art arda 7 tamamlanmış gün', open: 'Aç',
+    weightTitle: 'Kilo', latest: 'Son tartı', smoothed: 'Dengelenmiş', pace: (p) => `Hız: haftada ${p} kg`,
+    help: 'Yardım', helpSearch: 'Yardımda ara', moreTitle: 'Diğer', settings: 'Ayarlar',
+    amountTitle: 'Feta peyniri', amount: 'Miktar', unit: 'Birim', logTo: (m) => `Kaydet: ${m}`, per100: 'Değerler 100 g için, USDA verisi'
+  }
+};
+
+/* Decimal mark follows the language. */
+const num = (lang, v, d = 1) => { let s = v.toFixed(d).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, ''); return lang === 'tr' ? s.replace('.', ',') : s; };
+const pct = (lang, v) => lang === 'tr' ? `%${v}` : `${v} %`;
+
+/* Entries: typed names stay as typed; built-in (USDA) names and measures follow the language. */
+const ENTRIES = {
+  breakfast: [
+    { n: { en: 'Simit', tr: 'Simit' }, q: { en: '1 × piece (120 g)', tr: '1 × adet (120 g)' }, k: 280, typed: true },
+    { n: { en: 'Beyaz peynir', tr: 'Beyaz peynir' }, q: { en: '40 g', tr: '40 g' }, k: 106, typed: true },
+    { n: { en: 'Black tea, brewed', tr: 'Siyah çay, demlenmiş' }, q: { en: '2 × Tea glass (100 ml)', tr: '2 × Çay bardağı (100 ml)' }, k: 2 }
+  ],
+  lunch: [
+    { n: { en: 'Mercimek çorbası', tr: 'Mercimek çorbası' }, q: { en: '1 × Water glass (200 ml)', tr: '1 × Su bardağı (200 ml)' }, k: 150, typed: true },
+    { n: { en: 'Rice, white, boiled (salted)', tr: 'Pirinç, beyaz, haşlanmış (tuzlu)' }, q: { en: '150 g', tr: '150 g' }, k: 195 }
+  ],
+  dinner: [],
+  snacks: [
+    { n: { en: 'Banana', tr: 'Muz' }, q: { en: '1 × medium (18–20 cm long)', tr: '1 × orta boy (18–20 cm)' }, k: 105 }
+  ]
+};
+const EATEN = 838, BUDGET = 1850, ACT = 150;
+
+/* ---------- Date formatting, mirroring src/lib/shared/format.ts with a Turkish table ---------- */
+function parts(iso) { const [y, mo, d] = iso.split('-').map(Number); return { y, mo, d, wd: new Date(Date.UTC(y, mo - 1, d)).getUTCDay() }; }
+function addDays(iso, n) { const { y, mo, d } = parts(iso); const t = new Date(Date.UTC(y, mo - 1, d + n)); return t.toISOString().slice(0, 10); }
+function dayHeading(lang, date, today = TODAY) {
+  const p = parts(date), t = parts(today);
+  const dm = lang === 'tr' ? `${p.d} ${MO.tr[p.mo - 1]}${p.y !== t.y ? ' ' + p.y : ''}` : `${p.d} ${MO.en[p.mo - 1]}${p.y !== t.y ? ' ' + p.y : ''}`;
+  const name = WD[lang][p.wd];
+  const both = lang === 'tr' ? `${dm} ${name}` : `${name} ${dm}`;
+  if (date === today) return { title: S[lang].today, detail: both };
+  if (date === addDays(today, -1)) return { title: S[lang].yesterday, detail: both };
+  const sinceMon = (t.wd + 6) % 7;
+  if (date >= addDays(today, -sinceMon)) return { title: name, detail: dm };
+  return { title: dm, detail: name };
+}
+function dayBox(lang, date, today = TODAY) {
+  if (date === today) return S[lang].today;
+  const p = parts(date), t = parts(today); const yr = p.y !== t.y ? ' ' + p.y : '';
+  return lang === 'tr' ? `${p.d} ${MO3.tr[p.mo - 1]}${yr} ${WD.tr[p.wd]}` : `${WD.en[p.wd]} ${p.d} ${MO3.en[p.mo - 1]}${yr}`;
+}
+function dayTitle(lang, date, today = TODAY) {
+  if (date === today) return S[lang].today;
+  if (date === addDays(today, -1)) return S[lang].yesterday;
+  const p = parts(date);
+  return lang === 'tr' ? `${p.d} ${MO3.tr[p.mo - 1]} ${WD3.tr[p.wd]}` : `${WD3.en[p.wd]} ${p.d} ${MO3.en[p.mo - 1]}`;
+}
+function shortMonth(lang, date) { const p = parts(date); return p.mo === 1 ? `${MO3[lang][0]} ’${String(p.y).slice(2)}` : MO3[lang][p.mo - 1]; }
+function shortDate(lang, date) { const p = parts(date); return `${p.d} ${MO3[lang][p.mo - 1]}`; }
+function longDate(lang, date) { const p = parts(date); return lang === 'tr' ? `${p.d} ${MO.tr[p.mo - 1]} ${p.y} ${WD.tr[p.wd]}` : `${WD.en[p.wd]} ${p.d} ${MO.en[p.mo - 1]} ${p.y}`; }
+
+/* ---------- Icons (Lucide shapes) ---------- */
+const P = {
+  cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>',
+  plusc: '<circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/>',
+  book: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+  trend: '<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>',
+  dots: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/>',
+  scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/>',
+  pen: '<path d="M12 20h9"/><path d="M16.4 3.6a1 1 0 0 1 3 3L7.4 18.6a2 2 0 0 1-.9.5l-2.8.9a.5.5 0 0 1-.6-.6l.8-2.9a2 2 0 0 1 .5-.8z"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  left: '<path d="m15 18-6-6 6-6"/>', right: '<path d="m9 18 6-6-6-6"/>', down: '<path d="m6 9 6 6 6-6"/>',
+  plus: '<path d="M5 12h14M12 5v14"/>', x: '<path d="M18 6 6 18M6 6l12 12"/>', book2: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>'
+};
+const ic = (k, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[k]}</svg>`;
+const LOGO = `<svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="currentColor"/><circle cx="16" cy="16" r="7" fill="var(--surface)"/></svg>`;
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+/* ---------- App chrome ---------- */
+function chrome(lang, active, inner, overlay = '') {
+  const s = S[lang];
+  const items = [['cal', s.today], ['plusc', s.log], ['book', s.journal], ['trend', s.progress], ['dots', s.more]];
+  const side = `<aside class="side"><div class="brand">${LOGO}obur</div>${items.map(([k, t], i) => `<div class="it ${i === active ? 'on' : ''}">${ic(k)}${t}</div>`).join('')}</aside>`;
+  const tabs = `<nav class="tabs">${items.map(([k, t], i) => `<a class="${i === active ? 'on' : ''}" data-tab="${i}">${ic(k)}<span class="tl">${t}</span></a>`).join('')}</nav>`;
+  return `${side}<div class="screen">${inner}</div>${tabs}${overlay}`;
+}
+function budgetCard(s) {
+  return `<section class="c"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><p style="margin:0;white-space:nowrap"><span class="big">${BUDGET - EATEN}</span><span class="bl">${s.left}</span></p><span class="actpill hotable" data-k="activity">${ic('flame')}${s.activity}<b>${ACT}</b></span></div><div class="bar"><i style="width:${EATEN / BUDGET * 100}%"></i></div><div class="brow"><span>${s.eaten}<b>${EATEN}</b></span><span>${s.budget}<b>${BUDGET}</b> ${ic('right', 's')}</span></div></section>`;
+}
+function mealsCard(s, lang) {
+  return `<section class="c meals">${Object.entries(ENTRIES).map(([m, list]) => {
+    const tot = list.reduce((a, e) => a + e.k, 0);
+    return `<div class="meal"><div class="mh"><h4>${s.meals[m]}</h4>${tot ? `<span>${tot}</span>` : ''}</div>${list.map((e) => `<div class="ent"><span class="fi">${esc(e.n[lang][0])}</span><span style="min-width:0"><span class="en">${esc(e.n[lang])}</span><span class="eq">${esc(e.q[lang])}</span></span><span class="ek">${e.k}</span></div>`).join('')}<div class="addrow"><span class="a hotable" data-k="addfood"><i>${ic('plus', 's')}</i>${s.addFood}</span><span class="dots">${ic('dots')}</span></div></div>`;
+  }).join('')}</section>`;
+}
+function waterWeight(s, lang) {
+  return `<div class="pair2"><section class="c" style="padding:14px"><div class="cardt">${s.water}<a>${s.edit}</a></div><div class="wv">1250 ml</div><div class="wsub">${s.lastAdded}</div><div class="btnrow"><span class="btn">+250</span><span class="btn">+500</span></div><div class="stack"><span class="btn hotable" data-k="other">${s.other}</span></div></section>
+  <section class="c" style="padding:14px"><div class="cardt">${s.weight}<a>${s.edit}</a></div><div class="wv">${num(lang, 72.5)} kg</div><div class="wsub">${lang === 'tr' ? '−0,4 kg · ' : '−0.4 kg '}${s.since(lang === 'tr' ? '6 Kas' : '6 Nov')}</div><svg class="spark" viewBox="0 0 120 26" preserveAspectRatio="none"><polyline fill="none" stroke="currentColor" stroke-width="2" points="0,6 20,9 40,7 60,13 80,12 100,17 120,20"/></svg><div class="stack"><span class="btn hotable" data-k="newweigh">${s.newWeigh}</span></div></section></div>`;
+}
+function nutrientsCard(s, lang) {
+  const row = (l, v, t, col) => `<div class="nrow"><div class="l">${l}<span>${v} / ${t} g</span></div><div class="nbar"><i style="width:${Math.min(100, v / t * 100)}%;background:var(${col})"></i></div></div>`;
+  return `<section class="c"><div class="cardt" style="margin-bottom:10px">${s.nutrients}<span class="small muted" style="font-weight:500">${s.partial}</span></div><div class="nut">${row(s.protein, 38, 116, '--protein')}${row(s.carbs, 121, 208, '--carb')}${row(s.fat, 24, 62, '--fat')}<div class="ngrid"><div>${s.fibre}<b>${num(lang, 9.5)} g</b></div><div>${s.sugars}<b>${num(lang, 18.2)} g+</b></div><div>${s.satfat}<b>${num(lang, 9.1)} g</b></div><div>${s.salt}<b>${num(lang, 3.4)} g</b></div></div></div></section>`;
+}
+function completeCard(s) {
+  return `<section class="c"><div class="complete"><div><b class="hotable" data-k="complete">${s.complete}</b><div class="small muted">${s.completeHint}</div></div><span class="sw"></span></div></section>`;
+}
+function noteCard(s) { return `<section class="c"><div class="cardt">${s.notes}</div><div class="small muted" style="margin-top:4px">${s.noteTap}</div></section>`; }
+
+function screenToday(lang, desk) {
+  const s = S[lang], h = dayHeading(lang, TODAY);
+  const head = `<header class="dayhead"><span class="ib">${ic('left')}</span><div><div class="h">${h.title}</div><div class="d">${h.detail}</div></div><span class="ib" style="color:var(--line)">${ic('right')}</span></header>`;
+  const left = `${head}${budgetCard(s)}${mealsCard(s, lang)}`;
+  const right = `${waterWeight(s, lang)}${nutrientsCard(s, lang)}${noteCard(s)}${completeCard(s)}`;
+  return chrome(lang, 0, `<div class="cols2"><div>${left}</div><div style="${desk ? 'padding-top:72px' : ''}">${right}</div></div>`);
+}
+function screenTodayLower(lang) {
+  const s = S[lang];
+  return chrome(lang, 0, `<div class="cols2"><div>${budgetCard(s)}${waterWeight(s, lang)}</div><div>${completeCard(s)}${nutrientsCard(s, lang)}</div></div>`);
+}
+function logPanel(lang, preset) {
+  const s = S[lang];
+  const recent = [
+    { n: { en: 'Banana', tr: 'Muz' }, q: { en: '89 kcal per 100 g', tr: '100 g için 89 kcal' } },
+    { n: { en: 'Simit', tr: 'Simit' }, q: { en: '280 kcal per piece · Deniz', tr: 'adet başına 280 kcal · Deniz' } },
+    { n: { en: 'Feta cheese', tr: 'Feta peyniri' }, q: { en: '265 kcal per 100 g', tr: '100 g için 265 kcal' } },
+    { n: { en: 'Chicken breast, roasted (meat only)', tr: 'Tavuk göğsü, fırında (yalnız et)' }, q: { en: '165 kcal per 100 g', tr: '100 g için 165 kcal' } },
+    { n: { en: 'Mercimek çorbası', tr: 'Mercimek çorbası' }, q: { en: '75 kcal per 100 ml · Deniz', tr: '100 ml için 75 kcal · Deniz' } }
+  ];
+  return `<div class="search">${ic('search')}${s.search}</div>${preset ? `<span class="presetpill">${preset}<span class="x" style="background:transparent">${ic('x', 's')}</span></span>` : ''}
+  <div class="tiles"><span class="tile sp hotable" data-k="speak"><i>${ic('mic')}</i>${s.speak}</span><span class="tile sc hotable" data-k="scan"><i>${ic('scan')}</i>${s.scan}</span><span class="tile ty hotable" data-k="type"><i>${ic('pen')}</i>${s.type}</span></div>
+  <span class="btn ghost full hotable" data-k="quick">${s.quick}</span>
+  <div class="label">${s.recent}</div><div class="list">${recent.map((r) => `<div class="ent"><span class="fi">${esc(r.n[lang][0])}</span><span style="min-width:0"><span class="en">${esc(r.n[lang])}</span><span class="eq">${esc(r.q[lang])}</span></span><span></span></div>`).join('')}</div>`;
+}
+function screenLog(lang, desk, extra = {}) {
+  const s = S[lang];
+  const inner = `<div class="narrow"><div class="pagetitle">${s.log}</div>${logPanel(lang, extra.preset)}</div>`;
+  return chrome(lang, 1, inner, extra.overlay || '');
+}
+function screenNames(lang, desk) {
+  const s = S[lang];
+  const preset = s.adding(s.meals.lunch, s.today);
+  const toast = `<div class="toast"><span><b>${s.logged}</b>${s.loggedDetail(s.meals.lunch, 345)}</span><span class="u">${s.undo}</span></div>`;
+  return screenLog(lang, desk, { preset, overlay: toast });
+}
+function screenDelete(lang) {
+  const s = S[lang];
+  const name = lang === 'tr' ? 'Pazar kahvaltısı' : 'Sunday breakfast';
+  const ov = `<div class="scrim"><div class="sheet"><div class="grab"></div><div class="sh"><b>${s.delAsk(name)}</b></div><p class="muted" style="margin:0">${s.delBody}</p><div class="btnrow"><span class="btn">${s.cancel}</span><span class="btn fill" style="background:var(--bad);color:var(--on-accent)">${s.del}</span></div></div></div>`;
+  return chrome(lang, 4, `<div class="narrow"><div class="pagetitle">${s.saved}</div><div class="list">${['Pazar kahvaltısı', 'Ofis öğlesi'].map((n) => `<div class="ent"><span class="fi">${n[0]}</span><span><span class="en">${n}</span><span class="eq">${lang === 'tr' ? '3 öğe · 520 kcal' : '3 items · 520 kcal'}</span></span><span></span></div>`).join('')}</div></div>`, ov);
+}
+
+/* Journal and chart */
+function ringSvg(f, kind) {
+  const r = 10, c = 2 * Math.PI * r;
+  const col = kind === 'over' ? 'var(--bad)' : kind === 'inc' ? 'var(--muted)' : 'var(--good)';
+  const frac = kind === 'over' ? 1 : Math.min(.94, f);
+  return `<svg class="ring" viewBox="0 0 26 26"><circle cx="13" cy="13" r="${r}" fill="none" stroke="var(--track)" stroke-width="3"/>${kind === 'none' ? '' : `<circle cx="13" cy="13" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${c * frac} ${c}" transform="rotate(-90 13 13)"/>`}</svg>`;
+}
+function screenJournal(lang, desk) {
+  const s = S[lang];
+  const sel = '2026-11-10';
+  const first = parts('2026-11-01').wd; const lead = (first + 6) % 7;
+  const kinds = { 1: .8, 2: .9, 3: 1.1, 4: .85, 5: .7, 6: .9, 7: .95, 8: .88, 9: .92, 10: .86, 11: .9, 12: .6, 13: .45 };
+  let cells = '';
+  const wds = lang === 'tr' ? ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'] : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  cells += wds.map((w) => `<div class="wd">${w}</div>`).join('');
+  for (let i = 0; i < lead; i++) cells += '<div></div>';
+  for (let d = 1; d <= 30; d++) {
+    const f = kinds[d]; const kind = f === undefined ? 'none' : f > 1 ? 'over' : d >= 12 ? 'inc' : 'under';
+    const iso = `2026-11-${String(d).padStart(2, '0')}`;
+    cells += `<div class="dd ${iso === sel ? 'sel' : ''}">${ringSvg(f || 0, kind)}<span>${d}</span></div>`;
+  }
+  const monthHead = `<div class="monthhead"><span class="ib">${ic('left')}</span><b>${lang === 'tr' ? 'Kasım 2026' : 'November 2026'}</b><span class="ib">${ic('right')}</span></div>`;
+  const cal = `<section class="c">${monthHead}<div class="cal">${cells}</div></section>`;
+  const box = `<section class="c daybox"><h5>${dayBox(lang, sel)}</h5><div><span class="k">1720</span> <span class="muted small">${s.ofBudget(1850)}</span></div><div class="small muted" style="margin:4px 0 10px">${lang === 'tr' ? '130 bütçe altı · Gün tamam' : '130 under · Day complete'}</div><span class="btn">${s.open}</span></section>`;
+  const hl = `<section class="c"><div class="cardt" style="margin-bottom:8px">${s.highlights(MO[lang][10])}</div><div class="hl"><div>${s.lowest(num(lang, 72.5))}</div><div>${s.streak}</div><div>${s.budgetChanged(1850)} · ${shortDate(lang, '2026-11-03')}</div></div></section>`;
+  return chrome(lang, 2, `<div class="cols2"><div><div class="pagetitle">${s.journalTitle}</div>${cal}</div><div style="${desk ? 'padding-top:54px' : ''}">${box}${hl}</div></div>`);
+}
+function screenChart(lang, desk) {
+  const s = S[lang];
+  const W = 340, H = 190, L = 34, R = 8, T = 10, B = 26;
+  const start = '2026-08-15', days = 90;
+  const pts = []; for (let i = 0; i <= days; i += 3) { const t = 76.2 - i * 0.041 + Math.sin(i / 4) * .35; pts.push([i, t]); }
+  const x = (i) => L + (W - L - R) * i / days, y = (v) => T + (H - T - B) * (77 - v) / (77 - 72);
+  const trend = pts.map(([i, v]) => `${x(i).toFixed(1)},${y(76.2 - i * 0.041).toFixed(1)}`).join(' ');
+  const dots = pts.map(([i, v]) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2" fill="var(--muted)" opacity=".55"/>`).join('');
+  let grid = ''; for (let v = 72; v <= 77; v++) grid += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text class="ax" x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  let months = ''; for (const m of ['2026-09-01', '2026-10-01', '2026-11-01']) { const i = (Date.parse(m) - Date.parse(start)) / 864e5; months += `<line x1="${x(i)}" x2="${x(i)}" y1="${H - B}" y2="${H - B + 4}" stroke="var(--muted)"/><text class="ax" x="${x(i)}" y="${H - 8}" text-anchor="middle">${shortMonth(lang, m)}</text>`; }
+  const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="chart">${grid}${dots}<polyline fill="none" stroke="var(--accent)" stroke-width="2.5" points="${trend}"/>${months}</svg>`;
+  const ranges = lang === 'tr' ? ['1H', '1A', '3A', '1Y', 'Tümü'] : ['1W', '1M', '3M', '1Y', 'All'];
+  const head = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div class="rangeseg"><span>${s.latest}</span><span class="on">${s.smoothed}</span></div><div class="rangeseg">${ranges.map((r, i) => `<span class="${i === 2 ? 'on' : ''}">${r}</span>`).join('')}</div></div>`;
+  const big = `<div><span class="big" style="font-size:2.25rem">${num(lang, 72.6)}</span> <span class="bl">kg</span></div><div class="small muted">${s.pace(num(lang, -0.29, 2))} · ${lang === 'tr' ? 'Ağu ’26 → bugün' : 'Aug ’26 → today'}</div>`;
+  const yr = `<section class="c"><div class="cardt" style="margin-bottom:6px">${lang === 'tr' ? 'Yıl sınırında eksen' : 'Axis across a new year'}</div><div class="small muted">${['2026-11-01', '2026-12-01', '2027-01-01', '2027-02-01'].map((d) => shortMonth(lang, d)).join(' · ')}</div></section>`;
+  return chrome(lang, 3, `<div class="narrow"><div class="pagetitle">${s.progress}</div><section class="c" style="display:flex;flex-direction:column;gap:12px">${head}${big}<div class="chart">${svg}</div></section>${yr}</div>`);
+}
+
+/* Built-in foods */
+const FOODS = [
+  { en: 'Feta cheese', tr: 'Feta peyniri', why: 'The values are feta’s. Turkish white cheese (beyaz peynir) differs, so it stays a separate food.', k: 265, p: [['US cup (237 ml), crumbled', 'ABD bardağı (237 ml), ufalanmış', 150], ['2.5 cm cube', '2,5 cm küp', 17], ['wedge (38 g)', 'üçgen dilim (38 g)', 38]] },
+  { en: 'Cheddar cheese', tr: 'Çedar peyniri', why: 'Not “Kaşar”: kaşar is a different cheese. Searching “kaşar” still finds it.', k: 403, p: [['slice (28 g)', 'dilim (28 g)', 28], ['US cup (237 ml), shredded', 'ABD bardağı (237 ml), rendelenmiş', 113]] },
+  { en: 'Greek yoghurt, plain, nonfat', tr: 'Süzme yoğurt, sade, yağsız', why: 'Strained yoghurt is what Turkish shops call it.', k: 59, p: [['container', 'kap', 170]] },
+  { en: 'Milk, reduced fat (2%)', tr: 'Süt, yarım yağlı (%2)', why: '', k: 50, p: [['US cup (237 ml)', 'ABD bardağı (237 ml)', 244]] },
+  { en: 'Rice, white, boiled (salted)', tr: 'Pirinç, beyaz, haşlanmış (tuzlu)', why: 'Not “Pilav”: pilav is cooked with butter or oil; these values have none.', k: 130, p: [['US cup (237 ml)', 'ABD bardağı (237 ml)', 158]] },
+  { en: 'Bulgur, cooked', tr: 'Bulgur, haşlanmış', why: 'Not “Bulgur pilavı”, for the same reason.', k: 83, p: [['US cup (237 ml)', 'ABD bardağı (237 ml)', 182], ['tablespoon', 'yemek kaşığı', 8.4]] },
+  { en: 'Lentils, boiled (salted)', tr: 'Yeşil mercimek, haşlanmış (tuzlu)', why: 'USDA’s plain lentils are the green-brown kind.', k: 114, p: [['US cup (237 ml)', 'ABD bardağı (237 ml)', 198]] },
+  { en: 'Red lentils, raw', tr: 'Kırmızı mercimek, çiğ', why: '', k: 358, p: [['US cup (237 ml)', 'ABD bardağı (237 ml)', 192]] },
+  { en: 'Chicken breast, roasted (meat only)', tr: 'Tavuk göğsü, fırında (yalnız et)', why: 'Roasted, not grilled (ızgara): the name says how USDA cooked it.', k: 165, p: [['breast, bone and skin removed', 'göğüs, kemiksiz ve derisiz', 172], ['US cup (237 ml), chopped or diced', 'ABD bardağı (237 ml), doğranmış', 140]] },
+  { en: 'Ground beef, 10% fat, raw', tr: 'Dana kıyma, %10 yağlı, çiğ', why: '', k: 176, p: [] },
+  { en: 'Tomato', tr: 'Domates', why: '', k: 18, p: [['medium whole (7 cm across)', 'orta boy, bütün (7 cm çapında)', 123], ['cherry', 'çeri domates', 17], ['slice, medium (0.6 cm thick)', 'dilim, orta (0,6 cm kalınlığında)', 20]] },
+  { en: 'Banana', tr: 'Muz', why: '', k: 89, p: [['medium (18–20 cm long)', 'orta boy (18–20 cm)', 118], ['large (20–23 cm long)', 'büyük boy (20–23 cm)', 136], ['US cup (237 ml), sliced', 'ABD bardağı (237 ml), dilimlenmiş', 150]] },
+  { en: 'Egg, raw', tr: 'Yumurta, çiğ', why: '', k: 143, p: [['large', 'büyük boy', 50], ['medium', 'orta boy', 44]] },
+  { en: 'Olive oil', tr: 'Zeytinyağı', why: '', k: 884, p: [['tablespoon', 'yemek kaşığı', 13.5], ['teaspoon', 'çay kaşığı', 4.5]] },
+  { en: 'Black tea, brewed', tr: 'Siyah çay, demlenmiş', why: 'A tea glass comes from the household measures (Çay bardağı, 100 ml).', k: 1, p: [['US cup (237 ml)', 'ABD bardağı (237 ml)', 237]] },
+  { en: 'Pickled cucumbers', tr: 'Salatalık turşusu (dereotlu)', why: 'USDA measured dill pickles.', k: 12, p: [['spear, small', 'boyuna dilim, küçük', 35], ['slice', 'dilim', 7]] },
+  { en: 'Halibut, raw', tr: 'Halibut, çiğ', why: 'Not “Pisi balığı”: pisi is a different, smaller flatfish. The search word stays.', k: 91, p: [['fillet', 'fileto', 408]] },
+  { en: 'Mandarin', tr: 'Mandalina', why: '', k: 53, p: [['medium (6 cm across)', 'orta boy (6 cm çapında)', 88]] }
+];
+const MEASURES = [['Water glass', 'Su bardağı', 200], ['Tea glass', 'Çay bardağı', 100], ['Tablespoon', 'Yemek kaşığı', 15], ['Dessert spoon', 'Tatlı kaşığı', 10], ['Teaspoon', 'Çay kaşığı', 5]];
+function screenAmount(lang, desk) {
+  const s = S[lang], f = FOODS[0];
+  const opts = [['g', 'g', null], ...f.p.map(([e, t, g]) => [lang === 'tr' ? t : e, null, g])];
+  const list = opts.map(([l, u, g], i) => `<div class="${i === 1 ? 'on' : ''}"><span>${esc(l)}</span><span>${g ? num(lang, g) + ' g' : ''}</span></div>`).join('');
+  const ov = `<div class="scrim"><div class="sheet"><div class="grab"></div><div class="sh"><b>${lang === 'tr' ? f.tr : f.en}</b><span class="x">${ic('x', 's')}</span></div>
+  <div class="small muted">${s.per100}</div>
+  <div class="pair2"><div><div class="small muted" style="margin-bottom:4px">${s.amount}</div><div class="fld">1</div></div><div><div class="small muted" style="margin-bottom:4px">${s.unit}</div><div class="fld"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lang === 'tr' ? 'ABD bardağı…' : 'US cup…'}</span>${ic('down', 's')}</div></div></div>
+  <div class="opts">${list}</div>
+  <div class="pv">398 <small>kcal</small></div>
+  <div class="macros"><div>${s.protein}<b>${num(lang, 21.3)} g</b></div><div>${s.carbs}<b>${num(lang, 5.8)} g</b></div><div>${s.fat}<b>${num(lang, 32.3)} g</b></div></div>
+  <span class="btn fill full">${s.logTo(s.meals.breakfast)}</span></div></div>`;
+  return chrome(lang, 1, `<div class="narrow"><div class="pagetitle">${s.log}</div>${logPanel(lang)}</div>`, ov);
+}
+
+/* Numbers */
+function screenNumbers(lang, desk) {
+  const s = S[lang];
+  const profile = `<section class="c"><div class="cardt" style="margin-bottom:6px">${lang === 'tr' ? 'Profil ve hedef' : 'Profile and goal'}</div><div class="morelist">
+  <div class="row">${lang === 'tr' ? 'Boy' : 'Height'}<span>172 cm</span></div>
+  <div class="row">${lang === 'tr' ? 'Hedef kilo' : 'Goal weight'}<span>${num(lang, 68.5)} kg</span></div>
+  <div class="row">${lang === 'tr' ? 'Haftalık kayıp' : 'Weekly loss'}<span>${lang === 'tr' ? 'Orta · haftada 0,5 kg' : 'Steady · 0.5 kg a week'}</span></div>
+  <div class="row">${lang === 'tr' ? 'Bel / boy oranı' : 'Waist-to-height ratio'}<span>${num(lang, 0.48, 2)}</span></div>
+  <div class="row">${lang === 'tr' ? 'Makrolar' : 'Macros'}<span>${pct(lang, 25)} · ${pct(lang, 45)} · ${pct(lang, 30)}</span></div></div></section>`;
+  const input = `<section class="c"><div class="cardt">${s.newWeigh}</div><div class="fld" style="margin-top:10px"><span>${num(lang, 72.5)}</span><span class="muted">kg</span></div><div class="small muted" style="margin-top:6px">${lang === 'tr' ? '72,5 ve 72.5 ikisi de olur.' : 'Both 72.5 and 72,5 work.'}</div></section>`;
+  return chrome(lang, 0, `<div class="cols2"><div>${budgetCard(s)}${waterWeight(s, lang)}${input}</div><div>${nutrientsCard(s, lang)}${profile}</div></div>`);
+}
+
+/* Help */
+const HELP = {
+  en: [
+    { q: 'How is my daily budget worked out?', a: ['From what your body uses on an inactive day, plus the activity you add, minus the deficit for your goal:'], f: 'Budget = base burn (BMR × about 1.2) + activity − deficit', b: ['BMR uses Mifflin–St Jeor, or Katch–McArdle when you give your body fat. The deficit follows the weekly loss you chose: about 7700 kcal per kilo, and never more than 1 kg or 1 % of your weight a week, whichever is less. The budget never drops below the minimum in Profile and goals. Past days keep the budget they had.'] },
+    { q: 'What is “Smoothed” weight?', a: ['Your weight with the day-to-day swings from water, salt and food evened out. Each weigh-in nudges it, and it follows your pace, so it doesn’t lag behind while you’re losing steadily.', 'In tests on simulated histories it was usually about 0.3 kg from the true weight, closer than a single weigh-in (about 0.5 kg). Switch between Latest weigh-in and Smoothed above the weight on Progress.'] }
+  ],
+  tr: [
+    { q: 'Günlük bütçem nasıl hesaplanıyor?', a: ['Vücudunun hareketsiz bir günde harcadığı enerjiye eklediğin aktivite eklenir, hedefin için gereken açık çıkarılır:'], f: 'Bütçe = temel harcama (BMR × yaklaşık 1,2) + aktivite − açık', b: ['BMR için Mifflin–St Jeor kullanılır; vücut yağ oranını girersen Katch–McArdle. Açık, seçtiğin haftalık kayba göre belirlenir: kilo başına yaklaşık 7700 kcal. Haftada 1 kg’ı ya da kilonun %1’ini (hangisi azsa) geçmez. Bütçe hiçbir zaman alt sınırının altına inmez; alt sınırı Profil ve hedef ekranında ayarlarsın. Geçmiş günler kendi bütçesini korur.'] },
+    { q: '“Dengelenmiş” kilo nedir?', a: ['Su, tuz ve yemekten gelen günlük iniş çıkışları ayıklanmış kilon. Her tartı onu biraz oynatır. Senin hızını da izler, bu yüzden düzenli kilo verirken geride kalmaz.', 'Benzetilmiş geçmişlerle yapılan testlerde gerçek kilodan genelde yaklaşık 0,3 kg uzaktaydı; tek bir tartıdan (yaklaşık 0,5 kg) daha yakın. Gelişim ekranında, kilonun üstünden Son tartı ile Dengelenmiş arasında geçiş yapabilirsin.'] }
+  ]
+};
+function screenHelp(lang, desk) {
+  const s = S[lang];
+  const card = (h) => `<section class="c helpa"><div class="helpq">${h.q}</div>${h.a.map((p) => `<p>${p}</p>`).join('')}${h.f ? `<div class="formula">${h.f}</div>` : ''}${(h.b || []).map((p) => `<p>${p}</p>`).join('')}</section>`;
+  return chrome(lang, 4, `<div class="narrow"><div class="pagetitle">${s.help}</div><div class="search">${ic('search')}${s.helpSearch}</div>${HELP[lang].map(card).join('')}</div>`);
+}
+
+/* More (glossary in place) */
+function screenMore(lang, desk) {
+  const s = S[lang];
+  const L = lang === 'tr'
+    ? [['Yiyecekler', ''], ['Tarifler', ''], ['Kayıtlı öğünler', ''], ['Başarılar', '12'], ['Son silinenler', ''], ['Ev halkı', 'Güncelleme var'], ['Yardım', '']]
+    : [['Foods', ''], ['Recipes', ''], ['Saved meals', ''], ['Achievements', '12'], ['Recently deleted', ''], ['Household', 'Update available'], ['Help', '']];
+  const Set = lang === 'tr'
+    ? [['Profil', 'Deniz'], ['Hedef', 'Haftada 0,5 kg'], ['Hatırlatmalar', 'Açık'], ['Görünüm', 'Sistem'], ['Söyle ve Tara', ''], ['Güvenlik', '2 geçiş anahtarı'], ['Verilerin', '']]
+    : [['Profile', 'Deniz'], ['Goal', '0.5 kg a week'], ['Reminders', 'On'], ['Appearance', 'System'], ['Speak and Scan', ''], ['Security', '2 passkeys'], ['Your data', '']];
+  const rows = (arr) => arr.map(([a, b]) => `<div class="row">${a}<span>${b} ${ic('right', 's')}</span></div>`).join('');
+  return chrome(lang, 4, `<div class="cols2"><div><div class="pagetitle">${s.moreTitle}</div><section class="c morelist" style="padding:6px 12px">${rows(L)}</section></div><div style="${desk ? 'padding-top:54px' : ''}"><div class="secttl">${s.settings}</div><section class="c morelist" style="padding:6px 12px">${rows(Set)}</section></div></div>`);
+}
+
+/* ---------- Stops ---------- */
+const STOPS = [
+  { id: 'tr-tabs', title: 'Tab bar and buttons', screens: [['lower', 'Today', screenTodayLower], ['log', 'Log', (l, d) => screenLog(l, d)]], hot: true,
+    intro: 'The tab bar is the tightest space: five labels in about 64 px each on a normal phone, 56 px on a small one. Dashed outlines mark the main buttons. The table measures every label in the app’s own font.' },
+  { id: 'tr-today', title: 'Today and Log, filled in', screens: [['today', 'Today', screenToday], ['log', 'Log', (l, d) => screenLog(l, d)]],
+    intro: 'A realistic day. Names you type stay as typed (Simit, Mercimek çorbası). Built-in USDA foods and glasses switch language (Black tea → Siyah çay).' },
+  { id: 'tr-names', title: 'Sentences with a name in them', screens: [['log', 'Log with a meal picked', screenNames], ['delete', 'Delete a saved meal', (l) => screenDelete(l)]],
+    intro: 'Turkish adds endings to words (Kahvaltı<b>ya</b>, OpenAI<b>’ye</b>), and the ending changes with the word. A filled-in name can’t carry one safely, so each sentence is reworded to need none.' },
+  { id: 'tr-dates', title: 'Dates', screens: [['journal', 'Journal', screenJournal], ['chart', 'Progress chart', screenChart]],
+    intro: 'Turkish puts the day number first and the weekday last: “13 Kasım Cuma”. Short forms are three letters: Sal, Eki.' },
+  { id: 'tr-foods', title: 'Built-in foods and portions', screens: [['amount', 'Amount sheet', screenAmount]],
+    intro: 'The 102 built-in USDA foods get Turkish names that say what the values are. Portions are translated piece by piece. The cup stays USDA’s, with its size: “ABD bardağı (237 ml)”.' },
+  { id: 'tr-numbers', title: 'Numbers', screens: [['numbers', 'Today and Profile', screenNumbers]],
+    intro: 'English uses a decimal point (72.5 kg), Turkish a comma (72,5 kg). Typing either works in both languages.' },
+  { id: 'tr-help', title: 'Help answers', screens: [['help', 'Help', screenHelp]],
+    intro: 'Two answers in Turkish, speaking to you as “sen”, short and friendly. Check the tone more than single words.' },
+  { id: 'tr-glossary', title: 'Glossary', screens: [['more', 'More', screenMore]],
+    intro: 'About 45 key words, fixed before the full translation so every screen uses the same ones. The More screen shows many of them in place.' }
+];
+const SUMMARY = { id: 'summary', title: 'Summary' };
+const ALL = [...STOPS, SUMMARY];
+
+/* ---------- Stop extras: tables ---------- */
+let measureCtx;
+function textW(t, font) { measureCtx ||= document.createElement('canvas').getContext('2d'); measureCtx.font = font; return measureCtx.measureText(t).width; }
+function fitPill(w, room) { const r = w / room; return r <= .88 ? '<span class="pill fits">Fits</span>' : r <= 1 ? '<span class="pill tight">Tight</span>' : '<span class="pill over">Too long</span>'; }
+function extraTabs() {
+  const tab = (w) => (w - 24 - 12 - 16) / 5 - 6; /* screen width, bar insets, padding, gaps, a little side room */
+  const rows = [['today', 'Today', 'Bugün'], ['log', 'Log', 'Ekle'], ['journal', 'Journal', 'Takvim'], ['progress', 'Progress', 'Gelişim'], ['more', 'More', 'Diğer']];
+  const f = '700 11.5px Inter, system-ui, sans-serif', fBig = '700 14px Inter, system-ui, sans-serif';
+  const tabRows = rows.map(([, e, t]) => `<tr><td>${e}</td><td class="tr">${t}</td><td class="num">${Math.round(textW(t, f))} px</td><td>${fitPill(textW(t, f), tab(375))}</td><td>${fitPill(textW(t, f), tab(320))}</td><td>${fitPill(textW(t, fBig), tab(375))}</td></tr>`).join('');
+  const B = [
+    ['Add food', 'Yiyecek ekle', 200, 15.5], ['Other amount', 'Başka miktar', 140, 15], ['New weigh-in', 'Yeni tartı', 140, 15], ['Log calories only', 'Yalnızca kalori kaydet', 320, 15],
+    ['Scan a label', 'Etiket tara', 92, 14], ['Speak', 'Söyle', 92, 14], ['Type it', 'Yaz', 92, 14], ['Activity 150', 'Aktivite 150', 110, 13.5],
+    ['Mark the day complete', 'Günü tamamla', 250, 15], ['Save as a meal', 'Öğün olarak kaydet', 230, 15], ['Switch to maintain', 'Kilo korumaya geç', 150, 15], ['Keep deficit', 'Açığı koru', 150, 15], ['Cancel', 'Vazgeç', 150, 15], ['Undo', 'Geri al', 80, 14]
+  ];
+  const bRows = B.map(([e, t, room, px]) => { const w = textW(t, `700 ${px}px Inter, system-ui, sans-serif`); return `<tr><td>${e}</td><td class="tr">${t}</td><td class="num">+${Math.max(0, t.length - e.length)}</td><td>${fitPill(w, room)}${w > room ? '<span class="why">Wraps to two lines</span>' : ''}</td></tr>`; }).join('');
+  return `<section class="card"><h3>Tab labels</h3><p class="hint">“Large text” is the iPhone’s Larger Text, where tab labels grow to at most 14 px.</p><div class="tablebox"><table><thead><tr><th>English</th><th>Türkçe</th><th>Width</th><th>Phone</th><th>Small phone</th><th>Large text</th></tr></thead><tbody>${tabRows}</tbody></table></div>
+  <h3 style="margin-top:16px">Main buttons</h3><p class="hint">Turkish is longer in most labels. “Fits” means one line on a 375 px phone.</p><div class="tablebox"><table><thead><tr><th>English</th><th>Türkçe</th><th>Extra letters</th><th>On a phone</th></tr></thead><tbody>${bRows}</tbody></table></div></section>`;
+}
+const NAMES = [
+  ['meal_add', 'Add food to {meal}', '{meal}’a yiyecek ekle', '{meal} için yiyecek ekle', 'Kahvaltıya, Öğle yemeğine: the ending changes per meal.'],
+  ['log_adding_to', 'Adding to {meal} · {day}', '{meal}’a ekleniyor · {day}', 'Ekleniyor: {meal} · {day}', ''],
+  ['toast_logged_detail', 'Logged to {meal} · {kcal} kcal', '{meal}’a kaydedildi · {kcal} kcal', '{meal} · {kcal} kcal', 'Sits under the toast title “Kaydedildi” (Logged), so the meal needs no ending.'],
+  ['toast_deleted_detail', '{name} removed from {meal}', '{name}, {meal}’dan silindi', '{name} silindi · {meal}', ''],
+  ['entry_log_to', 'Log {count} to {meal}', '{count} öğeyi {meal}’a kaydet', 'Kaydet: {meal} · {count} öğe', ''],
+  ['household_delete_title', 'Delete {name}’s account?', '{name}’ın hesabı silinsin mi?', '{name} adlı kişinin hesabı silinsin mi?', 'Names end in any letter: Deniz’in, Ali’nin.'],
+  ['journal_highlights', '{month}’s highlights', '{month}’ın öne çıkanları', '{month} ayında öne çıkanlar', 'The ending goes on “ay” (month), which never changes.'],
+  ['models_consent_speak_title', 'Send your recordings to {provider}?', 'Kayıtların {provider}’a gönderilsin mi?', 'Ses kayıtların {provider} servisine gönderilsin mi?', 'OpenAI’ye, OpenRouter’a: different endings again.'],
+  ['remote_no_credit', 'Your {provider} account is out of credit', '{provider} hesabın…', '{provider} hesabında kredi kalmadı', ''],
+  ['achievement_weight_that', 'That’s {what}', 'Bu bir {what}', 'Bu, {what} kadar', '“kadar” (as much as) stands on its own.'],
+  ['entry_skipped', '{names} wasn’t logged', '{names} kaydedilmedi', 'Kaydedilmedi: {names}', 'With a list in front, the verb would also need a plural.'],
+  ['deleted_restored', 'Restored {name}', '{name}’ı geri getirdim', 'Geri getirildi: {name}', ''],
+  ['home_greeting', 'Hello, {name}', 'Merhaba {name}’cım', 'Merhaba {name}', 'Easy one: no ending needed.']
+];
+const hlph = (s) => esc(s).replace(/\{(\w+)\}/g, '<b style="color:var(--accent)">{$1}</b>');
+function extraNames() {
+  return `<section class="card"><h3>13 hard sentences</h3><p class="hint">Crossed out: the word-for-word version that needs an ending on the name. Bold: what I propose.</p><div class="tablebox"><table><thead><tr><th>English</th><th>Türkçe</th></tr></thead><tbody>${NAMES.map(([k, e, n, t, why]) => `<tr><td>${hlph(e)}</td><td><span class="naive">${hlph(n)}</span><br><span class="tr">${hlph(t)}</span>${why ? `<span class="why">${why}</span>` : ''}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+function extraDates() {
+  const ex = [
+    ['Day title, today', dayHeading('en', TODAY), dayHeading('tr', TODAY)],
+    ['Day title, yesterday', dayHeading('en', '2026-11-12'), dayHeading('tr', '2026-11-12')],
+    ['Day title, this week', dayHeading('en', '2026-11-10'), dayHeading('tr', '2026-11-10')],
+    ['Day title, older', dayHeading('en', '2026-10-20'), dayHeading('tr', '2026-10-20')],
+    ['Day title, last year', dayHeading('en', '2025-12-31'), dayHeading('tr', '2025-12-31')]
+  ].map(([l, e, t]) => `<tr><td>${l}</td><td>${e.title}<span class="why">${e.detail}</span></td><td class="tr">${t.title}<span class="why">${t.detail}</span></td></tr>`).join('');
+  const more = [
+    ['Journal day box', dayBox('en', '2026-11-10'), dayBox('tr', '2026-11-10')],
+    ['Short title (toasts, lists)', dayTitle('en', '2026-10-20'), dayTitle('tr', '2026-10-20')],
+    ['Short date', shortDate('en', '2026-10-20'), shortDate('tr', '2026-10-20')],
+    ['Long date', longDate('en', '2026-10-20'), longDate('tr', '2026-10-20')],
+    ['Chart months', ['2026-10-01', '2026-11-01', '2026-12-01', '2027-01-01'].map((d) => shortMonth('en', d)).join(' · '), ['2026-10-01', '2026-11-01', '2026-12-01', '2027-01-01'].map((d) => shortMonth('tr', d)).join(' · ')],
+    ['Calendar weekdays', 'Mon Tue Wed Thu Fri Sat Sun', 'Pzt Sal Çar Per Cum Cmt Paz'],
+    ['Chart ranges', '1W 1M 3M 1Y All', '1H 1A 3A 1Y Tümü']
+  ].map(([l, e, t]) => `<tr><td>${l}</td><td>${e}</td><td class="tr">${t}</td></tr>`).join('');
+  return `<section class="card"><h3>Every date form</h3><p class="hint">Worked out by the same rules as the app, with today as Friday 13 November 2026.</p><div class="tablebox"><table><thead><tr><th>Where</th><th>English</th><th>Türkçe</th></tr></thead><tbody>${ex}${more}</tbody></table></div></section>`;
+}
+function extraFoods() {
+  const rows = FOODS.map((f) => `<tr><td>${f.en}<span class="why">${f.k} kcal / 100 g</span></td><td class="tr">${f.tr}${f.why ? `<span class="why">${f.why}</span>` : ''}</td><td>${f.p.length ? f.p.map(([e, t, g]) => `${esc(t)} <span class="muted">· ${num('tr', g)} g</span><span class="why">${esc(e)}</span>`).join('<br>') : '<span class="muted">grams only</span>'}</td></tr>`).join('');
+  const ms = MEASURES.map(([e, t, ml]) => `<tr><td>${e}</td><td class="tr">${t}</td><td class="num">${ml} ml</td></tr>`).join('');
+  return `<section class="card"><h3>18 of the 102 foods</h3><p class="hint">The ones where the choice mattered most. Weights stay exactly as USDA measured them.</p><div class="tablebox"><table><thead><tr><th>English</th><th>Türkçe</th><th>Portions in Turkish</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <h3 style="margin-top:16px">Household measures</h3><p class="hint">Seeded today with Turkish names only; English gets its own names, same ml.</p><div class="tablebox"><table><thead><tr><th>English</th><th>Türkçe</th><th>Size</th></tr></thead><tbody>${ms}</tbody></table></div></section>`;
+}
+function extraNumbers() {
+  const R = [['Weight', '72.5 kg', '72,5 kg'], ['Pace', '0.5 kg a week', 'haftada 0,5 kg'], ['Grams', '12.5 g', '12,5 g'], ['Water', '1250 ml · 1.5 l', '1250 ml · 1,5 l'], ['Energy', '1850 kcal', '1850 kcal'], ['Percent', '30 %', '%30'], ['Ratio', '0.48', '0,48'], ['Portion name', '2.5 cm cube', '2,5 cm küp'], ['Formula in Help', 'BMR × about 1.2', 'BMR × yaklaşık 1,2'], ['Typing', '72.5 or 72,5', '72,5 veya 72.5']];
+  return `<section class="card"><h3>Side by side</h3><p class="hint">Today, English screens show a comma (72,5). With this plan English shows 72.5.</p><div class="tablebox"><table><thead><tr><th>What</th><th>English</th><th>Türkçe</th></tr></thead><tbody>${R.map(([a, e, t]) => `<tr><td>${a}</td><td class="num">${e}</td><td class="num tr">${t}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+const GLOSS = [
+  ['Budget', 'Bütçe', 'Keeps the app’s money picture. “Hedef” is kept for the goal.'],
+  ['kcal left / over', 'kcal kaldı / fazla', ''],
+  ['Eaten', 'Yenen', ''],
+  ['Base burn', 'Temel harcama', '“Bazal metabolizma” is BMR alone; base burn is BMR × 1,2.'],
+  ['Activity', 'Aktivite', '“Egzersiz” sounds like workouts; the app has none.'],
+  ['Goal', 'Hedef', ''],
+  ['Deficit', 'Açık', 'Short for “kalori açığı”, the usual term.'],
+  ['To log (food)', 'Kaydetmek', ''],
+  ['Log (tab)', 'Ekle', '“Kaydet” is already the Save button.'],
+  ['Entry', 'Kayıt', ''],
+  ['Diary', 'Günlük', ''],
+  ['Journal (tab)', 'Takvim', '“Günlük” also means daily, and is used for the diary.'],
+  ['Progress', 'Gelişim', 'Fits the tab; “İlerleme” is longer.'],
+  ['More', 'Diğer', ''],
+  ['Today / Yesterday', 'Bugün / Dün', ''],
+  ['Meal', 'Öğün', ''],
+  ['Breakfast, Lunch, Dinner, Snacks', 'Kahvaltı, Öğle yemeği, Akşam yemeği, Ara öğün', 'Full names; they fit.'],
+  ['Food', 'Yiyecek', '“Yemek” also means a dish or a meal; “gıda” is formal.'],
+  ['Recipe', 'Tarif', ''],
+  ['Saved meal', 'Kayıtlı öğün', '“Hazır öğün” would sound like a ready meal.'],
+  ['Log calories only', 'Yalnızca kalori kaydet', ''],
+  ['Portion / serving', 'Porsiyon', ''],
+  ['Household measure', 'Ev ölçüsü', ''],
+  ['Speak', 'Söyle', 'Short, and tells you what to do.'],
+  ['Scan a label', 'Etiket tara', ''],
+  ['Type it', 'Yaz', ''],
+  ['Nutrients', 'Besin değerleri', 'What Turkish labels say.'],
+  ['Protein, Carbs, Fat', 'Protein, Karbonhidrat, Yağ', ''],
+  ['Fibre, Sugars, Saturated fat, Salt', 'Lif, Şeker, Doymuş yağ, Tuz', ''],
+  ['Unknown', 'Bilinmiyor', 'Never shown as 0.'],
+  ['Water', 'Su', ''],
+  ['Weight', 'Kilo', 'The everyday word; “ağırlık” sounds technical.'],
+  ['Weigh-in', 'Tartı', ''],
+  ['Smoothed weight', 'Dengelenmiş kilo', '“Yumuşatılmış” is a statistics word; “ortalama” would be wrong.'],
+  ['Pace', 'Hız', ''],
+  ['Day complete / Mark the day complete', 'Gün tamam / Günü tamamla', ''],
+  ['Day note', 'Gün notu', ''],
+  ['Achievements', 'Başarılar', '“Rozetler” names the picture, not the thing.'],
+  ['Streak', 'Seri', ''],
+  ['Household', 'Ev halkı', '“Hane” sounds official.'],
+  ['Passkey', 'Geçiş anahtarı', 'What Apple and Google call it in Turkish.'],
+  ['Recovery code', 'Kurtarma kodu', ''],
+  ['Sign in', 'Giriş yap', ''],
+  ['Waiting to sync', 'Gönderilmeyi bekliyor', 'Says what happens, without “senkronizasyon”.'],
+  ['Reminder', 'Hatırlatma', ''],
+  ['Recently deleted', 'Son silinenler', ''],
+  ['Undo', 'Geri al', ''],
+  ['Export / Import', 'Dışa aktar / İçe aktar', ''],
+  ['Settings, Profile, Help', 'Ayarlar, Profil, Yardım', '']
+];
+function extraGloss() {
+  return `<section class="card"><h3>${GLOSS.length} terms</h3><p class="hint">A reason is given where there was a real choice.</p><div class="tablebox"><table><thead><tr><th>English</th><th>Türkçe</th></tr></thead><tbody>${GLOSS.map(([e, t, w]) => `<tr><td>${e}</td><td class="tr">${t}${w ? `<span class="why">${w}</span>` : ''}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+const EXTRA = { 'tr-tabs': extraTabs, 'tr-names': extraNames, 'tr-dates': extraDates, 'tr-foods': extraFoods, 'tr-numbers': extraNumbers, 'tr-glossary': extraGloss };
+
+/* ---------- State and rendering ---------- */
+const $ = (q) => document.querySelector(q);
+const state = { stop: 'tr-tabs', screen: {}, frame: 'phone', view: 'both', theme: 'light', verdicts: {} };
+try { const v = localStorage.getItem('tr-review-view'); if (v) Object.assign(state, JSON.parse(v)); } catch {}
+let db = null;
+const VLABEL = { ok: 'Looks right', change: 'Change it', dealbreaker: 'Dealbreaker' };
+
+function renderStops() {
+  $('#stops').innerHTML = ALL.map((s, i) => {
+    const v = state.verdicts[s.id]?.verdict;
+    const cls = v === 'ok' ? 'ok' : v === 'change' ? 'change' : v === 'dealbreaker' ? 'stopv' : '';
+    return `<button class="stop ${cls}" data-go="${s.id}" ${state.stop === s.id ? 'aria-current="step"' : ''}><span class="n">${s.id === 'summary' ? '✓' : i + 1}</span><span class="t">${s.title}</span></button>`;
+  }).join('');
+  const n = STOPS.filter((s) => state.verdicts[s.id]?.verdict).length;
+  $('#count').textContent = `${n} of ${STOPS.length} reviewed`;
+}
+function seg(name, opts, cur) { return `<div class="seg" role="group" aria-label="${name}">${opts.map(([v, l]) => `<button data-set="${name}" data-val="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')}</div>`; }
+function frameHtml(fn, lang) {
+  const desk = state.frame === 'desk';
+  return `<div class="fit" data-w="${desk ? 1100 : 375}" data-h="${desk ? 700 : 760}"><div class="frame ${desk ? 'desk' : 'phone'}"><div class="app th-${state.theme}" lang="${lang}">${fn(lang, desk)}</div></div></div>`;
+}
+function verdictBlock(id) {
+  const v = state.verdicts[id] || {};
+  return `<section class="card verdict" aria-labelledby="vh-${id}"><h2 id="vh-${id}" style="font-size:1.15rem">Your verdict</h2>
+    <div class="btns">${Object.entries(VLABEL).map(([k, l]) => `<button class="v ${k === 'dealbreaker' ? 'deal' : k}" data-verdict="${k}" aria-pressed="${v.verdict === k}">${l}</button>`).join('')}</div>
+    <label for="note-${id}">Note (optional)</label><textarea id="note-${id}" data-note placeholder="What should change, in your words">${esc(v.note || '')}</textarea><div class="saved" id="saved" aria-live="polite"></div></section>`;
+}
+function navBlock(i) {
+  const prev = ALL[i - 1], next = ALL[i + 1];
+  return `<div class="nav2">${prev ? `<button class="ghostb" data-go="${prev.id}">← ${prev.title}</button>` : '<span></span>'}${next ? `<button class="ghostb" data-go="${next.id}">${next.title} →</button>` : ''}</div>`;
+}
+function renderSummary() {
+  const items = STOPS.map((s, i) => { const v = state.verdicts[s.id]; return `<li><span class="n">${i + 1}</span><span><b>${s.title}:</b> ${v?.verdict ? VLABEL[v.verdict] : '<span class="muted">Not reviewed yet</span>'}${v?.note ? `<div class="q">“${esc(v.note)}”</div>` : ''}</span></li>`; }).join('');
+  const vs = STOPS.map((s) => state.verdicts[s.id]?.verdict);
+  const nStop = vs.filter((v) => v === 'dealbreaker').length, nChange = vs.filter((v) => v === 'change').length, nOk = vs.filter((v) => v === 'ok').length, nNone = vs.filter((v) => !v).length;
+  const decide = nStop ? `${nStop} dealbreaker${nStop > 1 ? 's' : ''}: the Turkish plan stops here unless the note says how to fix it.`
+    : nNone ? `${nNone} stop${nNone > 1 ? 's' : ''} still to review.`
+    : nChange ? `Go, with ${nChange} change${nChange > 1 ? 's' : ''} first.` : 'Go: everything looks right.';
+  return `<section class="card"><span class="tag">Summary</span><h2>Go or stop</h2><div class="decide">${decide}</div><p style="margin-top:10px" class="muted">${nOk} looks right · ${nChange} change it · ${nStop} dealbreaker</p></section>
+  <section class="card"><ul class="sum">${items}</ul><p style="margin-top:14px;color:var(--muted)">${db ? 'Your verdicts are saved. Tell Claude Code you’re done and it will read them.' : 'Saving isn’t available in this view, so copy your notes into the chat.'}</p></section>${navBlock(ALL.length - 1)}`;
+}
+function render() {
+  renderStops();
+  const i = ALL.findIndex((s) => s.id === state.stop);
+  const s = ALL[i];
+  const main = $('#main');
+  if (s.id === 'summary') { main.innerHTML = renderSummary(); return; }
+  const scr = state.screen[s.id] || s.screens[0][0];
+  const fn = (s.screens.find((x) => x[0] === scr) || s.screens[0])[2];
+  const langs = state.view === 'both' ? ['tr', 'en'] : [state.view];
+  const cols = state.frame === 'desk' || langs.length === 1 ? 1 : 2;
+  main.innerHTML = `<section class="card"><span class="tag">Stop ${i + 1} of ${STOPS.length}</span><h2>${s.title}</h2><p>${s.intro}</p>
+    <div class="controls" style="margin-top:12px">${s.screens.length > 1 ? seg('screen', s.screens.map(([v, l]) => [v, l]), scr) : ''}${seg('view', [['both', 'Both'], ['tr', 'Türkçe'], ['en', 'English']], state.view)}${seg('frame', [['phone', 'Phone'], ['desk', 'Desktop']], state.frame)}${seg('theme', [['light', 'Light'], ['dark', 'Dark']], state.theme)}</div></section>
+    <div class="stagebox" style="--cols:${cols}">${langs.map((l) => `<div class="col"><span class="cap">${l === 'tr' ? 'Türkçe' : 'English'}</span>${frameHtml(fn, l)}</div>`).join('')}</div>
+    ${state.frame === 'phone' && state.view === 'both' ? '<p class="hint" style="margin:-6px 0 0">Small on a phone? Tap Türkçe or English to see one at full size.</p>' : ''}
+    ${EXTRA[s.id] ? EXTRA[s.id]() : ''}${verdictBlock(s.id)}${navBlock(i)}`;
+  if (!s.hot) main.querySelectorAll('.hotable').forEach((el) => el.classList.remove('hotable'));
+  else main.querySelectorAll('.hotable').forEach((el) => el.classList.add('hot'));
+  fitFrames();
+}
+function fitFrames() {
+  document.querySelectorAll('.fit').forEach((box) => {
+    const w = +box.dataset.w, h = +box.dataset.h;
+    const sc = Math.min(1, box.clientWidth / w);
+    box.style.height = `${Math.ceil(h * sc)}px`;
+    box.firstElementChild.style.transform = `scale(${sc})`;
+  });
+}
+addEventListener('resize', fitFrames);
+
+function go(id) {
+  if (!ALL.some((s) => s.id === id)) id = 'tr-tabs';
+  state.stop = id; render();
+  try { if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id); } catch {}
+  try { $('#main').scrollIntoView({ block: 'start' }); } catch {}
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.go) { go(t.dataset.go); return; }
+  if (t.dataset.set) {
+    const k = t.dataset.set, v = t.dataset.val;
+    if (k === 'screen') state.screen[state.stop] = v; else state[k] = v;
+    try { localStorage.setItem('tr-review-view', JSON.stringify({ frame: state.frame, view: state.view, theme: state.theme })); } catch {}
+    render(); return;
+  }
+  if (t.dataset.verdict) {
+    const id = state.stop, v = (state.verdicts[id] ||= {});
+    v.verdict = t.dataset.verdict; render(); save(id); return;
+  }
+});
+let noteTimer;
+document.addEventListener('input', (e) => {
+  if (!e.target.matches('[data-note]')) return;
+  const id = state.stop; (state.verdicts[id] ||= {}).note = e.target.value;
+  clearTimeout(noteTimer); noteTimer = setTimeout(() => save(id), 600);
+});
+async function save(id) {
+  const out = () => $('#saved');
+  if (!db) { if (out()) out().textContent = 'Saving isn’t available here. Copy your note into the chat.'; return; }
+  try {
+    const v = state.verdicts[id];
+    await db.doc('review/' + id).set({ stop: id, verdict: v.verdict || null, note: v.note || '', at: new Date().toISOString() });
+    if (out()) out().textContent = 'Saved';
+  } catch { if (out()) out().textContent = 'Couldn’t save. Try again in a moment.'; }
+}
+window.addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id && id !== state.stop) go(id); });
+{ const h = location.hash.slice(1); if (ALL.some((s) => s.id === h)) state.stop = h; }
+render();
+if (document.fonts?.ready) document.fonts.ready.then(() => { if (state.stop === 'tr-tabs') render(); else fitFrames(); });
+(async () => {
+  try {
+    db = await window.claude?.use?.('db');
+    if (!db) return;
+    db.collection('review').onSnapshot((snap) => {
+      for (const d of snap.docs ?? []) { const x = d.data(); if (x?.stop?.startsWith?.('tr-')) state.verdicts[x.stop] = { verdict: x.verdict, note: x.note }; }
+      const focused = document.activeElement?.matches?.('[data-note]');
+      if (!focused) render(); else renderStops();
+    }, () => {});
+  } catch { db = null; }
+})();
+</script>
