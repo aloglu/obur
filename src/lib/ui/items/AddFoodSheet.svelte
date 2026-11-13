@@ -107,6 +107,7 @@
 				<button
 					type="button"
 					onclick={() => pick(r.id)}
+					data-prepare-touch={`/api/v1/foods/${r.id}`}
 					class="flex min-h-14 w-full items-center justify-between gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
 				>
 					<span class="line-clamp-2 min-w-0 text-[0.9375rem] font-semibold break-words"

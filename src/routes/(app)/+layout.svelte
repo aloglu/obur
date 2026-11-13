@@ -16,6 +16,7 @@
 	import { noteWaiting } from '#lib/client/offline/waiting.ts';
 	import { syncZoneCookie } from '#lib/client/prefs.ts';
 	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
+	import { forgetPrepared, startPreparing } from '#lib/client/prepare.ts';
 	import AppShell from '#lib/ui/shell/AppShell.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 
@@ -48,7 +49,10 @@
 			void invalidate(ACCOUNT_DATA, true);
 		}, 250);
 	}
+	// The pages likely to be opened next are prepared ahead (client/prepare.ts), so a tap shows them at once.
+	let preparer: ReturnType<typeof startPreparing> | undefined;
 	afterNavigate(({ type }) => {
+		preparer?.again();
 		// The first page arrives with all of it.
 		if (type !== 'enter') refreshAccount();
 	});
@@ -63,7 +67,17 @@
 
 	onMount(() => {
 		// The server decides which day "today" is from the device's time zone; refresh if it changed.
-		if (syncZoneCookie()) invalidateAll();
+		if (syncZoneCookie()) {
+			forgetPrepared();
+			invalidateAll();
+		}
+		preparer = startPreparing([
+			resolve('/(app)'),
+			resolve('/(app)/log'),
+			resolve('/(app)/journal'),
+			resolve('/(app)/progress'),
+			resolve('/(app)/more')
+		]);
 		// Send anything this account queued while offline; refresh the page when something arrives.
 		if (data.user)
 			startSync(data.user.id, (sent) => {
@@ -135,6 +149,7 @@
 			}, 200);
 		}, 3000);
 		return () => {
+			preparer?.stop();
 			clearTimeout(warm);
 			clearInterval(ahead);
 			clearTimeout(accountTimer);

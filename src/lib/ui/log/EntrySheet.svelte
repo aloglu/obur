@@ -529,6 +529,7 @@
 									<button
 										type="button"
 										onclick={() => choose(card, c.id)}
+										data-prepare-touch={`/api/v1/foods/${c.id}`}
 										class="flex min-h-[52px] items-center justify-between gap-3 rounded-small bg-surface2 py-1.5 pr-3 pl-3.5 text-left"
 									>
 										<span class="min-w-0">
@@ -587,6 +588,7 @@
 									<button
 										type="button"
 										onclick={() => choose(card, r.id)}
+										data-prepare-touch={`/api/v1/foods/${r.id}`}
 										class="min-h-11 truncate rounded-small px-2 text-left text-[0.9375rem] font-semibold hover:bg-surface2"
 										>{r.brand ? `${r.brand} ` : ''}{r.name}</button
 									>

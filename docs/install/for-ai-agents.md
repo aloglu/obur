@@ -107,6 +107,8 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
 - **"set PUBLIC_ORIGIN …" / "set OBUR_BACKUP_PASSPHRASE …":** a required setting is missing; add it and start again.
 - **"OBUR_BACKUP_PASSPHRASE is still the example value":** let the person choose their own phrase (or generate one)
   and save it in their password manager; see `troubleshooting.md` if backups already exist.
+- **"obur: slow: GET /path N ms"** (log): the server took over 300 ms on that request. Harmless by itself; if it
+  repeats for the same path, report it with the path and times (never paste a query or personal data).
 - **New versions:** obur does not look for them unless an admin turns on Household → Updates → "Check for new
   versions" (it then reads GitHub's public tag list once a day; `updates: the published versions could not be read`
   in the log means GitHub was unreachable, which is harmless). It never updates itself.

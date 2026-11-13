@@ -197,6 +197,7 @@
 					<button
 						type="button"
 						onclick={() => onpickmeal?.(s.id)}
+						data-prepare-touch={`/api/v1/saved-meals/${s.id}`}
 						class="flex min-h-14 w-full items-center gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
 					>
 						<Bookmark size={18} class="shrink-0 text-accent" aria-hidden="true" />
@@ -218,6 +219,7 @@
 				<button
 					type="button"
 					onclick={() => onpick(r.id)}
+					data-prepare-touch={`/api/v1/foods/${r.id}`}
 					class="grid min-h-14 w-full grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-input px-2.5 py-1.5 text-left hover:bg-surface2"
 				>
 					<FoodIcon icon={r.icon} name={r.name} brand={r.brand} />

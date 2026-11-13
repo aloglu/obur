@@ -9,6 +9,7 @@
 import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
 import { answerFromCopy, mergePageData, nothingNew } from './lib/shared/page-data-copy.ts';
+import { PREPARED_AGAIN_MS, askedLayers, mayAnswer, preparedKey } from './lib/shared/prepare.ts';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 const SHELL = `obur-shell-${version}`;
@@ -83,10 +84,113 @@ let unreachableUntil = 0;
 // A page that has just reached the server (its queue sent something) ends the hold at once, so the refresh that
 // follows shows live data instead of the saved copy. The reply tells the page it may refresh now.
 sw.addEventListener('message', (event) => {
-	if (event.data?.type !== 'obur:reachable') return;
-	unreachableUntil = 0;
-	event.ports[0]?.postMessage('ok');
+	const type = event.data?.type;
+	if (type === 'obur:reachable') {
+		unreachableUntil = 0;
+		event.ports[0]?.postMessage('ok');
+	} else if (type === 'obur:prepare' && Array.isArray(event.data.urls)) {
+		event.waitUntil(prepareAll(event.data.urls as string[]));
+	} else if (type === 'obur:forget') {
+		forgetPrepared();
+	}
 });
+
+// Pages prepared ahead (shared/prepare.ts): the open page names the pages likely to be opened next, and their data
+// is fetched now, so a tap shows the page at once. Kept in memory only, for a minute; any write drops them all,
+// and nothing fetched while a write was under way is kept, so a prepared page never predates a change made here.
+interface Prepared {
+	body: ArrayBuffer;
+	status: number;
+	headers: [string, string][];
+	at: number;
+	layers: string | null;
+}
+const prepared = new Map<string, Prepared>();
+/** Preparations under way: a request for one waits for it rather than asking the server a second time. */
+const preparing = new Map<string, Promise<void>>();
+/** Writes under way, and a count that changes with each one, so a fetch can tell whether one happened meanwhile. */
+let writes = 0;
+let generation = 0;
+
+function forgetPrepared() {
+	generation++;
+	prepared.clear();
+}
+
+async function prepareOne(url: string) {
+	const key = preparedKey(url);
+	const known = prepared.get(key);
+	if (preparing.has(key) || (known && Date.now() - known.at < PREPARED_AGAIN_MS)) return;
+	let done = () => {};
+	preparing.set(key, new Promise<void>((resolve) => (done = resolve)));
+	const startedAt = generation;
+	try {
+		const response = await fetch(url, {
+			credentials: 'same-origin',
+			signal: AbortSignal.timeout(NETWORK_TIMEOUT_MS)
+		}).catch((e: unknown) => {
+			// Hanging or failing like any other request: pages come from the saved copy at once for a while.
+			unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS;
+			throw e;
+		});
+		unreachableUntil = 0;
+		if (!response.ok || response.redirected || response.type !== 'basic') return;
+		const body = await response.clone().arrayBuffer();
+		if (generation !== startedAt || writes > 0) return;
+		prepared.set(key, {
+			body,
+			status: response.status,
+			headers: [...response.headers],
+			at: Date.now(),
+			layers: askedLayers(url)
+		});
+		// It is fresh: the copy for use offline gets it too.
+		await save(await caches.open(DATA), key, response);
+	} catch {
+		// Not reachable: the page is answered from the saved copy when it is opened.
+	} finally {
+		preparing.delete(key);
+		done();
+	}
+}
+
+/** A few at a time, so a page change never waits behind a queue of preparations. */
+async function prepareAll(urls: string[]) {
+	const queue = urls.filter((u) => {
+		try {
+			return new URL(u).origin === location.origin;
+		} catch {
+			return false;
+		}
+	});
+	const worker = async () => {
+		for (let url = queue.shift(); url !== undefined; url = queue.shift()) await prepareOne(url);
+	};
+	await Promise.all([worker(), worker(), worker()]);
+}
+
+/** A prepared answer for this request, if one may answer it. */
+function preparedAnswer(request: Request): Response | undefined {
+	if (writes > 0) return undefined;
+	const entry = prepared.get(preparedKey(request.url));
+	if (!entry || !mayAnswer(entry, request.url, Date.now())) return undefined;
+	return new Response(entry.body.slice(0), { status: entry.status, headers: entry.headers });
+}
+
+/** A change sent to the server: prepared pages may now be out of date, before and after it lands. */
+async function write(request: Request): Promise<Response> {
+	writes++;
+	forgetPrepared();
+	try {
+		return await fetch(request);
+	} finally {
+		writes--;
+		forgetPrepared();
+		// Open pages prepare again (client/prepare.ts).
+		for (const client of await sw.clients.matchAll({ type: 'window' }))
+			client.postMessage({ type: 'obur:written' });
+	}
+}
 
 const isPageData = (key: string) => new URL(key).pathname.endsWith('/__data.json');
 /** Which parts of a page's data a request asked for (SvelteKit's digits); null means all of them. */
@@ -206,9 +310,12 @@ async function networkFirst(event: FetchEvent): Promise<Response> {
 
 sw.addEventListener('fetch', (event) => {
 	const { request } = event;
-	if (request.method !== 'GET') return;
 	const url = new URL(request.url);
 	if (url.origin !== location.origin) return;
+	if (request.method !== 'GET') {
+		event.respondWith(write(request));
+		return;
+	}
 
 	// Hashed files never change, so any cached version's copy is right (including the previous version's).
 	if (SHELL_ASSETS.has(url.pathname) || url.pathname.startsWith('/_app/immutable/')) {
@@ -230,18 +337,46 @@ sw.addEventListener('fetch', (event) => {
 		);
 		return;
 	}
+	// Prepared a moment ago for exactly this: answered at once.
+	const ready = preparedAnswer(request);
+	if (ready) {
+		void announce(request, 'live');
+		event.respondWith(ready);
+		return;
+	}
+	// Being prepared right now (a finger touched it a moment ago): wait for that answer.
+	const underWay = preparing.get(preparedKey(request.url));
+	if (underWay) {
+		event.respondWith(
+			underWay.then(() => {
+				const arrived = preparedAnswer(request);
+				if (arrived) {
+					void announce(request, 'live');
+					return arrived;
+				}
+				return answerNormally(event);
+			})
+		);
+		return;
+	}
+	const handled = route(event, url);
+	if (handled) event.respondWith(handled);
+});
+
+/** How a GET is answered when nothing prepared applies; undefined when it goes to the network untouched. */
+function route(event: FetchEvent, url: URL): Promise<Response> | undefined {
+	const { request } = event;
 	const page =
 		request.mode === 'navigate' ||
 		url.pathname.endsWith('/__data.json') ||
 		request.headers.get('accept')?.includes('text/html');
-	if (page && !NO_CACHE_PAGES.test(url.pathname)) {
-		event.respondWith(networkFirst(event));
-		return;
-	}
-	if (CACHEABLE_API.some((pattern) => pattern.test(url.pathname))) {
-		event.respondWith(networkFirst(event));
-	}
-});
+	if (page && !NO_CACHE_PAGES.test(url.pathname)) return networkFirst(event);
+	if (CACHEABLE_API.some((pattern) => pattern.test(url.pathname))) return networkFirst(event);
+	return undefined;
+}
+
+const answerNormally = (event: FetchEvent) =>
+	route(event, new URL(event.request.url)) ?? fetch(event.request);
 
 // Reminders (docs/ui.md, "Reminders"): show what the server sent; a tap opens the app, reusing an open window.
 sw.addEventListener('push', (event) => {

@@ -113,7 +113,32 @@ const handleSession: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/** Requests whose work is slow by nature (reading a recording or a photo, building or reading an archive). */
+const SLOW_BY_NATURE = /^\/api\/v1\/(speak|scan|import|export|entry\/parse)/;
+/** Pages and lists that take longer than this on the server are logged, so a slow one can be found and fixed. */
+const SLOW_MS = 300;
+
+/**
+ * How long the server took, sent with every answer (Server-Timing, visible in the browser's developer tools), and
+ * a log line for any slow one: the method, the path (never the query, which can hold searches) and the time.
+ */
+const handleTiming: Handle = async ({ event, resolve }) => {
+	const started = performance.now();
+	const response = await resolve(event);
+	const ms = performance.now() - started;
+	try {
+		response.headers.set('server-timing', `app;dur=${ms.toFixed(1)}`);
+	} catch {
+		// Some responses (a redirect from fetch) have fixed headers; the time is then only logged.
+	}
+	const path = event.url.pathname;
+	if (ms > SLOW_MS && !SLOW_BY_NATURE.test(path))
+		console.log(`obur: slow: ${event.request.method} ${path} ${Math.round(ms)} ms`);
+	return response;
+};
+
 export const handle: Handle = sequence(
+	handleTiming,
 	handleRestore,
 	handleSecurity,
 	handleSession,

@@ -89,21 +89,12 @@
 	// A file chosen before the page is interactive would be lost silently, so the picker waits for hydration.
 	let ready = $state(false);
 	// Foods from a LoseIt import, which can be archived all at once (docs/design.md, "LoseIt import").
-	let imported = $state<{ active: number; archived: number } | null>(null);
-	const loadImported = async () => {
-		imported = await api<{ active: number; archived: number }>(
-			'GET',
-			'/api/v1/foods/imported'
-		).catch(() => imported);
-	};
+	const imported = $derived(data.imported);
+	const loadImported = () => invalidateAll();
 	// Deleting the account asks about shared foods only when there are some.
-	let sharedFoods = $state(0);
+	const sharedFoods = $derived(data.sharedFoods);
 	onMount(() => {
 		ready = true;
-		void api<{ sharedFoods: number }>('GET', '/api/v1/account')
-			.then((r) => (sharedFoods = r.sharedFoods))
-			.catch(() => {});
-		void loadImported();
 	});
 	const archiveImported = (archived: boolean) =>
 		run(async () => {
@@ -272,7 +263,7 @@
 			summary = null;
 			file = null;
 			showToast({ message: m.data_import_done() });
-			await Promise.all([invalidateAll(), loadImported()]);
+			await invalidateAll();
 		}, importProblem);
 
 	const deleteAccount = () =>

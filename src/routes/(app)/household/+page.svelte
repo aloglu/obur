@@ -2,7 +2,6 @@
 	import Check from '@lucide/svelte/icons/check';
 	import Link from '@lucide/svelte/icons/link';
 	import { resolve } from '$app/paths';
-	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
@@ -76,10 +75,10 @@
 			});
 		}
 	}
-	let invites = $state<Invite[]>([]);
-	let members = $state<Member[]>([]);
-	let deletions = $state<Deletion[]>([]);
-	let backups = $state<BackupReport | null>(null);
+	const invites = $derived(data.invites as Invite[]);
+	const members = $derived(data.members as Member[]);
+	const deletions = $derived(data.deletions as Deletion[]);
+	const backups = $derived(data.backups as BackupReport | null);
 	let deleting = $state<Member | null>(null);
 	let removeShared = $state<'keep' | 'remove'>('keep');
 	let note = $state('');
@@ -90,15 +89,8 @@
 
 	const date = (iso: string) => shortDate(iso.slice(0, 10));
 
-	const refresh = async () => {
-		invites = (await api<{ invites: Invite[] }>('GET', '/api/v1/auth/invites')).invites;
-		({ members, deletions, backups } = await api<{
-			members: Member[];
-			deletions: Deletion[];
-			backups: BackupReport;
-		}>('GET', '/api/v1/household/members'));
-	};
-	onMount(refresh);
+	// The lists come with the page; after a change, the page's data is fetched again.
+	const refresh = () => invalidateAll();
 
 	async function run(action: () => Promise<void>) {
 		busy = true;

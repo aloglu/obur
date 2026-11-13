@@ -2,6 +2,7 @@
 	import PageHead from '#lib/ui/PageHead.svelte';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import { describeError, register, suggestedLabel, withRecentAuth } from '#lib/client/passkeys.ts';
@@ -19,8 +20,9 @@
 		lastUsedAt: string | null;
 	}
 
-	let credentials = $state<Credential[]>([]);
-	let remaining = $state<number | undefined>();
+	let { data } = $props();
+	const credentials = $derived(data.credentials as Credential[]);
+	const remaining = $derived(data.remaining);
 	let label = $state('');
 	let problem = $state('');
 	let info = $state('');
@@ -30,15 +32,11 @@
 	const date = (iso: string) =>
 		new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
 
-	async function refresh() {
-		credentials = (await api<{ credentials: Credential[] }>('GET', '/api/v1/auth/credentials'))
-			.credentials;
-		remaining = (await api<{ remaining: number }>('GET', '/api/v1/auth/recovery-codes')).remaining;
-	}
+	// The lists come with the page; after a change, the page's data is fetched again.
+	const refresh = () => invalidateAll();
 
 	onMount(() => {
 		label = suggestedLabel();
-		refresh();
 	});
 
 	async function run(action: () => Promise<void>) {

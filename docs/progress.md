@@ -4,6 +4,16 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 ## Owner's reports on beta.10 (2026-11-13), `main`, next release
 
+- Done (owner's choice, 2026-11-13: options 2 and 5 of six laid out; easy to reverse): pages prepared ahead in the
+  service worker, so every tab and More section opens at once with data seconds old, and nothing changes on screen
+  after it appears; lists in Household, Your data and Passkeys come with the page; food and saved-meal details are
+  prepared when a finger touches the row. Server timing on every answer and slow requests logged. See design.md,
+  "Page changes and the saved copies". Tests: `prepare.test.ts`, `prepared.e2e.ts` (fast tab with the server held
+  back 5 s; a save never hidden behind a prepared copy, checked to fail without the protection; Household listed on
+  arrival), offline hanging-connection test reworded to "at most one page change waits". Not yet on a real iPhone.
+  If the owner still finds screens slow, the agreed next step is option 3 (show the saved copy, then update) for
+  those screens only.
+
 - Fixed: Today's date title flashed on every visit, desktop too. Cause (mine, in beta.10): the shared-data refresh a
   moment after each page change also reloaded Today (its load read today's date from the layout), and the title's
   animation class was worked out again on every refresh. Page loads now work out today themselves; the shared data

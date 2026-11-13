@@ -5,6 +5,8 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { m } from '#lib/paraglide/messages.js';
 	import { dayHeading } from '#lib/shared/format.ts';
+	import { dayHref } from '#lib/client/links.ts';
+	import { addDays } from '#lib/shared/diary-rules.ts';
 
 	let { date, today, onmove }: { date: string; today: string; onmove: (days: number) => void } =
 		$props();
@@ -39,6 +41,7 @@
 	<button
 		type="button"
 		onclick={() => onmove(-1)}
+		data-prepare={dayHref(addDays(date, -1))}
 		aria-label={m.day_previous()}
 		class="grid size-11 place-items-center rounded-full text-text"
 	>

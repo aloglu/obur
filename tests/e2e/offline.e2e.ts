@@ -197,7 +197,7 @@ test('the service worker and manifest are never served from a cache', async ({ r
 	}
 });
 
-test('with a hanging connection, only the first page waits; later tabs open from the saved copy at once', async ({
+test('with a hanging connection, at most one page change waits; the ones after it open from the saved copy at once', async ({
 	page,
 	context,
 	browserName
@@ -211,13 +211,25 @@ test('with a hanging connection, only the first page waits; later tabs open from
 	// Page data requests neither succeed nor fail, as on iOS in Airplane Mode.
 	await context.route('**/__data.json*', () => {});
 	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
-	await nav.getByRole('link', { name: 'Progress' }).click();
-	await expect(page.getByRole('heading', { level: 1, name: 'Progress' })).toBeVisible({
-		timeout: 6000
-	});
+	// The first moves may open from pages prepared before the connection went, or wait for it once; never more.
+	let waits = 0;
+	for (const [link, title] of [
+		['Progress', 'Progress'],
+		['Today', 'Today'],
+		['Journal', 'Journal']
+	]) {
+		const started = Date.now();
+		await nav.getByRole('link', { name: link }).click();
+		await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible({
+			timeout: 6000
+		});
+		if (Date.now() - started > 1500) waits++;
+	}
+	expect(waits).toBeLessThanOrEqual(1);
+	// After that, every tab opens at once.
 	const started = Date.now();
-	await nav.getByRole('link', { name: 'Today' }).click();
-	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await nav.getByRole('link', { name: 'More' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'More' })).toBeVisible();
 	expect(Date.now() - started).toBeLessThan(1500);
 	await context.unrouteAll({ behavior: 'ignoreErrors' });
 });
