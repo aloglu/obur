@@ -17,7 +17,8 @@ cleanup() {
 trap cleanup EXIT
 fail() {
 	echo "off-site test failed: $*" >&2
-	docker logs "$name" 2>&1 | tail -40 >&2
+	docker exec "$name" cat /data/status/backup.json >&2 || true
+	docker logs "$name" 2>&1 | grep -v '^Applied' | tail -40 >&2
 	exit 1
 }
 sql() { docker exec "$name" gosu postgres psql -X -q -t -A -h /var/run/postgresql -U obur_admin -d obur -c "$1"; }
@@ -74,7 +75,7 @@ for _ in $(seq 30); do
 done
 (($(waiting) == 0)) || fail "the waiting WAL was not sent"
 in_repo /offsite "$segment" || fail "the waiting WAL is not in the off-site store"
-docker exec "$name" obur backup restore-check >/dev/null 2>&1 || fail "restore check after the outage"
+out=$(docker exec "$name" obur backup restore-check 2>&1) || fail "restore check after the outage: $out"
 [[ $(status '[.lastRestoreCheck.ok, .lastOffsiteRestoreCheck.ok]') == '[true,true]' ]] || fail "restore check results"
 
 echo "an outage longer than the queue holds"
@@ -88,5 +89,5 @@ docker exec "$name" chmod 700 /offsite
 docker exec "$name" obur backup now >/dev/null 2>&1 || fail "the backup after the gap"
 sleep 4
 [[ $(status '.offsiteQueue.gapAt') == null ]] || fail "the gap is still reported after an off-site backup"
-docker exec "$name" obur backup restore-check >/dev/null 2>&1 || fail "restore check after the gap"
+out=$(docker exec "$name" obur backup restore-check 2>&1) || fail "restore check after the gap: $out"
 echo "off-site test passed"

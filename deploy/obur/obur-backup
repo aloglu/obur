@@ -100,7 +100,9 @@ offsite_only() {
 	)
 }
 
-queued() { find "$QUEUE_DIR" -maxdepth 1 -name '*.gz' 2>/dev/null | sort; }
+# The waiting files, oldest first. Files come and go while this looks (a WAL file arriving, another being sent), which
+# find reports as a failure; the list it printed is still right.
+queued() { { find "$QUEUE_DIR" -maxdepth 1 -name '*.gz' 2>/dev/null || true; } | sort; }
 
 # PostgreSQL's archive_command. The local repository decides the result: PostgreSQL keeps a WAL file until this
 # succeeds, so failing here because the off-site store is away would stop WAL reaching the local repository too
@@ -142,6 +144,7 @@ drain_queue() {
 			item=$(queued | head -1)
 			[[ -n $item ]] || break
 			name=$(basename "$item" .gz)
+			[[ -e $item ]] || continue
 			gzip -dc "$item" >"$work/$name" || exit 1
 			if ! out=$(offsite_only archive-push "$work/$name" 2>&1); then
 				# Already there with other contents (an earlier attempt that did arrive): nothing more to send.
@@ -286,7 +289,10 @@ restore_check_repo() {
 	# Cleans up when this function returns, then removes itself: a RETURN trap would otherwise fire again when the
 	# calling function returns, where $dir no longer exists.
 	trap 'pg_ctl -D "$dir" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$dir"; trap - RETURN' RETURN
-	# The recovery point to prove: the live database's current position, archived now.
+	# The recovery point to prove: the live database's current position, archived now. A marker is written first, so
+	# there is always something to archive: on a quiet database sitting exactly at the start of a WAL file, closing
+	# the file does nothing, and the check waited two minutes for a file that never came (seen 2026-11-13).
+	"${PSQL[@]}" -c "select pg_create_restore_point('obur restore check')" >/dev/null
 	target=$("${PSQL[@]}" -c 'select pg_current_wal_lsn()')
 	segment=$("${PSQL[@]}" -c "select pg_walfile_name('$target')")
 	"${PSQL[@]}" -c 'select pg_switch_wal()' >/dev/null
