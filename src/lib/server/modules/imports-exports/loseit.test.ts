@@ -20,7 +20,11 @@ const files = Object.fromEntries(
 );
 const data = readLoseItFiles(files);
 const archive = () =>
-	zipSync(Object.fromEntries(Object.entries(files).map(([k, v]) => [k, strToU8(v)])));
+	zipSync(Object.fromEntries(Object.entries(files).map(([k, v]) => [k, strToU8(v)])), {
+		// A fixed time: the same files must give the same bytes (zip stores the time to 2 s, so two zips built a
+		// moment apart could differ, and the repeat-import check compares the file's hash).
+		mtime: new Date('2026-01-01T00:00:00Z')
+	});
 
 describe('values', () => {
 	it('reads US dates and refuses impossible ones', () => {
