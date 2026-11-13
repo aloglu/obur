@@ -2,14 +2,20 @@
 	import Cloud from '@lucide/svelte/icons/cloud';
 	import CloudOff from '@lucide/svelte/icons/cloud-off';
 	import { onMount } from 'svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { afterNavigate, invalidate, invalidateAll, preloadCode } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
 	import { offer } from '#lib/client/celebration.svelte.ts';
-	import { offline, recentlyUnreachable, startSync } from '#lib/client/offline/sync.svelte.ts';
+	import {
+		offline,
+		recentlyUnreachable,
+		serverReachable,
+		startSync
+	} from '#lib/client/offline/sync.svelte.ts';
 	import { noteWaiting } from '#lib/client/offline/waiting.ts';
 	import { syncZoneCookie } from '#lib/client/prefs.ts';
+	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import AppShell from '#lib/ui/shell/AppShell.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 
@@ -17,6 +23,23 @@
 
 	// Achievements the server found waiting: the toast offers the most notable (docs/ui.md).
 	$effect(() => offer(data.celebrate));
+
+	// A page change loads only the page. What every page shares (settings, today's date, celebrations) is asked for
+	// again a moment later, in the background, so a change made on another device still arrives without a reload.
+	let accountTimer: ReturnType<typeof setTimeout> | undefined;
+	afterNavigate(({ type }) => {
+		// The first page arrives with all of it.
+		if (type === 'enter') return;
+		clearTimeout(accountTimer);
+		accountTimer = setTimeout(async () => {
+			if (recentlyUnreachable()) return;
+			// A refresh that fails must never replace the page (SvelteKit shows an error or loads the page again,
+			// losing what is being typed). The service worker answers "nothing new" when the server cannot; without
+			// one (the very first visit, before it has taken over), ask only once the server is known to be there.
+			if (!navigator.serviceWorker?.controller && !(await serverReachable())) return;
+			void invalidate(ACCOUNT_DATA, true);
+		}, 250);
+	});
 
 	onMount(() => {
 		// The server decides which day "today" is from the device's time zone; refresh if it changed.
@@ -35,6 +58,7 @@
 			});
 		// Keep a copy of every main tab on this device, so each one opens without a connection, not only the
 		// pages visited while online. Done once per app start, after the current page has settled.
+		let ahead: ReturnType<typeof setInterval> | undefined;
 		const warm = setTimeout(() => {
 			if (recentlyUnreachable()) return;
 			const tabs = [
@@ -56,8 +80,45 @@
 				get(href, 'text/html');
 				get(href === '/' ? '/__data.json?x-sveltekit-trailing-slash=1' : `${href}/__data.json`);
 			}
+			// Every page's code, one at a time, so the first visit to a page does not wait for it (the files are already
+			// on this device, in the service worker's copy; this reads them in before the tap).
+			const pages = [
+				'/(app)',
+				'/(app)/log',
+				'/(app)/journal',
+				'/(app)/progress',
+				'/(app)/more',
+				'/(app)/profile',
+				'/(app)/more/settings',
+				'/(app)/foods',
+				'/(app)/recipes',
+				'/(app)/saved-meals',
+				'/(app)/more/deleted',
+				'/(app)/household',
+				'/(app)/help',
+				'/(app)/achievements',
+				'/(app)/more/goal',
+				'/(app)/more/units',
+				'/(app)/more/appearance',
+				'/(app)/more/speak-and-scan',
+				'/(app)/settings/reminders',
+				'/(app)/settings/security',
+				'/(app)/settings/data',
+				'/(app)/foods/new',
+				'/(app)/foods/[id]',
+				'/(app)/scan'
+			] as const;
+			let next = 0;
+			ahead = setInterval(() => {
+				if (next >= pages.length) return clearInterval(ahead);
+				preloadCode(pages[next++]).catch(() => {});
+			}, 200);
 		}, 3000);
-		return () => clearTimeout(warm);
+		return () => {
+			clearTimeout(warm);
+			clearInterval(ahead);
+			clearTimeout(accountTimer);
+		};
 	});
 	// Keep the service worker's copy of this page current, so an offline reload shows the latest data rather than
 	// the page as it was first loaded. Only while online; failures are irrelevant.

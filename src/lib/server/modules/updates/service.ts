@@ -80,6 +80,11 @@ export function createUpdates(db: Database, options: UpdatesOptions) {
 			return toStatus(row);
 		},
 
+		/** The newer version already known, for an admin; never asks outside. Null for anyone else. */
+		async known(userId: string, isAdmin: boolean): Promise<string | null> {
+			return isAdmin ? toStatus(await read(userId)).latest : null;
+		},
+
 		/** Turns the check on (asking at once) or off (forgetting the answer). Null: not an admin. */
 		async setCheck(adminId: string, on: boolean): Promise<UpdateStatus | null> {
 			const rows = await withUser(db, adminId, (tx) =>

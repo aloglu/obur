@@ -2,7 +2,7 @@
 	// Navigation per docs/ui.md: floating tab bar on phones; from 760 px a side nav, as icons until 1100 px.
 	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import BookOpen from '@lucide/svelte/icons/book-open';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import CirclePlus from '@lucide/svelte/icons/circle-plus';
@@ -16,7 +16,8 @@
 
 	let { children }: { children: Snippet } = $props();
 
-	const path = $derived(page.url.pathname);
+	// The tab bar follows the tap: the page being opened counts as the current one, before it has arrived.
+	const path = $derived(navigating.to?.url.pathname ?? page.url.pathname);
 	const is = (prefix: string) => (prefix === '/' ? path === '/' : path.startsWith(prefix));
 	const moreActive = $derived(
 		[
@@ -31,7 +32,9 @@
 		].some((p) => path.startsWith(p))
 	);
 
-	const journalLink = $derived(journalHref(is('/') ? page.url.searchParams.get('date') : null));
+	const journalLink = $derived(
+		journalHref(page.url.pathname === '/' ? page.url.searchParams.get('date') : null)
+	);
 	const activeTab = $derived(
 		is('/') ? 0 : is('/log') ? 1 : is('/journal') ? 2 : is('/progress') ? 3 : moreActive ? 4 : -1
 	);

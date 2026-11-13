@@ -33,6 +33,21 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   development machine with the same request (beta.8 is told of beta.9; beta.9 and 1.0.0 of nothing).
   It reads tags, not GitHub Releases (the release workflow creates none); past 100 tags it would need paging.
 
+- Done (owner's report, 2026-11-13: "on mobile it behaves as though I am on a very slow connection"; "the headers
+  of sections don't line up", also within More). Measured, not assumed: with 150 ms added to every request,
+  phone-size Chromium at a 4x slower CPU, every page change took about 205 ms, all of it one trip to the server,
+  because both layouts reloaded their data on every page change. The code was not the cause: it is cached and
+  read in quickly. Now a page change loads only the page; the layouts' data (`obur:account`, which now also carries
+  More's counts and Settings' Goal row) refreshes 250 ms later in the background. Log, More, Settings, Help,
+  Appearance, Units, Your data, Passkeys and the new-food form open in about 65 ms there; pages with their own data
+  still take one trip. The tab bar marks the tapped tab at once. Service worker: answers before writing its copy,
+  builds saved page data up part by part (`shared/page-data-copy.ts`, unit tests), and answers a failed background
+  refresh with "nothing new", so it can never replace or reload a page (the first version could; the offline test
+  caught it). Every page's code is read in ahead of the first visit. More asks about updates after it opens
+  (`GET /api/v1/household/update-check`, `updates.known`). Headers: Today, Log, Progress and Passkeys sat 3–8 px
+  off the rest; all titles now share one height, and titles no longer rise with the page (that 8 px rise, on every
+  page change, was most of the jump people saw). `app-shell.e2e.ts` checks both. Not yet on a real iPhone.
+
 Checked 2026-11-13 after the three changes: type-check, lint, 1069 unit and database tests, e2e 218 passed (17
 skipped by design), image built, smoke test, off-site outage test, and an upgrade from the published beta.9 image
 (backup first, migrations 0046–0049 applied). Not released yet; the owner has a question and a request first.

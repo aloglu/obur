@@ -203,8 +203,20 @@ main {
 		transform: translateY(8px);
 	}
 }
+/* The page's title does not rise with it: titles sit at one height on every page, so a moving one reads as the
+   header jumping on each page change (owner, 2026-11-13). It moves against the page by the same amount, and only
+   fades in. */
+.page-head {
+	animation: page-head-hold 220ms var(--ui);
+}
+@keyframes page-head-hold {
+	from {
+		transform: translateY(-8px);
+	}
+}
 @media (prefers-reduced-motion: reduce) {
-	main {
+	main,
+	.page-head {
 		animation: none;
 	}
 }

@@ -98,6 +98,18 @@ describe('the check for new versions', () => {
 		expect((await u.status(ADMIN, true)).latest).toBe('1.0.3');
 	});
 
+	it('says what is already known without asking', async () => {
+		const u = updates();
+		expect(await u.known(ADMIN, true)).toBeNull();
+		await u.setCheck(ADMIN, true);
+		const before = asked;
+		hours(25);
+		answer = ['v9.9.9'];
+		expect(await u.known(ADMIN, true)).toBe('1.0.1');
+		expect(await u.known(MEMBER, false)).toBeNull();
+		expect(asked).toBe(before);
+	});
+
 	it('is the admins’ alone: a member can neither switch it nor cause a request', async () => {
 		const u = updates();
 		expect(await u.setCheck(MEMBER, true)).toBeNull();

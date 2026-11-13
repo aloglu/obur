@@ -335,5 +335,6 @@ test('New food: Scan label fills the Nutrition card in place, asks before replac
 	);
 	expect(await scanEditsFor(name)).toMatchObject({ changed: 0, removed: 0, added: 0 });
 	await page.goto('/');
-	await expect(page.getByText(name)).toHaveCount(0);
+	// In the day itself: the "Saved" confirmation may still be showing (it survives a page load for its 5 s).
+	await expect(page.getByRole('main').getByText(name)).toHaveCount(0);
 });

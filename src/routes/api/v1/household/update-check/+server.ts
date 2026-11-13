@@ -6,6 +6,17 @@ import { updates } from '#lib/server/updates.ts';
 import type { RequestHandler } from './$types';
 
 /**
+ * GET /api/v1/household/update-check: what an admin sees, asking GitHub first when the stored answer is over a day
+ * old and the check is on. More calls it after opening, so the page itself never waits for GitHub.
+ */
+export const GET: RequestHandler = ({ locals }) =>
+	respond(async () => {
+		const session = locals.session!;
+		auth.requireAdmin(session);
+		return json({ updates: await updates.status(session.userId, true) });
+	});
+
+/**
  * PUT /api/v1/household/update-check {on}: whether obur asks GitHub for newer versions (admins). Turning it on asks
  * at once and answers with what was found.
  */

@@ -350,7 +350,8 @@
 
 <svelte:head><title>{m.nav_today()} · {m.app_name()}</title></svelte:head>
 
-<main class="today mx-auto max-w-[1064px] px-3.5 py-3 desk:px-7 desk:py-5">
+<!-- The top padding puts "Today" at the height of every other page's title (the day header centres it in 60 px). -->
+<main class="today mx-auto max-w-[1064px] px-3.5 pt-[calc(1rem-1.25px)] pb-3 desk:px-7 desk:pb-5">
 	<DayHeader date={data.date} today={data.today} onmove={move} />
 	{#if refused.length}
 		<button

@@ -15,7 +15,7 @@
 </script>
 
 <!-- The negative margins keep the title where it sits on pages without a "<", and the arrow on the cards' edge. -->
-<div class="-my-1 flex items-start gap-0.5">
+<div class="page-head -my-1 flex items-start gap-0.5">
 	<!-- eslint-disable svelte/no-navigation-without-resolve -- every caller passes resolve(...) -->
 	<a
 		{href}

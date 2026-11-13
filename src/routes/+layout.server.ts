@@ -1,11 +1,13 @@
 import { goals } from '#lib/server/goals.ts';
+import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '#lib/shared/preferences.ts';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ locals, url }) => {
-	// Runs again on every page change, so a setting changed on another device arrives without a reload, and the
-	// Home Screen icon link in the page's head is always the account's (docs/ui.md, "App icon").
-	void url.pathname;
+export const load: LayoutServerLoad = async ({ locals, depends }) => {
+	// Asked for again after every page change (the app layout, ACCOUNT_DATA), so a setting changed on another device
+	// arrives without a reload, and the Home Screen icon link in the page's head is always the account's (docs/ui.md,
+	// "App icon"). After, not during: a page never waits for this before it opens.
+	depends(ACCOUNT_DATA);
 	const s = locals.session;
 	// This browser's own choices (cookies): what shows before signing in.
 	const device: Preferences = {

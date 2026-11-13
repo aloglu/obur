@@ -65,7 +65,7 @@ async function post(path: string, body: unknown, timeoutMs = TIMEOUT_MS): Promis
 }
 
 /** A quick check that bypasses the service worker's saved copies (no page data involved). */
-async function serverReachable(): Promise<boolean> {
+export async function serverReachable(): Promise<boolean> {
 	if (Date.now() < unreachableUntil) return false;
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), DIRECT_TIMEOUT_MS);

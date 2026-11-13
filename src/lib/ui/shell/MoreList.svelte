@@ -13,10 +13,11 @@
 	interface Props {
 		isAdmin: boolean;
 		displayName: string;
-		deletedCount: number;
-		foodCount: number;
-		recipeCount: number;
-		mealCount: number;
+		/** The numbers beside the rows; undefined when they could not be read (the row then shows none). */
+		deletedCount?: number;
+		foodCount?: number;
+		recipeCount?: number;
+		mealCount?: number;
 		/** Reminders are configured on this server (signing out stops them on this device). */
 		reminders: boolean;
 		/** A newer published version, for an admin who turned the check on (Household). */

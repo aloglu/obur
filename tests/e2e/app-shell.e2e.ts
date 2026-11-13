@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { signedInAs } from './fixtures.ts';
 
 test('signed-out visitors land on sign-in, served with self-hosted assets only', async ({
 	page,
@@ -66,4 +67,66 @@ test('signed out with entries waiting: the card says whose they are and never co
 	const top = await page.getByRole('alert').first().boundingBox();
 	expect(name!.y + name!.height).toBeLessThanOrEqual(top!.y);
 	await expect(page.getByRole('button', { name: 'Sign in with a passkey' })).toBeInViewport();
+});
+
+test('every page title sits at the same height and stays there while a page opens', async ({
+	page
+}) => {
+	await page.goto('/login');
+	await signedInAs(page, 'Title Height');
+	// The top of the title's letters, not of its box: boxes differ (a page with a "<" has a taller one).
+	const titleTop = () =>
+		page.evaluate(() => {
+			const range = document.createRange();
+			range.selectNodeContents(document.querySelector('h1')!);
+			return Math.round(range.getBoundingClientRect().top * 2) / 2;
+		});
+	const settled = () =>
+		page.evaluate(async () => {
+			await document.fonts.ready;
+			await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {})));
+		});
+	const tops: Record<string, number> = {};
+	for (const path of [
+		'/',
+		'/log',
+		'/journal',
+		'/progress',
+		'/more',
+		'/more/settings',
+		'/more/appearance',
+		'/settings/security',
+		'/settings/data',
+		'/profile',
+		'/foods',
+		'/recipes',
+		'/saved-meals',
+		'/household',
+		'/help',
+		'/achievements'
+	]) {
+		await page.goto(path);
+		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+		await settled();
+		tops[path] = await titleTop();
+	}
+	const expected = Object.fromEntries(Object.keys(tops).map((path) => [path, tops['/more']]));
+	expect(tops).toEqual(expected);
+
+	// A page rises into place as it opens; its title does not (measured at once, while the page still moves).
+	await page.goto('/more');
+	await settled();
+	for (const [link, title] of [
+		['Settings', 'Settings'],
+		['Appearance', 'Appearance'],
+		['Settings', 'Settings'],
+		['More', 'More']
+	]) {
+		await page.getByRole('main').getByRole('link', { name: link }).first().click();
+		await page.waitForFunction(
+			(t) => document.querySelector('h1')?.textContent?.trim() === t,
+			title
+		);
+		expect(await titleTop()).toBe(tops['/more']);
+	}
 });

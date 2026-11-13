@@ -31,9 +31,12 @@
 <svelte:head><title>{m.progress_title()} · {m.app_name()}</title></svelte:head>
 
 <main class="mx-auto flex max-w-[920px] flex-col gap-3 px-3.5 py-4 desk:px-7">
-	<div class="flex flex-wrap items-center justify-between gap-3">
+	<div class="page-head flex flex-wrap items-center justify-between gap-3">
 		<h1 class="text-[1.5rem] font-[750]">{m.progress_title()}</h1>
-		<RangeSelect id="range" value={data.history.range} onchange={setRange} />
+		<!-- Taller than the title: pulled in, so the title stays at the height it has on every other page. -->
+		<div class="-my-2">
+			<RangeSelect id="range" value={data.history.range} onchange={setRange} />
+		</div>
 	</div>
 	<HistorySection history={data.history} today={data.today} onchange={invalidateAll} />
 	{#if data.achievements === 0}

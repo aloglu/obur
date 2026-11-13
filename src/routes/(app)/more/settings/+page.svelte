@@ -23,7 +23,7 @@
 		theme={data.theme}
 		palette={data.palette}
 		timeFormat={data.timeFormat}
-		goal={data.goal === null ? null : paceLabel(data.goal)}
+		goal={data.goalPace === null ? null : paceLabel(data.goalPace)}
 		reminders={data.pushKey !== null}
 		{speakScan}
 	/>

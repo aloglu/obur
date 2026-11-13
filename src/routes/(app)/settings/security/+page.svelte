@@ -79,7 +79,7 @@
 
 <svelte:head><title>{m.security_title()} · {m.app_name()}</title></svelte:head>
 
-<main class="mx-auto flex min-h-dvh max-w-[520px] flex-col gap-3 px-3.5 py-6">
+<main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<PageHead
 		href={resolve('/(app)/more/settings')}
 		label={m.settings_title()}

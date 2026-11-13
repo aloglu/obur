@@ -8,6 +8,7 @@
 // all writes always go to the network. The data cache is cleared on sign-out and when another person signs in.
 import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
+import { answerFromCopy, mergePageData, nothingNew } from './lib/shared/page-data-copy.ts';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 const SHELL = `obur-shell-${version}`;
@@ -87,7 +88,43 @@ sw.addEventListener('message', (event) => {
 	event.ports[0]?.postMessage('ok');
 });
 
-async function fromNetwork(request: Request, cache: Cache, key: string, announceLive: boolean) {
+const isPageData = (key: string) => new URL(key).pathname.endsWith('/__data.json');
+/** Which parts of a page's data a request asked for (SvelteKit's digits); null means all of them. */
+const askedParts = (request: Request) =>
+	new URL(request.url).searchParams.get('x-sveltekit-invalidated');
+
+/** A response with another body: the original's headers, without the ones that described the old body. */
+function rewritten(body: string, original: Response): Response {
+	const headers = new Headers(original.headers);
+	headers.delete('content-length');
+	headers.delete('content-encoding');
+	return new Response(body, { status: original.status, headers });
+}
+
+/** Writes to the saved copies wait for each other, so two answers for one page build on one another in order. */
+let saving: Promise<unknown> = Promise.resolve();
+
+/**
+ * Keeps a copy of an answer. A page change brings only part of a page's data (often just the page, not what all
+ * pages share), so page data is laid over the copy already there (shared/page-data-copy.ts).
+ */
+function save(cache: Cache, key: string, response: Response): Promise<unknown> {
+	if (!isPageData(key)) return cache.put(key, response);
+	const write = async () => {
+		const fresh = await response.text();
+		const merged = mergePageData(await (await cache.match(key))?.text(), fresh);
+		if (merged !== undefined) await cache.put(key, rewritten(merged, response));
+	};
+	return (saving = saving.then(write, write));
+}
+
+async function fromNetwork(
+	event: FetchEvent,
+	request: Request,
+	cache: Cache,
+	key: string,
+	announceLive: boolean
+) {
 	let response: Response;
 	try {
 		response = await Promise.race([
@@ -101,8 +138,10 @@ async function fromNetwork(request: Request, cache: Cache, key: string, announce
 		throw e;
 	}
 	unreachableUntil = 0;
-	// Only successful, non-redirected responses are kept (never a sign-in redirect).
-	if (response.ok && !response.redirected) await cache.put(key, response.clone());
+	// Only successful, non-redirected responses are kept (never a sign-in redirect). The page gets its answer at
+	// once; the copy is written behind it (writing first held every page change back, most on a phone).
+	if (response.ok && !response.redirected)
+		event.waitUntil(save(cache, key, response.clone()).catch(() => {}));
 	if (announceLive) void announce(request, 'live');
 	return response;
 }
@@ -116,6 +155,9 @@ const READS_OWN_QUERY = new Set(['/log']);
 
 async function savedCopy(request: Request, cache: Cache, key: string) {
 	const exact = await cache.match(key);
+	// Page data: only the parts this request asked for.
+	if (exact && isPageData(key))
+		return rewritten(answerFromCopy(await exact.text(), askedParts(request)), exact);
 	if (exact) return exact;
 	const isPage =
 		request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html');
@@ -126,6 +168,11 @@ async function savedCopy(request: Request, cache: Cache, key: string) {
 	return samePage ?? (await cache.match(new URL('/offline', location.origin).href));
 }
 
+const pageData = (body: string) =>
+	new Response(body, {
+		headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store' }
+	});
+
 async function networkFirst(event: FetchEvent): Promise<Response> {
 	const { request } = event;
 	const cache = await caches.open(DATA);
@@ -135,19 +182,25 @@ async function networkFirst(event: FetchEvent): Promise<Response> {
 	if (Date.now() < unreachableUntil) {
 		const cached = await savedCopy(request, cache, key);
 		if (cached) {
-			event.waitUntil(fromNetwork(request.clone(), cache, key, false).catch(() => {}));
+			event.waitUntil(fromNetwork(event, request.clone(), cache, key, false).catch(() => {}));
 			void announce(request, 'cached');
 			return cached;
 		}
 	}
 	try {
-		return await fromNetwork(request, cache, key, true);
+		const response = await fromNetwork(event, request, cache, key, true);
+		// The server is there but failing, and this only refreshes what pages share: leave the page as it is
+		// rather than replace it with an error.
+		const quiet = response.status >= 500 && isPageData(key) && nothingNew(askedParts(request));
+		return quiet ? pageData(quiet) : response;
 	} catch {
 		const cached = await savedCopy(request, cache, key);
 		if (cached) void announce(request, 'cached');
-		return (
-			cached ?? new Response('Offline', { status: 503, headers: { 'content-type': 'text/plain' } })
-		);
+		if (cached) return cached;
+		// A refresh of what pages share, with nothing saved to answer it: nothing changed, the page stays.
+		const quiet = isPageData(key) && nothingNew(askedParts(request));
+		if (quiet) return pageData(quiet);
+		return new Response('Offline', { status: 503, headers: { 'content-type': 'text/plain' } });
 	}
 }
 
@@ -161,15 +214,19 @@ sw.addEventListener('fetch', (event) => {
 	if (SHELL_ASSETS.has(url.pathname) || url.pathname.startsWith('/_app/immutable/')) {
 		// ignoreVary: a module import sends headers (Origin) that the install-time copy was not fetched with.
 		event.respondWith(
-			caches.match(request, { ignoreVary: true }).then(
-				(hit) =>
-					hit ??
-					fetch(request).then(async (response) => {
-						// Fill a gap left at install time, so it is there next time the network is not.
-						if (response.ok) await (await caches.open(SHELL)).put(request, response.clone());
-						return response;
-					})
-			)
+			(async () => {
+				// This version's files first: looking through every cache means searching the saved pages too, which
+				// grow with use. The other caches only matter for a page still running the previous version.
+				const shell = await caches.open(SHELL);
+				const hit =
+					(await shell.match(request, { ignoreVary: true })) ??
+					(await caches.match(request, { ignoreVary: true }));
+				if (hit) return hit;
+				const response = await fetch(request);
+				// Fill a gap left at install time, so it is there next time the network is not.
+				if (response.ok) event.waitUntil(shell.put(request, response.clone()).catch(() => {}));
+				return response;
+			})()
 		);
 		return;
 	}
