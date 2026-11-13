@@ -10,6 +10,7 @@ import {
 	bmrMifflinStJeor,
 	dailyBudget,
 	dailyDeficit,
+	maintainOffer,
 	macroTargets,
 	macroTargetsFor,
 	maxRate,
@@ -198,5 +199,34 @@ describe('budgetStatus', () => {
 		[2750, 3000, 'close'] // 250 left: more than 200, but under 10 %
 	] as const)('%i of %i is %s', (eaten, budget, status) => {
 		expect(budgetStatus(eaten, budget)).toBe(status);
+	});
+});
+
+describe('maintainOffer', () => {
+	const losing = {
+		mode: 'calculated' as const,
+		atGoal: 'keep' as const,
+		goalWeightKg: 80,
+		deficitKcal: 500
+	};
+
+	it('offers maintenance once the latest weigh-in reaches the goal of a budget still losing', () => {
+		expect(maintainOffer(losing, 80.1, null)).toBeNull();
+		expect(maintainOffer(losing, 80, null)).toBe(80);
+		expect(maintainOffer(losing, 79.4, null)).toBe(80);
+	});
+
+	it('stays away once declined for that goal weight, and returns with a new goal', () => {
+		expect(maintainOffer(losing, 79.4, 80)).toBeNull();
+		expect(maintainOffer({ ...losing, goalWeightKg: 78 }, 77.9, 80)).toBe(78);
+	});
+
+	it('has nothing to offer without a deficit, a goal, a weigh-in or a calculated budget', () => {
+		expect(maintainOffer({ ...losing, atGoal: 'maintain' }, 79, null)).toBeNull();
+		expect(maintainOffer({ ...losing, deficitKcal: 0 }, 79, null)).toBeNull();
+		expect(maintainOffer({ ...losing, goalWeightKg: null }, 79, null)).toBeNull();
+		expect(maintainOffer({ ...losing, mode: 'manual' }, 79, null)).toBeNull();
+		expect(maintainOffer(losing, null, null)).toBeNull();
+		expect(maintainOffer(null, 79, null)).toBeNull();
 	});
 });

@@ -219,3 +219,25 @@ export function budgetStatus(eaten: number, budget: number): BudgetStatus {
 	if (left < 0) return 'over';
 	return left < 200 || left < budget * 0.1 ? 'close' : 'plenty';
 }
+
+/**
+ * The offer to stop the deficit at the goal weight (owner, 2026-11-13): a calculated budget still losing, set to keep
+ * its deficit, whose goal the latest weigh-in has reached. Never switched silently: one low reading would raise the
+ * budget. Declined, it stays away for that goal weight; a new goal is a new offer. Returns the goal weight, or null.
+ */
+export function maintainOffer(
+	target: {
+		mode: 'calculated' | 'manual' | 'none';
+		atGoal: 'keep' | 'maintain';
+		goalWeightKg: number | null;
+		deficitKcal: number;
+	} | null,
+	latestWeightKg: number | null,
+	declinedKg: number | null
+): number | null {
+	if (!target || target.mode !== 'calculated' || target.atGoal !== 'keep') return null;
+	const goal = target.goalWeightKg;
+	if (goal === null || latestWeightKg === null || target.deficitKcal <= 0) return null;
+	if (latestWeightKg > goal || declinedKg === goal) return null;
+	return goal;
+}

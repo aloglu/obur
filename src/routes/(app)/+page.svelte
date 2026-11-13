@@ -32,6 +32,7 @@
 	import SelectionBar from '#lib/ui/today/SelectionBar.svelte';
 	import DayHeader from '#lib/ui/today/DayHeader.svelte';
 	import WelcomeCard from '#lib/ui/today/WelcomeCard.svelte';
+	import MaintainOffer from '#lib/ui/today/MaintainOffer.svelte';
 	import MealCard from '#lib/ui/today/MealCard.svelte';
 	import NutrientsCard from '#lib/ui/today/NutrientsCard.svelte';
 	import WaterCard from '#lib/ui/today/WaterCard.svelte';
@@ -374,6 +375,11 @@
 	{#if data.date === data.today && !data.target}
 		<div transition:slide={{ duration: 260 }}>
 			<WelcomeCard name={data.user?.displayName ?? ''} busy={skipping} onskip={justLog} />
+		</div>
+	{/if}
+	{#if data.date === data.today && data.maintainAtKg !== null}
+		<div transition:slide={{ duration: 260 }}>
+			<MaintainOffer goalKg={data.maintainAtKg} />
 		</div>
 	{/if}
 	<div class="today-a">

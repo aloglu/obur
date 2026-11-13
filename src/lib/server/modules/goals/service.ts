@@ -88,7 +88,8 @@ const toPreferences = (r: ProfileRow): Preferences => ({
 	timeFormat: r.timeFormat,
 	weightView: r.weightView,
 	voiceOffSeen: r.voiceOffSeen,
-	holdHintSeen: r.holdHintSeen
+	holdHintSeen: r.holdHintSeen,
+	maintainOfferDeclinedKg: r.maintainOfferDeclinedKg
 });
 
 const toVersion = (r: VersionRow): TargetVersion => ({

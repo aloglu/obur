@@ -50,6 +50,12 @@ export const profiles = pgTable(
 			.default('readings'),
 		voiceOffSeen: boolean('voice_off_seen').notNull().default(false),
 		holdHintSeen: boolean('hold_hint_seen').notNull().default(false),
+		/** The goal weight at which the offer to switch to maintenance was declined (shared/goals.ts, maintainOffer). */
+		maintainOfferDeclinedKg: numeric('maintain_offer_declined_kg', {
+			precision: 6,
+			scale: 2,
+			mode: 'number'
+		}),
 		/** When the settings were first saved to the account; until then a browser's own choices are taken over. */
 		preferencesSavedAt: timestamp('preferences_saved_at', { withTimezone: true }),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
@@ -59,6 +65,10 @@ export const profiles = pgTable(
 		check(
 			'profiles_body_fat_range',
 			sql`${t.bodyFatPct} is null or ${t.bodyFatPct} between 2 and 75`
+		),
+		check(
+			'profiles_maintain_offer_range',
+			sql`${t.maintainOfferDeclinedKg} is null or ${t.maintainOfferDeclinedKg} between 20 and 700`
 		),
 		check('profiles_waist_range', sql`${t.waistCm} is null or ${t.waistCm} between 30 and 250`),
 		check('profiles_sex_valid', sql`${t.sex} is null or ${t.sex} in ('female', 'male')`),

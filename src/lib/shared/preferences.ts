@@ -11,13 +11,14 @@ export interface Preferences {
 	palette: PaletteId;
 	appIcon: AppIconId;
 	timeFormat: 'device' | '24' | '12';
-	/** Scan: saving a label opens Log for it. */
 	/** Progress: the weight chart shows readings or the trend. */
 	weightView: 'readings' | 'trend';
 	/** The grey "Speak is off" card was dismissed. */
 	voiceOffSeen: boolean;
 	/** Today's tip about holding entries was dismissed. */
 	holdHintSeen: boolean;
+	/** The goal weight (kg) at which "Switch to maintain" was declined; the offer returns with a new goal. */
+	maintainOfferDeclinedKg: number | null;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -27,7 +28,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timeFormat: 'device',
 	weightView: 'readings',
 	voiceOffSeen: false,
-	holdHintSeen: false
+	holdHintSeen: false,
+	maintainOfferDeclinedKg: null
 };
 
 /** Any of the settings, as a change. */
@@ -38,6 +40,9 @@ export const PreferencesInput = v.strictObject({
 	timeFormat: v.optional(v.picklist(['device', '24', '12'])),
 	weightView: v.optional(v.picklist(['readings', 'trend'])),
 	voiceOffSeen: v.optional(v.boolean()),
-	holdHintSeen: v.optional(v.boolean())
+	holdHintSeen: v.optional(v.boolean()),
+	maintainOfferDeclinedKg: v.optional(
+		v.nullable(v.pipe(v.number(), v.finite(), v.minValue(20), v.maxValue(700)))
+	)
 });
 export type PreferencesInput = v.InferOutput<typeof PreferencesInput>;

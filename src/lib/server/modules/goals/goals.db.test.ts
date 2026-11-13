@@ -327,6 +327,13 @@ describe('settings', () => {
 		// Only known values.
 		await expect(goals.savePreferences(MEHMET, { palette: 'neon' as never })).rejects.toThrow();
 		await expect(goals.savePreferences(MEHMET, { extra: 1 } as never)).rejects.toThrow();
+		// A declined offer to switch to maintenance is remembered by its goal weight, and can be cleared.
+		await goals.savePreferences(MEHMET, { maintainOfferDeclinedKg: 78.5 });
+		expect((await goals.preferences(MEHMET)).preferences.maintainOfferDeclinedKg).toBe(78.5);
+		expect((await goals.preferences(AYSE)).preferences.maintainOfferDeclinedKg).toBeNull();
+		await expect(goals.savePreferences(MEHMET, { maintainOfferDeclinedKg: 5 })).rejects.toThrow();
+		await goals.savePreferences(MEHMET, { maintainOfferDeclinedKg: null });
+		expect((await goals.preferences(MEHMET)).preferences.maintainOfferDeclinedKg).toBeNull();
 	});
 });
 

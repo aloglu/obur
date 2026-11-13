@@ -178,7 +178,8 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 						timeFormat: profile.timeFormat,
 						weightView: profile.weightView,
 						voiceOffSeen: profile.voiceOffSeen,
-						holdHintSeen: profile.holdHintSeen
+						holdHintSeen: profile.holdHintSeen,
+						maintainOfferDeclinedKg: profile.maintainOfferDeclinedKg
 					}
 				: null,
 			reminders: reminder

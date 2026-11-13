@@ -9,6 +9,7 @@
 	import { celebration, closeCelebration } from '#lib/client/celebration.svelte.ts';
 	import { STILL, countFor, scatter, step, stir, type Piece } from '#lib/client/confetti.ts';
 	import { lockPageScroll } from '#lib/client/scroll-lock.ts';
+	import { switchToMaintain } from '#lib/client/maintain.ts';
 	import Picture from './Picture.svelte';
 	import {
 		achievementDetail,
@@ -32,6 +33,15 @@
 	const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	let stirConfetti: (() => void) | undefined;
+
+	// A goal's celebration carries the offer to stop the deficit while it stands (shared/goals.ts, maintainOffer).
+	let switching = $state(false);
+	async function maintain() {
+		switching = true;
+		const done = await switchToMaintain();
+		switching = false;
+		if (done) closeCelebration();
+	}
 
 	function poke(event: MouseEvent) {
 		if (!(event.target as Element).closest('a, button')) stirConfetti?.();
@@ -194,6 +204,15 @@
 			class="done mt-2.5 min-h-[52px] min-w-[200px] rounded-tile bg-fill px-6 text-[1.0625rem] font-[750] text-on-accent"
 			>{m.achievement_done()}</button
 		>
+		{#if a.kind === 'goal' && page.data.maintainAtKg === Number(a.level)}
+			<button
+				type="button"
+				disabled={switching}
+				onclick={maintain}
+				class="done min-h-[52px] min-w-[200px] rounded-tile border border-line bg-surface px-6 text-[1.0625rem] font-[750] text-text disabled:opacity-50"
+				>{m.maintain_offer_yes()}</button
+			>
+		{/if}
 		<!-- Not when replayed from the badge page itself. -->
 		{#if page.url.pathname !== resolve('/(app)/achievements')}
 			<a

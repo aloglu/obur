@@ -12,7 +12,12 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   `deploy/obur/offsite-test.sh` (passes on the new image, fails on beta.6; in the release workflow),
   `backup-health.test.ts`. Not checked against a real S3 store going away (a folder stands in for it); a store that
   hangs rather than refuses holds PostgreSQL's archiver for pgBackRest's 60 s timeout once, then files queue.
-- Next: goal weight reached offers "Switch to maintain" (in the celebration and as a message on Today).
+- Done: goal weight reached offers "Switch to maintain". The setting already existed on the Goal page ("When I
+  reach my goal weight", default Keep deficit); the offer flips it at the right moment and never by itself. A card
+  on Today and a button in the goal's celebration (`MaintainOffer.svelte`, `Celebration.svelte`,
+  `client/maintain.ts`, rule `maintainOffer` in `shared/goals.ts`, worked out in the app layout's load). Declined:
+  remembered by goal weight on the profile (migrations 0046–0047), exported and imported. A Help answer. Tests:
+  `goals.test.ts`, `goals.db.test.ts`, `goals.e2e.ts` (two journeys, both browsers).
 - Next: Household tells admins when a newer version exists (off until the admin turns it on; it asks GitHub).
 
 ## Owner's reports, 2026-11-13 (released as `v1.0.0-beta.9`, no migration)
@@ -548,7 +553,6 @@ Owner's approach (2026-10-30): note phrasings that fail during real use and clos
 
 ## Unresolved questions
 
-- When a calculated target's goal weight is reached, should the deficit stop (maintain)? Today it continues. Ask the owner when convenient.
 
 
 - Test phone: iPhone 13, iOS 27.0.1. Second authenticators for recovery tests: two YubiKeys.

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, signedInAs, choose } from './fixtures.ts';
+import { apiAs, losingToward, signedInAs, choose } from './fixtures.ts';
 
 /** A birth date that makes the person exactly `years` old today (birthdays count from the day itself). */
 const bornYearsAgo = (years: number) => `${new Date().getFullYear() - years}-01-01`;
@@ -273,4 +273,89 @@ test('a budget set by hand takes a goal weight, which leaves the budget as it is
 	await expect(page.getByText('Pace')).toHaveCount(0);
 	await page.goto('/');
 	await expect(page.getByRole('region', { name: 'Budget' })).toContainText('2100 kcal');
+});
+
+// Someone losing toward 80 kg at half a kilo a week whose weigh-in today reaches it.
+async function reachedGoal(page: Page, name: string) {
+	const userId = await signedInAs(page, name);
+	await losingToward(userId, 80);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.goto('/');
+	const day = (ago: number) =>
+		page.evaluate((n) => {
+			const d = new Date();
+			d.setDate(d.getDate() - n);
+			return d.toLocaleDateString('en-CA');
+		}, ago);
+	const zone = 'Europe/Istanbul';
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: await day(30), zone, value: 86 });
+	await apiAs(page, 'POST', '/api/v1/targets', {
+		mode: 'calculated',
+		effectiveFrom: await day(0),
+		rateKgPerWeek: 0.5,
+		goalWeightKg: 80
+	});
+	await page.goto('/');
+	await expect(page.getByRole('region', { name: 'Budget' })).toBeVisible();
+	await expect(page.getByRole('region', { name: "You've reached your goal weight" })).toHaveCount(
+		0
+	);
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: await day(0), zone, value: 79.8 });
+	await page.goto('/');
+}
+
+test('reaching the goal weight offers to switch to maintain, from the celebration', async ({
+	page
+}, testInfo) => {
+	await reachedGoal(page, `Varis ${testInfo.project.name}`);
+	const offer = page.getByRole('region', { name: "You've reached your goal weight" });
+	await expect(offer).toBeVisible();
+	const before = await page.getByRole('region', { name: 'Budget' }).innerText();
+	await page.getByRole('button', { name: /^Goal reached: 80 kg/ }).click();
+	const dialog = page.getByRole('dialog', { name: 'Achievement: Goal reached: 80 kg' });
+	// Done keeps the focus, so Enter never changes a budget.
+	await expect(dialog.getByRole('button', { name: 'Done' })).toBeFocused();
+	await dialog.getByRole('button', { name: 'Switch to maintain' }).click();
+	await expect(dialog).toBeHidden();
+	await expect(page.getByRole('status')).toContainText('Budget switched to maintain');
+	await expect(offer).toHaveCount(0);
+	// The deficit is gone from today's budget, and the setting says so.
+	await expect(page.getByRole('region', { name: 'Budget' })).not.toHaveText(before);
+	await page.goto('/profile');
+	await expect(page.getByRole('radio', { name: 'Maintain' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+});
+
+test('the offer on Today: declined it stays away for that goal, and returns with a new one', async ({
+	page
+}, testInfo) => {
+	await reachedGoal(page, `Kalis ${testInfo.project.name}`);
+	const offer = page.getByRole('region', { name: "You've reached your goal weight" });
+	await offer.getByRole('button', { name: 'Keep deficit' }).click();
+	await expect(page.getByRole('status')).toContainText('Deficit kept');
+	await expect(offer).toHaveCount(0);
+	await page.reload();
+	await expect(page.getByRole('region', { name: 'Budget' })).toBeVisible();
+	await expect(offer).toHaveCount(0);
+	// The celebration no longer carries it either.
+	await page.goto('/achievements');
+	await page.getByRole('button', { name: /Goal reached: 80 kg/ }).click();
+	const dialog = page.getByRole('dialog', { name: 'Achievement: Goal reached: 80 kg' });
+	await expect(dialog.getByRole('button', { name: 'Done' })).toBeVisible();
+	await expect(dialog.getByRole('button', { name: 'Switch to maintain' })).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Done' }).click();
+
+	// A new goal, already reached: asked again, and accepted on Today.
+	await apiAs(page, 'PATCH', '/api/v1/targets/settings', { goalWeightKg: 79.9 });
+	await page.goto('/');
+	await offer.getByRole('button', { name: 'Switch to maintain' }).click();
+	await expect(page.getByRole('status')).toContainText('Budget switched to maintain');
+	await expect(offer).toHaveCount(0);
+	await page.goto('/profile');
+	await expect(page.getByRole('radio', { name: 'Maintain' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
 });

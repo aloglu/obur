@@ -290,7 +290,11 @@ export const ProfileRecord = v.object({
 	scanLogAfter: v.optional(v.boolean()),
 	weightView: v.optional(v.picklist(['readings', 'trend'])),
 	voiceOffSeen: v.optional(v.boolean()),
-	holdHintSeen: v.optional(v.boolean())
+	holdHintSeen: v.optional(v.boolean()),
+	// Added 2026-11-13.
+	maintainOfferDeclinedKg: v.optional(
+		v.nullable(v.pipe(v.number(), v.finite(), v.minValue(20), v.maxValue(700)))
+	)
 });
 
 export const DayCompletionRecord = v.object({

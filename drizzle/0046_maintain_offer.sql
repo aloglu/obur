@@ -1,0 +1,2 @@
+ALTER TABLE "profiles" ADD COLUMN "maintain_offer_declined_kg" numeric(6, 2);--> statement-breakpoint
+ALTER TABLE "profiles" ADD CONSTRAINT "profiles_maintain_offer_range" CHECK ("profiles"."maintain_offer_declined_kg" is null or "profiles"."maintain_offer_declined_kg" between 20 and 700);
