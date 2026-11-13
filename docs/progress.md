@@ -2,7 +2,10 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## After beta.11 (2026-11-13), `main`, next release
+## After beta.11 (2026-11-13), released as `v1.0.0-beta.12`
+
+Checks before the tag: type-check, lint, 1094 unit and database tests, e2e 227 passed (18 skipped by design), image
+built, smoke test, off-site outage test. No migration. The owner checks the page changes on their iPhone.
 
 - Done: page changes (owner's report: going into More's sections and deeper felt inconsistent and not in line with
   Stageshow). Found by filming: an empty frame between pages, the title blinking, and no difference between going in
