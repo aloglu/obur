@@ -910,6 +910,8 @@
 	"backup_backup_stale": "The last backup is more than a day and a half old.",
 	"backup_backup_failed": "The last backup failed.",
 	"backup_offsite_failed": "The last backup could not be copied off-site.",
+	"backup_offsite_behind": "The off-site store can't be reached. Backups on this server continue; recent changes wait to be copied off-site.",
+	"backup_offsite_gap": "The off-site store was out of reach for too long, so the off-site copy misses some changes. The next backup that reaches it makes it complete again.",
 	"backup_archive_failing": "Recent changes are not being archived. Backups between nightly runs are incomplete.",
 	"backup_restore_check_failed": "The last restore check failed. The backups may not be restorable.",
 	"backup_restore_check_stale": "No restore check has passed in the last week.",

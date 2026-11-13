@@ -75,4 +75,16 @@ describe('assessBackups', () => {
 		expect(assessBackups(null, now, false).problems).toEqual(['not_configured']);
 		expect(assessBackups(null, now, true).problems).toEqual(['no_status']);
 	});
+
+	it('says when the off-site copy is behind or has lost changes, without touching the local verdict', () => {
+		const waiting = (oldestAt: string, gapAt: string | null = null) =>
+			assessBackups({ ...healthy, offsiteQueue: { waiting: 4, oldestAt, gapAt } }, now, true)
+				.problems;
+		// A short outage is not a warning.
+		expect(waiting('2026-10-29T11:30:00Z')).toEqual([]);
+		expect(waiting('2026-10-29T09:00:00Z')).toEqual(['offsite_behind']);
+		expect(waiting('2026-10-29T09:00:00Z', '2026-10-29T10:00:00Z')).toEqual(['offsite_gap']);
+		const drained = { waiting: 0, oldestAt: null, gapAt: null };
+		expect(assessBackups({ ...healthy, offsiteQueue: drained }, now, true).problems).toEqual([]);
+	});
 });

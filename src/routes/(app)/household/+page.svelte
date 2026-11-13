@@ -109,6 +109,8 @@
 		backup_stale: m.backup_backup_stale,
 		backup_failed: m.backup_backup_failed,
 		offsite_failed: m.backup_offsite_failed,
+		offsite_behind: m.backup_offsite_behind,
+		offsite_gap: m.backup_offsite_gap,
 		archive_failing: m.backup_archive_failing,
 		restore_check_failed: m.backup_restore_check_failed,
 		restore_check_stale: m.backup_restore_check_stale,

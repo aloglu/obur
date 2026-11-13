@@ -20,7 +20,7 @@ if ! mountpoint -q /data; then
 fi
 # The database and the web app run as their own users, who must be able to pass through /data to their folders.
 chmod a+x /data
-install -d -o postgres -g postgres -m 700 /data/postgres /data/backups
+install -d -o postgres -g postgres -m 700 /data/postgres /data/backups /data/offsite-queue
 install -d -o postgres -g postgres -m 755 "$OBUR_STATUS_DIR"
 chown postgres:postgres /data/backups
 

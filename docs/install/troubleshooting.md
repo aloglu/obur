@@ -37,6 +37,13 @@ cause. `docker exec obur obur backup now` tries again.
 failure leaves the database as it was. Go back to the previous version ([Updating](updating.md)) and report the log
 lines.
 
+**"The off-site store can't be reached" in Household → Backups.** The storage holding the off-site copy has not
+answered for over an hour (an outage there, changed credentials, or no internet on the server). Backups on the server
+itself carry on as usual. Changes made meanwhile wait in `/data/offsite-queue` and are sent by themselves when the
+store answers again; nothing needs doing unless the credentials changed. If the wait outgrows 1 GB
+(`OBUR_OFFSITE_QUEUE_MAX_MB`), it is dropped and Household says the off-site copy misses some changes: the next
+nightly backup that reaches the store makes it complete again, or run `docker exec obur obur backup now`.
+
 **"the off-site repository could not be set up … is or was the repo encrypted?".** The off-site location already
 holds backups made with a different passphrase, usually another installation's (an earlier server, or a test). Local
 backups continue. Either give this installation its own folder in the bucket with `OBUR_OFFSITE_PATH` (for example

@@ -2,6 +2,19 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Before version 1 (owner agreed 2026-11-13), one commit each, `main`, next release
+
+- Done: local backups no longer wait for the off-site store (the issue open since 2026-11-09). `obur-backup
+  archive-push` sends each WAL file to the local repository first; one the off-site store cannot take waits in
+  `/data/offsite-queue` (gzip, 1 GB limit, dropped and reported over it) and a loop beside the scheduler sends it
+  when the store answers. Off-site backups and restore checks send what waits first. Household: "can't be reached"
+  after an hour of waiting, "misses some changes" after a drop until the next off-site backup.
+  `deploy/obur/offsite-test.sh` (passes on the new image, fails on beta.6; in the release workflow),
+  `backup-health.test.ts`. Not checked against a real S3 store going away (a folder stands in for it); a store that
+  hangs rather than refuses holds PostgreSQL's archiver for pgBackRest's 60 s timeout once, then files queue.
+- Next: goal weight reached offers "Switch to maintain" (in the celebration and as a message on Today).
+- Next: Household tells admins when a newer version exists (off until the admin turns it on; it asks GitHub).
+
 ## Owner's reports, 2026-11-13 (released as `v1.0.0-beta.9`, no migration)
 
 Checks before the tag: type-check, lint, 1057 unit and database tests, e2e 213 passed (16 skipped by design). The owner
@@ -135,7 +148,7 @@ Agreed (owner, 2026-11-10), one commit each, `main`, next release:
 Checked 2026-11-10: lint, type-check, all Vitest projects (1053), the full browser suite in the Playwright image
 (209 passed, 16 skipped by design, passkey journeys included). Released as `v1.0.0-beta.8` (2026-11-10), no migration.
 
-Next step: the open archiving issue above (WAL stops reaching the local repository when the off-site one is unreachable).
+The open archiving issue above was fixed on 2026-11-13 (see "Before version 1").
 
 ## Current phase
 

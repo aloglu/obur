@@ -6,6 +6,9 @@
 # by PostgreSQL's archive_command. Results are written to $STATUS_FILE so the admin page can show them, including a
 # plain warning when there is no off-site copy.
 #
+# The local repository never waits for the off-site one: each WAL file goes to the local repository first, and one
+# the off-site store cannot take waits in a bounded queue ($QUEUE_DIR) that is sent when the store answers again.
+#
 #   obur-backup run            a backup now (full on the weekly full day or when none exists, otherwise differential)
 #   obur-backup pre-upgrade    a quick incremental backup before an upgrade
 #   obur-backup full           a full backup now (after a restore, which starts a new history)
@@ -13,8 +16,9 @@
 #   obur-backup restore-check  archive the current position, restore backup + WAL into a throwaway cluster, and
 #                              verify it reached that position and every table reads
 #   obur-backup scheduler      the nightly backup and weekly restore check (started by the container)
-#   obur-backup pgbackrest …    pgBackRest with this installation's settings (archive_command uses it through
-#                              pgbackrest-obur, since pgBackRest requires its name in the command)
+#   obur-backup archive-push <file>  archive one WAL file (PostgreSQL's archive_command, through pgbackrest-obur,
+#                              since pgBackRest requires its name in the command)
+#   obur-backup pgbackrest …    pgBackRest with this installation's settings
 set -euo pipefail
 
 STATUS_DIR=${OBUR_STATUS_DIR:-/var/lib/obur-status}
@@ -23,6 +27,10 @@ SOCKET=${PGBACKREST_PG1_SOCKET_PATH:-/var/run/postgresql}
 BACKUP_HOUR=${OBUR_BACKUP_HOUR:-2}
 FULL_DAY=${OBUR_FULL_BACKUP_DAY:-7}         # ISO weekday: 7 = Sunday
 CHECK_DAY=${OBUR_RESTORE_CHECK_DAY:-7}
+# WAL files waiting for the off-site store, compressed. Over the limit the queue is emptied: the off-site copy then
+# cannot replay past that point until its next backup, which starts a complete history again.
+QUEUE_DIR=${OBUR_OFFSITE_QUEUE_DIR:-/data/offsite-queue}
+QUEUE_MAX_MB=${OBUR_OFFSITE_QUEUE_MAX_MB:-1024}
 PSQL=(psql -X -q -t -A -h "$SOCKET" -U "${PGBACKREST_PG1_USER:-postgres}" -d postgres)
 
 # The off-site repository exists only when configured: pgBackRest refuses empty settings, so they are passed on
@@ -56,11 +64,15 @@ status() {
 	local filter=${*: -1}
 	set -- "${@:1:$#-1}"
 	mkdir -p "$STATUS_DIR"
-	local current='{}'
-	if [[ -s $STATUS_FILE ]]; then current=$(cat "$STATUS_FILE"); fi
-	jq --arg now "$(now)" --argjson offsite "$([[ -n ${PGBACKREST_REPO2_TYPE:-} ]] && echo true || echo false)" \
-		"$@" "($filter) + {updatedAt: \$now, offsiteConfigured: \$offsite}" <<<"$current" >"$STATUS_FILE.tmp"
-	mv "$STATUS_FILE.tmp" "$STATUS_FILE"
+	# One writer at a time: the scheduler, the off-site queue and a backup run by hand all update this file.
+	(
+		flock 8
+		local current='{}'
+		if [[ -s $STATUS_FILE ]]; then current=$(cat "$STATUS_FILE"); fi
+		jq --arg now "$(now)" --argjson offsite "$([[ -n ${PGBACKREST_REPO2_TYPE:-} ]] && echo true || echo false)" \
+			"$@" "($filter) + {updatedAt: \$now, offsiteConfigured: \$offsite}" <<<"$current" >"$STATUS_FILE.tmp"
+		mv "$STATUS_FILE.tmp" "$STATUS_FILE"
+	) 8>"$STATUS_DIR/.backup.lock"
 }
 
 wait_ready() {
@@ -73,6 +85,99 @@ local_only() {
 		for v in $(compgen -e | grep '^PGBACKREST_REPO2_' || true); do unset "$v"; done
 		pgbackrest "$@"
 	)
+}
+
+# Runs pgBackRest with the off-site repository as its only one (a repository's number is only configuration).
+offsite_only() {
+	(
+		local v
+		for v in $(compgen -e | grep '^PGBACKREST_REPO1_' || true); do unset "$v"; done
+		for v in $(compgen -e | grep '^PGBACKREST_REPO2_'); do
+			export "PGBACKREST_REPO1_${v#PGBACKREST_REPO2_}=${!v}"
+			unset "$v"
+		done
+		pgbackrest "$@"
+	)
+}
+
+queued() { find "$QUEUE_DIR" -maxdepth 1 -name '*.gz' 2>/dev/null | sort; }
+
+# PostgreSQL's archive_command. The local repository decides the result: PostgreSQL keeps a WAL file until this
+# succeeds, so failing here because the off-site store is away would stop WAL reaching the local repository too
+# (it did, before 1.0.0-beta.10). A file the off-site store does not take is queued instead; so is every file while
+# others wait, without trying the store again each time.
+archive_push() {
+	local wal=$1 file name
+	local_only archive-push "$wal" || return 1
+	[[ -n ${PGBACKREST_REPO2_TYPE:-} ]] || return 0
+	name=$(basename "$wal")
+	if [[ -z $(queued | head -1) ]] && offsite_only archive-push "$wal" >/dev/null 2>&1; then return 0; fi
+	file=$wal
+	[[ $file == /* ]] || file=${PGBACKREST_PG1_PATH:-$PWD}/$file
+	# A copy, never a link: PostgreSQL reuses the WAL file under a new name.
+	if mkdir -p "$QUEUE_DIR" && gzip -1 -c "$file" >"$QUEUE_DIR/.$name.tmp" && sync "$QUEUE_DIR/.$name.tmp" &&
+		mv "$QUEUE_DIR/.$name.tmp" "$QUEUE_DIR/$name.gz"; then
+		local used
+		used=$(du -sm "$QUEUE_DIR" | cut -f1)
+		((used <= QUEUE_MAX_MB)) && return 0
+		log "the off-site store has been away too long: $used MB of WAL waited for it (limit $QUEUE_MAX_MB MB)"
+	else
+		log "WAL file $name could not be kept for the off-site store"
+	fi
+	# The off-site history now has a hole. Say so until the next off-site backup, and keep nothing that needs it.
+	find "$QUEUE_DIR" -maxdepth 1 \( -name '*.gz' -o -name '.*.tmp' \) -delete 2>/dev/null || true
+	now >"$QUEUE_DIR/gap" 2>/dev/null || true
+	return 0
+}
+
+# Sends the waiting WAL files to the off-site store, oldest first. Fails while any still wait.
+drain_queue() {
+	[[ -n ${PGBACKREST_REPO2_TYPE:-} && -n $(queued | head -1) ]] || return 0
+	(
+		flock 7
+		work=$(mktemp -d "${TMPDIR:-/tmp}/offsite-queue.XXXXXX")
+		trap 'rm -rf "$work"' EXIT
+		sent=0
+		while true; do
+			item=$(queued | head -1)
+			[[ -n $item ]] || break
+			name=$(basename "$item" .gz)
+			gzip -dc "$item" >"$work/$name" || exit 1
+			if ! out=$(offsite_only archive-push "$work/$name" 2>&1); then
+				# Already there with other contents (an earlier attempt that did arrive): nothing more to send.
+				[[ $out == *'ERROR: [045]'* ]] || exit 1
+				log "WAL file $name is already in the off-site store; not sent again"
+			fi
+			rm -f "$item" "$work/$name"
+			sent=$((sent + 1))
+		done
+		log "the off-site store is back: $sent waiting WAL file(s) sent"
+	) 7>"$QUEUE_DIR/.lock"
+}
+
+# What waits for the off-site store, for the admin page. Written only when it changes.
+queue_status() {
+	local count oldest='' gap='' first line
+	first=$(queued | head -1)
+	count=$(queued | wc -l)
+	[[ -n $first ]] && oldest=$(date -u -r "$first" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)
+	[[ -s $QUEUE_DIR/gap ]] && gap=$(cat "$QUEUE_DIR/gap")
+	line="$count|$oldest|$gap"
+	[[ $line == "${last_queue_status:-}" ]] && return 0
+	last_queue_status=$line
+	status --argjson n "$count" --arg o "$oldest" --arg g "$gap" \
+		'.offsiteQueue = {waiting: $n, oldestAt: (if $o == "" then null else $o end),
+			gapAt: (if $g == "" then null else $g end)}'
+}
+
+# Runs beside the scheduler and ends with it.
+queue_loop() {
+	local parent=$1
+	while kill -0 "$parent" 2>/dev/null; do
+		drain_queue || true
+		queue_status || true
+		sleep "${OBUR_OFFSITE_RETRY_SECONDS:-15}"
+	done
 }
 
 # Idempotent: succeeds when the stanza already exists. stanza-create acts on every configured repository, so the
@@ -135,7 +240,16 @@ backup() {
 		return 1
 	fi
 	for repo in $targets; do
-		if $run --repo="$repo" --type="$type" backup; then
+		# The off-site backup needs its WAL to arrive there, so what waits is sent first; if it cannot be, the
+		# store is away and the backup would only time out.
+		local reachable=true
+		if [[ $repo == 2 ]] && ! drain_queue; then
+			reachable=false
+			log "the off-site store cannot be reached; WAL is waiting for it"
+		fi
+		if $reachable && $run --repo="$repo" --type="$type" backup; then
+			# A finished off-site backup is complete in itself, whatever was lost before it.
+			if [[ $repo == 2 ]]; then rm -f "$QUEUE_DIR/gap"; fi
 			results=$(jq --arg r "$repo" '. + {($r): true}' <<<"$results")
 		else
 			ok=false
@@ -147,6 +261,7 @@ backup() {
 		'.lastBackup = {at: $at, type: $type, ok: $ok, repos: $repos}
 		| if $ok then .lastSuccessfulBackupAt = $at else . end'
 	archive_status
+	queue_status || true
 	$ok
 }
 
@@ -185,6 +300,8 @@ restore_check_repo() {
 	# never push WAL into the real repositories.
 	if [[ ${archived:0:24} < "$segment" ]]; then
 		detail="WAL up to $target was not archived within two minutes"
+	elif [[ $repo == 2 ]] && ! drain_queue; then
+		detail="the off-site store could not be reached; $(queued | wc -l) WAL file(s) wait to be sent"
 	elif ! pgbackrest --repo="$repo" restore --pg1-path="$dir" --archive-mode=off --delta >/dev/null; then
 		detail="restore failed"
 	elif ! pg_ctl -D "$dir" -w -t 600 -l "$dir/restore.log" \
@@ -241,6 +358,7 @@ scheduler() {
 		log "waiting to create the backup stanza"
 		sleep 60
 	done
+	if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then queue_loop $$ & fi
 	log "scheduler started (backups after ${BACKUP_HOUR}:00, restore check on weekday $CHECK_DAY)"
 	while true; do
 		local today hour last_backup last_check
@@ -269,6 +387,7 @@ pgbackrest)
 	shift
 	exec pgbackrest "$@"
 	;;
+archive-push) archive_push "${2:?}" ;;
 run) backup "$(scheduled_type)" ;;
 # Local only: the point to go back to if an upgrade goes wrong, quick, and never stopped by an unreachable off-site
 # store. The nightly backup copies the upgraded database off site as usual.
@@ -278,7 +397,7 @@ info) pgbackrest info ;;
 restore-check) restore_check ;;
 scheduler) scheduler ;;
 *)
-	echo "usage: obur-backup run|pre-upgrade|full|info|restore-check|scheduler|pgbackrest <args>" >&2
+	echo "usage: obur-backup run|pre-upgrade|full|info|restore-check|scheduler|archive-push <file>|pgbackrest <args>" >&2
 	exit 2
 	;;
 esac

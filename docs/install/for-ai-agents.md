@@ -107,6 +107,11 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
 - **"set PUBLIC_ORIGIN …" / "set OBUR_BACKUP_PASSPHRASE …":** a required setting is missing; add it and start again.
 - **"OBUR_BACKUP_PASSPHRASE is still the example value":** let the person choose their own phrase (or generate one)
   and save it in their password manager; see `troubleshooting.md` if backups already exist.
+- **"the off-site store cannot be reached; WAL is waiting for it"** (log) or **"The off-site store can't be
+  reached"** (Household → Backups): the off-site storage is not answering. Local backups continue; changes wait in
+  `/data/offsite-queue` (limit `OBUR_OFFSITE_QUEUE_MAX_MB`, default 1024) and are sent when it answers ("the off-site
+  store is back: N waiting WAL file(s) sent"). Check the `OBUR_OFFSITE_*` values and the server's connection. After
+  "the off-site store has been away too long", run `docker exec obur obur backup now` once it is reachable.
 - **"the off-site repository could not be set up … is or was the repo encrypted?":** the bucket folder holds another
   installation's backups. Ask the person whether those are still needed; never delete them on your own. Otherwise set
   `OBUR_OFFSITE_PATH` to a new folder.

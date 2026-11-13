@@ -8,6 +8,11 @@ export interface BackupStatusFile {
 	lastRestoreCheck?: { at: string; ok: boolean; detail: string };
 	/** The same check restoring from the off-site copy (when one is configured). */
 	lastOffsiteRestoreCheck?: { at: string; ok: boolean; detail: string };
+	/**
+	 * Changes kept back for the off-site store while it cannot be reached (the local copy never waits for it).
+	 * `gapAt`: the wait outgrew its limit and was dropped, so the off-site copy misses changes until its next backup.
+	 */
+	offsiteQueue?: { waiting: number; oldestAt: string | null; gapAt: string | null };
 }
 
 export type BackupProblem =
@@ -17,6 +22,8 @@ export type BackupProblem =
 	| 'backup_stale'
 	| 'backup_failed'
 	| 'offsite_failed'
+	| 'offsite_behind'
+	| 'offsite_gap'
 	| 'archive_failing'
 	| 'restore_check_failed'
 	| 'restore_check_stale'
@@ -37,6 +44,8 @@ const HOUR = 3600_000;
 export const BACKUP_MAX_AGE_MS = 36 * HOUR;
 /** The weekly restore check, with a day of slack. */
 export const RESTORE_CHECK_MAX_AGE_MS = 8 * 24 * HOUR;
+/** A store that answers again within the hour is not worth a warning. */
+export const OFFSITE_BEHIND_MAX_AGE_MS = HOUR;
 
 export function assessBackups(
 	status: BackupStatusFile | null,
@@ -54,6 +63,10 @@ export function assessBackups(
 		if (status.lastBackup && !status.lastBackup.repos['1']) problems.push('backup_failed');
 		if (status.offsiteConfigured && status.lastBackup && status.lastBackup.repos['2'] === false)
 			problems.push('offsite_failed');
+		const queue = status.offsiteConfigured ? status.offsiteQueue : undefined;
+		if (queue?.gapAt) problems.push('offsite_gap');
+		else if (queue && queue.waiting > 0 && age(queue.oldestAt) > OFFSITE_BEHIND_MAX_AGE_MS)
+			problems.push('offsite_behind');
 		const archive = status.archive;
 		// Failing now: the latest failure is newer than the latest success.
 		if (archive?.lastFailedAt && age(archive.lastFailedAt) < age(archive.lastArchivedAt))

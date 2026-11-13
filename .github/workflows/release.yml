@@ -87,6 +87,9 @@ jobs:
       - name: Smoke test
         if: matrix.image == 'obur'
         run: deploy/obur/smoke-test.sh obur:test
+      - name: Off-site outage test
+        if: matrix.image == 'obur'
+        run: deploy/obur/offsite-test.sh obur:test
       - name: Publish
         if: env.PUBLISH == 'true'
         env:
