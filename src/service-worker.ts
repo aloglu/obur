@@ -10,6 +10,7 @@ import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
 import { answerFromCopy, mergePageData, nothingNew } from './lib/shared/page-data-copy.ts';
 import { PREPARED_AGAIN_MS, askedLayers, mayAnswer, preparedKey } from './lib/shared/prepare.ts';
+import { TRIM_EVERY_MS, savedCopyExpired } from './lib/shared/saved-copies.ts';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 const SHELL = `obur-shell-${version}`;
@@ -222,6 +223,20 @@ function save(cache: Cache, key: string, response: Response): Promise<unknown> {
 	return (saving = saving.then(write, write));
 }
 
+/** When expired saved copies were last looked for (0: not since this worker started). */
+let trimmedAt = 0;
+
+/** Removes saved copies past their limit (shared/saved-copies.ts), at most every few hours, behind the page. */
+async function trimSaved(cache: Cache): Promise<void> {
+	if (Date.now() - trimmedAt < TRIM_EVERY_MS) return;
+	trimmedAt = Date.now();
+	for (const request of await cache.keys()) {
+		const saved = await cache.match(request);
+		if (saved && savedCopyExpired(saved.headers.get('date'), Date.now()))
+			await cache.delete(request);
+	}
+}
+
 async function fromNetwork(
 	event: FetchEvent,
 	request: Request,
@@ -245,7 +260,11 @@ async function fromNetwork(
 	// Only successful, non-redirected responses are kept (never a sign-in redirect). The page gets its answer at
 	// once; the copy is written behind it (writing first held every page change back, most on a phone).
 	if (response.ok && !response.redirected)
-		event.waitUntil(save(cache, key, response.clone()).catch(() => {}));
+		event.waitUntil(
+			save(cache, key, response.clone())
+				.then(() => trimSaved(cache))
+				.catch(() => {})
+		);
 	if (announceLive) void announce(request, 'live');
 	return response;
 }

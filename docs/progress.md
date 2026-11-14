@@ -13,8 +13,12 @@ page loads. Fixing everything found (owner, 2026-11-14):
 - Done: speech requests were logged as slow (`SLOW_BY_NATURE` named `/speak`).
 - Done: More's counts are counted in the database (`trashCount`, `recipes.count`, `savedMeals.count`) instead of
   loading the trash, every recipe and every saved meal with its items after each page change and save.
+- Done: the device's saved pages expire after 60 days by their Date header (`shared/saved-copies.ts`); the service
+  worker looks at most every 6 hours, behind a page's answer. Main tabs are saved again each start, so they stay.
+  Checks: unit test for the rule, offline and prepared e2e (27 passed, 4 skipped by design). The trimming itself has
+  no browser test (it would need a 60-day-old copy).
 - Next: sign-in limits per real client behind a trusted proxy (all documented remote-access setups share one IP
-  now); a bound on the device's saved pages.
+  now).
 
 ## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
 
