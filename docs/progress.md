@@ -2,7 +2,13 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Owner's Turkish fixes (2026-11-14), after beta.15
+## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
+
+Checks before the tag: type-check, lint, 1113 unit and database tests, e2e 246 passed (18 skipped by design; one
+intermittent failure, below), image built, smoke test, off-site outage test. No new migration. Tag pushed; the
+release workflow publishes the images (not yet confirmed).
+
+## Owner's Turkish fixes (2026-11-14)
 
 - Done: the meal picker says Öğle, Akşam (full names everywhere else; `mealShortName`). Buttons and toasts that name a
   meal as a destination use a fixed dative per meal: "Öğle yemeğine 1 yiyecek kaydet", "Kahvaltıya taşı" (`mealNameTo`;
@@ -19,7 +25,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   matches that Turkish word. Display only; stored names unchanged ("Bar" stays). Checks: type-check, lint, 1113 unit
   and database tests, e2e 246 passed (18 skipped by design), one phone-WebKit `saved-meals.e2e.ts` failure that
   passed when run alone (English-only test; not traced).
-- Next: the next release when the owner asks.
+- Next: confirm the beta.16 release workflow published all three images.
 
 ## Turkish released (2026-11-14), as `v1.0.0-beta.15`
 
