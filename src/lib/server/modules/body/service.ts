@@ -29,6 +29,15 @@ export interface ReadingContext {
 
 const TRASH_MS = 30 * 24 * 3600 * 1000;
 
+/**
+ * A value at the precision its column keeps (kg to 0.01, ml to 0.1), so the reply shows what was stored and a retry
+ * compares with it rather than with a longer number the database rounded.
+ */
+const stored = (table: Table, value: number) => {
+	const places = table === weightEntries ? 100 : 10;
+	return Math.max(1, Math.round(value * places)) / places;
+};
+
 type Table = typeof weightEntries | typeof waterEntries | typeof activityEntries;
 
 const toReading = (
@@ -72,6 +81,7 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 	): Promise<BodyReading> {
 		const id = ctx.id ?? randomUUID();
 		const valueColumn = table === weightEntries ? 'kg' : 'ml';
+		value = stored(table, value);
 		return withUser(db, userId, async (tx) => {
 			const [existing] = await tx.select().from(table).where(eq(table.id, id));
 			if (existing) {
@@ -131,6 +141,7 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 		value: number
 	): Promise<BodyReading> {
 		const valueColumn = table === weightEntries ? 'kg' : 'ml';
+		value = stored(table, value);
 		return withUser(db, userId, async (tx) => {
 			const [row] = await tx.select().from(table).where(eq(table.id, id));
 			if (!row || row.deletedAt) throw new BodyError('not_found');

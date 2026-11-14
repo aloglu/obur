@@ -273,3 +273,16 @@ it('sums counted activity per day', async () => {
 		{ localDate: '2026-10-01', kcal: 300 }
 	]);
 });
+
+describe('retries with more decimals than are stored', () => {
+	it('are the same reading, shown as stored', async () => {
+		const weight = at('2026-10-25', randomUUID());
+		const first = await body.logWeight(AYSE, weight, 72.555);
+		expect(first.value).toBe(72.56);
+		expect(await body.logWeight(AYSE, weight, 72.555)).toEqual(first);
+		const water = at('2026-10-25', randomUUID());
+		const glass = await body.logWater(AYSE, water, 333.33);
+		expect(glass.value).toBe(333.3);
+		expect(await body.logWater(AYSE, water, 333.33)).toEqual(glass);
+	});
+});

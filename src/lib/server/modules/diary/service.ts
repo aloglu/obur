@@ -60,6 +60,9 @@ export interface Measure {
 
 const TRASH_DAYS = 30;
 
+/** An amount at the precision its column keeps (0.0001), so nutrients, the reply and a retry all use what is stored. */
+const storedAmount = (amount: number) => Math.max(1, Math.round(amount * 10_000)) / 10_000;
+
 /** Resolves a client unit into a stored unit, or undefined if it does not exist for this food. */
 export function resolveUnit(
 	input: UnitInput,
@@ -228,6 +231,7 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 			amount: number,
 			unit: SnapshotUnit
 		): Promise<DiaryEntry> {
+			amount = storedAmount(amount);
 			const snapshot = snapshotOf(food);
 			const nutrients = snapshotNutrients(snapshot, amount, unit);
 			if (!nutrients) throw new DiaryError('conversion_unknown');
@@ -301,7 +305,7 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 				if (changes.meal) patch.meal = changes.meal;
 				if (changes.localDate) patch.localDate = changes.localDate;
 				if (row.kind === 'food' && (changes.amount !== undefined || changes.unit)) {
-					const amount = changes.amount ?? row.amount!;
+					const amount = storedAmount(changes.amount ?? row.amount!);
 					const unit = changes.unit ?? row.unit!;
 					const nutrients = snapshotNutrients(row.food!, amount, unit);
 					if (!nutrients) throw new DiaryError('conversion_unknown');

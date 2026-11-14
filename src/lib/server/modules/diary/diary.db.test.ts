@@ -275,6 +275,15 @@ describe('retries', () => {
 		}
 	});
 
+	it('recognises a retry of an amount with more decimals than are stored', async () => {
+		const food = (await catalog.getFood(MEHMET, breadId))!;
+		const id = randomUUID();
+		// 10 oz in grams, as typed or spoken entries propose it.
+		const first = await diary.logFood(MEHMET, ctx({ id }), food, 283.49523125, grams);
+		expect(first.amount).toBe(283.4952);
+		expect(await diary.logFood(MEHMET, ctx({ id }), food, 283.49523125, grams)).toEqual(first);
+	});
+
 	it('rejects the same ID reused with different content', async () => {
 		const id = randomUUID();
 		await diary.quickAdd(MEHMET, ctx({ id }), 300, 'Simit');

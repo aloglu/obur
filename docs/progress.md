@@ -47,6 +47,9 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
   `goals.db.test.ts` (pregnant and under 18; earlier days keep theirs; saving again records nothing).
 - Done: finding 5. A failed Undo says "Couldn't undo" (`shell/Toast.svelte`); marking a day complete says when it
   failed. E2e `offline.e2e.ts` (fails without the fix, both browsers).
+- Done: finding 2. Weights (0.01 kg), water (0.1 ml) and food amounts (0.0001) are rounded to what their columns
+  keep before saving, so a retry matches and the reply shows the stored value. Tests in `body.db.test.ts` and
+  `diary.db.test.ts` (both fail without the fix).
 
 ## Pre-release audit fixes (2026-11-14)
 
