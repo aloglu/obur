@@ -25,12 +25,17 @@ type FoodProposal = Extract<ReturnType<typeof parseEntry>['items'][number], { ki
  */
 async function portionFirst(userId: string, p: FoodProposal, recent: string[]) {
 	if (p.amount === null || p.unit?.kind !== 'count' || p.unit.word !== null) return null;
-	const [word, ...others] = p.text.split(' ');
-	if (!others.length) return null;
-	const candidates = await catalog.searchFoodsLoose(userId, others.join(' '), 5, recent);
-	if (!candidates[0] || candidates[0].loose) return null;
-	const food = await catalog.getFood(userId, candidates[0].id);
-	return food && portionNamed(word, food) ? { candidates, food, word } : null;
+	const all = p.text.split(' ');
+	// Two words first ("yemek kaşığı zeytinyağı"), then one ("3 scoops whey").
+	for (const size of [2, 1]) {
+		if (all.length <= size) continue;
+		const word = all.slice(0, size).join(' ');
+		const candidates = await catalog.searchFoodsLoose(userId, all.slice(size).join(' '), 5, recent);
+		if (!candidates[0] || candidates[0].loose) continue;
+		const food = await catalog.getFood(userId, candidates[0].id);
+		if (food && portionNamed(word, food)) return { candidates, food, word };
+	}
+	return null;
 }
 
 export async function understandEntry(

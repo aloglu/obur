@@ -53,6 +53,10 @@ built, smoke test, off-site outage test. Migrations 0050–0052 run on update. P
   built-in portions). Found and fixed: "Karbonhidrat" ran into its bar (the three nutrient rows now share one label
   column; English pictures unchanged). Checks: type-check, lint, 1109 unit and database tests, e2e 239 passed
   (18 skipped by design).
+- Done (2026-11-14, after beta.14): typed and spoken portions find a built-in food's portion by its Turkish name,
+  and two-word portions work ("1 yemek kaşığı zeytinyağı"). Checks: lint, 1111 unit and database tests, e2e 242
+  passed; the phone offline test (offline.e2e.ts:237) failed once in the full run and passed in three runs on its own
+  (seen once before; intermittent, not identified yet).
 - Next: the owner reads the app in Turkish (set `OBUR_PREVIEW_LANGUAGES=tr` on their server after the next release,
   then More → Settings → Language) and marks wording to change; then release Turkish (add it to
   `ENABLED_LANGUAGES`).

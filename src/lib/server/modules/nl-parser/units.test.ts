@@ -120,4 +120,41 @@ describe('portionNamed', () => {
 	it('needs a food that converts: a per-serving food without a size has none to name', () => {
 		expect(portionNamed('bar', bar)).toBeNull();
 	});
+	it('knows a built-in food’s portions by their Turkish names too, also two words said together', () => {
+		const garlic = {
+			basis: '100g' as const,
+			servingLabel: null,
+			origin: 'curated',
+			servings: [{ id: 'clove', name: 'clove', amount: 3, unit: 'g' as const }]
+		};
+		const oil = {
+			basis: '100g' as const,
+			servingLabel: null,
+			origin: 'curated',
+			servings: [
+				{ id: 'tbsp', name: 'tablespoon', amount: 13.5, unit: 'g' as const },
+				{ id: 'cup', name: 'US cup (237 ml)', amount: 216, unit: 'g' as const }
+			]
+		};
+		expect(portionNamed('diş', garlic)).toEqual({ kind: 'serving', servingId: 'clove' });
+		expect(portionNamed('cloves', garlic)).toEqual({ kind: 'serving', servingId: 'clove' });
+		expect(portionNamed('yemek kaşığı', oil)).toEqual({ kind: 'serving', servingId: 'tbsp' });
+		expect(portionNamed('tablespoons', oil)).toEqual({ kind: 'serving', servingId: 'tbsp' });
+		// Two words must come together, in order.
+		expect(portionNamed('kaşığı yemek', oil)).toBeNull();
+		// A typed food's portions answer only to their own names.
+		expect(portionNamed('diş', { ...garlic, origin: 'manual' })).toBeNull();
+	});
+	it('reads a count word against a built-in food’s Turkish portion names', () => {
+		const bread = {
+			basis: '100g' as const,
+			servingLabel: null,
+			origin: 'curated',
+			servings: [{ id: 'pkg', name: 'package (283 g)', amount: 283, unit: 'g' as const }]
+		};
+		expect(unitForFood({ kind: 'count', word: 'package' }, bread)).toEqual({
+			kind: 'serving',
+			servingId: 'pkg'
+		});
+	});
 });

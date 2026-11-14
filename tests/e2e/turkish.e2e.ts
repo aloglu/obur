@@ -146,3 +146,37 @@ test('dates, numbers and built-in portions read as Turkish', async ({ page }) =>
 	await expect(page.getByRole('heading', { level: 1, name: 'Takvim' })).toBeVisible();
 	await expect(page.getByText(/Kasım 2026|Ekim 2026|Aralık 2026/).first()).toBeVisible();
 });
+
+test('typed Turkish portions find a built-in food’s portion: “diş”, “yemek kaşığı”', async ({
+	page
+}) => {
+	await signedInAs(page, 'Porsiyon Deneyen');
+	const parse = (text: string) =>
+		apiAs<{
+			items: {
+				food: { name: string; servings: { id: string; name: string }[] } | null;
+				amount: number | null;
+				unit: { kind: string; servingId?: string } | null;
+			}[];
+		}>(page, 'POST', '/api/v1/entry/parse', { text, date: '2026-11-14', zone: ZONE });
+	const portionOf = async (text: string) => {
+		const [item] = (await parse(text)).items;
+		const serving = item.food?.servings.find((s) => s.id === item.unit?.servingId);
+		return { food: item.food?.name, amount: item.amount, portion: serving?.name };
+	};
+	expect(await portionOf('iki diş sarımsak')).toEqual({
+		food: 'Garlic',
+		amount: 2,
+		portion: 'clove'
+	});
+	expect(await portionOf('1 yemek kaşığı zeytinyağı')).toEqual({
+		food: 'Olive oil',
+		amount: 1,
+		portion: 'tablespoon'
+	});
+	expect(await portionOf('2 cloves garlic')).toEqual({
+		food: 'Garlic',
+		amount: 2,
+		portion: 'clove'
+	});
+});

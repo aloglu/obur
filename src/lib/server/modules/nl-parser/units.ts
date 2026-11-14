@@ -4,6 +4,7 @@
 // choose: no weight or density is ever assumed.
 import { supportedDimensions, type QuantityModel } from '../../../shared/quantity.ts';
 import { offeredAmount, type UnitOption } from '../../../shared/unit-options.ts';
+import { turkishPortion } from '../../../shared/curated-names-tr.ts';
 import type { CountWord, ParsedUnit } from './parse.ts';
 import { fold } from './parse.ts';
 
@@ -28,6 +29,16 @@ const SYNONYMS: Record<CountWord, string[]> = {
 };
 const words = (s: string) => fold(s).split(/[^a-z0-9]+/);
 
+/** The food as the matcher sees it; a built-in one also answers to its portions' Turkish names. */
+type MatchFood = QuantityModel & { servingLabel: string | null; origin?: string };
+
+/** The words of each portion's names: as stored, and for a built-in food also in Turkish ("clove", "diş"). */
+const portionWords = (food: MatchFood) =>
+	food.servings.map((s) => {
+		const turkish = food.origin === 'curated' ? turkishPortion(s.name) : null;
+		return { serving: s, names: [s.name, ...(turkish ? [turkish] : [])].map(words) };
+	});
+
 /** "cups" → cups, cup; "berries" → berry; "boxes" → box. */
 const singulars = (w: string) => [
 	w,
@@ -40,28 +51,35 @@ const singulars = (w: string) => [
  * The food's own portion that a word names, singular or plural ("2 cups" → its "Cup", "3 scoops" → "Scoop (30 g)").
  * Matched after the food is found, so any portion name works, not only the count words the parser knows.
  */
-export function portionNamed(
-	word: string,
-	food: QuantityModel & { servingLabel: string | null }
-): FoodUnit | null {
+export function portionNamed(word: string, food: MatchFood): FoodUnit | null {
 	const dims = supportedDimensions(food);
 	if (!dims.mass && !dims.volume) return null;
-	const forms = singulars(fold(word));
-	const portion = food.servings.find((s) => words(s.name).some((w) => forms.includes(w)));
-	return portion ? { kind: 'serving', servingId: portion.id } : null;
+	// One word, or two said together ("yemek kaşığı"): the last may be plural.
+	const said = fold(word)
+		.split(/[^a-z0-9]+/)
+		.filter(Boolean);
+	if (!said.length) return null;
+	const head = said.slice(0, -1);
+	const forms = singulars(said[said.length - 1]);
+	const names = (ws: string[]) =>
+		ws.some(
+			(w, i) =>
+				forms.includes(w) && head.every((h, j) => ws[i - head.length + j] === h) && i >= head.length
+		);
+	const found = portionWords(food).find((p) => p.names.some(names));
+	return found ? { kind: 'serving', servingId: found.serving.id } : null;
 }
 
-export function unitForFood(
-	parsed: ParsedUnit | null,
-	food: QuantityModel & { servingLabel: string | null }
-): FoodUnit | null {
+export function unitForFood(parsed: ParsedUnit | null, food: MatchFood): FoodUnit | null {
 	if (!parsed) return null;
 	const dims = supportedDimensions(food);
 	if (parsed.kind === 'g') return dims.mass ? { kind: 'mass', unit: 'g' } : null;
 	if (parsed.kind === 'ml') return dims.volume ? { kind: 'volume', unit: 'ml' } : null;
 
 	const wanted = parsed.word ? SYNONYMS[parsed.word] : SYNONYMS.piece;
-	const portion = food.servings.find((s) => words(s.name).some((w) => wanted.includes(w)));
+	const portion = portionWords(food).find((p) =>
+		p.names.some((ws) => ws.some((w) => wanted.includes(w)))
+	)?.serving;
 	if (portion && (dims.mass || dims.volume)) return { kind: 'serving', servingId: portion.id };
 	if (food.basis === 'serving') {
 		const label = food.servingLabel ? words(food.servingLabel) : [];
@@ -85,8 +103,8 @@ export function unitForFood(
 export function proposeForFood(
 	amount: number | null,
 	parsed: ParsedUnit | null,
-	food: QuantityModel & { servingLabel: string | null },
-	/** A word after the number that names one of the food's portions ("2 cups"), found by `portionNamed`. */
+	food: MatchFood,
+	/** Words after the number that name one of the food's portions ("2 cups"), found by `portionNamed`. */
 	named?: string
 ): { unit: FoodUnit | null; amount: number | null } {
 	const bare = amount === null && parsed === null && food.basis === 'serving';
