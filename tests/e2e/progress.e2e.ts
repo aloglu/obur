@@ -137,7 +137,12 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	await expect(weightReadout).toContainText(': 82.6 kg');
 	// Trend: the smoothed weight and pace, remembered on this device; the card keeps its height.
 	const before = (await weight.boundingBox())!.height;
+	// Saved to the account in the background: the reload below waits for that, or it can come first.
+	const saved = page.waitForResponse(
+		(r) => r.url().endsWith('/api/v1/profile/preferences') && r.request().method() !== 'GET'
+	);
 	await show.getByRole('radio', { name: 'Smoothed' }).click();
+	expect((await saved).ok()).toBe(true);
 	await expect(show.getByRole('radio', { name: 'Smoothed' })).toHaveAttribute(
 		'aria-checked',
 		'true'

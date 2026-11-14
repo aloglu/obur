@@ -19,7 +19,13 @@ page loads. Fixing everything found (owner, 2026-11-14):
   no browser test (it would need a 60-day-old copy).
 - Done: sign-in limits count each real client behind a local proxy (`server/client-ip.ts`, design.md "Sessions,
   uploads and deployment"); no new setting, install steps unchanged. Checks: unit tests, auth e2e (7 passed).
-- Next: full checks (type-check, lint, all unit and database tests, e2e), then the owner decides on a release.
+- Done: `progress.e2e.ts` reloaded before the Smoothed choice had saved (it saves in the background); it now waits
+  for the save. Failed once in a full run, then passed 37 of 37 repeated (both browsers).
+- Checks (all five fixes): type-check, lint, build, 1120 unit and database tests, e2e 246 passed (18 skipped by
+  design) with that one failure, which is now fixed. A first full e2e run was spoilt by running `npm run build`
+  alongside it (it replaces the build the tests serve); don't do that.
+- Next: the owner decides on a release (beta.17). Not audited yet: large UI components, nl/label parsers, backup
+  scripts beyond their tests, LoseIt import and export completeness in detail.
 
 ## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
 
