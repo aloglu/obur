@@ -34,6 +34,8 @@
 	// The sheet slides in small, as sheets do, and then the list makes it grow.
 	let opened = $state(false);
 	let searched = $state(false);
+	/** The server could not be reached for the search or the food: say so instead of showing nothing. */
+	let unreachable = $state(false);
 	let food = $state<FoodDetail | undefined>();
 	let measures = $state<MeasureOption[]>([]);
 	let optionKey = $state('');
@@ -48,16 +50,22 @@
 		if (!q) {
 			results = [];
 			searched = false;
+			unreachable = false;
 			return;
 		}
 		timer = setTimeout(async () => {
-			const data = await api<{ results: FoodSearchResult[] }>(
-				'GET',
-				`/api/v1/foods?q=${encodeURIComponent(q)}`
-			);
-			if (q === query.trim()) {
-				results = data.results;
-				searched = true;
+			try {
+				const data = await api<{ results: FoodSearchResult[] }>(
+					'GET',
+					`/api/v1/foods?q=${encodeURIComponent(q)}`
+				);
+				if (q === query.trim()) {
+					results = data.results;
+					searched = true;
+					unreachable = false;
+				}
+			} catch {
+				if (q === query.trim()) unreachable = true;
 			}
 		}, 200);
 	});
@@ -78,7 +86,13 @@
 	});
 
 	async function pick(id: string) {
-		food = await api<FoodDetail>('GET', `/api/v1/foods/${id}`);
+		try {
+			food = await api<FoodDetail>('GET', `/api/v1/foods/${id}`);
+			unreachable = false;
+		} catch {
+			unreachable = true;
+			return;
+		}
 		const first = unitOptions(food, measures)[0];
 		optionKey = first?.key ?? '';
 		amountText = first ? formatDecimal(first.defaultAmount, 2) : '';
@@ -131,7 +145,9 @@
 	{onclose}
 >
 	{#if !food}
-		{#if searched && results.length === 0}
+		{#if unreachable}
+			<Notice>{m.foods_search_offline()}</Notice>
+		{:else if searched && results.length === 0}
 			<p class="text-[0.875rem] text-muted">{m.foods_none()}</p>
 		{/if}
 		{#if query.trim()}

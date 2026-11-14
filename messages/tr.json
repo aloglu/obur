@@ -939,6 +939,7 @@
 	"backup_offsite_restore_stale": "Son bir haftada sunucu dışı kopyadan başarılı bir geri yükleme olmadı.",
 	"backup_no_offsite": "Sunucu dışı kopya yok. Bu sunucunun diskleri bozulursa ya da sunucu kaybolursa yedekler de onunla gider.",
 	"restore_in_progress": "obur bir yedekten geri yükleniyor. Lütfen biraz sonra tekrar dene.",
+	"foods_search_offline": "Arama için bağlantı gerekiyor.",
 	"log_search_offline": "Arama için bağlantı gerekiyor. Yine de hızlıca kalori ekleyebilir ya da son kaydedilen bir yiyeceği seçebilirsin.",
 	"offline_page_title": "Çevrimdışı kullanılamıyor",
 	"offline_page_body": "Bu sayfa henüz bu cihaza kaydedilmedi. Bağlantı gelince açılır.",

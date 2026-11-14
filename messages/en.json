@@ -939,6 +939,7 @@
 	"backup_offsite_restore_stale": "No restore from the off-site copy has passed in the last week.",
 	"backup_no_offsite": "There is no off-site copy. If this server's disks fail or the server is lost, the backups go with it.",
 	"restore_in_progress": "obur is being restored from a backup. Please try again in a little while.",
+	"foods_search_offline": "Search needs a connection.",
 	"log_search_offline": "Search needs a connection. You can still quick add calories, or pick a recent food.",
 	"offline_page_title": "Not available offline",
 	"offline_page_body": "This page isn't saved on this device yet. It will open once you're back online.",
