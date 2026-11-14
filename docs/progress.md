@@ -2,6 +2,18 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Pre-release audit fixes (2026-11-14)
+
+Audit of sign-in, isolation, diary retries, offline sync, service worker, imports, reminders, uploads, search and
+page loads. Fixing everything found (owner, 2026-11-14):
+
+- Done: a retried food entry logged by serving or household measure was refused as a conflict (jsonb reorders the
+  unit's keys; `sameRequest` now compares with sorted keys). Regression test in `diary.db.test.ts` (fails without
+  the fix).
+- Done: speech requests were logged as slow (`SLOW_BY_NATURE` named `/speak`).
+- Next: sign-in limits per real client behind a trusted proxy (all documented remote-access setups share one IP
+  now); More's counts as database counts; a bound on the device's saved pages.
+
 ## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
 
 Checks before the tag: type-check, lint, 1113 unit and database tests, e2e 246 passed (18 skipped by design; one

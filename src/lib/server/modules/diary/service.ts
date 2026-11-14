@@ -100,13 +100,24 @@ function toEntry(r: Row): DiaryEntry {
 	};
 }
 
+/**
+ * JSON with object keys sorted: a unit read back from jsonb has its keys in the database's order, not the order the
+ * request built them in, so a plain JSON.stringify would tell a retry from its original.
+ */
+const sortedJson = (value: unknown): string =>
+	JSON.stringify(value, (_k, v) =>
+		v && typeof v === 'object' && !Array.isArray(v)
+			? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+			: v
+	);
+
 /** What a create request contained, to recognise a retry of the same request. */
 function sameRequest(
 	existing: Row,
 	candidate: Omit<Row, 'createdAt' | 'updatedAt' | 'energyKcal'>
 ): boolean {
 	const pick = (r: Partial<Row>) =>
-		JSON.stringify([
+		sortedJson([
 			r.localDate,
 			r.meal,
 			r.zone,

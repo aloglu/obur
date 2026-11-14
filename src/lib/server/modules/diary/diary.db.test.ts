@@ -235,6 +235,46 @@ describe('retries', () => {
 		expect(await diary.day(MEHMET, '2026-10-25')).toHaveLength(1);
 	});
 
+	it('recognises a retry of a food entry logged by serving or household measure', async () => {
+		// jsonb keeps a unit's keys in its own order, not the request's (a retry was once refused as a conflict).
+		const bread = (await catalog.getFood(MEHMET, breadId))!;
+		const milkId = await catalog.createFood(
+			MEHMET,
+			v.parse(FoodInput, {
+				name: 'Milk',
+				visibility: 'private',
+				basis: '100ml',
+				nutrients: [{ code: 'energy_kcal', value: 61, qualifier: 'reported' }]
+			})
+		);
+		const milk = (await catalog.getFood(MEHMET, milkId))!;
+		const [measure] = await asUser(
+			MEHMET,
+			(tx) => tx`select code, name, ml from household_measures limit 1`
+		);
+		const cases = [
+			{
+				food: bread,
+				unit: resolveUnit({ kind: 'serving', servingId: bread.servings[0].id }, bread.servings, [])!
+			},
+			{
+				food: milk,
+				unit: resolveUnit(
+					{ kind: 'measure', code: measure.code },
+					[],
+					[{ code: measure.code, name: measure.name, ml: Number(measure.ml) }]
+				)!
+			}
+		];
+		for (const { food, unit } of cases) {
+			const id = randomUUID();
+			const first = await diary.logFood(MEHMET, ctx({ id }), food, 2, unit);
+			const again = await diary.logFood(MEHMET, ctx({ id }), food, 2, unit);
+			expect(again).toEqual(first);
+			expect(await errorCode(diary.logFood(MEHMET, ctx({ id }), food, 3, unit))).toBe('conflict');
+		}
+	});
+
 	it('rejects the same ID reused with different content', async () => {
 		const id = randomUUID();
 		await diary.quickAdd(MEHMET, ctx({ id }), 300, 'Simit');
