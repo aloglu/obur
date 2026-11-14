@@ -2,6 +2,17 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Audit fixes released (2026-11-15), as `v1.0.0-beta.17`
+
+Checks before the tag: type-check, lint, build, 1133 unit and database tests, e2e 251 passed (18 skipped by design,
+no failures), image built, smoke test, off-site outage test (with the new retry and restore steps). Migrations
+0053–0054 run on update. `docs/install/for-ai-agents.md` checked: no new settings, commands or start-up log lines.
+Tag pushed; the release workflow publishes the images (not yet confirmed).
+- Next: confirm the workflow published all three images; then the owner updates their server, uses beta.17 for a
+  week, tries the changed flows on the iPhone (Undo and sign-out offline, pregnancy in About you on a test
+  account) and rehearses a restore once on a scratch copy; then 1.0.0 (version, guide check, a fresh install from
+  the published image).
+
 ## Full pre-release audit (owner, 2026-11-14): every file, findings reported before fixing
 
 Coverage ([x] read in full; findings in the list below, fixed only after the owner's go):
@@ -80,7 +91,6 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
 - Checks (all audit fixes): type-check, lint, build, 1133 unit and database tests, e2e 251 passed (18 skipped by
   design, no failures), image built, smoke test, off-site test (now with retry and restore steps). Migrations
   0053–0054 run on update.
-- Next: the owner decides on a release (beta.17).
 
 ## Pre-release audit fixes (2026-11-14)
 
