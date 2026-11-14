@@ -56,6 +56,10 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
   so and marks the off-site copy for a full backup at its next backup (`offsite-full-needed` in the status folder).
   `offsite-test.sh` gained a step: restore start and finish with the store away, then the nightly backup gives the
   off-site copy its full backup and a restore check passes (image built, test passed).
+- Done: finding 7. Sign-out asks the server first, with a 5-second limit (an iPhone can leave an offline request
+  hanging); offline it says it needs a connection and clears nothing. Found while testing: the reminders step
+  waited forever for a service worker that wasn't registered yet (`push.ts` now looks it up without waiting).
+  E2e `offline.e2e.ts`; the offline file passed 3 times on both browsers.
 
 ## Pre-release audit fixes (2026-11-14)
 

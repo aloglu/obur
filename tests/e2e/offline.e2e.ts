@@ -409,7 +409,26 @@ test('an Undo that cannot reach the server says so instead of looking done', asy
 
 	await context.setOffline(true);
 	await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
-	await expect(page.getByRole('status')).toContainText("Couldn't undo");
+	await expect(page.getByRole('status').filter({ hasText: "Couldn't undo" })).toBeVisible();
 	await expect(snacks.getByRole('button', { name: /Apple/ })).toHaveCount(0);
 	await context.setOffline(false);
+});
+
+test('signing out offline says it needs a connection and keeps the person signed in', async ({
+	page,
+	context
+}) => {
+	await signedInAs(page, 'Zeynep');
+	await primeCache(page);
+	await page.goto('/more');
+	await page.waitForLoadState('networkidle');
+	await context.setOffline(true);
+	await page.getByRole('button', { name: 'Sign out' }).click();
+	await expect(
+		page.getByRole('status').filter({ hasText: 'Signing out needs a connection' })
+	).toBeVisible({ timeout: 10_000 });
+	await expect(page).toHaveURL(/\/more$/);
+	await context.setOffline(false);
+	await page.reload();
+	await expect(page.getByText('Signed in as Zeynep')).toBeVisible();
 });

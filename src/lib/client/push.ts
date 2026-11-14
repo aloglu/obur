@@ -16,9 +16,10 @@ const needsInstall = () =>
 	!matchMedia('(display-mode: standalone)').matches &&
 	!(navigator as Navigator & { standalone?: boolean }).standalone;
 
+/** This device's subscription; none while the service worker isn't registered yet (never waits for it). */
 async function current(): Promise<PushSubscription | null> {
-	const registration = await navigator.serviceWorker.ready;
-	return registration.pushManager.getSubscription();
+	const registration = await navigator.serviceWorker.getRegistration();
+	return registration ? registration.pushManager.getSubscription() : null;
 }
 
 export async function pushState(): Promise<PushState> {

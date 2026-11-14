@@ -5,7 +5,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { clearDeviceData, flush, offline } from '#lib/client/offline/sync.svelte.ts';
 	import Button from '../Button.svelte';
 	import NavRow from './NavRow.svelte';
@@ -39,10 +39,24 @@
 		await flush();
 		const unsent = offline.items.length;
 		if (unsent > 0 && !confirm(m.signout_pending({ count: String(unsent) }))) return;
-		if (offline.ownerId) await clearDeviceData(offline.ownerId);
 		// This device stops getting this person's reminders; whoever signs in next turns on their own.
 		if (reminders) await stopReminders();
-		await api('POST', '/api/v1/auth/logout', {});
+		// Signed out on the server first: offline, nothing on this device is cleared and the person stays signed in.
+		try {
+			// A time limit: an iPhone can leave an offline request hanging instead of failing it.
+			const response = await fetch('/api/v1/auth/logout', {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: { 'content-type': 'application/json' },
+				body: '{}',
+				signal: AbortSignal.timeout(5000)
+			});
+			if (!response.ok && response.status !== 401) throw new Error(`status ${response.status}`);
+		} catch {
+			showToast({ message: m.signout_offline(), detail: m.signout_offline_detail() });
+			return;
+		}
+		if (offline.ownerId) await clearDeviceData(offline.ownerId);
 		await invalidateAll();
 		await goto(resolve('/login'));
 	}
