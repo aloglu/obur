@@ -6,7 +6,7 @@ import { readJson } from '#lib/server/http.ts';
 import { portability, respondPortability } from '#lib/server/portability.ts';
 import type { RequestHandler } from './$types';
 
-// Admin only: the household's accounts, the list of deleted ones (opaque ID and date) and backup health.
+// Admin only: every account, the list of deleted ones (opaque ID and date) and backup health.
 export const GET: RequestHandler = async ({ locals }) => {
 	const session = locals.session!;
 	if (session.role !== 'admin') error(403, 'Admins only');

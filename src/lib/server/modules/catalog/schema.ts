@@ -199,7 +199,7 @@ export const recipeIngredients = pgTable(
 
 /**
  * How much a person changed a label scan's proposal before saving the food (shared/scan-edits.ts): counts only, never
- * values or photos. Private to the person; admins see household totals through `app_label_scan_totals()`.
+ * values or photos. Private to the person; admins see totals across members through `app_label_scan_totals()`.
  */
 export const labelScanEdits = pgTable(
 	'label_scan_edits',

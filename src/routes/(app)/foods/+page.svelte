@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Foods (docs/ui.md, "Recipes and saved meals"): the person's own foods and scans, and a search that also reaches what
-	// the household shares and the curated foods. New food stays above the list: an import can bring hundreds.
+	// other members share and the curated foods. New food stays above the list: an import can bring hundreds.
 	import { onMount, untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';

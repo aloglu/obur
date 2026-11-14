@@ -37,7 +37,7 @@ or setup and recovery links in places other people can read.
   container. It listens on port 3000 inside the container.
 - **`obur-speech`** and **`obur-labels`** (optional): speech to text for Speak, and label reading for Scan. About
   1.5 GB of memory together. They have no internet access and keep nothing. Without them, people can still use Speak
-  and Scan with their own OpenAI or OpenRouter key, if the household allows it.
+  and Scan with their own OpenAI or OpenRouter key, if an admin allows it.
 - **The data folder** (`OBUR_DATA_DIR`, default `./data`, mounted at `/data`): `postgres/` (the database),
   `backups/` (encrypted backups; ideally its own disk, `OBUR_BACKUP_DIR`), `status/` (backup health), `secrets/`
   (passwords and keys obur generated for itself; never copy these anywhere).
@@ -81,11 +81,11 @@ backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cl
    Give it to the person privately. A new one: `docker exec obur obur setup-link`. Remind them to save the recovery
    codes the app shows after they create their passkey.
 8. **Tell the person** where the folder is, that the passphrase must be kept safe, and whether there is an off-site
-   copy (Household → Backups warns while there isn't).
+   copy (Members → Backups warns while there isn't).
 
 ## Routine maintenance
 
-- **Health:** `docker compose ps` (obur `healthy`), `docker compose logs --tail 100 obur`, and in the app Household →
+- **Health:** `docker compose ps` (obur `healthy`), `docker compose logs --tail 100 obur`, and in the app Members →
   Backups (last backup, last weekly restore check, last off-site restore check).
 - **Update:** `docker compose pull && docker compose up -d`, then read the log. Before changing the database, obur
   takes a backup by itself; a failed upgrade changes nothing and stops with the reason in the log. Afterwards
@@ -96,7 +96,7 @@ backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cl
 - **Back up now:** `docker exec obur obur backup now`. **List backups:** `docker exec obur obur backup info`.
   **Prove a restore works** (into a throwaway copy, nothing changes): `docker exec obur obur backup restore-check`.
 - **Someone lost every passkey and recovery code:** `docker exec obur obur recovery-link "<their name>"` (one hour,
-  works once). Only when the person running the household asks for it.
+  works once). Only when the person running obur asks for it.
 - **Disk space:** backups keep `OBUR_BACKUP_KEEP_WEEKS` (default 5) weekly full backups and everything between them.
   If the disk is filling, tell the person; don't delete backup files by hand.
 
@@ -109,11 +109,11 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
   and save it in their password manager; see `troubleshooting.md` if backups already exist.
 - **"obur: slow: GET /path N ms"** (log): the server took over 300 ms on that request. Harmless by itself; if it
   repeats for the same path, report it with the path and times (never paste a query or personal data).
-- **New versions:** obur does not look for them unless an admin turns on Household → Updates → "Check for new
+- **New versions:** obur does not look for them unless an admin turns on Members → Updates → "Check for new
   versions" (it then reads GitHub's public tag list once a day; `updates: the published versions could not be read`
   in the log means GitHub was unreachable, which is harmless). It never updates itself.
 - **"the off-site store cannot be reached; WAL is waiting for it"** (log) or **"The off-site store can't be
-  reached"** (Household → Backups): the off-site storage is not answering. Local backups continue; changes wait in
+  reached"** (Members → Backups): the off-site storage is not answering. Local backups continue; changes wait in
   `/data/offsite-queue` (limit `OBUR_OFFSITE_QUEUE_MAX_MB`, default 1024) and are sent when it answers ("the off-site
   store is back: N waiting WAL file(s) sent"). Check the `OBUR_OFFSITE_*` values and the server's connection. After
   "the off-site store has been away too long", run `docker exec obur obur backup now` once it is reachable.

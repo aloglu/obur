@@ -117,7 +117,7 @@
 	/>
 	<p class="text-[0.9375rem] text-muted">{m.models_intro()}</p>
 	{#if !s.allowed}
-		<Notice tone="info">{s.householdOff ? m.models_off_household() : m.models_off_server()}</Notice>
+		<Notice tone="info">{s.adminOff ? m.models_off_members() : m.models_off_server()}</Notice>
 	{/if}
 
 	{#each FEATURES as feature (feature)}

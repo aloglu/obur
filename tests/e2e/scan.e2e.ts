@@ -169,7 +169,7 @@ test('a label that cannot be read says so and offers to fill it in by hand', asy
 	await expect(page.getByRole('button', { name: 'Retake' })).toBeVisible();
 });
 
-test('Scan opens as a sheet over Log; a corrected value is counted and admins see household totals', async ({
+test('Scan opens as a sheet over Log; a corrected value is counted and admins see totals across members', async ({
 	page,
 	request
 }, testInfo) => {
@@ -193,7 +193,7 @@ test('Scan opens as a sheet over Log; a corrected value is counted and admins se
 	await expect(page.getByRole('heading', { level: 1, name: 'Check the label' })).toBeVisible();
 	// No "Log it after saving" choice: from Log, saving always goes on to the amount.
 	await expect(page.getByLabel('Log it after saving')).toHaveCount(0);
-	// One value corrected before saving is counted as one change; admins see household totals.
+	// One value corrected before saving is counted as one change; admins see totals across members.
 	await page.locator('#n-energy_kcal').fill('410');
 	await page.getByLabel('Name', { exact: true }).fill(`Gofret 2 ${testInfo.project.name}`);
 	await page.getByRole('button', { name: 'Save and choose amount' }).click();
@@ -206,7 +206,7 @@ test('Scan opens as a sheet over Log; a corrected value is counted and admins se
 	// Check the label opened without a reading (a reload) goes back to Log with the sheet open.
 	await page.goto('/scan');
 	await expect(page.getByRole('dialog', { name: 'Scan a label' })).toBeVisible();
-	await page.goto('/household');
+	await page.goto('/members');
 	await expect(page.getByTestId('scan-totals')).toContainText('Labels saved');
 });
 

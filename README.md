@@ -1,6 +1,6 @@
 # obur
 
-A self-hosted calorie, weight and water tracker for a household or a small circle of people. It runs on a server you
+A self-hosted calorie, weight and water tracker for a small circle of people, such as family and friends. It runs on a server you
 control (a VPS, Unraid, TrueNAS or any machine with Docker) and you use it on your phone, where it installs as an
 app. Sign-in with passkeys, invite-only accounts and automatic encrypted backups. Nothing leaves your server unless
 someone chooses to use their own OpenAI or OpenRouter key for Speak and Scan. Weights are in kilograms for now.

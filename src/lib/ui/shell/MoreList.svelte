@@ -1,5 +1,5 @@
 <script lang="ts">
-	// docs/ui.md "More and settings": your foods, recipes and meals, then Settings, Household and Help, then
+	// docs/ui.md "More and settings": your foods, recipes and meals, then Settings, Members and Help, then
 	// signing out. Compact rows with their counts.
 	import { stopReminders } from '#lib/client/push.ts';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -20,7 +20,7 @@
 		mealCount?: number;
 		/** Reminders are configured on this server (signing out stops them on this device). */
 		reminders: boolean;
-		/** A newer published version, for an admin who turned the check on (Household). */
+		/** A newer published version, for an admin who turned the check on (Members). */
 		newerVersion?: string | null;
 	}
 	let {
@@ -65,9 +65,9 @@
 	<NavRow href={resolve('/(app)/more/settings')} label={m.settings_title()} />
 	{#if isAdmin}
 		<NavRow
-			href={resolve('/(app)/household')}
-			label={m.more_household()}
-			value={newerVersion ? m.more_household_update() : undefined}
+			href={resolve('/(app)/members')}
+			label={m.more_members()}
+			value={newerVersion ? m.more_members_update() : undefined}
 		/>
 	{/if}
 	<NavRow href={resolve('/(app)/help')} label={m.more_help()} />

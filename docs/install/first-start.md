@@ -9,7 +9,7 @@ obur: no account exists yet. Open this link on the device you will use first …
 https://obur.example.com/setup#…
 ```
 
-Open it on your phone, choose your name and create a passkey. You are the household's admin. If the link expired
+Open it on your phone, choose your name and create a passkey. You are the admin. If the link expired
 or got lost, make a new one: `docker exec obur obur setup-link` (on Unraid or TrueNAS, `obur setup-link` in the
 container's console or shell).
 
@@ -22,7 +22,7 @@ Then save the **recovery codes** obur shows you somewhere safe: they let you bac
 
 ## Inviting people
 
-Household → **Invite someone** gives a link for one person. They open it on their phone and create their own
+Members → **Invite someone** gives a link for one person. They open it on their phone and create their own
 passkey; nobody needs a password.
 
 ## Someone lost every passkey and recovery code
@@ -35,5 +35,5 @@ docker exec obur obur recovery-link "Their name"
 
 ## Check the backups
 
-Household → **Backups** shows when the last backup ran and whether the weekly restore check passed. It warns while
+Members → **Backups** shows when the last backup ran and whether the weekly restore check passed. It warns while
 there is no off-site copy; see the off-site lines in `.env`.

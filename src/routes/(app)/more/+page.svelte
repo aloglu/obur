@@ -9,11 +9,11 @@
 	let { data } = $props();
 
 	// More opens from what the app already holds. An admin's "Update available" is looked up afterwards (at most
-	// one question to GitHub a day, and only with the check turned on in Household); if the answer is news, the
+	// one question to GitHub a day, and only with the check turned on in Members); if the answer is news, the
 	// row follows.
 	onMount(() => {
 		if (data.user?.role !== 'admin') return;
-		api<{ updates: { latest: string | null } }>('GET', '/api/v1/household/update-check')
+		api<{ updates: { latest: string | null } }>('GET', '/api/v1/admin/update-check')
 			.then(({ updates }) => {
 				if (updates.latest !== (data.more?.newerVersion ?? null))
 					void invalidate(ACCOUNT_DATA, true);

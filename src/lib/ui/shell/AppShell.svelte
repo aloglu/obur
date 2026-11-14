@@ -27,7 +27,7 @@
 			'/foods',
 			'/recipes',
 			'/saved-meals',
-			'/household',
+			'/members',
 			'/help'
 		].some((p) => path.startsWith(p))
 	);

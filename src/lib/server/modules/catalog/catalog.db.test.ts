@@ -466,7 +466,7 @@ describe('label scan edit counts', () => {
 		expect(await admin`select 1 from label_scan_edits`).toHaveLength(0);
 	});
 
-	it('are totalled for admins across the household, and only for admins', async () => {
+	it('are totalled for admins across all members, and only for admins', async () => {
 		await catalog.createFood(MEHMET, food(), { origin: 'label_scan', scanEdits: edits });
 		await catalog.createFood(ZEYNEP, food(), {
 			origin: 'label_scan',

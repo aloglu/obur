@@ -50,7 +50,7 @@ restore_start() {
 	fi
 	rm -f "$OBUR_RUN/hold"
 	echo "obur: restored. obur now says it is being restored until you run:"
-	echo "      obur restore finish <every entry from Household → Deleted accounts>"
+	echo "      obur restore finish <every entry from Members → Deleted accounts>"
 }
 
 restore_finish() {
@@ -61,7 +61,7 @@ restore_finish() {
 		sleep 1
 	done
 	obur-restore finish "$@"
-	echo "obur: obur reopens in a few seconds. Then check Household → Backups, and run: obur backup restore-check"
+	echo "obur: obur reopens in a few seconds. Then check Members → Backups, and run: obur backup restore-check"
 }
 
 restore_cancel() {

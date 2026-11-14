@@ -1169,7 +1169,7 @@ export function createPortability(db: Database) {
 
 		/**
 		 * Deletes an account in one transaction: by the person themselves, or by an admin for someone else (both
-		 * after a recent passkey check). Shared foods stay for the household without an owner unless removed too.
+		 * after a recent passkey check). Shared foods stay for other members without an owner unless removed too.
 		 */
 		async deleteAccount(
 			actorId: string,
@@ -1192,7 +1192,7 @@ export function createPortability(db: Database) {
 		},
 
 		/**
-		 * The household's accounts, for an admin (RLS shows others only to admins), with how many foods each has
+		 * Every account, for an admin (RLS shows others only to admins), with how many foods each has
 		 * shared: deleting the account asks about those only when there are some.
 		 */
 		async members(userId: string) {

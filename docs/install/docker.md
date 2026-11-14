@@ -93,7 +93,7 @@ Run these in the `obur` folder:
 
 By default the backups live in `data/backups`, next to the database. A failing disk would take both. If the machine
 has a second disk, set `OBUR_BACKUP_DIR` in `.env` to a folder on it, and set up an off-site copy (an S3-compatible
-bucket such as Cloudflare R2; the `OBUR_OFFSITE_*` lines in `.env`). Household → Backups warns while there is no
+bucket such as Cloudflare R2; the `OBUR_OFFSITE_*` lines in `.env`). Members → Backups warns while there is no
 off-site copy.
 
 ## Safety

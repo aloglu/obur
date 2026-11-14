@@ -5,7 +5,7 @@
 import type { Database } from '../../db/index.ts';
 import { withUser } from '../../db/identity.ts';
 import { newerVersion } from '../../../shared/version.ts';
-import { householdSettings } from '../remote-models/index.ts';
+import { serverSettings } from '../remote-models/index.ts';
 
 export interface UpdateStatus {
 	/** The version running. */
@@ -33,7 +33,7 @@ export function createUpdates(db: Database, options: UpdatesOptions) {
 	let lastFailure = 0;
 
 	const read = async (userId: string) => {
-		const [row] = await withUser(db, userId, (tx) => tx.select().from(householdSettings));
+		const [row] = await withUser(db, userId, (tx) => tx.select().from(serverSettings));
 		return row;
 	};
 	const toStatus = (row: Awaited<ReturnType<typeof read>>): UpdateStatus => ({
@@ -58,7 +58,7 @@ export function createUpdates(db: Database, options: UpdatesOptions) {
 		}
 		lastFailure = 0;
 		await withUser(db, adminId, (tx) =>
-			tx.update(householdSettings).set({
+			tx.update(serverSettings).set({
 				latestVersion: newerVersion(options.current, names),
 				latestCheckedAt: now()
 			})
@@ -89,9 +89,9 @@ export function createUpdates(db: Database, options: UpdatesOptions) {
 		async setCheck(adminId: string, on: boolean): Promise<UpdateStatus | null> {
 			const rows = await withUser(db, adminId, (tx) =>
 				tx
-					.update(householdSettings)
+					.update(serverSettings)
 					.set({ updateCheck: on, latestVersion: null, latestCheckedAt: null, updatedAt: now() })
-					.returning({ on: householdSettings.updateCheck })
+					.returning({ on: serverSettings.updateCheck })
 			);
 			if (rows.length !== 1) return null;
 			if (on) {

@@ -87,12 +87,12 @@ test('a person deletes their own account after confirming', async ({ page }) => 
 	await page.reload();
 	await expect(
 		page.getByRole('radiogroup', {
-			name: "You shared 1 food with the household. Keep it in everyone's search?"
+			name: "You shared 1 food with other members. Keep it in everyone's search?"
 		})
 	).toBeVisible();
 	await page.getByRole('button', { name: 'Delete my account' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Delete your account?' });
-	await expect(sheet).toContainText('Foods you shared stay for the household.');
+	await expect(sheet).toContainText('Foods you shared stay for other members.');
 	const confirm = sheet.getByRole('button', { name: 'Delete account' });
 	await expect(confirm).toBeDisabled();
 	await sheet.getByLabel("I understand this can't be undone").check();
@@ -122,8 +122,8 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	const adminId = await signedInAs(page, 'Gül', 'admin');
 	// Without a recent passkey check the server refuses, whatever the page does.
 	await staleSessions(adminId);
-	await page.goto('/household');
-	const refused = await page.request.delete('/api/v1/household/members', {
+	await page.goto('/members');
+	const refused = await page.request.delete('/api/v1/admin/members', {
 		headers: { origin: new URL(page.url()).origin },
 		data: { id: memberId, removeSharedFoods: false }
 	});
@@ -142,7 +142,7 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	// The question names the person and the count (it once said "Foods you shared", meaning the admin).
 	await sheet
 		.getByRole('radiogroup', {
-			name: `${name} shared 2 foods with the household. Keep them in everyone's search?`
+			name: `${name} shared 2 foods with other members. Keep them in everyone's search?`
 		})
 		.getByRole('radio', { name: 'Remove' })
 		.click();

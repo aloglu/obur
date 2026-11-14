@@ -81,7 +81,7 @@ describe('keys', () => {
 });
 
 describe('choosing a provider', () => {
-	it('needs agreement, a key and the household’s permission, and records when it was allowed', async () => {
+	it('needs agreement, a key and an admin’s permission, and records when it was allowed', async () => {
 		await expect(models.choose(MEMBER, 'speak', 'openai', true)).rejects.toThrow(ModelChoiceError);
 		await models.saveKey(MEMBER, 'openai', KEY);
 		await expect(models.choose(MEMBER, 'speak', 'openai', false)).rejects.toThrow(ModelChoiceError);
@@ -106,7 +106,7 @@ describe('choosing a provider', () => {
 		).rejects.toThrow(/model_choices_allowed/);
 	});
 
-	it('is refused while the household has personal keys off, and without a secrets key', async () => {
+	it('is refused while an admin has turned personal keys off, and without a secrets key', async () => {
 		await models.saveKey(MEMBER, 'openai', KEY);
 		await admin`update household_settings set personal_keys = false`;
 		expect(await models.allowed(MEMBER)).toBe(false);
@@ -115,12 +115,12 @@ describe('choosing a provider', () => {
 	});
 });
 
-describe('the household switch', () => {
+describe('the admins’ personal keys switch', () => {
 	it('only an admin can change it; everyone can read it', async () => {
-		expect(await models.setHouseholdAllows(MEMBER, false)).toBe(false);
-		expect(await models.householdAllows(MEMBER)).toBe(true);
-		expect(await models.setHouseholdAllows(ADMIN, false)).toBe(true);
-		expect(await models.householdAllows(MEMBER)).toBe(false);
+		expect(await models.setPersonalKeysAllowed(MEMBER, false)).toBe(false);
+		expect(await models.personalKeysAllowed(MEMBER)).toBe(true);
+		expect(await models.setPersonalKeysAllowed(ADMIN, false)).toBe(true);
+		expect(await models.personalKeysAllowed(MEMBER)).toBe(false);
 	});
 });
 

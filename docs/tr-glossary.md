@@ -44,7 +44,8 @@ corrections from the same review applied. Tone: "sen". Every Turkish string uses
 | Day note | Gün notu | |
 | Achievements | Başarılar | |
 | Streak | Seri | |
-| Household | Ev halkı | |
+| Members (the people using this server; the admin page) | Kullanıcılar | Owner, 2026-11-14: replaces Household / Ev halkı, which didn't fit friends. "Üyeler" sounds like an organisation's membership. |
+| Member (one) | Kullanıcı | |
 | Passkey | Geçiş anahtarı | |
 | Recovery code | Kurtarma kodu | |
 | Sign in | Giriş yap | |

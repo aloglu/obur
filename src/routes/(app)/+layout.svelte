@@ -162,7 +162,7 @@
 				'/(app)/recipes',
 				'/(app)/saved-meals',
 				'/(app)/more/deleted',
-				'/(app)/household',
+				'/(app)/members',
 				'/(app)/help',
 				'/(app)/achievements',
 				'/(app)/more/goal',

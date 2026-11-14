@@ -1,6 +1,6 @@
 # Installing obur
 
-obur is a calorie, weight and water tracker for a household or a small circle of people. It runs on a server you
+obur is a calorie, weight and water tracker for a small circle of people, such as family and friends. It runs on a server you
 control and you use it in the browser on your phone, where it installs as an app. Nothing is sent anywhere else.
 
 Every guide goes step by step and says what you should see.
@@ -22,7 +22,7 @@ add-ons. They never reach the internet: audio and photos stay on your server, in
 
 **Without the add-ons**, each person can still use Speak and Scan with their own OpenAI or OpenRouter key (More →
 Speak and Scan), after allowing that company to receive their recordings or photos. They pay that company for what
-they use. An admin can switch this off for everyone on Household.
+they use. An admin can switch this off for everyone on Members.
 
 ## 2. Give it an https address
 

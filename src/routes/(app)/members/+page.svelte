@@ -50,7 +50,7 @@
 	async function saveUpdateCheck(on: boolean) {
 		checking = true;
 		try {
-			({ updates } = await api<{ updates: UpdateStatus }>('PUT', '/api/v1/household/update-check', {
+			({ updates } = await api<{ updates: UpdateStatus }>('PUT', '/api/v1/admin/update-check', {
 				on
 			}));
 		} catch {
@@ -63,7 +63,7 @@
 	async function savePersonalKeys(allow: boolean) {
 		try {
 			// An admin setting: the server asks for a passkey moments old (as for invites and deletions).
-			await withRecentAuth(() => api('PUT', '/api/v1/household/personal-keys', { allow }));
+			await withRecentAuth(() => api('PUT', '/api/v1/admin/personal-keys', { allow }));
 			await invalidateAll();
 		} catch (e) {
 			personalKeys = !allow;
@@ -131,11 +131,11 @@
 	const when = (iso: string | null) =>
 		iso
 			? `${date(iso)}, ${clockTime(iso, data.timeFormat ?? 'device')}`
-			: m.household_backups_never();
+			: m.members_backups_never();
 
 	const deleteMember = (member: Member) =>
 		run(async () => {
-			await api('DELETE', '/api/v1/household/members', {
+			await api('DELETE', '/api/v1/admin/members', {
 				id: member.id,
 				removeSharedFoods: removeShared === 'remove'
 			});
@@ -149,10 +149,10 @@
 			await navigator.clipboard.writeText(text);
 			showToast({ message, detail });
 		} catch {
-			showToast({ message: m.household_copy_failed(), detail: m.household_copy_failed_detail() });
+			showToast({ message: m.members_copy_failed(), detail: m.members_copy_failed_detail() });
 		}
 	}
-	const copy = () => copyText(link, m.household_copied(), m.household_copied_detail());
+	const copy = () => copyText(link, m.members_copied(), m.members_copied_detail());
 	// The entries as `obur restore finish` takes them: <ID>[:shared]@<deletion date>.
 	const copyDeletions = () =>
 		copyText(
@@ -162,12 +162,12 @@
 						`${d.accountId}${d.removedSharedFoods ? ':shared' : ''}@${d.deletedAt.slice(0, 10)}`
 				)
 				.join(' '),
-			m.household_deletions_copied(),
-			m.household_deletions_copied_detail()
+			m.members_deletions_copied(),
+			m.members_deletions_copied_detail()
 		);
 </script>
 
-<svelte:head><title>{m.household_title()} · {m.app_name()}</title></svelte:head>
+<svelte:head><title>{m.members_title()} · {m.app_name()}</title></svelte:head>
 
 {#snippet label(text: string, id: string)}
 	<h2 {id} class="mb-1.5 px-1 text-[0.8125rem] font-[650] text-muted">{text}</h2>
@@ -185,12 +185,11 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-4 px-3.5 py-4 desk:px-7">
 	<div class="flex flex-col gap-3">
-		<PageHead href={resolve('/(app)/more')} label={m.nav_more()} title={m.household_title()} />
+		<PageHead href={resolve('/(app)/more')} label={m.nav_more()} title={m.members_title()} />
 	</div>
 	{#if problem && !deleting}<Notice>{problem}</Notice>{/if}
 
-	<section aria-labelledby="people-label">
-		{@render label(m.household_members(), 'people-label')}
+	<section aria-label={m.members_people()}>
 		<ul class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
 			{#each members as member (member.id)}
 				<li
@@ -206,15 +205,15 @@
 							<b class="text-[0.9375rem] font-semibold break-words">{member.displayName}</b>
 							{#if member.id === data.user?.id}<span
 									class="rounded-menu bg-surface2 px-2 py-0.5 text-[0.75rem] font-[650] text-muted"
-									>{m.household_you()}</span
+									>{m.members_you()}</span
 								>{/if}
 							{#if member.role === 'admin'}<span
 									class="rounded-menu bg-soft px-2 py-0.5 text-[0.75rem] font-[650] text-accent"
-									>{m.household_admin()}</span
+									>{m.members_admin()}</span
 								>{/if}
 						</span>
 						<small class="block text-[0.8125rem] text-muted"
-							>{m.household_joined({ date: date(member.createdAt) })}</small
+							>{m.members_joined({ date: date(member.createdAt) })}</small
 						>
 					</span>
 					{#if member.id !== data.user?.id}
@@ -223,7 +222,7 @@
 							disabled={busy}
 							onclick={() => ((deleting = member), (removeShared = 'keep'), (understood = false))}
 							class="min-h-11 text-[0.875rem] font-bold whitespace-nowrap text-bad large:col-start-2 large:justify-self-start"
-							>{m.household_delete_member()}</button
+							>{m.members_delete_member()}</button
 						>
 					{/if}
 				</li>
@@ -232,16 +231,16 @@
 	</section>
 
 	<section class="flex flex-col" aria-labelledby="invite-label">
-		{@render label(m.household_invite(), 'invite-label')}
+		{@render label(m.members_invite(), 'invite-label')}
 		<div class="flex flex-col gap-3">
 			<div class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
 				<TextField
-					label={m.household_invite_note()}
-					placeholder={m.household_invite_placeholder()}
+					label={m.members_invite_note()}
+					placeholder={m.members_invite_placeholder()}
 					bind:value={note}
 					maxlength={60}
 				/>
-				<Button disabled={busy} onclick={create}>{m.household_invite_button()}</Button>
+				<Button disabled={busy} onclick={create}>{m.members_invite_button()}</Button>
 				<div class={['collapse-row -mt-3', link && 'open']}>
 					<div inert={!link}>
 						<div class="flex flex-col gap-2 pt-3">
@@ -257,7 +256,7 @@
 									>{m.common_copy()}</button
 								>
 							</div>
-							<p class="text-[0.8125rem] text-muted">{m.household_invite_ready()}</p>
+							<p class="text-[0.8125rem] text-muted">{m.members_invite_ready()}</p>
 						</div>
 					</div>
 				</div>
@@ -265,7 +264,7 @@
 			{#if invites.length > 0}
 				<div class="rounded-card bg-surface px-[18px] pb-1 shadow-card">
 					<h3 class="pt-2.5 pb-0.5 text-[0.78125rem] font-[650] text-muted">
-						{m.household_invites()}
+						{m.members_invites()}
 					</h3>
 					<ul class="flex flex-col divide-y divide-line">
 						{#each invites as i (i.id)}
@@ -277,18 +276,16 @@
 								>
 								<span class="min-w-0">
 									<b class="block truncate text-[0.9375rem] font-semibold"
-										>{i.note
-											? m.household_invite_for({ name: i.note })
-											: m.household_invite_any()}</b
+										>{i.note ? m.members_invite_for({ name: i.note }) : m.members_invite_any()}</b
 									>
 									<small class="block text-[0.8125rem] text-muted"
-										>{m.household_status_pending({ date: date(i.expiresAt) })}</small
+										>{m.members_status_pending({ date: date(i.expiresAt) })}</small
 									>
 								</span>
 								<button
 									type="button"
 									disabled={busy}
-									aria-label={m.household_revoke()}
+									aria-label={m.members_revoke()}
 									onclick={() => revoke(i)}
 									class="min-h-11 text-[0.875rem] font-bold text-bad">{m.common_cancel()}</button
 								>
@@ -302,7 +299,7 @@
 
 	{#if backups}
 		<section aria-labelledby="backups-label">
-			{@render label(m.household_backups(), 'backups-label')}
+			{@render label(m.members_backups(), 'backups-label')}
 			<div class="flex flex-col gap-2.5 rounded-card bg-surface p-[18px] shadow-card">
 				{#each backups.problems as p (p)}
 					<Notice tone={p === 'not_configured' || p === 'no_status' ? 'info' : 'warn'}>
@@ -316,31 +313,31 @@
 							style:background="color-mix(in srgb, var(--good) 13%, var(--surface))"
 							><Check size={22} aria-hidden="true" /></span
 						>
-						{m.household_backups_ok()}
+						{m.members_backups_ok()}
 					</p>
 				{/if}
 				{@render facts([
-					[m.household_backups_last(), when(backups.lastSuccessfulBackupAt)],
-					[m.household_backups_check(), when(backups.lastRestoreCheckAt)],
+					[m.members_backups_last(), when(backups.lastSuccessfulBackupAt)],
+					[m.members_backups_check(), when(backups.lastRestoreCheckAt)],
 					backups.offsiteConfigured
-						? [m.household_backups_offsite_check(), when(backups.lastOffsiteRestoreCheckAt)]
-						: [m.household_backups_offsite(), m.household_backups_offsite_none()]
+						? [m.members_backups_offsite_check(), when(backups.lastOffsiteRestoreCheckAt)]
+						: [m.members_backups_offsite(), m.members_backups_offsite_none()]
 				])}
 				<div class="flex flex-col gap-1.5 border-t border-line pt-3" data-testid="deleted-accounts">
 					<div class="flex items-center justify-between gap-3">
-						<h3 class="text-[0.9375rem] font-semibold">{m.household_deletions()}</h3>
+						<h3 class="text-[0.9375rem] font-semibold">{m.members_deletions()}</h3>
 						{#if deletions.length > 0}
 							<button
 								type="button"
 								onclick={copyDeletions}
 								class="min-h-11 shrink-0 text-[0.875rem] font-bold text-accent"
-								>{m.household_deletions_copy()}</button
+								>{m.members_deletions_copy()}</button
 							>
 						{/if}
 					</div>
-					<p class="text-[0.8125rem] leading-snug text-muted">{m.household_deletions_body()}</p>
+					<p class="text-[0.8125rem] leading-snug text-muted">{m.members_deletions_body()}</p>
 					{#if deletions.length === 0}
-						<p class="py-1 text-[0.875rem] text-muted">{m.household_deletions_none()}</p>
+						<p class="py-1 text-[0.875rem] text-muted">{m.members_deletions_none()}</p>
 					{:else}
 						<ul class="flex flex-col divide-y divide-line" data-testid="deletions">
 							{#each deletions as d (d.accountId)}
@@ -350,9 +347,9 @@
 										>{[
 											date(d.deletedAt),
 											d.by === 'self'
-												? m.household_deletions_by_self()
-												: m.household_deletions_by_admin(),
-											...(d.removedSharedFoods ? [m.household_deletions_shared_removed()] : [])
+												? m.members_deletions_by_self()
+												: m.members_deletions_by_admin(),
+											...(d.removedSharedFoods ? [m.members_deletions_shared_removed()] : [])
 										].join(' · ')}</span
 									>
 								</li>
@@ -365,36 +362,36 @@
 	{/if}
 
 	<section aria-labelledby="updates-label">
-		{@render label(m.household_updates(), 'updates-label')}
+		{@render label(m.members_updates(), 'updates-label')}
 		<div class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
 			{#if updates.latest}
-				<Notice tone="info" title={m.household_updates_newer({ version: updates.latest })}>
+				<Notice tone="info" title={m.members_updates_newer({ version: updates.latest })}>
 					<a
 						href="https://github.com/aloglu/obur/blob/main/docs/install/updating.md"
 						target="_blank"
 						rel="noreferrer"
-						class="font-semibold text-accent underline">{m.household_updates_how()}</a
+						class="font-semibold text-accent underline">{m.members_updates_how()}</a
 					>
 				</Notice>
 			{/if}
 			<Switch
-				label={m.household_updates_check()}
-				detail={m.household_updates_check_line()}
+				label={m.members_updates_check()}
+				detail={m.members_updates_check_line()}
 				bind:checked={updateCheck}
 				onchange={saveUpdateCheck}
 			/>
 			{@render facts(
 				[
-					[m.household_updates_current(), updates.current],
+					[m.members_updates_current(), updates.current],
 					...(updates.check && !checking
 						? [
 								[
-									m.household_updates_checked(),
+									m.members_updates_checked(),
 									updates.checkedAt
 										? updates.latest
 											? when(updates.checkedAt)
-											: m.household_updates_none({ when: when(updates.checkedAt) })
-										: m.household_updates_unreachable()
+											: m.members_updates_none({ when: when(updates.checkedAt) })
+										: m.members_updates_unreachable()
 								] as [string, string]
 							]
 						: [])
@@ -405,43 +402,40 @@
 	</section>
 
 	<section aria-labelledby="keys-label">
-		{@render label(m.household_personal_keys(), 'keys-label')}
+		{@render label(m.members_personal_keys(), 'keys-label')}
 		<div class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
 			<Switch
-				label={m.household_personal_keys()}
-				detail={m.household_personal_keys_line()}
+				label={m.members_personal_keys()}
+				detail={m.members_personal_keys_line()}
 				bind:checked={personalKeys}
 				onchange={savePersonalKeys}
 			/>
 			{#if !personalKeys}
-				<p class="text-[0.8125rem] leading-snug text-muted">{m.household_personal_keys_off()}</p>
+				<p class="text-[0.8125rem] leading-snug text-muted">{m.members_personal_keys_off()}</p>
 			{/if}
 		</div>
 	</section>
 
 	<section aria-labelledby="scans-label">
-		{@render label(m.household_scans(), 'scans-label')}
+		{@render label(m.members_scans(), 'scans-label')}
 		<div class="flex flex-col gap-2 rounded-card bg-surface p-[18px] shadow-card">
-			<p class="text-[0.8125rem] text-muted">{m.household_scans_body()}</p>
+			<p class="text-[0.8125rem] text-muted">{m.members_scans_body()}</p>
 			{#if data.scanTotals.scans === 0}
-				<p class="text-[0.875rem] text-muted">{m.household_scans_none()}</p>
+				<p class="text-[0.875rem] text-muted">{m.members_scans_none()}</p>
 			{:else}
 				{@const t = data.scanTotals}
 				{@const share = (part: number, whole: number) =>
 					whole ? ` (${Math.round((part / whole) * 100)} %)` : ''}
 				{@render facts(
 					[
-						[m.household_scans_saved(), `${t.scans}`],
-						[
-							m.household_scans_without_edits(),
-							`${t.withoutEdits}${share(t.withoutEdits, t.scans)}`
-						],
-						[m.household_scans_values(), `${t.proposed}`],
-						[m.household_scans_changed(), `${t.changed}${share(t.changed, t.proposed)}`],
-						[m.household_scans_removed(), `${t.removed}${share(t.removed, t.proposed)}`],
-						[m.household_scans_added(), `${t.added}`],
-						[m.household_scans_basis_unknown(), `${t.basisUnknown}`],
-						[m.household_scans_basis_changed(), `${t.basisChanged}`]
+						[m.members_scans_saved(), `${t.scans}`],
+						[m.members_scans_without_edits(), `${t.withoutEdits}${share(t.withoutEdits, t.scans)}`],
+						[m.members_scans_values(), `${t.proposed}`],
+						[m.members_scans_changed(), `${t.changed}${share(t.changed, t.proposed)}`],
+						[m.members_scans_removed(), `${t.removed}${share(t.removed, t.proposed)}`],
+						[m.members_scans_added(), `${t.added}`],
+						[m.members_scans_basis_unknown(), `${t.basisUnknown}`],
+						[m.members_scans_basis_changed(), `${t.basisChanged}`]
 					],
 					'scan-totals'
 				)}
@@ -453,16 +447,16 @@
 {#if deleting}
 	{@const member = deleting}
 	<Sheet
-		title={m.household_delete_title({ name: member.displayName })}
+		title={m.members_delete_title({ name: member.displayName })}
 		onclose={() => (deleting = null)}
 	>
-		<p class="text-[0.9375rem]">{m.household_delete_body()}</p>
+		<p class="text-[0.9375rem]">{m.members_delete_body()}</p>
 		<!-- Asked only when there is something to decide (owner, 2026-11-10). -->
 		{#if member.sharedFoods > 0}
 			<Chips
 				label={member.sharedFoods === 1
-					? m.household_delete_shared_one({ name: member.displayName })
-					: m.household_delete_shared({
+					? m.members_delete_shared_one({ name: member.displayName })
+					: m.members_delete_shared({
 							name: member.displayName,
 							count: String(member.sharedFoods)
 						})}

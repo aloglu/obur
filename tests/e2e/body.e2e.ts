@@ -59,7 +59,7 @@ test('weight: decimal comma input, validation, and readings stay private', async
 	await expect(weight).toContainText('First weigh-in');
 	await expect(weight.getByLabel('New weight')).toBeHidden();
 
-	// Someone else in the household does not see it.
+	// Another member does not see it.
 	const other = await browser.newContext({ ...testInfo.project.use });
 	const otherPage = await other.newPage();
 	await signedInAs(otherPage, 'Zeynep');

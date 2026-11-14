@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-**obur** is a self-hosted calorie, weight and water tracker intended to replace LoseIt. It is a mobile-first PWA with an English interface and English, Turkish and mixed-language input. Typical use is a household or close circle; accounts are invite-only, with no arbitrary user cap. MIT licence.
+**obur** is a self-hosted calorie, weight and water tracker intended to replace LoseIt. It is a mobile-first PWA with an English interface and English, Turkish and mixed-language input. Typical use is a small circle of family and friends (up to about 20); accounts are invite-only, with no arbitrary user cap. MIT licence.
 
 ## Sources of truth
 

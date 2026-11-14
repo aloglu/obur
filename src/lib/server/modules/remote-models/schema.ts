@@ -88,8 +88,8 @@ export const modelUsage = pgTable(
 	]
 );
 
-/** Household-wide settings an admin chooses: one row. */
-export const householdSettings = pgTable(
+/** Server-wide settings an admin chooses: one row. The table keeps its first name, household_settings. */
+export const serverSettings = pgTable(
 	'household_settings',
 	{
 		singleton: boolean('singleton').primaryKey().default(true),

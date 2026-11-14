@@ -3,7 +3,7 @@
 // away; a change to another tab slides the screens sideways in tab order. Pure; no I/O.
 
 const PARENTS: [RegExp, string][] = [
-	[/^\/(foods|recipes|saved-meals|household|help)$/, '/more'],
+	[/^\/(foods|recipes|saved-meals|members|help)$/, '/more'],
 	[/^\/more\/(settings|deleted)$/, '/more'],
 	[
 		/^\/(profile|more\/(goal|units|appearance|speak-and-scan)|settings\/(reminders|security|data))$/,

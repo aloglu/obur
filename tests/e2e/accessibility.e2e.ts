@@ -57,7 +57,7 @@ test('every page passes the automated accessibility checks in light and dark', a
 		'/settings/data',
 		'/settings/reminders',
 		'/settings/security',
-		'/household',
+		'/members',
 		'/help',
 		'/onboarding'
 	];

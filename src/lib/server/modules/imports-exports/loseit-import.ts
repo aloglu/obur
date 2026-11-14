@@ -34,7 +34,7 @@ export interface LoseItOptions {
 	zone: string;
 	/** LoseIt's weights have no unit column. */
 	weightUnit: 'kg' | 'lb';
-	/** Share the person's custom foods with the household (imported foods are private by default). */
+	/** Share the person's custom foods with other members (imported foods are private by default). */
 	shareFoods: boolean;
 	/** Move entries imported earlier but missing from this export to the trash. */
 	trashMissing: boolean;

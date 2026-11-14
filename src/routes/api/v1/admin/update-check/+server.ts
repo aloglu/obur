@@ -6,7 +6,7 @@ import { updates } from '#lib/server/updates.ts';
 import type { RequestHandler } from './$types';
 
 /**
- * GET /api/v1/household/update-check: what an admin sees, asking GitHub first when the stored answer is over a day
+ * GET /api/v1/admin/update-check: what an admin sees, asking GitHub first when the stored answer is over a day
  * old and the check is on. More calls it after opening, so the page itself never waits for GitHub.
  */
 export const GET: RequestHandler = ({ locals }) =>
@@ -17,7 +17,7 @@ export const GET: RequestHandler = ({ locals }) =>
 	});
 
 /**
- * PUT /api/v1/household/update-check {on}: whether obur asks GitHub for newer versions (admins). Turning it on asks
+ * PUT /api/v1/admin/update-check {on}: whether obur asks GitHub for newer versions (admins). Turning it on asks
  * at once and answers with what was found.
  */
 export const PUT: RequestHandler = ({ request, locals }) =>

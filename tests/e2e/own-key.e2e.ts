@@ -202,7 +202,7 @@ test('a server without the add-ons keeps Speak and Scan and offers the person’
 		page.getByRole('radiogroup', { name: 'Speak' }).getByRole('radio', { name: /On this server/ })
 	).toBeDisabled();
 	await expect(page.getByRole('radiogroup', { name: 'Speak' })).toContainText(
-		'Not set up on this server. Your household’s admin can add it.'
+		'Not set up on this server. An admin can add it.'
 	);
 
 	await page.goto(`${NO_ADDONS}/scan`);
@@ -225,11 +225,9 @@ test('an admin is told which add-on a server without them needs', async ({ page 
 	);
 });
 
-test('the household’s admin sees the personal keys switch, on by default', async ({
-	page
-}, testInfo) => {
+test('an admin sees the personal keys switch, on by default', async ({ page }, testInfo) => {
 	test.skip(testInfo.project.name !== 'desktop-chromium', 'one browser is enough for a switch');
 	await signedInAs(page, 'Yönetici Anahtar', 'admin');
-	await page.goto('/household');
+	await page.goto('/members');
 	await expect(page.getByRole('switch', { name: 'Personal AI keys' })).toBeChecked();
 });

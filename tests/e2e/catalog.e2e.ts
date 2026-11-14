@@ -59,7 +59,7 @@ test('a member creates a shared per-serving food that another member can find an
 	await expect(result).toContainText('191');
 	await expect(result).toContainText('Shared');
 	await result.click();
-	await expect(otherPage.getByText('Shared by someone in your household')).toBeVisible();
+	await expect(otherPage.getByText('Shared by another member')).toBeVisible();
 
 	// "Make my own variant" gives an editable private copy.
 	await otherPage.getByRole('button', { name: 'Make my own variant' }).click();

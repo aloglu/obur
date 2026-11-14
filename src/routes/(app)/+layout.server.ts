@@ -62,7 +62,7 @@ export const load: LayoutServerLoad = async ({ locals, depends, parent }) => {
 		foodCount: number;
 		recipeCount: number;
 		mealCount: number;
-		/** A newer published version already known, for an admin who turned the check on (Household). */
+		/** A newer published version already known, for an admin who turned the check on (Members). */
 		newerVersion: string | null;
 	} | null = null;
 	if (locals.session?.kind === 'normal') {

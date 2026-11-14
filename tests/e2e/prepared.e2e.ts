@@ -75,14 +75,14 @@ test('a change made in the app shows on a page prepared before it', async ({ pag
 	await expect(month).not.toContainText('Nothing logged');
 });
 
-test('Household opens with its people already listed', async ({ page }) => {
+test('Members opens with its people already listed', async ({ page }) => {
 	await signedInAs(page, 'Listed Admin', 'admin');
 	await page.goto('/more');
 	await page
 		.getByRole('main')
-		.getByRole('link', { name: /Household/ })
+		.getByRole('link', { name: /Members/ })
 		.click();
 	// Nothing fetched after the page opens: the list is there as soon as the page is.
-	await expect(page.getByRole('heading', { level: 1, name: 'Household' })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Members' })).toBeVisible();
 	expect(await page.getByRole('main').textContent()).toContain('Listed Admin');
 });

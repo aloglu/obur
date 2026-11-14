@@ -1,4 +1,4 @@
-// Household → Updates (docs/ui.md, "Household"): the check for new versions is off until an admin turns it on, and
+// Members → Updates (docs/ui.md, "Members"): the check for new versions is off until an admin turns it on, and
 // GitHub's list of published versions is played by the stand-in in tests/e2e/speech-stub.ts. The switch is one
 // setting for the whole installation, so only one browser runs this, and it leaves the switch off.
 import { readFileSync } from 'node:fs';
@@ -21,7 +21,7 @@ test('an admin turns the check for new versions on, sees a newer one, and turns 
 	test.skip(testInfo.project.name !== 'desktop-chromium', 'one installation-wide switch');
 	await signedInAs(page, 'Sürüm Yöneticisi', 'admin');
 	const before = await requests();
-	await page.goto('/household');
+	await page.goto('/members');
 	const check = page.getByRole('switch', { name: 'Check for new versions' });
 	const facts = page.getByTestId('update-facts');
 	await expect(check).not.toBeChecked();
@@ -41,8 +41,8 @@ test('an admin turns the check for new versions on, sees a newer one, and turns 
 	expect(await requests()).toBe(before + 1);
 	// More points at it; opening pages again within the day asks nobody.
 	await page.goto('/more');
-	await expect(page.getByRole('link', { name: /Household/ })).toContainText('Update available');
-	await page.goto('/household');
+	await expect(page.getByRole('link', { name: /Members/ })).toContainText('Update available');
+	await page.goto('/members');
 	await expect(notice).toBeVisible();
 	expect(await requests()).toBe(before + 1);
 
@@ -50,11 +50,11 @@ test('an admin turns the check for new versions on, sees a newer one, and turns 
 	await expect(notice).toHaveCount(0);
 	await expect(facts).not.toContainText('Last checked');
 	await page.goto('/more');
-	await expect(page.getByRole('link', { name: /Household/ })).not.toContainText('Update available');
+	await expect(page.getByRole('link', { name: /Members/ })).not.toContainText('Update available');
 
 	// GitHub away: said plainly, nothing invented.
 	await publish(503, []);
-	await page.goto('/household');
+	await page.goto('/members');
 	await check.click();
 	await expect(facts).toContainText("GitHub couldn't be reached");
 	await expect(notice).toHaveCount(0);

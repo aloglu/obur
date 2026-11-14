@@ -10,7 +10,7 @@ import { foldForSearch, foodSearchKey, searchKeyWithAliases } from '../../../sha
 import type { ScanEdits } from '../../../shared/scan-edits.ts';
 import { foodNutrients, foods, foodServings, householdMeasures, labelScanEdits } from './schema.ts';
 
-/** Household totals of label scans saved with edit counts (counts only). */
+/** Totals across members of label scans saved with edit counts (counts only). */
 export interface LabelScanTotals {
 	scans: number;
 	withoutEdits: number;
@@ -153,7 +153,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			});
 		},
 
-		/** Household totals of label scan edits, for admins (counts only; app_label_scan_totals()). */
+		/** Totals across members of label scan edits, for admins (counts only; app_label_scan_totals()). */
 		async labelScanTotals(userId: string): Promise<LabelScanTotals> {
 			const rows = await withUser(db, userId, (tx) =>
 				tx.execute<Record<string, string>>(sql`select * from app_label_scan_totals()`)

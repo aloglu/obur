@@ -10,12 +10,12 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (locals.session?.role !== 'admin') redirect(303, '/');
-	// Household totals of how much label scans were edited before saving (counts only).
+	// Totals across members of how much label scans were edited before saving (counts only).
 	const session = locals.session;
 	const [scanTotals, personalKeys, updateStatus, invites, members, deletions, backups] =
 		await Promise.all([
 			catalog.labelScanTotals(session.userId),
-			remoteModels.householdAllows(session.userId),
+			remoteModels.personalKeysAllowed(session.userId),
 			updates.status(session.userId, true),
 			// The lists arrive with the page (and so are prepared with it), never fetched after it opens.
 			auth.listInvites(session),

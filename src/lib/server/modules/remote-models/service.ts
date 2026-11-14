@@ -1,5 +1,5 @@
 // Remote models' data (docs/design.md, "Remote models for Speak and Scan"): each person's keys (encrypted), their
-// choice per feature with the date they allowed it, this month's counts, and the household's switch. Calls to the
+// choice per feature with the date they allowed it, this month's counts, and the admins' switch. Calls to the
 // providers live in providers.ts; this module makes none.
 import { and, eq, sql } from 'drizzle-orm';
 import { withUser, type Database } from '../../db/identity.ts';
@@ -13,7 +13,7 @@ import {
 	type Source
 } from '../../../shared/remote-models.ts';
 import { decryptKey, encryptKey } from './crypto.ts';
-import { householdSettings, modelChoices, modelKeys, modelUsage } from './schema.ts';
+import { serverSettings, modelChoices, modelKeys, modelUsage } from './schema.ts';
 
 export class ModelChoiceError extends Error {}
 
@@ -28,25 +28,25 @@ export function createRemoteModels(db: Database, secret: Buffer | null) {
 	}
 
 	return {
-		/** Whether personal keys can work here at all: the server has its key, and the household allows them. */
+		/** Whether personal keys can work here at all: the server has its key, and an admin allows them. */
 		async allowed(userId: string): Promise<boolean> {
 			if (!secret) return false;
-			const [row] = await withUser(db, userId, (tx) => tx.select().from(householdSettings));
+			const [row] = await withUser(db, userId, (tx) => tx.select().from(serverSettings));
 			return row?.personalKeys ?? true;
 		},
 
-		/** The household's switch as an admin sees it; RLS lets only an active admin change it. */
-		async householdAllows(userId: string): Promise<boolean> {
-			const [row] = await withUser(db, userId, (tx) => tx.select().from(householdSettings));
+		/** The admins' switch as an admin sees it; RLS lets only an active admin change it. */
+		async personalKeysAllowed(userId: string): Promise<boolean> {
+			const [row] = await withUser(db, userId, (tx) => tx.select().from(serverSettings));
 			return row?.personalKeys ?? true;
 		},
 
-		async setHouseholdAllows(adminId: string, allow: boolean): Promise<boolean> {
+		async setPersonalKeysAllowed(adminId: string, allow: boolean): Promise<boolean> {
 			const rows = await withUser(db, adminId, (tx) =>
 				tx
-					.update(householdSettings)
+					.update(serverSettings)
 					.set({ personalKeys: allow, updatedAt: new Date() })
-					.returning({ personalKeys: householdSettings.personalKeys })
+					.returning({ personalKeys: serverSettings.personalKeys })
 			);
 			return rows.length === 1;
 		},
@@ -110,7 +110,7 @@ export function createRemoteModels(db: Database, secret: Buffer | null) {
 
 		/**
 		 * Chooses what reads a feature. A provider needs the person's explicit agreement (`allowed`), a key for it and
-		 * the household's permission; the date is stored with the choice.
+		 * an admin's permission; the date is stored with the choice.
 		 */
 		async choose(
 			userId: string,

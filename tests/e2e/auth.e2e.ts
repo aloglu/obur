@@ -179,7 +179,7 @@ test('an admin setting asks for the passkey again once the last check is old', a
 	const sql = postgres(e2eEnv.DATABASE_MIGRATOR_URL, { max: 1, onnotice: () => {} });
 	await sql`update sessions set verified_at = now() - interval '1 hour'`;
 	await sql.end();
-	await page.goto('/household');
+	await page.goto('/members');
 	const keys = page.getByRole('switch', { name: 'Personal AI keys' });
 	await expect(keys).toBeChecked();
 	const saved = () =>
@@ -196,7 +196,7 @@ test('an admin setting asks for the passkey again once the last check is old', a
 test('an invited member joins with their own passkey', async ({ browser }) => {
 	const { page } = admin;
 	await signIn(page, ADMIN);
-	await page.goto('/household');
+	await page.goto('/members');
 	await page.getByLabel('Who is it for? (optional)').fill('Mehmet');
 	await page.getByRole('button', { name: 'Create invite link' }).click();
 	await expect(page.getByTestId('invite-link')).toContainText('/join#');
@@ -210,13 +210,15 @@ test('an invited member joins with their own passkey', async ({ browser }) => {
 	await member.page.getByRole('button', { name: 'Create passkey and join' }).click();
 	await saveCodes(member.page);
 	await expectSignedIn(member.page, 'Mehmet Öztürk');
-	// Members have no Household page.
-	await expect(member.page.getByRole('link', { name: 'Household' })).toHaveCount(0);
-	await member.page.goto('/household');
+	// Non-admins have no Members page.
+	await expect(member.page.getByRole('link', { name: 'Members' })).toHaveCount(0);
+	await member.page.goto('/members');
 	await expect(member.page).toHaveURL(/\/$/);
 	await member.context.close();
 
+	// The page's old address (Household until 2026-11-14) still leads to it.
 	await page.goto('/household');
+	await expect(page).toHaveURL(/\/members$/);
 	// The person is under People; their used invite is no longer listed.
 	await expect(page.getByRole('region', { name: 'People' })).toContainText('Mehmet Öztürk');
 	await expect(page.getByText('For Mehmet')).toHaveCount(0);

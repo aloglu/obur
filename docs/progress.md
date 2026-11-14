@@ -5,6 +5,12 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 ## Turkish interface (planned 2026-11-14)
 
 - Agreed plan: design.md, "Interface language". Nothing built in the app.
+- Done (owner, 2026-11-14): Household renamed Members (friends aren't a household); Turkish "Kullanıcılar". About 80
+  strings rewritten around members ("Shared by another member", "An admin can …"), page at `/members` (`/household`
+  redirects, e2e), admin APIs under `/api/v1/admin/`, code names follow; the table stays `household_settings`.
+  Household measures unchanged. Docs, install guides and deploy messages follow. Checks: type-check, lint (outside
+  the stray `.claude/worktrees` copy, which Prettier also scans), 1096 unit and database tests, e2e 227 passed (18
+  skipped by design).
 - Done (2026-11-13, overnight cloud session): review page published to the existing review artifact
   (https://claude.ai/artifact/1D6vQwDnAYtRhHLxccs5ii, version 10, db collection `review`). Source:
   `docs/ui/review-2026-11/turkish.html`. Old Scan docs left untouched; the page reads only `tr-` docs.

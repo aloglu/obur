@@ -603,7 +603,7 @@ describe('import', () => {
 });
 
 describe('account deletion', () => {
-	it('removes everything private in one step and keeps shared foods for the household', async () => {
+	it('removes everything private in one step and keeps shared foods for other members', async () => {
 		const { ekmek } = await buildHistory();
 		const shared = await catalog.createFood(
 			MEHMET,

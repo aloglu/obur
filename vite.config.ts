@@ -7,7 +7,7 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
-	// The version an admin sees in Household, and the one compared with the published ones.
+	// The version an admin sees in Members, and the one compared with the published ones.
 	define: { __OBUR_VERSION__: JSON.stringify(pkg.version) },
 	plugins: [
 		tailwindcss(),

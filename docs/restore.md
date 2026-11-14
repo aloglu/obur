@@ -13,7 +13,7 @@ backup, and taken a fresh full backup. obur never reopens with restored sessions
 
 - **The backup passphrase** (`OBUR_BACKUP_PASSPHRASE`). Without it no backup can be read.
 - **The off-site credentials** (`OBUR_OFFSITE_*`), if the server's own backups are lost too.
-- **The deleted-accounts list** from Household → Backups → Deleted accounts. Copy it whenever an account is deleted
+- **The deleted-accounts list** from Members → Backups → Deleted accounts. Copy it whenever an account is deleted
   (**Copy list** gives the entries in the form `finish` takes below). Each entry is an account ID, the date and
   whether shared foods were removed. It never contains diary content.
 
@@ -63,7 +63,7 @@ their deletions are applied again after every restore.
    ```
    docker exec obur obur backup restore-check
    ```
-   Then look at Household → Backups. Everyone signs in again with their passkey: passkeys and recovery codes are
+   Then look at Members → Backups. Everyone signs in again with their passkey: passkeys and recovery codes are
    unchanged. Entries a phone queued while the server was down are sent after its owner signs in.
 
 5. **Clean up.** Once you are satisfied, delete the folder moved aside in step 2.
