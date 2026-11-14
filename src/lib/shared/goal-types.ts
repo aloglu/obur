@@ -132,6 +132,11 @@ export type ProfileDetailsInput = v.InferOutput<typeof ProfileDetailsInput>;
 export type DetailsOutcome =
 	| { kind: 'unchanged' }
 	| { kind: 'recalculated'; beforeKcal: number; afterKcal: number }
+	/**
+	 * The calculated budget ended from today: the details no longer allow one (pregnancy, breastfeeding, under 18).
+	 * The person may enter their own number, such as one from a doctor or midwife.
+	 */
+	| { kind: 'ended'; beforeKcal: number }
 	/** The budget in force stays as it was: a calculation is no longer allowed (a minor, say) or possible. */
 	| {
 			kind: 'not_recalculated';

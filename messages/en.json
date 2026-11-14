@@ -738,6 +738,8 @@
 	"onb_none": "Just log, without a budget",
 	"onb_restricted": "obur doesn't calculate targets during pregnancy, while breastfeeding or for under-18s. You can still log everything, and enter a target from your doctor or dietitian below.",
 	"onb_weight_needed": "Enter your current weight first.",
+	"onb_budget_ended": "Calculated budget turned off",
+	"onb_budget_ended_detail": "For pregnancy, breastfeeding or under 18, obur doesn't work out a budget. You can enter a number from your doctor or midwife on the next step.",
 	"onb_saved": "Budget saved",
 	"details_height": "Height",
 	"details_birth": "Birth date",

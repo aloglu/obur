@@ -738,6 +738,8 @@
 	"onb_none": "Bütçesiz, sadece kaydet",
 	"onb_restricted": "obur hamilelikte, emzirirken ya da 18 yaşın altındakiler için hedef hesaplamaz. Yine de her şeyi kaydedebilir, doktorunun ya da diyetisyeninin verdiği hedefi aşağıya girebilirsin.",
 	"onb_weight_needed": "Önce şu anki kilonu gir.",
+	"onb_budget_ended": "Hesaplanan bütçe kapatıldı",
+	"onb_budget_ended_detail": "Hamilelikte, emzirirken ya da 18 yaş altında obur bütçe hesaplamaz. Sonraki adımda doktorunun ya da ebenin verdiği bir sayıyı girebilirsin.",
 	"onb_saved": "Bütçe kaydedildi",
 	"details_height": "Boy",
 	"details_birth": "Doğum tarihi",

@@ -461,8 +461,8 @@ export function createGoals(db: Database) {
 		 * Saves the details Profile edits (height, birth date, sex, and the goal weight of a calculated budget) and,
 		 * in the same transaction, recalculates a calculated budget from `today` with the same choices when its
 		 * numbers change. Past days keep their budgets; manual budgets are left alone. When the new details no longer
-		 * allow a calculation (a birth date that makes the person a minor), the details are saved and the budget in
-		 * force stays, for the person to replace with their own number.
+		 * allow a calculation (pregnancy, breastfeeding, a birth date under 18), the details are saved and the calculated
+		 * budget ends from today (no budget), for the person to replace with their own number if they want one.
 		 */
 		async updateDetails(
 			userId: string,
@@ -502,6 +502,31 @@ export function createGoals(db: Database) {
 				try {
 					values = await calculatedValues(tx, userId, request, latestWeightKg);
 				} catch (e) {
+					// No algorithmic target for pregnancy, breastfeeding or under 18 (owner, 2026-11-14): the calculated
+					// budget, deficit included, ends from today rather than staying in force. Their own number can follow.
+					if (e instanceof GoalError && e.code === 'targets_not_allowed') {
+						const [row] = await tx
+							.insert(goalVersions)
+							.values({
+								userId,
+								effectiveFrom: today,
+								calculationVersion: CALCULATION_VERSION,
+								mode: 'none',
+								baseBurnKcal: null,
+								countActivity: current.countActivity,
+								atGoal: current.atGoal,
+								inputs: { source: 'details', reason: 'targets_not_allowed' },
+								...macroColumns(macroChoice(current), null)
+							})
+							.returning();
+						return done(
+							{
+								kind: 'ended',
+								beforeKcal: Math.max(current.floorKcal, current.baseBurnKcal! - current.deficitKcal)
+							},
+							row
+						);
+					}
 					if (e instanceof GoalError && e.code !== 'no_target')
 						return done({ kind: 'not_recalculated', reason: e.code });
 					throw e;

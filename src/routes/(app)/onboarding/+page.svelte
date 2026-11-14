@@ -33,6 +33,7 @@
 	import Roll from '#lib/ui/Roll.svelte';
 	import TextField from '#lib/ui/TextField.svelte';
 	import UnitField from '#lib/ui/UnitField.svelte';
+	import type { DetailsOutcome } from '#lib/shared/goal-types.ts';
 
 	let { data } = $props();
 	const start = untrack(() => data);
@@ -134,7 +135,7 @@
 			}
 			// Saved now, not at the end: someone who came from Profile to change one detail may stop here, and a
 			// calculated budget follows the details from today on all the same.
-			await api('PATCH', '/api/v1/profile/details', {
+			const saved = await api<{ outcome: DetailsOutcome }>('PATCH', '/api/v1/profile/details', {
 				heightCm: h,
 				birthDate,
 				sex,
@@ -144,6 +145,8 @@
 				breastfeeding: nursing
 			});
 			if (!floorText && sex) floorText = String(DEFAULT_FLOOR[sex]);
+			if (saved.outcome.kind === 'ended')
+				showToast({ message: m.onb_budget_ended(), detail: m.onb_budget_ended_detail() });
 			go(2);
 		} catch {
 			problem = m.error_generic();

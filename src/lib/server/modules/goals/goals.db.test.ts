@@ -387,14 +387,30 @@ describe('editing details on Profile', () => {
 		expect((await goals.targetFor(MEHMET, '2026-06-10'))!.baseBurnKcal).not.toBe(
 			before!.baseBurnKcal
 		);
-		// Pregnant: no new calculation, and the budget in force stays.
+		// Pregnant: the calculated budget, deficit and all, ends from today (owner, 2026-11-14).
+		const inForce = (await goals.targetFor(MEHMET, '2026-06-10'))!;
 		const pregnant = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
 			...adult,
 			sex: 'female',
 			pregnant: true
 		});
-		expect(pregnant.outcome).toEqual({ kind: 'not_recalculated', reason: 'targets_not_allowed' });
+		expect(pregnant.outcome).toEqual({
+			kind: 'ended',
+			beforeKcal: Math.max(inForce.floorKcal, inForce.baseBurnKcal! - inForce.deficitKcal)
+		});
 		expect(pregnant.profile).toMatchObject({ pregnant: true, bodyFatPct: 15 });
+		expect(await goals.targetFor(MEHMET, '2026-06-10')).toMatchObject({
+			mode: 'none',
+			baseBurnKcal: null
+		});
+		// Earlier days keep their budget, and the person's own number can follow.
+		expect((await goals.targetFor(MEHMET, '2026-06-09'))?.mode).toBe('calculated');
+		await goals.setTarget(
+			MEHMET,
+			{ mode: 'manual', effectiveFrom: '2026-06-10', budgetKcal: 2300 },
+			80
+		);
+		expect((await goals.targetFor(MEHMET, '2026-06-10'))?.baseBurnKcal).toBe(2300);
 	});
 
 	it('records nothing when nothing changes, and keeps the goal when it is not sent', async () => {
@@ -412,16 +428,24 @@ describe('editing details on Profile', () => {
 		expect(cleared.target).toMatchObject({ goalWeightKg: null, proteinBasisKg: 80 });
 	});
 
-	it('saves details that no longer allow a calculation and leaves the budget in force', async () => {
+	it('saves details that no longer allow a calculation and ends the calculated budget from today', async () => {
 		await goals.saveProfile(MEHMET, adult);
 		const first = await goals.setTarget(MEHMET, calc, 80);
 		const minor = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
 			...adult,
 			birthDate: '2012-01-01'
 		});
-		expect(minor.outcome).toEqual({ kind: 'not_recalculated', reason: 'targets_not_allowed' });
+		expect(minor.outcome.kind).toBe('ended');
 		expect(minor.profile.birthDate).toBe('2012-01-01');
-		expect(minor.target?.id).toBe(first.id);
+		expect(minor.target).toMatchObject({ mode: 'none', effectiveFrom: '2026-06-10' });
+		expect((await goals.targetFor(MEHMET, '2026-06-09'))?.id).toBe(first.id);
+		// Saving the same details again records nothing more.
+		const again = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
+			...adult,
+			birthDate: '2012-01-01'
+		});
+		expect(again.outcome).toEqual({ kind: 'unchanged' });
+		expect(await goals.history(MEHMET)).toHaveLength(2);
 	});
 
 	it('leaves a hand-set budget alone, works without one, and validates', async () => {

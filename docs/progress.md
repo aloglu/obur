@@ -41,6 +41,10 @@ Findings (C–G):
     owner's private review pages sit in this file; correction to finding 2: the app's screens round amounts to two
     decimals, so only API clients and weights typed with three decimals hit it.
 Screens (E) were read for their logic and failure handling, not every line of markup.
+Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
+- Done: finding 1. Details that no longer allow a calculation end a calculated budget from today (a `none`
+  version; outcome `ended`, a toast in setup, which then offers the person's own number). Tests in
+  `goals.db.test.ts` (pregnant and under 18; earlier days keep theirs; saving again records nothing).
 
 ## Pre-release audit fixes (2026-11-14)
 
