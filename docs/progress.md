@@ -6,8 +6,8 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 Coverage ([x] read in full; findings in the list below, fixed only after the owner's go):
 
-- [ ] A. Database: every migration (RLS policies, SECURITY DEFINER functions, grants), `db/`, `jobs/setup.ts`
-- [ ] B. Server modules: auth (rest), goals, body, catalog (service, recipes, curated, usda), diary (saved meals),
+- [x] A. Database: every migration (RLS policies, SECURITY DEFINER functions, grants), `db/`, `jobs/setup.ts`
+- [x] B. Server modules: auth (rest), goals, body, catalog (service, recipes, curated, usda), diary (saved meals),
   progress, reminders (rest), remote-models, updates, imports-exports (plan, write, LoseIt rest, account deletion)
 - [ ] C. Server glue (`src/lib/server/*.ts`), every API route and page server load
 - [ ] D. Shared logic (`src/lib/shared/`): goals and budget math, quantities, nutrients, dates and zones, history,
@@ -17,7 +17,17 @@ Coverage ([x] read in full; findings in the list below, fixed only after the own
   `scripts/`, the speech and labels services
 - [ ] G. Configuration and docs: lint rules, Vite/Svelte config, `.env.example`, install guides against the commands
 
-Findings so far: none.
+Findings so far (A–B):
+1. A calculated (weight-loss) budget stays in force after someone marks pregnancy or breastfeeding, unless they
+   finish setup (`goals.updateDetails` returns `not_recalculated`; the onboarding page ignores it). Owner decision.
+2. A weight with 3 decimals or water with 2 is refused as a conflict on retry (stored rounded, compared unrounded);
+   the reply also shows the unrounded value (`body/service.ts` insert).
+3. LoseIt food identities are cut to 100 characters when stored but compared in full: a LoseIt database food with a
+   long name is added again by every overlapping import (diary rows are not duplicated).
+4. Small: expired sessions, reminder sends and purge markers are never cleaned up; no index for trash counts;
+   recipe and saved-meal saves don't check the version on the final update (two devices at once: last one wins
+   silently); importing an archive into an account with a profile can warn "profile kept" when only defaults
+   differ; the GitHub tag list is read 100 at a time.
 
 ## Pre-release audit fixes (2026-11-14)
 
