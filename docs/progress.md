@@ -6,7 +6,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 Checks before the tag: type-check, lint, 1113 unit and database tests, e2e 246 passed (18 skipped by design; one
 intermittent failure, below), image built, smoke test, off-site outage test. No new migration. Tag pushed; the
-release workflow publishes the images (not yet confirmed).
+release workflow published all three images.
 
 ## Owner's Turkish fixes (2026-11-14)
 
@@ -25,7 +25,7 @@ release workflow publishes the images (not yet confirmed).
   matches that Turkish word. Display only; stored names unchanged ("Bar" stays). Checks: type-check, lint, 1113 unit
   and database tests, e2e 246 passed (18 skipped by design), one phone-WebKit `saved-meals.e2e.ts` failure that
   passed when run alone (English-only test; not traced).
-- Next: confirm the beta.16 release workflow published all three images.
+- Next: whatever the owner asks next.
 
 ## Turkish released (2026-11-14), as `v1.0.0-beta.15`
 
