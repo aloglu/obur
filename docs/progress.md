@@ -77,6 +77,10 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
 - Left as is (small): achievements are worked out on the page and again by the layout's refresh after it. The
   layout's run is behind the page and only writes what changed; removing it would delay celebrations. Not worth
   the change.
+- Checks (all audit fixes): type-check, lint, build, 1133 unit and database tests, e2e 251 passed (18 skipped by
+  design, no failures), image built, smoke test, off-site test (now with retry and restore steps). Migrations
+  0053–0054 run on update.
+- Next: the owner decides on a release (beta.17).
 
 ## Pre-release audit fixes (2026-11-14)
 
