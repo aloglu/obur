@@ -5,7 +5,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 ## Audit fixes released (2026-11-15), as `v1.0.0-beta.18`
 
 beta.17 plus the restore-finish fix below. Checks before the tag: smoke test and off-site test on a fresh image
-(the code otherwise as checked for beta.17). Tag pushed; publishing not yet confirmed.
+(the code otherwise as checked for beta.17). Tag pushed; the release workflow passed (checks, all three images, smoke and off-site tests on GitHub) and published them as 1.0.0-beta.18.
 
 ## Audit fixes released (2026-11-15), as `v1.0.0-beta.17`
 
@@ -17,7 +17,7 @@ off-site test on GitHub: `obur restore finish` ran while the restored database w
 so "delete from sessions" failed. It passed locally by timing; a real restore on a fast machine would have failed the
 same way. Fixed: `obur restore finish` waits until `pg_is_in_recovery()` is false (10 minutes at most). No `obur`
 1.0.0-beta.17 image exists; the release is redone as beta.18.
-- Next: confirm the workflow published all three images; then the owner updates their server, uses beta.17 for a
+- Next: the owner updates their server (`OBUR_VERSION=1.0.0-beta.18`), uses beta.17 for a
   week, tries the changed flows on the iPhone (Undo and sign-out offline, pregnancy in About you on a test
   account) and rehearses a restore once on a scratch copy; then 1.0.0 (version, guide check, a fresh install from
   the published image).
