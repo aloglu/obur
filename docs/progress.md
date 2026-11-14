@@ -63,6 +63,8 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
 - Done: finding 8. "Keep the calories" saves (or queues) the replacement first and discards the refused entry only
   then; a refusal shows an error and keeps it. The existing refused-entry e2e passes; the double refusal has no
   test of its own (hard to provoke in a browser).
+- Done: finding 9. A reminder subscription must point at Chrome's, Firefox's, Safari's or Edge's push service
+  (`shared/push-services.ts`, unit test with look-alikes). Subscriptions already saved keep working.
 
 ## Pre-release audit fixes (2026-11-14)
 

@@ -1,12 +1,17 @@
 import { error, json } from '@sveltejs/kit';
 import * as v from 'valibot';
+import { isPushService } from '#lib/shared/push-services.ts';
 import { config } from '#lib/server/config.ts';
 import { readJson } from '#lib/server/http.ts';
 import { reminders } from '#lib/server/reminders.ts';
 import type { RequestHandler } from './$types';
 
 // The browser's push endpoint: an https URL at its push service.
-const Endpoint = v.pipe(v.string(), v.maxLength(2048), v.url(), v.startsWith('https://'));
+const Endpoint = v.pipe(
+	v.string(),
+	v.maxLength(2048),
+	v.check(isPushService, 'Not a browser push service')
+);
 const Key = (max: number) => v.pipe(v.string(), v.maxLength(max), v.regex(/^[A-Za-z0-9_=-]+$/));
 const Subscription = v.object({
 	endpoint: Endpoint,
