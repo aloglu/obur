@@ -5,7 +5,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 ## Turkish released (2026-11-14), as `v1.0.0-beta.15`
 
 Checks before the tag: type-check, lint, 1111 unit and database tests, e2e 242 passed (18 skipped by design; one
-intermittent failure, see below), image built, smoke test, off-site outage test. No new migration. Also in it: Turkish
+intermittent failure, see below), image built, smoke test, off-site outage test. No new migration. Published 2026-11-14 (all three images). Also in it: Turkish
 names for built-in portions when typing or speaking.
 
 ## Turkish interface (2026-11-14), released as `v1.0.0-beta.14` (Turkish in preview only)
