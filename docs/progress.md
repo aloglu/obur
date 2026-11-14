@@ -17,8 +17,9 @@ page loads. Fixing everything found (owner, 2026-11-14):
   worker looks at most every 6 hours, behind a page's answer. Main tabs are saved again each start, so they stay.
   Checks: unit test for the rule, offline and prepared e2e (27 passed, 4 skipped by design). The trimming itself has
   no browser test (it would need a 60-day-old copy).
-- Next: sign-in limits per real client behind a trusted proxy (all documented remote-access setups share one IP
-  now).
+- Done: sign-in limits count each real client behind a local proxy (`server/client-ip.ts`, design.md "Sessions,
+  uploads and deployment"); no new setting, install steps unchanged. Checks: unit tests, auth e2e (7 passed).
+- Next: full checks (type-check, lint, all unit and database tests, e2e), then the owner decides on a release.
 
 ## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
 

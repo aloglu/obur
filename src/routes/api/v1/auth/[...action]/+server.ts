@@ -3,6 +3,7 @@ import { error, json, type RequestEvent, type RequestHandler } from '@sveltejs/k
 import * as v from 'valibot';
 import { auth, SESSION_COOKIE } from '#lib/server/auth.ts';
 import { config } from '#lib/server/config.ts';
+import { clientIp } from '#lib/server/client-ip.ts';
 import { clearSessionCookie, readJson, respond, setSessionCookie } from '#lib/server/http.ts';
 import type { SessionRecord } from '#lib/server/modules/auth/index.ts';
 
@@ -45,9 +46,10 @@ type Reg = Parameters<typeof auth.setupVerify>[2];
 type Auth = Parameters<typeof auth.loginVerify>[1];
 
 const routes: Record<string, Handler> = {
-	'POST setup/options': async ({ request, getClientAddress }) => {
+	'POST setup/options': async (event) => {
+		const { request } = event;
 		const body = await readJson(request, v.object({ token, displayName }));
-		return json(await auth.setupOptions(body.token, body.displayName, getClientAddress()));
+		return json(await auth.setupOptions(body.token, body.displayName, clientIp(event)));
 	},
 	'POST setup/verify': async ({ request, cookies }) => {
 		const body = await readJson(
@@ -63,9 +65,10 @@ const routes: Record<string, Handler> = {
 		setSessionCookie(cookies, result.sessionToken);
 		return json({ recoveryCodes: result.recoveryCodes });
 	},
-	'POST join/options': async ({ request, getClientAddress }) => {
+	'POST join/options': async (event) => {
+		const { request } = event;
 		const body = await readJson(request, v.object({ token, displayName }));
-		return json(await auth.joinOptions(body.token, body.displayName, getClientAddress()));
+		return json(await auth.joinOptions(body.token, body.displayName, clientIp(event)));
 	},
 	'POST join/verify': async ({ request, cookies }) => {
 		const body = await readJson(
@@ -81,14 +84,14 @@ const routes: Record<string, Handler> = {
 		setSessionCookie(cookies, result.sessionToken);
 		return json({ recoveryCodes: result.recoveryCodes });
 	},
-	'POST login/options': async ({ getClientAddress }) =>
-		json(await auth.loginOptions(getClientAddress())),
-	'POST login/verify': async ({ request, cookies, getClientAddress }) => {
+	'POST login/options': async (event) => json(await auth.loginOptions(clientIp(event))),
+	'POST login/verify': async (event) => {
+		const { request, cookies } = event;
 		const body = await readJson(request, v.object({ challengeId, response: assertion }));
 		const sessionToken = await auth.loginVerify(
 			body.challengeId,
 			body.response as Auth,
-			getClientAddress()
+			clientIp(event)
 		);
 		setSessionCookie(cookies, sessionToken);
 		return json({ ok: true });
@@ -130,7 +133,8 @@ const routes: Record<string, Handler> = {
 		json({ recoveryCodes: await auth.regenerateRecoveryCodes(requireSession(session)) }),
 	'POST sessions/sign-out-others': async (_, session) =>
 		json({ signedOut: await auth.signOutOtherSessions(requireSession(session)) }),
-	'POST recovery/begin': async ({ request, cookies, getClientAddress }) => {
+	'POST recovery/begin': async (event) => {
+		const { request, cookies } = event;
 		const body = await readJson(
 			request,
 			v.object({
@@ -138,7 +142,7 @@ const routes: Record<string, Handler> = {
 				linkToken: v.optional(token)
 			})
 		);
-		const recoveryToken = await auth.beginRecovery(body, getClientAddress());
+		const recoveryToken = await auth.beginRecovery(body, clientIp(event));
 		setSessionCookie(cookies, recoveryToken, true);
 		return json({ ok: true });
 	},
