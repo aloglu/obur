@@ -2,6 +2,23 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Full pre-release audit (owner, 2026-11-14): every file, findings reported before fixing
+
+Coverage ([x] read in full; findings in the list below, fixed only after the owner's go):
+
+- [ ] A. Database: every migration (RLS policies, SECURITY DEFINER functions, grants), `db/`, `jobs/setup.ts`
+- [ ] B. Server modules: auth (rest), goals, body, catalog (service, recipes, curated, usda), diary (saved meals),
+  progress, reminders (rest), remote-models, updates, imports-exports (plan, write, LoseIt rest, account deletion)
+- [ ] C. Server glue (`src/lib/server/*.ts`), every API route and page server load
+- [ ] D. Shared logic (`src/lib/shared/`): goals and budget math, quantities, nutrients, dates and zones, history,
+  achievements, reminder times, search folding, formatting
+- [ ] E. Client (`src/lib/client/`), every screen and component (`src/lib/ui/`, `src/routes/`)
+- [ ] F. Deploy: Dockerfile, `deploy/obur/*` (init, restore, CLI), `server.js`, compose, release workflow,
+  `scripts/`, the speech and labels services
+- [ ] G. Configuration and docs: lint rules, Vite/Svelte config, `.env.example`, install guides against the commands
+
+Findings so far: none.
+
 ## Pre-release audit fixes (2026-11-14)
 
 Audit of sign-in, isolation, diary retries, offline sync, service worker, imports, reminders, uploads, search and
