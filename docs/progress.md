@@ -29,10 +29,11 @@ page loads. Fixing everything found (owner, 2026-11-14):
   groups of three are now thousands; oz, lb and fl oz convert to g/ml (design.md, "Typed and voice logging").
   Tests in `parse.test.ts`; all development sentences unchanged. The held-out and audio evaluations need the
   owner's private fixtures and were not run.
-- Found, not fixed yet: an obur export doesn't carry which LoseIt rows (and files) were imported, so after moving
-  to a fresh installation by export/import, a later overlapping LoseIt import would add everything again; a failed
-  nightly backup isn't retried until the next night.
-- Next: finish the audit (label parser, screens), then fix what was found.
+- Audit done: label parser, backup scripts, LoseIt file reading and screens (by pattern) had nothing else.
+- Done: exports carry which LoseIt rows were imported (`data/loseit-identities.json`), so a later LoseIt import
+  after a move by export/import adds only new rows. Test in `loseit.db.test.ts` (fresh installation; fails without).
+  The exact-file repeat check does not travel: the same LoseIt file again is then 0 new, not "already imported".
+- Next: retry a failed nightly backup; an offline message for food search in the recipe and saved-meal editors.
 
 ## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
 

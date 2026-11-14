@@ -36,6 +36,7 @@ import { modelChoices } from '../remote-models/index.ts';
 import { readArchive, sha256, writeArchive, type PortableData } from './archive.ts';
 import { readLoseItArchive } from './loseit.ts';
 import {
+	LOSEIT_SOURCE,
 	planLoseIt,
 	writeLoseIt,
 	type LoseItOptions,
@@ -264,6 +265,19 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 				text: n.text,
 				typedAt: n.typedAt.toISOString()
 			})),
+		loseitIdentities: (
+			await tx
+				.select()
+				.from(importIdentities)
+				.where(
+					and(
+						eq(importIdentities.userId, userId),
+						eq(importIdentities.sourceInstall, LOSEIT_SOURCE)
+					)
+				)
+		).flatMap((i) =>
+			i.kind === 'saved_meal' ? [] : [{ kind: i.kind, sourceId: i.sourceId, localId: i.localId }]
+		),
 		dayCompletions: (
 			await tx.select().from(dayCompletions).where(eq(dayCompletions.userId, userId))
 		).map((d) => ({
@@ -1078,6 +1092,19 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 				set: { text: sql`excluded.text`, typedAt: sql`excluded.typed_at` }
 			})
 	);
+	// What the archive's LoseIt rows became, pointed at the records they are here now. Rows whose record is not in the
+	// archive (purged from the trash) have nothing to point at and are left out.
+	for (const i of data.loseitIdentities) {
+		const here = p.decisions.get(key(i.kind, i.localId));
+		if (here)
+			identities.push({
+				userId,
+				sourceInstall: LOSEIT_SOURCE,
+				kind: i.kind,
+				sourceId: i.sourceId,
+				localId: here.localId
+			});
+	}
 	await chunked(identities, (chunk) =>
 		tx.insert(importIdentities).values(chunk).onConflictDoNothing()
 	);

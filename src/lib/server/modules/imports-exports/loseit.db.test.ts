@@ -212,6 +212,40 @@ describe('LoseIt import', () => {
 		expect(live.filter((r) => r.n === 'Haşlanmış yumurta')).toHaveLength(2);
 	});
 
+	it('remembers what was imported from LoseIt after a move to another installation by export and import', async () => {
+		await portability.applyLoseIt(MEHMET, zip(), options);
+		const archive = await portability.exportArchive(MEHMET);
+		// A fresh installation: no accounts, another installation ID.
+		await admin`truncate users cascade`;
+		await admin`insert into users (id, display_name) values (${MEHMET}, 'Mehmet'), (${ZEYNEP}, 'Zeynep')`;
+		await admin`update installation set id = ${randomUUID()}`;
+		await portability.applyImport(MEHMET, archive);
+
+		const lines = files['food-logs.csv'].split('\n');
+		const later = {
+			...files,
+			'food-logs.csv': [
+				...lines.filter((l) => !l.startsWith('1/7/2026,Banana')).filter((l) => l),
+				'1/8/2026,Apple,Apple,Snacks,1.0,Each,95.0,0,0.3,0.5,25.0,0.0,19.0,4.4,0.0,2.0',
+				''
+			].join('\n')
+		};
+		const preview = await portability.previewLoseIt(MEHMET, zip(later), options);
+		expect(preview.counts.diary).toEqual({ new: 1, unchanged: 17, missing: 1, skipped: 0 });
+		expect(preview.counts.food.new).toBe(1);
+		expect(preview.counts.weight.new).toBe(0);
+		expect(preview.counts.water.new).toBe(0);
+		expect(preview.counts.activity.new).toBe(0);
+		await portability.applyLoseIt(MEHMET, zip(later), { ...options, trashMissing: true });
+		const live = await admin`select food->>'name' as n from diary_entries
+			where user_id = ${MEHMET} and deleted_at is null`;
+		expect(live).toHaveLength(18);
+		expect(live.map((r) => r.n)).not.toContain('Banana');
+		// What Mehmet imported says nothing about anyone else's account.
+		const theirs = await portability.previewLoseIt(ZEYNEP, zip(later), options);
+		expect(theirs.counts.diary.new).toBe(18);
+	});
+
 	it('leaves another person’s data alone', async () => {
 		await portability.applyLoseIt(ZEYNEP, zip(), options);
 		await portability.applyLoseIt(MEHMET, zip(), options);

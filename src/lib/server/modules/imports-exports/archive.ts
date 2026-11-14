@@ -314,6 +314,16 @@ export const DayNoteRecord = v.object({
 	typedAt: Timestamp
 });
 
+/**
+ * Which record a LoseIt row became (added 2026-11-14), so a later, overlapping LoseIt export imported after a move to
+ * another installation adds only what is new. `localId` is the record's ID in this archive.
+ */
+export const LoseItIdentityRecord = v.object({
+	kind: v.picklist(['food', 'diary', 'weight', 'water', 'activity', 'target']),
+	sourceId: Text(100),
+	localId: Uuid
+});
+
 export const AccountRecord = v.object({
 	displayName: Text(80),
 	profile: v.nullable(ProfileRecord),
@@ -347,13 +357,15 @@ const DATA_FILES = {
 	'data/targets.json': v.array(TargetRecord),
 	'data/saved-meals.json': v.array(SavedMealRecord),
 	'data/recipes.json': v.array(RecipeRecord),
-	'data/day-notes.json': v.array(DayNoteRecord)
+	'data/day-notes.json': v.array(DayNoteRecord),
+	'data/loseit-identities.json': v.array(LoseItIdentityRecord)
 } as const;
 /** Added to format version 1 later: absent in older archives, read as empty. */
 const OPTIONAL_FILES = new Set<string>([
 	'data/saved-meals.json',
 	'data/recipes.json',
-	'data/day-notes.json'
+	'data/day-notes.json',
+	'data/loseit-identities.json'
 ]);
 const CSV_FILES = ['csv/diary.csv', 'csv/weight.csv', 'csv/water.csv', 'csv/activity.csv'] as const;
 
@@ -369,6 +381,7 @@ export interface PortableData {
 	savedMeals: v.InferOutput<typeof SavedMealRecord>[];
 	recipes: v.InferOutput<typeof RecipeRecord>[];
 	dayNotes: v.InferOutput<typeof DayNoteRecord>[];
+	loseitIdentities: v.InferOutput<typeof LoseItIdentityRecord>[];
 }
 
 const KEYS: Record<keyof typeof DATA_FILES, keyof PortableData> = {
@@ -382,7 +395,8 @@ const KEYS: Record<keyof typeof DATA_FILES, keyof PortableData> = {
 	'data/targets.json': 'targets',
 	'data/saved-meals.json': 'savedMeals',
 	'data/recipes.json': 'recipes',
-	'data/day-notes.json': 'dayNotes'
+	'data/day-notes.json': 'dayNotes',
+	'data/loseit-identities.json': 'loseitIdentities'
 };
 
 const Manifest = v.object({
