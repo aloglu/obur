@@ -2,6 +2,12 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Turkish released (2026-11-14), as `v1.0.0-beta.15`
+
+Checks before the tag: type-check, lint, 1111 unit and database tests, e2e 242 passed (18 skipped by design; one
+intermittent failure, see below), image built, smoke test, off-site outage test. No new migration. Also in it: Turkish
+names for built-in portions when typing or speaking.
+
 ## Turkish interface (2026-11-14), released as `v1.0.0-beta.14` (Turkish in preview only)
 
 Checks before the tag: type-check, lint, 1109 unit and database tests, e2e 239 passed (18 skipped by design), image
@@ -57,9 +63,12 @@ built, smoke test, off-site outage test. Migrations 0050–0052 run on update. P
   and two-word portions work ("1 yemek kaşığı zeytinyağı"). Checks: lint, 1111 unit and database tests, e2e 242
   passed; the phone offline test (offline.e2e.ts:237) failed once in the full run and passed in three runs on its own
   (seen once before; intermittent, not identified yet).
-- Next: the owner reads the app in Turkish (set `OBUR_PREVIEW_LANGUAGES=tr` on their server after the next release,
-  then More → Settings → Language) and marks wording to change; then release Turkish (add it to
-  `ENABLED_LANGUAGES`).
+- Done (2026-11-14): Turkish released for everyone (`ENABLED_LANGUAGES` = en, tr). The owner tried the beta.14
+  preview and asked for no changes; least certain, if wording comes up later: achievement quips, budget setup and
+  BMI text, Help answers beyond the two the owner rewrote, error messages. Checks: type-check, lint, 1111 unit and
+  database tests, e2e 242 passed; accessibility.e2e.ts failed once on phone in the full run and passed three times on
+  its own (like offline.e2e.ts:237: intermittent, to investigate).
+- Next: nothing open for Turkish. Back to the last item before version 1: the whole-codebase review.
 
 ## After beta.12 (2026-11-13), released as `v1.0.0-beta.13`
 

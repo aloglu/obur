@@ -1,8 +1,7 @@
 // The interface language (docs/design.md, "Interface language"): pages are drawn in the cookie's language, else the
-// phone's, and the cookie is written so the page's scripts agree. The main test server previews Turkish
-// (OBUR_PREVIEW_LANGUAGES); the features-off server doesn't, and there it never shows.
+// phone's, and the cookie is written so the page's scripts agree. Unknown languages never show.
 import { expect, test } from '@playwright/test';
-import { FEATURES_OFF } from '../../playwright.config.ts';
+import { FEATURES_OFF, e2eEnv } from '../../playwright.config.ts';
 import { signedInAs } from './fixtures.ts';
 
 test('the sign-in page follows the phone’s language, then the device remembers it', async ({
@@ -25,13 +24,17 @@ test('the sign-in page follows the phone’s language, then the device remembers
 	expect(await again.text()).toContain('<html lang="tr"');
 });
 
-test('a language a server doesn’t offer never shows there', async ({ request }) => {
+test('a language obur doesn’t know is never shown or saved', async ({ page, request }) => {
 	const res = await request.get(`${FEATURES_OFF}/login`, {
-		headers: { cookie: 'obur_lang=tr', 'accept-language': 'tr;q=1' }
+		headers: { cookie: 'obur_lang=xx', 'accept-language': 'xx;q=1' }
 	});
-	const html = await res.text();
-	expect(html).toContain('<html lang="en"');
-	expect(html).toContain('Sign in with a passkey');
+	expect(await res.text()).toContain('<html lang="en"');
+	await signedInAs(page, 'Bilinmeyen Dil');
+	const refused = await page.request.patch('/api/v1/profile/preferences', {
+		data: { language: 'xx' },
+		headers: { origin: e2eEnv.PUBLIC_ORIGIN }
+	});
+	expect(refused.status()).toBe(400);
 });
 
 test('choosing Türkçe in Settings draws the app in Turkish, and English brings it back', async ({

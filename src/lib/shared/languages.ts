@@ -7,10 +7,10 @@ export const LANGUAGES = ['en', 'tr'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 /**
- * The languages people can use. Turkish joins once its text is complete and the owner has reviewed it; until then
- * nothing shows or picks it, and a saved choice of it falls back to English.
+ * The languages people can use (Turkish released 2026-11-14). A language added later stays out of this list until its
+ * text is complete and reviewed: until then nothing shows or picks it, and a saved choice of it falls back to English.
  */
-export const ENABLED_LANGUAGES: readonly [Language, ...Language[]] = ['en'];
+export const ENABLED_LANGUAGES: readonly [Language, ...Language[]] = ['en', 'tr'];
 
 /**
  * The released languages plus any an operator previews before their release (OBUR_PREVIEW_LANGUAGES, "tr"), so the

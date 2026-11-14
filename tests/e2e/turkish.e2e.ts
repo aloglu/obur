@@ -1,4 +1,4 @@
-// The app in Turkish (docs/design.md, "Interface language"), previewed on the test server (OBUR_PREVIEW_LANGUAGES):
+// The app in Turkish (docs/design.md, "Interface language"):
 // Today with long Turkish names, a built-in food and a budget with activity, in pictures; every main screen without
 // sideways scrolling; built-in names, dates and decimal commas as the plan says.
 import { expect, test, type Page } from '@playwright/test';

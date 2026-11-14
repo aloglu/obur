@@ -33,8 +33,6 @@ export const e2eEnv = {
 	// The list of published versions, played by the stand-in too.
 	UPDATES_TEST_URL: SPEECH_STUB,
 	WEBAUTHN_RP_ID: 'localhost',
-	// Turkish before its release, so its screens are tested; the second server below leaves it hidden.
-	OBUR_PREVIEW_LANGUAGES: 'tr',
 	// A throwaway Web Push public key so the Reminders page is offered; no worker sends anything in tests.
 	VAPID_PUBLIC_KEY:
 		'BNEjlPiBGAifsDg7V17978UFsToCwYizckYHDAeSaN4VHKUPEcEUJrZeAkyW4A8u1dGgdwOHZxnE-iiBSp-0VXE'
@@ -76,7 +74,6 @@ export default defineConfig({
 				SPEECH_URL: '',
 				LABELS_URL: '',
 				OBUR_SECRETS_KEY: '',
-				OBUR_PREVIEW_LANGUAGES: '',
 				PUBLIC_ORIGIN: FEATURES_OFF,
 				PORT: String(PORT + 2),
 				HOST: '127.0.0.1'
