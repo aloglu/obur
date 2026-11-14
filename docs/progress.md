@@ -2,6 +2,11 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Audit fixes released (2026-11-15), as `v1.0.0-beta.18`
+
+beta.17 plus the restore-finish fix below. Checks before the tag: smoke test and off-site test on a fresh image
+(the code otherwise as checked for beta.17). Tag pushed; publishing not yet confirmed.
+
 ## Audit fixes released (2026-11-15), as `v1.0.0-beta.17`
 
 Checks before the tag: type-check, lint, build, 1133 unit and database tests, e2e 251 passed (18 skipped by design,
