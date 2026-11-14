@@ -18,7 +18,8 @@ corrections from the same review applied. Tone: "sen". Every Turkish string uses
 | Entry | Girdi | Owner's correction (review: "Kaydettiğin girdiler günlüğünde kalır"). |
 | Diary | Günlük | |
 | Meal | Öğün | |
-| Breakfast, Lunch, Dinner, Snacks | Kahvaltı, Öğle yemeği, Akşam yemeği, Ara öğün | Full names. |
+| Breakfast, Lunch, Dinner, Snacks | Kahvaltı, Öğle yemeği, Akşam yemeği, Ara öğün | Full names. The meal picker alone says Öğle, Akşam (owner, 2026-11-14). As a destination they take the dative, a fixed form per meal: "Öğle yemeğine 1 yiyecek kaydet", "Kahvaltıya taşı", "Ara öğüne", "Akşam yemeğine" (`mealNameTo`). |
+| Carbs (macro preview under an amount) | Karb. | Only where three macros share a phone row; full word everywhere else (owner, 2026-11-14 screenshot: "Karbonhidrat" ran into "Yağ"). |
 | Food | Yiyecek | |
 | Recipe | Tarif | |
 | Saved meal | Kayıtlı öğün | |

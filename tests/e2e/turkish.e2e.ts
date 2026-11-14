@@ -180,3 +180,48 @@ test('typed Turkish portions find a built-in food’s portion: “diş”, “ye
 		portion: 'clove'
 	});
 });
+
+test('logging in Turkish: short meal choices, the meal first on the button, macros apart (owner, 2026-11-14)', async ({
+	page
+}, testInfo) => {
+	const tag = testInfo.project.name.replace(/[^a-z]/gi, '');
+	await inTurkish(page, `Elif ${tag}`);
+	await createFood(page, {
+		name: `Protein Bar ${tag}`,
+		brand: 'Fellas',
+		basis: '100g',
+		nutrients: [
+			{ code: 'energy_kcal', value: 378, qualifier: 'reported' },
+			{ code: 'protein', value: 42, qualifier: 'reported' },
+			{ code: 'carbohydrate_excl_fibre', value: 12, qualifier: 'reported' },
+			{ code: 'fat', value: 11, qualifier: 'reported' }
+		],
+		servings: [{ name: 'Bar', amount: 50, unit: 'g' }]
+	});
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Yaz', exact: true }).click();
+	const sheet = page.getByRole('dialog', { name: 'Ne yediğini yaz' });
+	await sheet.getByLabel('Yazdığın').fill(`öğle yemeğinde bir bar protein bar ${tag}`);
+	await expect(sheet.getByRole('radio', { name: 'Öğle', exact: true })).toBeChecked();
+	await expect(sheet.getByRole('radio', { name: 'Akşam', exact: true })).toBeVisible();
+	await expect(sheet.getByRole('button', { name: 'Öğle yemeğine 1 yiyecek kaydet' })).toBeVisible();
+	await sheet.getByRole('radio', { name: 'Ara öğün' }).click();
+	await expect(sheet.getByRole('button', { name: 'Ara öğüne 1 yiyecek kaydet' })).toBeVisible();
+
+	// The amount's macro labels sit side by side without running into each other.
+	await sheet
+		.getByRole('region', { name: `Fellas Protein Bar ${tag}` })
+		.getByRole('button', { name: /^Düzenle/ })
+		.click();
+	const labels = sheet.locator('dl dt');
+	await expect(labels).toHaveCount(3);
+	const boxes = await labels.evaluateAll((dts) =>
+		dts.map((dt) => {
+			const r = dt.getBoundingClientRect();
+			return { left: r.left, right: dt.getBoundingClientRect().left + dt.scrollWidth };
+		})
+	);
+	for (let i = 1; i < boxes.length; i++)
+		expect(boxes[i - 1].right).toBeLessThanOrEqual(boxes[i].left);
+	await expect(labels.nth(1)).toContainText('Karbonhidrat'); // for screen readers
+});

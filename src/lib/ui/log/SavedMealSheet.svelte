@@ -9,7 +9,7 @@
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { addDays, isLateNight } from '#lib/shared/diary-rules.ts';
 	import { MEALS, type DiaryEntry, type Meal, type SavedMeal } from '#lib/shared/diary-types.ts';
-	import { dayTitle, kcal, mealName } from '#lib/shared/format.ts';
+	import { dayTitle, kcal, mealShortName } from '#lib/shared/format.ts';
 	import Button from '../Button.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
@@ -95,7 +95,7 @@
 				bind:day
 				days={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
 				bind:meal
-				meals={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
+				meals={MEALS.map((x) => ({ value: x, label: mealShortName(x) }))}
 			/>
 			<Button type="submit" wide disabled={busy || picked.length === 0}
 				>{busy

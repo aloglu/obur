@@ -25,6 +25,9 @@
 		color: var(--text);
 		font-family: var(--font-sans);
 		-webkit-text-size-adjust: 100%;
+		/* No zooming anywhere (owner, 2026-11-14): no double-tap zoom here, no pinch (app.html, text-scale.js).
+		   Bigger text comes from the phone's text size instead. */
+		touch-action: manipulation;
 	}
 
 	body {

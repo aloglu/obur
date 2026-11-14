@@ -7,7 +7,7 @@
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { addDays } from '#lib/shared/diary-rules.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
-	import { dayTitle, mealName } from '#lib/shared/format.ts';
+	import { dayTitle, mealShortName } from '#lib/shared/format.ts';
 	import { parseDecimal } from '#lib/shared/numbers.ts';
 	import Button from '../Button.svelte';
 	import Notice from '../Notice.svelte';
@@ -88,7 +88,7 @@
 			bind:day
 			days={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
 			bind:meal
-			meals={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
+			meals={MEALS.map((x) => ({ value: x, label: mealShortName(x) }))}
 		/>
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<Button type="submit" wide disabled={busy || value === undefined}

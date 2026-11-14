@@ -75,6 +75,9 @@ test('every page passes the automated accessibility checks in light and dark', a
 			const check = () =>
 				new AxeBuilder({ page })
 					.withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+					// Zoom is off on purpose (owner, 2026-11-14; docs/ui.md, "No zooming"); text follows the phone's
+					// text size instead, checked in large-text.e2e.ts.
+					.disableRules(['meta-viewport'])
 					.analyze();
 			let r = await check();
 			// Under load a page can be caught mid-paint; a real problem is still there a second later.

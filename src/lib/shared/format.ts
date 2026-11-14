@@ -16,6 +16,24 @@ export const mealName = (meal: Meal): string =>
 		snacks: m.meal_snacks
 	})[meal]();
 
+/** The meal picker's label: Turkish drops "yemeği" there so four choices fit one row ("Öğle", "Akşam"). */
+export const mealShortName = (meal: Meal): string =>
+	({
+		breakfast: m.meal_breakfast_short,
+		lunch: m.meal_lunch_short,
+		dinner: m.meal_dinner_short,
+		snacks: m.meal_snacks_short
+	})[meal]();
+
+/** The meal as a destination: Turkish takes the dative ("Öğle yemeğine"); English is the name itself. */
+export const mealNameTo = (meal: Meal): string =>
+	({
+		breakfast: m.meal_breakfast_to,
+		lunch: m.meal_lunch_to,
+		dinner: m.meal_dinner_to,
+		snacks: m.meal_snacks_to
+	})[meal]();
+
 export const kcal = (value: number): string => String(Math.round(value));
 
 // Formatted by hand so every browser and the server produce identical text (Intl output differs by engine). One table

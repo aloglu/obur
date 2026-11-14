@@ -5,7 +5,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { addDays } from '#lib/shared/diary-rules.ts';
 	import { MEALS, type Meal } from '#lib/shared/diary-types.ts';
-	import { mealName } from '#lib/shared/format.ts';
+	import { mealShortName, mealNameTo } from '#lib/shared/format.ts';
 	import Button from '../Button.svelte';
 	import Select from '../Select.svelte';
 	import Sheet from '../Sheet.svelte';
@@ -66,7 +66,7 @@
 				value={meal ?? ('' as Meal)}
 				onchange={(v) => (meal = v)}
 				wide
-				options={MEALS.map((value) => ({ value, label: mealName(value) }))}
+				options={MEALS.map((value) => ({ value, label: mealShortName(value) }))}
 			/>
 		</div>
 		{#if day === 'other'}
@@ -88,8 +88,8 @@
 			onclick={() => meal && onconfirm(date, meal)}
 			>{meal
 				? mode === 'move'
-					? m.bulk_confirm_move({ meal: mealName(meal) })
-					: m.bulk_confirm_copy({ meal: mealName(meal) })
+					? m.bulk_confirm_move({ meal: mealNameTo(meal) })
+					: m.bulk_confirm_copy({ meal: mealNameTo(meal) })
 				: title}</Button
 		>
 	</div>

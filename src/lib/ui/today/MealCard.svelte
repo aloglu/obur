@@ -13,7 +13,7 @@
 	import FoodIcon from '../FoodIcon.svelte';
 	import Roll from '../Roll.svelte';
 	import MealMenu from './MealMenu.svelte';
-	import { entryName, entryQuantity, kcal, mealName } from '#lib/shared/format.ts';
+	import { entryName, entryQuantity, kcal, mealName, mealNameTo } from '#lib/shared/format.ts';
 
 	interface Props {
 		meal: Meal;
@@ -172,7 +172,7 @@
 		<button
 			type="button"
 			onclick={onadd}
-			aria-label={m.meal_add({ meal: mealName(meal) })}
+			aria-label={m.meal_add({ meal: mealNameTo(meal) })}
 			class="add-food grid min-h-[52px] min-w-0 flex-1 grid-cols-[40px_minmax(0,1fr)] items-center gap-3 text-left font-[650] text-accent"
 		>
 			<span class="grid size-10 place-items-center rounded-small bg-soft"

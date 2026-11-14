@@ -19,4 +19,12 @@
 	root.style.fontSize = 'min(max(100%, ' + 16 * scale + 'px), 32px)';
 	// Large text: layouts that sit side by side stack (the `large:` variant in layout.css).
 	if (scale >= 1.35) root.dataset.text = 'large';
+	// No pinch zoom (owner, 2026-11-14): Safari ignores `user-scalable=no`, so its pinch gesture is stopped here.
+	document.addEventListener(
+		'gesturestart',
+		function (event) {
+			event.preventDefault();
+		},
+		{ passive: false }
+	);
 })();

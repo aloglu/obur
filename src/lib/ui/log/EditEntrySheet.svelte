@@ -8,7 +8,7 @@
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { addDays, snapshotNutrients } from '#lib/shared/diary-rules.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
-	import { dayTitle, mealName } from '#lib/shared/format.ts';
+	import { dayTitle, mealShortName, mealNameTo } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import {
 		optionKeyFor,
@@ -161,7 +161,7 @@
 			bind:day
 			days={dayOptions.map((d) => ({ value: d, label: dayTitle(d, today) }))}
 			bind:meal
-			meals={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
+			meals={MEALS.map((x) => ({ value: x, label: mealShortName(x) }))}
 		/>
 		{#if start.kind !== 'quick'}
 			<MacroPreview nutrients={preview} />
@@ -181,7 +181,7 @@
 				{#if !placeChanged && !valueChanged}
 					{m.edit_no_changes()}
 				{:else if placeChanged && !valueChanged}
-					{m.edit_move_to({ meal: mealName(meal) })}
+					{m.edit_move_to({ meal: mealNameTo(meal) })}
 				{:else}
 					{m.edit_save()}
 				{/if}

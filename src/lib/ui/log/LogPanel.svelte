@@ -29,7 +29,7 @@
 	import { api } from '#lib/client/api.ts';
 	import type { Meal, SavedMealSummary } from '#lib/shared/diary-types.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
-	import { dayTitle, kcal, mealName } from '#lib/shared/format.ts';
+	import { dayTitle, kcal, mealNameTo } from '#lib/shared/format.ts';
 	import { foldForSearch } from '#lib/shared/search-text.ts';
 
 	interface Props {
@@ -278,7 +278,7 @@
 			<div
 				class="preset flex h-10 items-center gap-1.5 self-start rounded-small bg-soft pr-1 pl-3.5 text-[0.875rem] font-semibold text-accent"
 			>
-				{m.log_adding_to({ meal: mealName(preset), day: dayTitle(date, today) })}
+				{m.log_adding_to({ meal: mealNameTo(preset), day: dayTitle(date, today) })}
 				<button
 					type="button"
 					onclick={onclearpreset}

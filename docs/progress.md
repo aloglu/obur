@@ -2,6 +2,22 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Owner's Turkish fixes (2026-11-14), after beta.15
+
+- Done: the meal picker says Öğle, Akşam (full names everywhere else; `mealShortName`). Buttons and toasts that name a
+  meal as a destination use a fixed dative per meal: "Öğle yemeğine 1 yiyecek kaydet", "Kahvaltıya taşı" (`mealNameTo`;
+  English unchanged). The amount's macro preview says "Karb." in Turkish (it ran into "Yağ"; full word for screen
+  readers and large text). No zooming: `user-scalable=no`, `touch-action: manipulation`, Safari's pinch stopped in
+  `static/text-scale.js`; the axe `meta-viewport` rule is off for it. Stored meals are keys, so no data changes.
+- Checks: type-check, lint, 1111 unit and database tests, e2e 244 passed (18 skipped by design) before the axe rule
+  change, then accessibility and large-text rerun and passing; new Turkish logging test on phone WebKit and desktop
+  Chromium. Intermittent: `turkish.e2e.ts` "no main screen scrolls sideways" on phone WebKit failed 2 of about 40 runs
+  with "navigation to /achievements interrupted by another navigation to /help" (passed 16 of 16 before the change
+  and 12 of 12 after; not traced).
+- Open (owner to decide): Turkish display names for portions of non-built-in foods (e.g. "Bar", "Slice"). Today only
+  built-in foods' portions are shown in Turkish; user, scanned and LoseIt portions show as typed.
+- Next: owner's answer on the portions question; then the next release when the owner asks.
+
 ## Turkish released (2026-11-14), as `v1.0.0-beta.15`
 
 Checks before the tag: type-check, lint, 1111 unit and database tests, e2e 242 passed (18 skipped by design; one

@@ -22,9 +22,16 @@
 		!n
 			? m.amount_unknown_short()
 			: `${n.qualifier === 'less_than' ? '< ' : n.qualifier === 'estimate' ? '≈ ' : ''}${formatDecimal(n.value, 1)} g`;
+	// Three columns beside kcal leave a phone about 60 px each; "Karbonhidrat" needs about 90, so Turkish shows
+	// "Karb." here; large text stacks them and screen readers get the full word.
 	const macros = $derived([
 		{ label: m.nutrient_short_protein(), color: 'var(--protein)', value: grams(find('protein')) },
-		{ label: m.nutrient_short_carbohydrate(), color: 'var(--carb)', value: grams(carbs) },
+		{
+			label: m.nutrient_short_carbohydrate(),
+			shown: m.nutrient_compact_carbohydrate(),
+			color: 'var(--carb)',
+			value: grams(carbs)
+		},
 		{ label: m.nutrient_short_fat(), color: 'var(--fat)', value: grams(find('fat')) }
 	]);
 </script>
@@ -48,7 +55,12 @@
 					<div class="min-w-0">
 						<dt class="flex items-center gap-1.5 text-[0.75rem] font-semibold text-muted">
 							<span class="size-2 shrink-0 rounded-full" style:background={macro.color}></span>
-							{macro.label}
+							{#if 'shown' in macro && macro.shown !== macro.label}
+								<span aria-hidden="true" class="truncate large:hidden">{macro.shown}</span>
+								<span class="sr-only large:not-sr-only">{macro.label}</span>
+							{:else}
+								<span class="truncate">{macro.label}</span>
+							{/if}
 						</dt>
 						<dd class="text-[0.9375rem] font-bold tabular-nums"><Roll value={macro.value} /></dd>
 					</div>

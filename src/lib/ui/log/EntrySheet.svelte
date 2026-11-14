@@ -25,7 +25,7 @@
 	import { MEALS, type Meal } from '#lib/shared/diary-types.ts';
 	import type { EntryItem, LoggedEntry, ParsedEntry } from '#lib/shared/entry-types.ts';
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
-	import { dayTitle, kcal, mealName } from '#lib/shared/format.ts';
+	import { dayTitle, kcal, mealName, mealShortName, mealNameTo } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import { basisFactor, scaleNutrients, type Unit } from '#lib/shared/quantity.ts';
 	import { unitOptions, type MeasureOption, type UnitOption } from '#lib/shared/unit-options.ts';
@@ -696,7 +696,7 @@
 				label={m.amount_meal()}
 				bind:value={meal}
 				onchange={(next) => (tapped = next)}
-				options={MEALS.map((x) => ({ value: x, label: mealName(x) }))}
+				options={MEALS.map((x) => ({ value: x, label: mealShortName(x) }))}
 			/>
 		{/if}
 		{#if problem}<Notice>{problem}</Notice>{/if}
@@ -710,7 +710,7 @@
 						: cards.some(unsure)
 							? m.entry_pick_first()
 							: usesMeal
-								? m.entry_log_to({ count: String(ready.length), meal: mealName(meal) })
+								? m.entry_log_to({ count: String(ready.length), meal: mealNameTo(meal) })
 								: cards.length === 1
 									? m.entry_log_one()
 									: m.entry_log_many({ count: String(ready.length) })}

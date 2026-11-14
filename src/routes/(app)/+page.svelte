@@ -14,7 +14,7 @@
 	import { addDays, carbohydrateDay } from '#lib/shared/diary-rules.ts';
 	import type { ActivityEntry } from '#lib/shared/body-types.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
-	import { dayTitle, entryName, kcal, mealName } from '#lib/shared/format.ts';
+	import { dayTitle, entryName, kcal, mealName, mealNameTo } from '#lib/shared/format.ts';
 	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import X from '@lucide/svelte/icons/x';
@@ -149,7 +149,9 @@
 		editing = null;
 		await invalidateAll();
 		highlight = [entry.id];
-		showToast({ message: movedTo ? m.toast_moved({ meal: mealName(movedTo) }) : m.toast_saved() });
+		showToast({
+			message: movedTo ? m.toast_moved({ meal: mealNameTo(movedTo) }) : m.toast_saved()
+		});
 	}
 
 	async function deleted(entry: DiaryEntry) {
