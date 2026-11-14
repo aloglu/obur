@@ -69,22 +69,29 @@
 		const p = op.preview;
 		if (p.kind !== 'diary' || p.kcal === null) return;
 		pendingOpen = null;
-		await discard(op.seq!);
 		const id = crypto.randomUUID();
 		const zone = typeof op.body.zone === 'string' ? op.body.zone : deviceZone();
-		const result = await submit<DiaryEntry>(
-			'/api/v1/diary/entries',
-			{
-				id,
-				kind: 'quick',
-				date: p.localDate,
-				meal: p.meal,
-				zone,
-				kcal: p.kcal,
-				description: p.name
-			},
-			{ ...p, quantity: m.entry_kind_quick() }
-		);
+		// The replacement first: the refused entry is discarded only once its calories are kept (sent or queued).
+		let result: Awaited<ReturnType<typeof submit<DiaryEntry>>>;
+		try {
+			result = await submit<DiaryEntry>(
+				'/api/v1/diary/entries',
+				{
+					id,
+					kind: 'quick',
+					date: p.localDate,
+					meal: p.meal,
+					zone,
+					kcal: p.kcal,
+					description: p.name
+				},
+				{ ...p, quantity: m.entry_kind_quick() }
+			);
+		} catch {
+			showToast({ message: m.error_generic() });
+			return;
+		}
+		await discard(op.seq!);
 		await invalidateAll();
 		showToast({
 			message: m.offline_refused_kept(),

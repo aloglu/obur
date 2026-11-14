@@ -60,6 +60,9 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
   hanging); offline it says it needs a connection and clears nothing. Found while testing: the reminders step
   waited forever for a service worker that wasn't registered yet (`push.ts` now looks it up without waiting).
   E2e `offline.e2e.ts`; the offline file passed 3 times on both browsers.
+- Done: finding 8. "Keep the calories" saves (or queues) the replacement first and discards the refused entry only
+  then; a refusal shows an error and keeps it. The existing refused-entry e2e passes; the double refusal has no
+  test of its own (hard to provoke in a browser).
 
 ## Pre-release audit fixes (2026-11-14)
 
