@@ -9,6 +9,10 @@ const tr = read('tr');
 const placeholders = (text: string) => [...new Set(text.match(/\{\w+\}/g) ?? [])].sort();
 
 describe('the Turkish messages', () => {
+	it('has every message the English catalog has', () => {
+		expect(Object.keys(en).filter((k) => !(k in tr))).toEqual([]);
+	});
+
 	it('only has keys the English catalog has', () => {
 		expect(Object.keys(tr).filter((k) => !(k in en))).toEqual([]);
 	});
