@@ -142,7 +142,7 @@ const handleSession: Handle = async ({ event, resolve }) => {
 };
 
 /** Requests whose work is slow by nature (reading a recording or a photo, building or reading an archive). */
-const SLOW_BY_NATURE = /^\/api\/v1\/(speak|scan|import|export|entry\/parse)/;
+const SLOW_BY_NATURE = /^\/api\/v1\/(speech|scan|import|export|entry\/parse)(\/|$)/;
 /** Pages and lists that take longer than this on the server are logged, so a slow one can be found and fixed. */
 const SLOW_MS = 300;
 
