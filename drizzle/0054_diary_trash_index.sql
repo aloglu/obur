@@ -1,0 +1,1 @@
+CREATE INDEX "diary_entries_user_trash_idx" ON "diary_entries" USING btree ("user_id","deleted_at") WHERE "diary_entries"."deleted_at" is not null;

@@ -65,6 +65,8 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
   test of its own (hard to provoke in a browser).
 - Done: finding 9. A reminder subscription must point at Chrome's, Firefox's, Safari's or Edge's push service
   (`shared/push-services.ts`, unit test with look-alikes). Subscriptions already saved keep working.
+- Done (small): nightly housekeeping (migration 0053, `app_housekeeping()`, run by the worker after the purge;
+  database test incl. the app role refused) and an index for the trash (migration 0054).
 
 ## Pre-release audit fixes (2026-11-14)
 

@@ -372,6 +372,20 @@
       "when": 1794666519070,
       "tag": "0052_curated_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1794690019795,
+      "tag": "0053_housekeeping",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1794690036494,
+      "tag": "0054_diary_trash_index",
+      "breakpoints": true
     }
   ]
 }

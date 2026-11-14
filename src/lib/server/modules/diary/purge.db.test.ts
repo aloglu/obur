@@ -79,3 +79,39 @@ describe('trash purge', () => {
 		await expect(write).rejects.toMatchObject({ code: '42501' });
 	});
 });
+
+describe('housekeeping', () => {
+	it('removes only expired sessions, old reminder sends and spent links, run by the worker alone', async () => {
+		const session = (hash: string, expires: string, seen: string) =>
+			admin`insert into sessions (user_id, token_hash, expires_at, last_seen_at)
+				values (${MEHMET}, ${hash}, now() + ${expires}::interval, now() - ${seen}::interval)`;
+		await session('live', '30 days', '1 day');
+		await session('expired', '-1 day', '1 day');
+		await session('idle', '30 days', '15 days');
+		await admin`insert into reminder_sends (user_id, kind, local_date, sent_at) values
+			(${MEHMET}, 'lunch', '2026-01-01', now() - interval '40 days'),
+			(${MEHMET}, 'dinner', '2026-01-02', now() - interval '1 day')`;
+		await admin`insert into recovery_links (user_id, token_hash, expires_at) values
+			(${MEHMET}, 'old', now() - interval '40 days'), (${MEHMET}, 'new', now() + interval '1 hour')`;
+
+		const rows = await workerSql`select kind, removed::int from app_housekeeping() order by kind`;
+		expect(Object.fromEntries(rows.map((r) => [r.kind, r.removed]))).toEqual({
+			bootstrap_tokens: 0,
+			recovery_links: 1,
+			reminder_sends: 1,
+			sessions: 2
+		});
+		expect((await admin`select token_hash from sessions`).map((r) => r.token_hash)).toEqual([
+			'live'
+		]);
+		expect((await admin`select kind from reminder_sends`).map((r) => r.kind)).toEqual(['dinner']);
+		expect((await admin`select token_hash from recovery_links`).map((r) => r.token_hash)).toEqual([
+			'new'
+		]);
+		const asApp = appSql.begin(async (tx) => {
+			await tx`select set_config('app.user_id', ${MEHMET}, true)`;
+			await tx`select * from app_housekeeping()`;
+		});
+		await expect(asApp).rejects.toMatchObject({ code: '42501' });
+	});
+});

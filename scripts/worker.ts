@@ -35,6 +35,9 @@ await boss.work(QUEUES.purgeTrash, { localConcurrency: concurrency }, async () =
 		`purge-trash: removed ${total} expired trash rows`,
 		Object.fromEntries(rows.map((r) => [r.kind, r.purged]))
 	);
+	// Records that only ever grow: expired sessions, old reminder sends, used or expired links (0053_housekeeping).
+	const kept = await sql`select kind, removed::int from app_housekeeping()`;
+	console.log('housekeeping:', Object.fromEntries(kept.map((r) => [r.kind, r.removed])));
 });
 // Reminders: only with all three Web Push settings. The notification says what to do, never values (docs/design.md).
 const vapid = {

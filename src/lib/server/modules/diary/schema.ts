@@ -75,7 +75,11 @@ export const diaryEntries = pgTable(
 		index('diary_entries_user_date_idx')
 			.on(t.userId, t.localDate)
 			.where(sql`${t.deletedAt} is null`),
-		index('diary_entries_user_food_idx').on(t.userId, t.foodId, t.createdAt)
+		index('diary_entries_user_food_idx').on(t.userId, t.foodId, t.createdAt),
+		// The trash (More's count after every page change, Recently deleted, the nightly purge).
+		index('diary_entries_user_trash_idx')
+			.on(t.userId, t.deletedAt)
+			.where(sql`${t.deletedAt} is not null`)
 	]
 );
 
