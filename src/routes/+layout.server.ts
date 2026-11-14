@@ -46,7 +46,7 @@ export const load: LayoutServerLoad = async ({ locals, depends, cookies }) => {
 		locals.appIcon = preferences.appIcon;
 		locals.timeFormat = preferences.timeFormat;
 		// The next page is drawn in the account's language; this one asks the browser to reload (+layout.svelte).
-		const language = usable(preferences.language) ?? DEFAULT_LANGUAGE;
+		const language = usable(preferences.language, config.languages) ?? DEFAULT_LANGUAGE;
 		if (language !== device.language)
 			cookies.set(LANGUAGE_COOKIE, language, {
 				path: '/',
@@ -63,7 +63,9 @@ export const load: LayoutServerLoad = async ({ locals, depends, cookies }) => {
 		palette: preferences.palette,
 		appIcon: preferences.appIcon,
 		timeFormat: preferences.timeFormat,
-		language: usable(preferences.language) ?? DEFAULT_LANGUAGE,
+		language: usable(preferences.language, config.languages) ?? DEFAULT_LANGUAGE,
+		/** The languages people can choose here; the choice shows only with more than one. */
+		languages: config.languages,
 		preferences
 	};
 };

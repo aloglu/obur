@@ -8,10 +8,13 @@ import webpush from 'web-push';
 import { JOB_SCHEMA, QUEUES } from '../src/lib/server/jobs/setup.ts';
 import { sendDueReminders } from '../src/lib/server/modules/reminders/index.ts';
 import { reminderTitle } from '../src/lib/server/reminder-text.ts';
+import { enabledLanguages } from '../src/lib/shared/languages.ts';
 
 const url = process.env.DATABASE_WORKER_URL;
 if (!url) throw new Error('DATABASE_WORKER_URL is not set');
 const concurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY ?? 1) || 1);
+// Reminders in each person's language, among the ones this server offers (OBUR_PREVIEW_LANGUAGES adds previews).
+const languages = enabledLanguages(process.env.OBUR_PREVIEW_LANGUAGES);
 
 const sql = postgres(url, { max: concurrency, onnotice: () => {} });
 const boss = new PgBoss({
@@ -47,7 +50,7 @@ if (vapid.publicKey && vapid.privateKey && vapid.subject) {
 			// The reminder is the title, in the person's language; iOS adds "from obur" below it itself (owner's
 			// choice, 2026-10-31).
 			const payload = JSON.stringify({
-				title: reminderTitle(kind, to.language),
+				title: reminderTitle(kind, to.language, languages),
 				url: '/',
 				tag: kind
 			});

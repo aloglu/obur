@@ -4,6 +4,10 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import type { ThemeChoice, TimeFormat } from '#lib/client/prefs.ts';
 	import { paletteOf, type PaletteId } from '#lib/shared/themes.ts';
+	import { LANGUAGE_NAMES, type Language } from '#lib/shared/languages.ts';
+	import { savePreferences, showLanguage } from '#lib/client/prefs.ts';
+	import { showToast } from '#lib/client/toast.svelte.ts';
+	import MenuRow from '#lib/ui/MenuRow.svelte';
 	import NavRow from './NavRow.svelte';
 
 	interface Props {
@@ -16,8 +20,33 @@
 		reminders: boolean;
 		/** The Speak and Scan row's value, when people may use their own key here. */
 		speakScan?: string | null;
+		/** The account's language, and the ones this server offers (the choice shows with more than one). */
+		language: Language;
+		languages: readonly Language[];
 	}
-	let { theme, palette, timeFormat, goal, reminders, speakScan = null }: Props = $props();
+	let {
+		theme,
+		palette,
+		timeFormat,
+		goal,
+		reminders,
+		speakScan = null,
+		language,
+		languages
+	}: Props = $props();
+
+	// A new language draws every page again: saved with the account, then the app reloads in it, its saved copies of
+	// pages cleared (docs/design.md, "Interface language").
+	let chosenLanguage = $derived(language);
+	async function changeLanguage(next: Language) {
+		try {
+			await savePreferences({ language: next });
+			await showLanguage(next, true);
+		} catch {
+			chosenLanguage = language;
+			showToast({ message: m.settings_save_failed() });
+		}
+	}
 
 	const mode = $derived(
 		{ system: m.theme_system(), light: m.theme_light(), dark: m.theme_dark() }[theme]
@@ -32,6 +61,14 @@
 <div class={group}>
 	<NavRow href={resolve('/(app)/profile')} label={m.more_profile()} />
 	<NavRow href={resolve('/(app)/more/goal')} label={m.more_goal()} value={goal ?? undefined} />
+	{#if languages.length > 1}
+		<MenuRow
+			label={m.more_language()}
+			bind:value={chosenLanguage}
+			onchange={changeLanguage}
+			options={languages.map((l) => ({ value: l, label: LANGUAGE_NAMES[l] }))}
+		/>
+	{/if}
 	<NavRow href={resolve('/(app)/more/units')} label={m.more_units()} value="kg · {time}" />
 	<NavRow
 		href={resolve('/(app)/more/appearance')}

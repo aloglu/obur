@@ -26,5 +26,7 @@
 		goal={data.goalPace === null ? null : paceLabel(data.goalPace)}
 		reminders={data.pushKey !== null}
 		{speakScan}
+		language={data.language}
+		languages={data.languages}
 	/>
 </main>

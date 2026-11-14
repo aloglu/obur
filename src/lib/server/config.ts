@@ -1,12 +1,14 @@
 // Server configuration derived from validated environment variables (src/env.ts).
 import {
 	LABELS_URL,
+	OBUR_PREVIEW_LANGUAGES,
 	PUBLIC_ORIGIN,
 	SPEECH_URL,
 	VAPID_PUBLIC_KEY,
 	WEBAUTHN_RP_ID,
 	WEBAUTHN_RP_NAME
 } from '$app/env/private';
+import { enabledLanguages, type Language } from '#lib/shared/languages.ts';
 
 export interface ServerConfig {
 	origin: string;
@@ -19,6 +21,8 @@ export interface ServerConfig {
 	ocrUrl: string | null;
 	/** The Web Push public key, or null when reminders are switched off. */
 	pushKey: string | null;
+	/** The interface languages people can use here (released ones and any in preview; shared/languages.ts). */
+	languages: readonly Language[];
 }
 
 /** The passkey domain must be the origin's host or a parent domain of it. */
@@ -39,7 +43,8 @@ function load(): ServerConfig {
 		secureCookies: new URL(PUBLIC_ORIGIN).protocol === 'https:',
 		speechUrl: SPEECH_URL ?? null,
 		ocrUrl: LABELS_URL ?? null,
-		pushKey: VAPID_PUBLIC_KEY ?? null
+		pushKey: VAPID_PUBLIC_KEY ?? null,
+		languages: enabledLanguages(OBUR_PREVIEW_LANGUAGES)
 	};
 }
 

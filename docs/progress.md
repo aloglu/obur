@@ -44,8 +44,14 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   0052, display only; tested that nothing else in a row changes), household measures per language (English now says
   "Water glass"), US cup labelled with its size. Checks: type-check, lint, 1109 unit and database tests, e2e 231
   passed (18 skipped by design).
-- Next: Turkish layout checks and screenshot tests (phone and desktop, light and dark, long Turkish names), then the
-  owner's full text review of `messages/tr.json`.
+- Done (2026-11-14): Turkish preview on a server (`OBUR_PREVIEW_LANGUAGES=tr`, in `.env.example`), Language in
+  Settings, Turkish screen tests (Today pictures phone/desktop light/dark, 20 screens without sideways scrolling,
+  built-in portions). Found and fixed: "Karbonhidrat" ran into its bar (the three nutrient rows now share one label
+  column; English pictures unchanged). Checks: type-check, lint, 1109 unit and database tests, e2e 239 passed
+  (18 skipped by design).
+- Next: the owner reads the app in Turkish (set `OBUR_PREVIEW_LANGUAGES=tr` on their server after the next release,
+  then More → Settings → Language) and marks wording to change; then release Turkish (add it to
+  `ENABLED_LANGUAGES`).
 
 ## After beta.12 (2026-11-13), released as `v1.0.0-beta.13`
 

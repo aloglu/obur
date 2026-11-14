@@ -12,7 +12,22 @@ export type Language = (typeof LANGUAGES)[number];
  */
 export const ENABLED_LANGUAGES: readonly [Language, ...Language[]] = ['en'];
 
+/**
+ * The released languages plus any an operator previews before their release (OBUR_PREVIEW_LANGUAGES, "tr"), so the
+ * owner can read the whole app in a language before it ships. The server passes the result on; a page never guesses.
+ */
+export function enabledLanguages(preview: string | null | undefined): readonly Language[] {
+	const extra = (preview ?? '')
+		.split(',')
+		.map((x) => x.trim())
+		.filter((x): x is Language => isLanguage(x) && !ENABLED_LANGUAGES.includes(x));
+	return [...ENABLED_LANGUAGES, ...extra];
+}
+
 export const DEFAULT_LANGUAGE: Language = 'en';
+
+/** Each language in its own words, so anyone can find theirs. */
+export const LANGUAGE_NAMES: Record<Language, string> = { en: 'English', tr: 'Türkçe' };
 
 /** The cookie that mirrors the language, read before the page draws (server) and by the page itself (client). */
 export const LANGUAGE_COOKIE = 'obur_lang';

@@ -24,7 +24,8 @@ defineCustomServerStrategy('custom-obur', {
 	getLocale: (request) =>
 		pickLanguage(
 			cookieOf(request?.headers.get('cookie') ?? null, LANGUAGE_COOKIE),
-			request?.headers.get('accept-language')
+			request?.headers.get('accept-language'),
+			config.languages
 		)
 });
 

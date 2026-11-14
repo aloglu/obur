@@ -60,6 +60,20 @@ export const variables = defineEnvVars({
 			return url.origin;
 		}
 	},
+	OBUR_PREVIEW_LANGUAGES: {
+		description:
+			'Interface languages to try before their release, comma-separated (only "tr" exists). Unset: only released languages.',
+		schema: (value) => {
+			if (!value) return null;
+			const list = value
+				.split(',')
+				.map((x) => x.trim())
+				.filter(Boolean);
+			for (const lang of list)
+				if (lang !== 'tr') throw new Error('OBUR_PREVIEW_LANGUAGES only knows "tr"');
+			return list.join(',');
+		}
+	},
 	OBUR_SECRETS_KEY: {
 		description:
 			"64 hex characters that encrypt people's own AI keys (made by the obur container on first start). Unset: personal keys are off.",

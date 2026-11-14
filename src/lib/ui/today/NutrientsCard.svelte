@@ -86,35 +86,46 @@
 	class="flex flex-col gap-3 rounded-card bg-surface px-[18px] py-4 shadow-card"
 	aria-label={m.nutrients_title()}
 >
-	{#each main as n (n.code)}
-		{@const s = shown(totalFor(n.code))}
-		<div>
-			<div
-				class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2.5 text-[0.875rem] large:grid-cols-[minmax(0,1fr)_auto] large:gap-y-1"
-			>
-				<span>{n.label()}</span>
+	<!-- One label column for the three rows, as wide as the longest label ("Karbonhidrat"), so the bars line up. -->
+	<div
+		class="grid grid-cols-[minmax(72px,max-content)_minmax(0,1fr)_auto] gap-x-2.5 gap-y-3 large:grid-cols-1"
+	>
+		{#each main as n (n.code)}
+			{@const s = shown(totalFor(n.code))}
+			<div class="col-span-3 grid grid-cols-subgrid large:col-span-1 large:grid-cols-1">
 				<div
-					class="h-2 overflow-hidden rounded-full bg-track large:order-last large:col-span-2"
-					aria-hidden="true"
+					class="col-span-3 grid grid-cols-subgrid items-center gap-x-2.5 text-[0.875rem] large:col-span-1 large:grid-cols-[minmax(0,1fr)_auto] large:gap-y-1"
 				>
+					<span>{n.label()}</span>
 					<div
-						class="h-full rounded-full transition-[width] duration-600 ease-(--travel) motion-reduce:transition-none"
-						style:background={n.color}
-						style:width="{width(n)}%"
-					></div>
+						class="h-2 overflow-hidden rounded-full bg-track large:order-last large:col-span-2"
+						aria-hidden="true"
+					>
+						<div
+							class="h-full rounded-full transition-[width] duration-600 ease-(--travel) motion-reduce:transition-none"
+							style:background={n.color}
+							style:width="{width(n)}%"
+						></div>
+					</div>
+					<span class="min-w-[92px] text-right text-muted tabular-nums large:min-w-0"
+						><b class="font-[650] text-text">{s.text}</b>{#if targets}<span class="ml-1"
+								>/ {targets[n.target]} g</span
+							>{/if}</span
+					>
 				</div>
-				<span class="min-w-[92px] text-right text-muted tabular-nums large:min-w-0"
-					><b class="font-[650] text-text">{s.text}</b>{#if targets}<span class="ml-1"
-							>/ {targets[n.target]} g</span
-						>{/if}</span
-				>
+				{#if s.note}<p
+						class="col-span-3 mt-0.5 text-right text-[0.78125rem] text-muted large:col-span-1"
+					>
+						{s.note}
+					</p>{/if}
+				{#if n.code === 'carbohydrate_excl_fibre' && carbNote}
+					<p class="col-span-3 mt-0.5 text-right text-[0.78125rem] text-muted large:col-span-1">
+						{carbNote}
+					</p>
+				{/if}
 			</div>
-			{#if s.note}<p class="mt-0.5 text-right text-[0.78125rem] text-muted">{s.note}</p>{/if}
-			{#if n.code === 'carbohydrate_excl_fibre' && carbNote}
-				<p class="mt-0.5 text-right text-[0.78125rem] text-muted">{carbNote}</p>
-			{/if}
-		</div>
-	{/each}
+		{/each}
+	</div>
 	<dl
 		class="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-3 text-[0.84375rem] text-muted tabular-nums large:grid-cols-1"
 	>

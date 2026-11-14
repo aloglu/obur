@@ -79,13 +79,13 @@ export async function savePreferences(change: Partial<Preferences>): Promise<voi
  * Shows the app in another language: the cookie the server draws pages in, then a reload. Saved copies of pages hold
  * their text, so the prepared ones and the cached ones go first (docs/design.md, "Interface language").
  */
-export async function showLanguage(language: Language): Promise<void> {
-	// Once per language and tab: a browser that refuses the cookie would otherwise reload forever.
+export async function showLanguage(language: Language, chosen = false): Promise<void> {
+	// Unasked, once per language and tab: a browser that refuses the cookie would otherwise reload forever.
 	try {
-		if (sessionStorage.getItem('obur-language-reload') === language) return;
+		if (!chosen && sessionStorage.getItem('obur-language-reload') === language) return;
 		sessionStorage.setItem('obur-language-reload', language);
 	} catch {
-		return;
+		if (!chosen) return;
 	}
 	document.cookie = `${LANGUAGE_COOKIE}=${language}; path=/; max-age=${YEAR}; samesite=lax${secure()}`;
 	forgetPrepared();

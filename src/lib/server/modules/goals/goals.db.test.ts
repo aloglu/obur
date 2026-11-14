@@ -1,6 +1,5 @@
 // Profiles and versioned targets against real PostgreSQL, run as the runtime role.
 import { DEFAULT_PREFERENCES } from '../../../shared/preferences.ts';
-import { ENABLED_LANGUAGES, LANGUAGES } from '../../../shared/languages.ts';
 import { randomUUID } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -328,11 +327,11 @@ describe('settings', () => {
 		// Only known values.
 		await expect(goals.savePreferences(MEHMET, { palette: 'neon' as never })).rejects.toThrow();
 		await expect(goals.savePreferences(MEHMET, { extra: 1 } as never)).rejects.toThrow();
-		// The language: an enabled one is kept; one not enabled yet can't be chosen.
+		// The language: a known one is kept (the API refuses one the server doesn't offer); others never.
+		await goals.savePreferences(MEHMET, { language: 'tr' });
+		expect((await goals.preferences(MEHMET)).preferences.language).toBe('tr');
+		await expect(goals.savePreferences(MEHMET, { language: 'xx' as never })).rejects.toThrow();
 		await goals.savePreferences(MEHMET, { language: 'en' });
-		expect((await goals.preferences(MEHMET)).preferences.language).toBe('en');
-		for (const hidden of LANGUAGES.filter((l) => !ENABLED_LANGUAGES.includes(l)))
-			await expect(goals.savePreferences(MEHMET, { language: hidden as never })).rejects.toThrow();
 		// A declined offer to switch to maintenance is remembered by its goal weight, and can be cleared.
 		await goals.savePreferences(MEHMET, { maintainOfferDeclinedKg: 78.5 });
 		expect((await goals.preferences(MEHMET)).preferences.maintainOfferDeclinedKg).toBe(78.5);

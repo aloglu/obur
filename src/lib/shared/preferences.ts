@@ -4,7 +4,7 @@
 // waiting entries describe the device, so they stay on it.
 import * as v from 'valibot';
 import { APP_ICONS, DEFAULT_APP_ICON, type AppIconId } from './app-icons.ts';
-import { DEFAULT_LANGUAGE, ENABLED_LANGUAGES, type Language } from './languages.ts';
+import { DEFAULT_LANGUAGE, LANGUAGES, type Language } from './languages.ts';
 import { DEFAULT_PALETTE, PALETTES, type PaletteId } from './themes.ts';
 
 export interface Preferences {
@@ -38,8 +38,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 
 /** Any of the settings, as a change. */
 export const PreferencesInput = v.strictObject({
-	// Only a language people can use now; a hidden one is refused.
-	language: v.optional(v.picklist(ENABLED_LANGUAGES)),
+	// A known language; the API refuses one this server doesn't offer (config.languages).
+	language: v.optional(v.picklist(LANGUAGES)),
 	themeMode: v.optional(v.picklist(['system', 'light', 'dark'])),
 	palette: v.optional(v.picklist(PALETTES.map((p) => p.id))),
 	appIcon: v.optional(v.picklist(APP_ICONS.map((i) => i.id))),
