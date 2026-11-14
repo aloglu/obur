@@ -20,7 +20,8 @@ export function snapshotOf(food: FoodDetail): FoodSnapshot {
 		servingSize: food.servingSize ?? null,
 		servings: food.servings.map(({ id, name, amount, unit }) => ({ id, name, amount, unit })),
 		basisNutrients: food.nutrients,
-		icon: food.icon
+		icon: food.icon,
+		...(food.origin === 'curated' ? { curated: true } : {})
 	};
 }
 

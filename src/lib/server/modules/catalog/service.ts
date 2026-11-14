@@ -405,6 +405,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						icon: foods.icon,
 						visibility: foods.visibility,
 						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
+						curated: sql<boolean>`${foods.origin} = 'curated'`,
 						kcal: foodNutrients.value,
 						whole: sql<boolean>`(${allWords})`
 					})
@@ -434,7 +435,12 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					)
 					.limit(Math.min(Math.max(limit, 1), 50))
 			);
-			return rows.map((r) => ({ ...r, mine: Boolean(r.mine), whole: Boolean(r.whole) }));
+			return rows.map((r) => ({
+				...r,
+				mine: Boolean(r.mine),
+				curated: Boolean(r.curated),
+				whole: Boolean(r.whole)
+			}));
 		},
 
 		/**
@@ -459,6 +465,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					mine: r.mine,
 					kcal: r.kcal,
 					icon: r.icon,
+					curated: r.curated,
 					loose: !r.whole
 				}));
 			const full = await this.searchFoods(userId, text, limit, boostIds);

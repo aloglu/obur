@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fullFoodName } from '#lib/shared/curated-names.ts';
 	// Type it, and what Speak heard (docs/ui.md, "Logging"): the text, read again as it changes, one card per item with its
 	// own amount, unit and kcal, the meal as a toggle that follows the text, then Log. Nothing is saved before that. Each
 	// card has its own client ID, so a retry never logs twice; cards that saved leave the sheet.
@@ -342,7 +343,7 @@
 	const title = (c: Card) =>
 		c.kind === 'food'
 			? c.food
-				? `${c.food.brand ? `${c.food.brand} ` : ''}${c.food.name}`
+				? fullFoodName(c.food)
 				: c.text
 			: {
 					quick: m.entry_kind_quick,
@@ -497,7 +498,9 @@
 									<FoodIcon
 										icon={card.kind === 'food' ? card.food?.icon : null}
 										name={card.kind === 'food'
-											? (card.food?.name ?? card.text)
+											? card.food
+												? fullFoodName({ ...card.food, brand: null })
+												: card.text
 											: card.kind === 'quick'
 												? card.description
 												: title(card)}
@@ -590,7 +593,7 @@
 										onclick={() => choose(card, r.id)}
 										data-prepare-touch={`/api/v1/foods/${r.id}`}
 										class="min-h-11 truncate rounded-small px-2 text-left text-[0.9375rem] font-semibold hover:bg-surface2"
-										>{r.brand ? `${r.brand} ` : ''}{r.name}</button
+										>{fullFoodName(r)}</button
 									>
 								{/each}
 							</div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fullFoodName } from '#lib/shared/curated-names.ts';
 	// Adds a food in the saved meal and recipe editors: search, or Recent before typing, then the amount and unit with the
 	// live preview.
 	// Nothing is saved here; the editor's Save sends everything.
@@ -111,7 +112,7 @@
 					class="flex min-h-14 w-full items-center justify-between gap-3 rounded-input px-2 py-2 text-left hover:bg-surface2"
 				>
 					<span class="line-clamp-2 min-w-0 text-[0.9375rem] font-semibold break-words"
-						>{r.brand ? `${r.brand} ` : ''}{r.name}</span
+						>{fullFoodName(r)}</span
 					>
 					<span class="shrink-0 text-[0.8125rem] text-muted tabular-nums"
 						>{r.kcal === null ? '?' : kcal(r.kcal)} kcal</span
@@ -123,7 +124,7 @@
 {/snippet}
 
 <Sheet
-	title={food ? `${food.brand ? `${food.brand} ` : ''}${food.name}` : m.meal_editor_add_title()}
+	title={food ? fullFoodName(food) : m.meal_editor_add_title()}
 	pinned={food ? undefined : search}
 	resizes
 	onopened={() => (opened = true)}

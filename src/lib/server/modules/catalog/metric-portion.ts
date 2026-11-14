@@ -20,7 +20,8 @@ function parse(text: string): number {
 	return Number(text);
 }
 
-const decimal = (n: number) => String(n).replace('.', ',');
+// English names with decimal points (the stored ones); Turkish shows its own (shared/curated-names.ts).
+const decimal = (n: number) => String(n);
 /** Centimetres: one decimal below 3 cm, whole numbers above. */
 const cm = (inches: number) => {
 	const v = inches * INCH_CM;
@@ -55,7 +56,7 @@ export function metricPortionName(original: string): string | null {
 		(_, a: string, rest: string) => `${cm(parse(a))} cm${rest}`
 	);
 	s = s
-		.replace(/\bcubic inch\b/gi, '2,5 cm cube')
+		.replace(/\bcubic inch\b/gi, '2.5 cm cube')
 		.replace(/\bdia\b\.?/gi, 'across')
 		.replace(/\bsq\b\.?/gi, 'square')
 		.replace(/ x /g, ' × ');
@@ -90,7 +91,6 @@ export function metricPortionName(original: string): string | null {
 	s = s.replace(/^cup\b,?\s*/i, (m) => (m.trim().length < m.length ? `${US_CUP}, ` : US_CUP));
 	s = s.replace(/,\s*$/, '');
 
-	s = s.replace(/(\d)\.(\d)/g, '$1,$2'); // decimal comma, as everywhere in the app
 	if (s.length > 60) s = s.replace(US_CUP, 'US cup');
 	return s.replace(/\s+/g, ' ').trim().slice(0, 60).trim();
 }

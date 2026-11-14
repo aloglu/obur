@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { offeredAmount, optionKeyFor, unitOptions } from './unit-options.ts';
+import { overwriteLocale } from './test-locale.ts';
 
 const measures = [{ code: 'su_bardagi', name: 'Su bardağı', ml: 200 }];
 
@@ -20,15 +21,19 @@ describe('unitOptions', () => {
 	});
 
 	it('offers ml, household measures and ml portions for a per-100 ml food', () => {
-		const options = unitOptions(
-			{
-				basis: '100ml',
-				servingLabel: null,
-				servings: [{ id: 'c', name: 'can', amount: 330, unit: 'ml' }]
-			},
-			measures
-		);
-		expect(options.map((o) => o.label)).toEqual(['can (330 ml)', 'ml', 'Su bardağı (200 ml)']);
+		const food = {
+			basis: '100ml' as const,
+			servingLabel: null,
+			servings: [{ id: 'c', name: 'can', amount: 330, unit: 'ml' as const }]
+		};
+		const options = unitOptions(food, measures);
+		expect(options.map((o) => o.label)).toEqual(['can (330 ml)', 'ml', 'Water glass (200 ml)']);
+		// The same measure, named in Turkish.
+		expect(overwriteLocale('tr', () => unitOptions(food, measures)).map((o) => o.label)).toEqual([
+			'can (330 ml)',
+			'ml',
+			'Su bardağı (200 ml)'
+		]);
 	});
 
 	it('offers the serving, and grams only when the serving weight is known', () => {

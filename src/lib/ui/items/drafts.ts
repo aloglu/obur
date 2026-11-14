@@ -6,6 +6,7 @@ import type { FoodDetail } from '#lib/shared/food-types.ts';
 import { quantityText } from '#lib/shared/format.ts';
 import type { NutrientValue } from '#lib/shared/nutrients.ts';
 import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+import { fullFoodName } from '#lib/shared/curated-names.ts';
 import {
 	optionKeyFor,
 	snapshotUnitFor,
@@ -32,8 +33,7 @@ export interface Draft {
 	stored: EntryNutrients;
 }
 
-const displayName = (s: { name: string; brand: string | null }) =>
-	`${s.brand ? `${s.brand} ` : ''}${s.name}`;
+const displayName = fullFoodName;
 
 /** A kept item as the editor starts with it. */
 export function keptDraft(i: {
@@ -78,7 +78,8 @@ export function newDraft(food: FoodDetail, amount: number, option: UnitOption): 
 			servingSize: food.servingSize ?? null,
 			servings: food.servings,
 			basisNutrients: food.nutrients,
-			icon: food.icon
+			icon: food.icon,
+			...(food.origin === 'curated' ? { curated: true } : {})
 		},
 		amountText: formatDecimal(amount, 2),
 		optionKey: option.key,

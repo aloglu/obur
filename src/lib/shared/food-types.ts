@@ -40,4 +40,6 @@ export interface FoodSearchResult {
 	icon: string | null;
 	/** Found only by typo tolerance, or by ignoring some of the words: worth asking about. */
 	loose?: boolean;
+	/** A built-in USDA food: its name and portions show in the interface language (shared/curated-names.ts). */
+	curated?: boolean;
 }

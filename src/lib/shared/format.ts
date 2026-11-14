@@ -5,6 +5,8 @@ import { getLocale } from '#lib/paraglide/runtime.js';
 import { addDays } from './diary-rules.ts';
 import type { FoodSnapshot, Meal, SnapshotUnit } from './diary-types.ts';
 import { formatDecimal } from './numbers.ts';
+import { fullFoodName, portionName } from '#lib/shared/curated-names.ts';
+import { measureName } from '#lib/shared/measure-names.ts';
 
 export const mealName = (meal: Meal): string =>
 	({
@@ -206,7 +208,7 @@ const UNIT_LABELS: Record<'en' | 'tr', Record<string, string>> = {
 		lb: 'lb',
 		ml: 'ml',
 		l: 'l',
-		us_cup: 'US cup',
+		us_cup: 'US cup (237 ml)',
 		metric_cup: 'cup (250 ml)',
 		us_fl_oz: 'US fl oz',
 		imp_fl_oz: 'UK fl oz'
@@ -218,7 +220,7 @@ const UNIT_LABELS: Record<'en' | 'tr', Record<string, string>> = {
 		lb: 'lb',
 		ml: 'ml',
 		l: 'l',
-		us_cup: 'ABD bardağı',
+		us_cup: 'ABD bardağı (237 ml)',
 		metric_cup: 'bardak (250 ml)',
 		us_fl_oz: 'ABD sıvı onsu',
 		imp_fl_oz: 'İngiliz sıvı onsu'
@@ -229,7 +231,8 @@ const UNIT_LABELS: Record<'en' | 'tr', Record<string, string>> = {
 export function quantityText(
 	amount: number,
 	unit: SnapshotUnit,
-	servingLabel: string | null
+	servingLabel: string | null,
+	curated?: boolean
 ): string {
 	const n = formatDecimal(amount, 2);
 	switch (unit.kind) {
@@ -237,9 +240,9 @@ export function quantityText(
 		case 'volume':
 			return `${n} ${unitLabel(unit.unit)}`;
 		case 'measure':
-			return `${n} × ${unit.name} (${formatDecimal(unit.ml, 0)} ml)`;
+			return `${n} × ${measureName(unit.code, unit.name)} (${formatDecimal(unit.ml, 0)} ml)`;
 		case 'serving':
-			return `${n} × ${unit.name} (${formatDecimal(unit.amount, 1)} ${unit.unit})`;
+			return `${n} × ${portionName(unit.name, curated)} (${formatDecimal(unit.amount, 1)} ${unit.unit})`;
 		case 'basis_serving':
 			return amount === 1 ? (servingLabel ?? '1') : `${n} × ${servingLabel ?? ''}`;
 	}
@@ -258,11 +261,9 @@ interface EntryLike {
 
 /** "Untad Premium Light Ekmek", or a quick add's description. */
 export const entryName = (e: EntryLike): string =>
-	e.kind === 'quick'
-		? (e.description ?? m.entry_quick())
-		: `${e.food?.brand ? `${e.food.brand} ` : ''}${e.food?.name ?? ''}`;
+	e.kind === 'quick' ? (e.description ?? m.entry_quick()) : e.food ? fullFoodName(e.food) : '';
 
 export const entryQuantity = (e: EntryLike): string =>
 	e.kind === 'quick'
 		? m.entry_quick()
-		: quantityText(e.amount!, e.unit!, e.food?.servingLabel ?? null);
+		: quantityText(e.amount!, e.unit!, e.food?.servingLabel ?? null, e.food?.curated);

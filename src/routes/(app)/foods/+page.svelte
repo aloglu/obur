@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { foodName } from '#lib/shared/curated-names.ts';
 	// Foods (docs/ui.md, "Recipes and saved meals"): the person's own foods and scans, and a search that also reaches what
 	// other members share and the curated foods. New food stays above the list: an import can bring hundreds.
 	import { onMount, untrack } from 'svelte';
@@ -92,7 +93,7 @@
 	<ListRow
 		href={resolve('/(app)/foods/[id]', { id: r.id })}
 		icon={r.icon}
-		name={r.name}
+		name={foodName(r.name, r.curated)}
 		brand={r.brand}
 		detail={archived ? `${line} · ${m.foods_archived()}` : line}
 		kcal={energy(r)}

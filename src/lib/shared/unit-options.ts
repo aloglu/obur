@@ -3,6 +3,8 @@
 import type { SnapshotUnit } from './diary-types.ts';
 import { formatDecimal } from './numbers.ts';
 import { supportedDimensions, type QuantityModel } from './quantity.ts';
+import { isCurated, portionName } from '#lib/shared/curated-names.ts';
+import { measureName } from '#lib/shared/measure-names.ts';
 
 export interface UnitOption {
 	key: string;
@@ -53,7 +55,7 @@ export function offeredAmount(
 
 /** `keepBasis` keeps the basis serving even when redundant, so an entry logged in it can still be edited. */
 export function unitOptions(
-	food: QuantityModel & { servingLabel: string | null },
+	food: QuantityModel & { servingLabel: string | null; curated?: boolean; origin?: string },
 	measures: MeasureOption[],
 	keepBasis = false
 ): UnitOption[] {
@@ -75,7 +77,7 @@ export function unitOptions(
 		if ((s.unit === 'g' && dims.mass) || (s.unit === 'ml' && dims.volume)) {
 			options.push({
 				key: `serving:${s.id}`,
-				label: `${s.name} (${formatDecimal(s.amount, 1)} ${s.unit})`,
+				label: `${portionName(s.name, isCurated(food))} (${formatDecimal(s.amount, 1)} ${s.unit})`,
 				input: { kind: 'serving', servingId: s.id },
 				defaultAmount: 1
 			});
@@ -98,7 +100,7 @@ export function unitOptions(
 		for (const m of measures) {
 			options.push({
 				key: `measure:${m.code}`,
-				label: `${m.name} (${formatDecimal(m.ml, 0)} ml)`,
+				label: `${measureName(m.code, m.name)} (${formatDecimal(m.ml, 0)} ml)`,
 				input: { kind: 'measure', code: m.code },
 				defaultAmount: 1
 			});

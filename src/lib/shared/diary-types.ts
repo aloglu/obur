@@ -24,6 +24,8 @@ export interface FoodSnapshot {
 	basisNutrients: NutrientValue[];
 	/** The food's chosen icon when logged (display only; older snapshots have none). */
 	icon?: string | null;
+	/** A built-in USDA food: its name and portions show in the interface language (display only). */
+	curated?: boolean;
 }
 
 export type EntryNutrients = Partial<Record<NutrientCode, { value: number; qualifier: Qualifier }>>;

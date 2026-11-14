@@ -23,7 +23,8 @@ export const GET: RequestHandler = async ({ locals }) => {
 				visibility: f.visibility,
 				mine: f.mine,
 				kcal: f.nutrients.find((n) => n.code === 'energy_kcal')?.value ?? null,
-				icon: f.icon
+				icon: f.icon,
+				curated: f.origin === 'curated'
 			}
 		];
 	});

@@ -108,7 +108,9 @@ const FoodSnapshot = v.object({
 	servingLabel: v.nullable(Text(200)),
 	servingSize: v.nullable(v.object({ amount: Positive, unit: v.picklist(['g', 'ml']) })),
 	servings: v.array(Serving),
-	basisNutrients: v.array(NutrientValue)
+	basisNutrients: v.array(NutrientValue),
+	// Added 2026-11-14: a built-in food's copy shows its name in the interface language.
+	curated: v.optional(v.boolean())
 });
 
 const EntryNutrients = v.pipe(

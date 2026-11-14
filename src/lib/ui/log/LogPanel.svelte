@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { fullFoodName } from '#lib/shared/curated-names.ts';
 	import type { FoodSearchResult as Result } from '#lib/shared/food-types.ts';
 	import type { SavedMealSummary as Summary } from '#lib/shared/diary-types.ts';
 	/**
@@ -225,7 +226,7 @@
 					<FoodIcon icon={r.icon} name={r.name} brand={r.brand} />
 					<span class="min-w-0">
 						<span class="line-clamp-2 text-[0.9375rem] leading-[1.3] font-semibold break-words"
-							>{r.brand ? `${r.brand} ` : ''}{r.name}</span
+							>{fullFoodName(r)}</span
 						>
 						<span class="block text-[0.8125rem] text-muted"
 							>{r.kcal === null ? m.foods_kcal_unknown() : per(r)}</span

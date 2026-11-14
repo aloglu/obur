@@ -1,5 +1,6 @@
 // Diary rules against real PostgreSQL, run as the runtime role.
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as v from 'valibot';
@@ -70,6 +71,56 @@ afterAll(async () => {
 });
 
 describe('snapshots', () => {
+	it('mark a built-in food’s copy, so its name can show in the interface language', async () => {
+		const [banana] = await admin`
+			insert into foods (owner_id, visibility, name, search_key, basis, origin, source_meta)
+			values (null, 'shared', 'Banana', 'banana', '100g', 'curated',
+				${admin.json({ dataset: 'sr_legacy', fdcId: '173944' })})
+			returning id`;
+		await admin`insert into food_nutrients (food_id, code, value, qualifier)
+			values (${banana.id}, 'energy_kcal', 89, 'reported')`;
+		const builtIn = await diary.logFood(
+			ZEYNEP,
+			ctx(),
+			await catalog.getFood(ZEYNEP, banana.id),
+			120,
+			grams
+		);
+		expect(builtIn.food?.curated).toBe(true);
+		// A typed food with the same English name stays as typed.
+		const typedId = await catalog.createFood(ZEYNEP, { ...bread(), name: 'Banana' });
+		const typed = await diary.logFood(
+			ZEYNEP,
+			ctx(),
+			await catalog.getFood(ZEYNEP, typedId),
+			1,
+			grams
+		);
+		expect(typed.food?.curated).toBeUndefined();
+
+		// Copies made before the marker existed get it from migration 0052; nothing else about them changes.
+		await admin`update diary_entries set food = food - 'curated'`;
+		const before =
+			await admin`select id, food, nutrients, revision, updated_at from diary_entries order by id`;
+		const migration = readFileSync('drizzle/0052_curated_snapshots.sql', 'utf8');
+		for (const statement of migration.split('--> statement-breakpoint'))
+			await admin.unsafe(statement);
+		const after =
+			await admin`select id, food, nutrients, revision, updated_at from diary_entries order by id`;
+		const marked = after.filter((r) => r.food.curated === true).map((r) => r.id);
+		expect(marked).toEqual([builtIn.id]);
+		for (const [i, row] of after.entries()) {
+			const { curated, ...food } = row.food;
+			expect(food).toEqual(before[i].food);
+			expect([row.nutrients, row.revision, row.updated_at]).toEqual([
+				before[i].nutrients,
+				before[i].revision,
+				before[i].updated_at
+			]);
+			expect(curated === true).toBe(row.id === builtIn.id);
+		}
+	});
+
 	it('keeps an entry’s nutrition when the food changes later', async () => {
 		const food = await catalog.getFood(ZEYNEP, breadId);
 		const entry = await diary.logFood(ZEYNEP, ctx(), food, 52, grams);

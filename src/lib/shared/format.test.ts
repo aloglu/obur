@@ -49,7 +49,7 @@ describe('format', () => {
 
 	it('describes quantities with the language’s decimal mark and readable portions', () => {
 		expect(quantityText(225, { kind: 'mass', unit: 'g' }, null)).toBe('225 g');
-		expect(quantityText(1.5, { kind: 'volume', unit: 'us_cup' }, null)).toBe('1.5 US cup');
+		expect(quantityText(1.5, { kind: 'volume', unit: 'us_cup' }, null)).toBe('1.5 US cup (237 ml)');
 		expect(quantityText(1, { kind: 'basis_serving' }, '1 bar')).toBe('1 bar');
 		expect(quantityText(2, { kind: 'basis_serving' }, '1 bar')).toBe('2 × 1 bar');
 		expect(
@@ -61,7 +61,7 @@ describe('format', () => {
 		).toBe('3 × slice (26 g)');
 		expect(
 			quantityText(2, { kind: 'measure', code: 'su_bardagi', name: 'Su bardağı', ml: 200 }, null)
-		).toBe('2 × Su bardağı (200 ml)');
+		).toBe('2 × Water glass (200 ml)');
 	});
 });
 

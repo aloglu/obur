@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fullFoodName } from '#lib/shared/curated-names.ts';
 	// docs/ui.md "Picking a food": basis line, amount with unit chips, day chips, meal chips, live preview, Save.
 	import AmountField from '../AmountField.svelte';
 	import DayMealFields from '../DayMealFields.svelte';
@@ -112,7 +113,7 @@
 					kind: 'diary',
 					localDate: day,
 					meal,
-					name: `${food.brand ? `${food.brand} ` : ''}${food.name}`,
+					name: fullFoodName(food),
 					quantity,
 					kcal: kcalValue !== undefined && scaled !== undefined ? kcalValue * scaled : null
 				}
@@ -129,14 +130,11 @@
 	}
 </script>
 
-<Sheet
-	title={food ? `${food.brand ? `${food.brand} ` : ''}${food.name}` : m.amount_title()}
-	{onclose}
->
+<Sheet title={food ? fullFoodName(food) : m.amount_title()} {onclose}>
 	{#snippet head()}
 		{#if food}
 			<FoodSheetHead
-				name={`${food.brand ? `${food.brand} ` : ''}${food.name}`}
+				name={fullFoodName(food)}
 				iconName={food.name}
 				icon={food.icon}
 				brand={food.brand}

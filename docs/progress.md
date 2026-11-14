@@ -40,9 +40,12 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   dates and numbers per language (English shows 72.5 now; e2e expectations and the Today screenshots updated, only
   the decimal marks changed), reminders in the person's language, passkey names and manifest from the catalog.
   Checks: type-check, lint, 1106 unit and database tests, e2e 231 passed (18 skipped by design).
-- Next: USDA names and portions in Turkish (design.md "Built-in USDA foods"; `catalog/metric-portion.ts` still writes
-  decimal commas), household measures' names per language, cup labels with their size. Then layout checks and Turkish
-  screenshot tests, then the owner's full text review.
+- Done (2026-11-14): built-in foods' Turkish names and portions, a `curated` marker on their diary copies (migration
+  0052, display only; tested that nothing else in a row changes), household measures per language (English now says
+  "Water glass"), US cup labelled with its size. Checks: type-check, lint, 1109 unit and database tests, e2e 231
+  passed (18 skipped by design).
+- Next: Turkish layout checks and screenshot tests (phone and desktop, light and dark, long Turkish names), then the
+  owner's full text review of `messages/tr.json`.
 
 ## After beta.12 (2026-11-13), released as `v1.0.0-beta.13`
 

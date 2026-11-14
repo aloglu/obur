@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { foodName } from '#lib/shared/curated-names.ts';
 	import { savePreferences } from '#lib/client/prefs.ts';
 	import { slide } from 'svelte/transition';
 	// docs/ui.md "Today". Phone: one column. From 760 px: Budget and the meals on the left, the rest on the right.
@@ -155,7 +156,11 @@
 		editing = null;
 		await invalidateAll();
 		const name =
-			entry.kind === 'quick' ? (entry.description ?? m.entry_quick()) : (entry.food?.name ?? '');
+			entry.kind === 'quick'
+				? (entry.description ?? m.entry_quick())
+				: entry.food
+					? foodName(entry.food.name, entry.food.curated)
+					: '';
 		showToast({
 			message: m.toast_deleted(),
 			detail: m.toast_deleted_detail({ name, meal: mealName(entry.meal) }),

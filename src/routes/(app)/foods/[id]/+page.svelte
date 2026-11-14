@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fullFoodName } from '#lib/shared/curated-names.ts';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -84,7 +85,7 @@
 	};
 </script>
 
-<svelte:head><title>{food.name} · {m.app_name()}</title></svelte:head>
+<svelte:head><title>{fullFoodName({ ...food, brand: null })} · {m.app_name()}</title></svelte:head>
 
 {#snippet foodActions()}
 	<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
@@ -114,7 +115,7 @@
 	<PageHead
 		href={resolve('/(app)/foods')}
 		label={m.foods_title()}
-		title={editing ? m.food_edit_title() : `${food.brand ? `${food.brand} ` : ''}${food.name}`}
+		title={editing ? m.food_edit_title() : fullFoodName(food)}
 	/>
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	{#if food.archived}<Notice tone="info">{m.food_archived()}</Notice>{/if}
