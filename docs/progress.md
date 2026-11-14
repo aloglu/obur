@@ -24,8 +24,15 @@ page loads. Fixing everything found (owner, 2026-11-14):
 - Checks (all five fixes): type-check, lint, build, 1120 unit and database tests, e2e 246 passed (18 skipped by
   design) with that one failure, which is now fixed. A first full e2e run was spoilt by running `npm run build`
   alongside it (it replaces the build the tests serve); don't do that.
-- Next: the owner decides on a release (beta.17). Not audited yet: large UI components, nl/label parsers, backup
-  scripts beyond their tests, LoseIt import and export completeness in detail.
+- Audit, second part (owner, 2026-11-14): export/LoseIt import, backup scripts, parsers, screens.
+- Done: typed and spoken text read "2,000 kcal" as 2 kcal and "10 oz steak" as 10 steaks (count). Commas between
+  groups of three are now thousands; oz, lb and fl oz convert to g/ml (design.md, "Typed and voice logging").
+  Tests in `parse.test.ts`; all development sentences unchanged. The held-out and audio evaluations need the
+  owner's private fixtures and were not run.
+- Found, not fixed yet: an obur export doesn't carry which LoseIt rows (and files) were imported, so after moving
+  to a fresh installation by export/import, a later overlapping LoseIt import would add everything again; a failed
+  nightly backup isn't retried until the next night.
+- Next: finish the audit (label parser, screens), then fix what was found.
 
 ## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
 

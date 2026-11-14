@@ -32,4 +32,25 @@ describe('parseEntry: edges', () => {
 			items: [{ kind: 'food', text: 'ŞEHRİYE', amount: 100, unit: { kind: 'g' }, vague: false }]
 		});
 	});
+
+	it('reads commas between groups of three as thousands, any other comma as a decimal mark', () => {
+		const first = (text: string) => parseEntry(text, TODAY_WEEKDAY).items[0];
+		expect(first('2,000 kcal')).toEqual({ kind: 'quick', kcal: 2000, description: null });
+		expect(first('1,000 g yoghurt')).toMatchObject({ text: 'yoghurt', amount: 1000 });
+		expect(first('1,5 kg elma')).toMatchObject({ text: 'elma', amount: 1500 });
+		expect(first('0,250 kg peynir')).toMatchObject({ text: 'peynir', amount: 250 });
+		expect(first('12,50 g cheese')).toMatchObject({ amount: 12.5 });
+	});
+
+	it('converts ounces and pounds to grams and fluid ounces to millilitres', () => {
+		const first = (text: string) => parseEntry(text, TODAY_WEEKDAY).items[0];
+		expect(first('10 oz steak')).toMatchObject({ text: 'steak', unit: { kind: 'g' } });
+		expect((first('10 oz steak') as { amount: number }).amount).toBeCloseTo(283.495, 3);
+		expect((first('2 lbs chicken') as { amount: number }).amount).toBeCloseTo(907.185, 3);
+		expect(first('8 fl oz orange juice')).toMatchObject({
+			text: 'orange juice',
+			unit: { kind: 'ml' }
+		});
+		expect((first('8 fluid ounces milk') as { amount: number }).amount).toBeCloseTo(236.588, 3);
+	});
 });

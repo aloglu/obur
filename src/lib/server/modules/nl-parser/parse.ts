@@ -215,7 +215,11 @@ function readNumbers(tokens: Token[]): Token[] {
 			}
 		}
 		if (/^\d/.test(t.f)) {
-			let value = Number(t.f.replace(',', '.'));
+			// "2,000": commas between groups of three are thousands, as English is written and as the speech model
+			// writes numbers ("two thousand calories" arrives as "2,000"). Any other comma is a decimal mark ("1,5").
+			let value = THOUSANDS.test(t.f)
+				? Number(t.f.replace(/,/g, ''))
+				: Number(t.f.replace(',', '.'));
 			let used = 1;
 			if (at(i + 1) === 'percent') {
 				out.push({ raw: `%${value}`, f: `%${value}` });
@@ -333,6 +337,14 @@ function wordNumber(tokens: Token[], k: number, afterPercent = false): [number |
 
 // Units ----------------------------------------------------------------------------------------------------------
 
+/** "2,000", "12,500", "1,000,000"; not "0,250" (a decimal). */
+const THOUSANDS = /^[1-9]\d{0,2}(,\d{3})+$/;
+/** Exact by definition: the avoirdupois ounce and pound, and the US fluid ounce. */
+const G_PER_OZ = 28.349523125;
+const G_PER_LB = 453.59237;
+const ML_PER_FL_OZ = 29.5735295625;
+const OUNCE = /^(oz|ozs|ounce|ounces)$/;
+
 type UnitHit =
 	| { kind: 'g'; factor: number }
 	| { kind: 'ml'; factor: number }
@@ -346,6 +358,8 @@ function unitOf(f: string): UnitHit | null {
 	if (/^(ml|mililitre|mililitrelik|millilitre|millilitres|milliliter|milliliters)$/.test(f))
 		return { kind: 'ml', factor: 1 };
 	if (/^(l|lt|litre|litres|liter|liters|litrelik)$/.test(f)) return { kind: 'ml', factor: 1000 };
+	if (OUNCE.test(f)) return { kind: 'g', factor: G_PER_OZ };
+	if (/^(lb|lbs|pound|pounds)$/.test(f)) return { kind: 'g', factor: G_PER_LB };
 	if (/^(kcal|cal|cals|calorie|calories|kalori|kalorilik|kaloriyi|kaloriye)$/.test(f))
 		return { kind: 'kcal' };
 	if (/^(dilim|dilimi|slice|slices)$/.test(f)) return { kind: 'count', word: 'slice' };
@@ -596,10 +610,15 @@ function readItem(tokens: Token[]): Proposal | null {
 		const article =
 			(tokens[k]?.f === 'a' || tokens[k]?.f === 'an') && unitOf(tokens[k + 1]?.f ?? '');
 		if (article) k += 1;
-		const hit = tokens[k] && unitOf(tokens[k].f);
+		// "8 fl oz", "8 fluid ounces": a volume, not the weight a bare "oz" is.
+		const fluid = /^(fl|fluid)$/.test(tokens[k]?.f ?? '') && OUNCE.test(tokens[k + 1]?.f ?? '');
+		const hit = fluid
+			? ({ kind: 'ml', factor: ML_PER_FL_OZ } as const)
+			: tokens[k] && unitOf(tokens[k].f);
 		if (hit) {
 			unit = hit;
 			used.add(k);
+			if (fluid) used.add(k + 1);
 			if (article) used.add(k - 1);
 		}
 	} else {
