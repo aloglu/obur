@@ -67,6 +67,9 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
   (`shared/push-services.ts`, unit test with look-alikes). Subscriptions already saved keep working.
 - Done (small): nightly housekeeping (migration 0053, `app_housekeeping()`, run by the worker after the purge;
   database test incl. the app role refused) and an index for the trash (migration 0054).
+- Done (small): recipe and saved-meal saves check the version on their final update, so of two saves at once the
+  second gets a conflict instead of silently replacing the first. Tests in `recipes.db.test.ts` and
+  `saved-meals.db.test.ts` (both fail without the fix; the saved-meal one holds a row lock to force the overlap).
 
 ## Pre-release audit fixes (2026-11-14)
 

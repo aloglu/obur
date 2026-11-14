@@ -215,10 +215,13 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 					...servingSize(input.servings, input.cookedYieldG)
 				};
 				if (existing) {
-					await tx
+					// Two saves at once: the second finds the version moved on and is refused, not merged silently.
+					const moved = await tx
 						.update(foods)
 						.set({ ...columns, version: existing.version + 1, updatedAt: now() })
-						.where(and(eq(foods.id, input.id), eq(foods.version, existing.version)));
+						.where(and(eq(foods.id, input.id), eq(foods.version, existing.version)))
+						.returning({ id: foods.id });
+					if (moved.length === 0) throw new CatalogError('conflict');
 					await tx
 						.update(recipes)
 						.set({ servings: input.servings, cookedYieldG: input.cookedYieldG })

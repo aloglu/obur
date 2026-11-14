@@ -231,10 +231,13 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 					return { ...kept, amount, unit, nutrients };
 				});
 				if (existing) {
-					await tx
+					// Two saves at once: the second finds the revision moved on and is refused, not merged silently.
+					const moved = await tx
 						.update(savedMeals)
 						.set({ name: input.name, revision: existing.revision + 1, updatedAt: now() })
-						.where(eq(savedMeals.id, input.id));
+						.where(and(eq(savedMeals.id, input.id), eq(savedMeals.revision, existing.revision)))
+						.returning({ id: savedMeals.id });
+					if (moved.length === 0) throw new DiaryError('conflict');
 					await tx.delete(savedMealItems).where(eq(savedMealItems.savedMealId, input.id));
 				} else {
 					try {

@@ -196,6 +196,34 @@ describe('pinning and editing', () => {
 	});
 });
 
+describe('two devices', () => {
+	it('refuses the second of two saves made at once from the same version', async () => {
+		const recipe = await soup();
+		const lentils = await catalog.getFood(MEHMET, lentilsId);
+		const save = (name: string) =>
+			recipes.save(MEHMET, {
+				id: recipe.id,
+				version: recipe.version,
+				name,
+				visibility: 'shared',
+				icon: null,
+				servings: 4,
+				cookedYieldG: 1200,
+				ingredients: [{ food: lentils, ...grams(250) }]
+			});
+		const results = await Promise.allSettled([save('Phone'), save('Laptop')]);
+		expect(results.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected']);
+		expect(
+			(results.find((r) => r.status === 'rejected') as PromiseRejectedResult).reason
+		).toMatchObject({
+			code: 'conflict'
+		});
+		const kept = await recipes.get(MEHMET, recipe.id);
+		expect(kept.version).toBe(recipe.version + 1);
+		expect(kept.ingredients).toHaveLength(1);
+	});
+});
+
 describe('privacy', () => {
 	it('shows others a shared recipe as a plain food, never its ingredients', async () => {
 		const recipe = await soup();

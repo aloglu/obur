@@ -264,6 +264,33 @@ describe('managing', () => {
 		expect((await saved.get(ZEYNEP, meal.id)).name).toBe('Hafta içi');
 	});
 
+	it('refuses a save whose revision moved on while it waited, never merging silently', async () => {
+		const meal = await breakfast();
+		const food = await catalog.getFood(ZEYNEP, breadId);
+		const grams = { kind: 'mass' as const, unit: 'g' as const };
+		// Another device's save holds the meal and then moves it to revision 2, after this save has read revision 1.
+		let saving: Promise<unknown> = Promise.resolve();
+		await admin.begin(async (other) => {
+			await other`select 1 from saved_meals where id = ${meal.id} for update`;
+			saving = saved
+				.saveContents(ZEYNEP, {
+					id: meal.id,
+					revision: 1,
+					name: 'Laptop',
+					items: [{ food, amount: 50, unit: grams }]
+				})
+				.then(
+					() => 'saved',
+					(e) => e
+				);
+			await new Promise((r) => setTimeout(r, 300));
+			await other`update saved_meals set revision = 2, name = 'Phone' where id = ${meal.id}`;
+		});
+		expect(await saving).toMatchObject({ code: 'conflict' });
+		const kept = await saved.get(ZEYNEP, meal.id);
+		expect(kept).toMatchObject({ name: 'Phone', revision: 2, itemCount: 2 });
+	});
+
 	it('creates a meal from scratch, idempotently, and refuses unknown units, foreign items and quick amounts', async () => {
 		const food = await catalog.getFood(ZEYNEP, breadId);
 		const slice = resolveUnit(
