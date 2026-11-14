@@ -111,6 +111,9 @@ describe('portionNamed', () => {
 		expect(portionNamed('berries', milk)).toEqual({ kind: 'serving', servingId: 'berry' });
 		expect(portionNamed('protein', milk)).toBeNull();
 	});
+	it('knows any food’s everyday portion by the Turkish it shows as ("2 bardak" → its "Cup")', () => {
+		expect(portionNamed('bardak', milk)).toEqual({ kind: 'serving', servingId: 'cup' });
+	});
 	it('proposes that portion with the amount said ("2 cups")', () => {
 		expect(proposeForFood(2, { kind: 'count', word: null }, milk, 'cups')).toEqual({
 			unit: { kind: 'serving', servingId: 'cup' },
@@ -142,8 +145,22 @@ describe('portionNamed', () => {
 		expect(portionNamed('tablespoons', oil)).toEqual({ kind: 'serving', servingId: 'tbsp' });
 		// Two words must come together, in order.
 		expect(portionNamed('kaşığı yemek', oil)).toBeNull();
-		// A typed food's portions answer only to their own names.
-		expect(portionNamed('diş', { ...garlic, origin: 'manual' })).toBeNull();
+		// A typed food's portion answers to the Turkish it shows as, only when its name is an everyday portion word.
+		expect(portionNamed('diş', { ...garlic, origin: 'manual' })).toEqual({
+			kind: 'serving',
+			servingId: 'clove'
+		});
+		expect(portionNamed('yemek kaşığı', { ...oil, origin: 'manual' })).toEqual({
+			kind: 'serving',
+			servingId: 'tbsp'
+		});
+		expect(
+			portionNamed('diş', {
+				...garlic,
+				origin: 'manual',
+				servings: [{ id: 'x', name: 'Garlic clove, big', amount: 5, unit: 'g' as const }]
+			})
+		).toBeNull();
 	});
 	it('reads a count word against a built-in food’s Turkish portion names', () => {
 		const bread = {

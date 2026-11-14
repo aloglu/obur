@@ -3,7 +3,7 @@
 import type { SnapshotUnit } from './diary-types.ts';
 import { formatDecimal } from './numbers.ts';
 import { supportedDimensions, type QuantityModel } from './quantity.ts';
-import { isCurated, portionName } from '#lib/shared/curated-names.ts';
+import { isCurated, portionName, servingLabelName } from '#lib/shared/curated-names.ts';
 import { measureName } from '#lib/shared/measure-names.ts';
 
 export interface UnitOption {
@@ -68,7 +68,7 @@ export function unitOptions(
 	if (food.basis === 'serving' && !hidden) {
 		options.push({
 			key: 'basis',
-			label: food.servingLabel ?? '1',
+			label: food.servingLabel ? servingLabelName(food.servingLabel) : '1',
 			input: { kind: 'basis_serving' },
 			defaultAmount: 1
 		});

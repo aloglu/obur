@@ -325,3 +325,59 @@ export function turkishPortion(english: string): string | null {
 	}
 	return null;
 }
+
+/**
+ * Everyday portion words in Turkish, for any food's portion named by one of them alone (owner, 2026-11-14): a typed,
+ * scanned or LoseIt "Slice" shows as "Dilim" in Turkish. Display only; the stored name stays as typed. A word that
+ * reads the same in Turkish ("bar") or is ambiguous ("stick") is left out.
+ */
+export const GENERIC_PORTIONS: Record<string, string> = {
+	slice: 'dilim',
+	slices: 'dilim',
+	piece: 'parça',
+	pieces: 'parça',
+	each: 'adet',
+	whole: 'bütün',
+	serving: 'porsiyon',
+	servings: 'porsiyon',
+	portion: 'porsiyon',
+	cup: 'bardak',
+	cups: 'bardak',
+	glass: 'bardak',
+	mug: 'kupa',
+	bowl: 'kase',
+	plate: 'tabak',
+	tablespoon: 'yemek kaşığı',
+	tablespoons: 'yemek kaşığı',
+	tbsp: 'yemek kaşığı',
+	teaspoon: 'çay kaşığı',
+	teaspoons: 'çay kaşığı',
+	tsp: 'çay kaşığı',
+	scoop: 'ölçek',
+	handful: 'avuç',
+	container: 'kap',
+	package: 'paket',
+	packet: 'paket',
+	pack: 'paket',
+	bottle: 'şişe',
+	can: 'kutu',
+	box: 'kutu',
+	jar: 'kavanoz',
+	clove: 'diş',
+	cloves: 'diş',
+	small: 'küçük',
+	medium: 'orta boy',
+	large: 'büyük',
+	ounce: 'ons',
+	oz: 'ons'
+};
+
+/** A portion word's Turkish, keeping a capital first letter ("Slice" → "Dilim"), or null when it isn't one. */
+export function genericPortion(name: string): string | null {
+	const found = GENERIC_PORTIONS[name.trim().toLocaleLowerCase('en')];
+	if (!found) return null;
+	const first = name.trim()[0];
+	return first !== first.toLocaleLowerCase('en')
+		? found[0].toLocaleUpperCase('tr') + found.slice(1)
+		: found;
+}

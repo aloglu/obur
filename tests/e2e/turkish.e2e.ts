@@ -225,3 +225,33 @@ test('logging in Turkish: short meal choices, the meal first on the button, macr
 		expect(boxes[i - 1].right).toBeLessThanOrEqual(boxes[i].left);
 	await expect(labels.nth(1)).toContainText('Karbonhidrat'); // for screen readers
 });
+
+test('a typed food’s everyday portion reads as Turkish, stored as typed (owner, 2026-11-14)', async ({
+	page
+}, testInfo) => {
+	const tag = testInfo.project.name.replace(/[^a-z]/gi, '');
+	await inTurkish(page, `Can ${tag}`);
+	const bread = await createFood(page, {
+		name: `Köy ekmeği ${tag}`,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }],
+		servings: [{ name: 'Slice', amount: 30, unit: 'g' }]
+	});
+	const food = await apiAs<{ servings: { id: string; name: string }[] }>(
+		page,
+		'GET',
+		`/api/v1/foods/${bread}`
+	);
+	await apiAs(page, 'POST', '/api/v1/diary/entries', {
+		date: '2026-10-20',
+		zone: ZONE,
+		kind: 'food',
+		meal: 'breakfast',
+		foodId: bread,
+		amount: 2,
+		unit: { kind: 'serving', servingId: food.servings[0].id }
+	});
+	await page.goto('/?date=2026-10-20');
+	await expect(page.getByRole('region', { name: 'Kahvaltı' })).toContainText('2 × Dilim (30 g)');
+	expect(food.servings[0].name).toBe('Slice');
+});

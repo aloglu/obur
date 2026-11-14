@@ -4,7 +4,7 @@
 // Weights stay as USDA measured them; the cup stays USDA's, labelled with its size.
 import { getLocale } from '#lib/paraglide/runtime.js';
 
-import { NAMES, turkishPortion } from './curated-names-tr.ts';
+import { genericPortion, NAMES, turkishPortion } from './curated-names-tr.ts';
 
 /** A built-in food's name in the interface language; any other food's name exactly as typed. */
 export function foodName(name: string, curated: boolean | undefined): string {
@@ -12,10 +12,25 @@ export function foodName(name: string, curated: boolean | undefined): string {
 	return NAMES[name] ?? name;
 }
 
-/** A built-in food's portion name in the interface language; any other portion's name as typed. */
+/**
+ * A portion's name in the interface language: a built-in food's from its table; any other food's when the name is an
+ * everyday portion word alone ("Slice" → "Dilim"); otherwise as typed. Display only.
+ */
 export function portionName(name: string, curated: boolean | undefined): string {
-	if (!curated || getLocale() !== 'tr') return name;
-	return turkishPortion(name) ?? name;
+	if (getLocale() !== 'tr') return name;
+	return (curated ? turkishPortion(name) : null) ?? genericPortion(name) ?? name;
+}
+
+/** A food's own serving label in the interface language when it is a portion word, with or without a count
+ * ("1 slice" → "1 dilim"); otherwise as typed. */
+export function servingLabelName(label: string): string {
+	if (getLocale() !== 'tr') return label;
+	const m = /^(\s*[\d.,½¼¾]+\s+)(\S+)\s*$/.exec(label);
+	if (m) {
+		const word = genericPortion(m[2]);
+		return word ? `${m[1]}${word}` : label;
+	}
+	return genericPortion(label) ?? label;
 }
 
 /** For tests: every name and portion the built-in list has should have its Turkish. */

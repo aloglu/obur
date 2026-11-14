@@ -4,7 +4,7 @@
 // choose: no weight or density is ever assumed.
 import { supportedDimensions, type QuantityModel } from '../../../shared/quantity.ts';
 import { offeredAmount, type UnitOption } from '../../../shared/unit-options.ts';
-import { turkishPortion } from '../../../shared/curated-names-tr.ts';
+import { genericPortion, turkishPortion } from '../../../shared/curated-names-tr.ts';
 import type { CountWord, ParsedUnit } from './parse.ts';
 import { fold } from './parse.ts';
 
@@ -32,10 +32,11 @@ const words = (s: string) => fold(s).split(/[^a-z0-9]+/);
 /** The food as the matcher sees it; a built-in one also answers to its portions' Turkish names. */
 type MatchFood = QuantityModel & { servingLabel: string | null; origin?: string };
 
-/** The words of each portion's names: as stored, and for a built-in food also in Turkish ("clove", "diş"). */
+/** The words of each portion's names: as stored, and in Turkish as shown ("clove", "diş"; any food's "Bowl", "kase"). */
 const portionWords = (food: MatchFood) =>
 	food.servings.map((s) => {
-		const turkish = food.origin === 'curated' ? turkishPortion(s.name) : null;
+		const turkish =
+			(food.origin === 'curated' ? turkishPortion(s.name) : null) ?? genericPortion(s.name);
 		return { serving: s, names: [s.name, ...(turkish ? [turkish] : [])].map(words) };
 	});
 

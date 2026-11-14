@@ -28,9 +28,9 @@ describe('unitOptions', () => {
 		};
 		const options = unitOptions(food, measures);
 		expect(options.map((o) => o.label)).toEqual(['can (330 ml)', 'ml', 'Water glass (200 ml)']);
-		// The same measure, named in Turkish.
+		// The same measure in Turkish; the typed "can" is an everyday portion word, so it shows in Turkish too.
 		expect(overwriteLocale('tr', () => unitOptions(food, measures)).map((o) => o.label)).toEqual([
-			'can (330 ml)',
+			'kutu (330 ml)',
 			'ml',
 			'Su bardağı (200 ml)'
 		]);

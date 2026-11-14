@@ -14,9 +14,12 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   Chromium. Intermittent: `turkish.e2e.ts` "no main screen scrolls sideways" on phone WebKit failed 2 of about 40 runs
   with "navigation to /achievements interrupted by another navigation to /help" (passed 16 of 16 before the change
   and 12 of 12 after; not traced).
-- Open (owner to decide): Turkish display names for portions of non-built-in foods (e.g. "Bar", "Slice"). Today only
-  built-in foods' portions are shown in Turkish; user, scanned and LoseIt portions show as typed.
-- Next: owner's answer on the portions question; then the next release when the owner asks.
+- Done (owner agreed, 2026-11-14): any food's portion or serving label that is an everyday portion word alone (or
+  after a count) shows in Turkish, "Slice" → "Dilim", "1 cup" → "1 bardak" (`GENERIC_PORTIONS`); the parser also
+  matches that Turkish word. Display only; stored names unchanged ("Bar" stays). Checks: type-check, lint, 1113 unit
+  and database tests, e2e 246 passed (18 skipped by design), one phone-WebKit `saved-meals.e2e.ts` failure that
+  passed when run alone (English-only test; not traced).
+- Next: the next release when the owner asks.
 
 ## Turkish released (2026-11-14), as `v1.0.0-beta.15`
 

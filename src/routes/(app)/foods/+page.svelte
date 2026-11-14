@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { foodName } from '#lib/shared/curated-names.ts';
+	import { foodName, servingLabelName } from '#lib/shared/curated-names.ts';
 	// Foods (docs/ui.md, "Recipes and saved meals"): the person's own foods and scans, and a search that also reaches what
 	// other members share and the curated foods. New food stays above the list: an import can bring hundreds.
 	import { onMount, untrack } from 'svelte';
@@ -77,7 +77,7 @@
 
 	const per = (r: FoodSearchResult) =>
 		r.basis === 'serving'
-			? m.foods_per_serving({ serving: r.servingLabel ?? '' })
+			? m.foods_per_serving({ serving: servingLabelName(r.servingLabel ?? '') })
 			: r.basis === '100g'
 				? m.food_basis_100g()
 				: m.food_basis_100ml();

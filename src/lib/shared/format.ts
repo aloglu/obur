@@ -5,7 +5,7 @@ import { getLocale } from '#lib/paraglide/runtime.js';
 import { addDays } from './diary-rules.ts';
 import type { FoodSnapshot, Meal, SnapshotUnit } from './diary-types.ts';
 import { formatDecimal } from './numbers.ts';
-import { fullFoodName, portionName } from '#lib/shared/curated-names.ts';
+import { fullFoodName, portionName, servingLabelName } from '#lib/shared/curated-names.ts';
 import { measureName } from '#lib/shared/measure-names.ts';
 
 export const mealName = (meal: Meal): string =>
@@ -262,7 +262,9 @@ export function quantityText(
 		case 'serving':
 			return `${n} × ${portionName(unit.name, curated)} (${formatDecimal(unit.amount, 1)} ${unit.unit})`;
 		case 'basis_serving':
-			return amount === 1 ? (servingLabel ?? '1') : `${n} × ${servingLabel ?? ''}`;
+			return amount === 1
+				? servingLabelName(servingLabel ?? '1')
+				: `${n} × ${servingLabelName(servingLabel ?? '')}`;
 	}
 }
 

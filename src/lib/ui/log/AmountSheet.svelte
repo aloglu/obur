@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { fullFoodName } from '#lib/shared/curated-names.ts';
+	import { fullFoodName, servingLabelName } from '#lib/shared/curated-names.ts';
 	// docs/ui.md "Picking a food": basis line, amount with unit chips, day chips, meal chips, live preview, Save.
 	import AmountField from '../AmountField.svelte';
 	import DayMealFields from '../DayMealFields.svelte';
@@ -78,7 +78,7 @@
 		const e = food.nutrients.find((n) => n.code === 'energy_kcal');
 		const per =
 			food.basis === 'serving'
-				? (food.servingLabel ?? '')
+				? servingLabelName(food.servingLabel ?? '')
 				: food.basis === '100g'
 					? '100 g'
 					: '100 ml';

@@ -24,7 +24,7 @@ corrections from the same review applied. Tone: "sen". Every Turkish string uses
 | Recipe | Tarif | |
 | Saved meal | Kayıtlı öğün | |
 | Log calories only | Yalnızca kalori kaydet | |
-| Portion / serving | Porsiyon | |
+| Portion / serving | Porsiyon | Any food's portion named by an everyday word alone shows in Turkish (Slice → Dilim, Cup → Bardak, Scoop → Ölçek; owner, 2026-11-14). Display only. |
 | Household measure | Ev ölçüsü | |
 | Speak | Söyle | |
 | Scan a label | Tara | Owner's correction. |

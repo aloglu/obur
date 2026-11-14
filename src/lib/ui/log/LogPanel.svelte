@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { fullFoodName } from '#lib/shared/curated-names.ts';
+	import { fullFoodName, servingLabelName } from '#lib/shared/curated-names.ts';
 	import type { FoodSearchResult as Result } from '#lib/shared/food-types.ts';
 	import type { SavedMealSummary as Summary } from '#lib/shared/diary-types.ts';
 	/**
@@ -178,7 +178,11 @@
 	}
 
 	const per = (r: FoodSearchResult) =>
-		r.basis === 'serving' ? (r.servingLabel ?? '') : r.basis === '100g' ? '100 g' : '100 ml';
+		r.basis === 'serving'
+			? servingLabelName(r.servingLabel ?? '')
+			: r.basis === '100g'
+				? '100 g'
+				: '100 ml';
 
 	const tile =
 		'flex min-h-28 flex-col items-center justify-center gap-2.5 rounded-tile bg-surface px-1.5 text-center text-[0.90625rem] leading-tight font-bold shadow-card transition-transform active:scale-[0.97]';
