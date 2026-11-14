@@ -20,7 +20,12 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Checked: every stop, screen, Phone/Desktop, Light/Dark and Both/Türkçe view walked in headless Chromium at 390 and
   1280 px: no script errors, no page overflow, no clipped text. Saving verdicts verified only by reading the
   collection (no test write); the real save runs when the owner taps a verdict.
-- Next: read the owner's `tr-` verdicts; go or stop. If go: glossary first.
+- Review done (owner, 2026-11-14, https://claude.ai/artifact/1D6vQwDnAYtRhHLxccs5ii, collection `review`, ids `tr-*`):
+  no dealbreaker, so it goes ahead. Six stops right with small wording fixes, two to change (tab bar wording, Help
+  text). Glossary approved and saved with the fixes: `docs/tr-glossary.md`.
+- Open, waiting for the owner: a fit for "Aktivite" on the budget card's pill; final Help wording (owner rewrote
+  both answers; the formula lost its minus, the second answer mixes "siz" into "sen" and calls a difference "oran").
+- Next: language setting (hidden), then the full translation in `messages/tr.json`.
 
 ## After beta.12 (2026-11-13), released as `v1.0.0-beta.13`
 

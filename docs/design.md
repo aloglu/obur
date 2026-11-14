@@ -126,7 +126,7 @@ obur should feel joyful to use without ever being slower to use. Practical first
 
 ## Interface language (planned, owner 2026-11-14)
 
-Status: agreed plan, not built. First step is a review page of the riskiest areas (below); the owner decides there whether to go on or stop.
+Status: agreed plan, not built. Review page done 2026-11-14: go. Glossary approved: `docs/tr-glossary.md`.
 
 - **Choice:** English or Türkçe, per person, kept with the account preferences (backup and export) and mirrored in a cookie so pages render in the right language at once. Before sign-in (sign-in, join, setup, recovery) the last language used on that device, else the phone's language. Switching reloads and clears the service worker's prepared and cached pages, which hold rendered text. The switch stays hidden until the Turkish catalog is complete and reviewed.
 - **Text:** a second catalog `messages/tr.json`, tone "sen". Sentences with an inserted name are phrased so no suffix hangs on the placeholder. A test fails when `tr.json` misses or adds a key or its placeholders differ. Every later string change carries its Turkish in the same commit. Typed food names, brands and notes are never translated. A glossary of about 40 key terms is approved before the full translation.
