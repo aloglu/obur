@@ -114,4 +114,24 @@ done
 	fail "the failed off-site backup was not tried again"
 docker logs "$name" 2>&1 | grep -q 'retrying the failed backup to repository 2 (attempt 1 of 3)' ||
 	fail "the retry was not logged, or retried more than the off-site repository"
+
+echo "a restore finishes while the store is away"
+docker exec "$name" chmod 000 /offsite
+out=$(docker exec "$name" obur restore start 2>&1) || fail "restore start: $out"
+out=$(docker exec "$name" obur restore finish 2>&1) || fail "restore finish with the store away: $out"
+[[ $out == *'next nightly backup'* ]] || fail "restore finish did not say the off-site copy waits: $out"
+docker exec "$name" test -f /data/status/offsite-full-needed || fail "the off-site full backup is not remembered"
+docker exec "$name" test ! -f /data/status/restore-pending || fail "obur stayed closed after the restore"
+[[ $(status '.lastBackup.repos["1"]') == true ]] || fail "no local full backup after the restore"
+docker exec "$name" chmod 700 /offsite
+yesterday=$(date -u -d yesterday +%Y-%m-%dT%H:%M:%SZ)
+docker exec "$name" gosu postgres bash -c "jq --arg y '$yesterday' '.lastScheduledBackupAt = \$y | .lastBackup.at = \$y' \
+	/data/status/backup.json >/data/status/backup.json.tmp && mv /data/status/backup.json.tmp /data/status/backup.json"
+for _ in $(seq 90); do
+	docker exec "$name" test -f /data/status/offsite-full-needed || break
+	sleep 2
+done
+docker exec "$name" test ! -f /data/status/offsite-full-needed || fail "the off-site copy got no full backup after the restore"
+[[ $(docker exec "$name" obur backup info) == *'full backup'* ]] || fail "backup info"
+out=$(docker exec "$name" obur backup restore-check 2>&1) || fail "restore check after the restore: $out"
 echo "off-site test passed"

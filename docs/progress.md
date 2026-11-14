@@ -52,6 +52,10 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
   `diary.db.test.ts` (both fail without the fix).
 - Done: finding 3. A LoseIt identity over 100 characters is stored as its start plus a hash and found again; ones
   cut at 100 by earlier imports still match. Test in `loseit.db.test.ts` (fails without the fix).
+- Done: finding 6. `obur restore finish` needs only the local full backup; when the off-site store is away it says
+  so and marks the off-site copy for a full backup at its next backup (`offsite-full-needed` in the status folder).
+  `offsite-test.sh` gained a step: restore start and finish with the store away, then the nightly backup gives the
+  off-site copy its full backup and a restore check passes (image built, test passed).
 
 ## Pre-release audit fixes (2026-11-14)
 

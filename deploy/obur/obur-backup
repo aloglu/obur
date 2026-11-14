@@ -12,6 +12,8 @@
 #   obur-backup run            a backup now (full on the weekly full day or when none exists, otherwise differential)
 #   obur-backup pre-upgrade    a quick incremental backup before an upgrade
 #   obur-backup full           a full backup now (after a restore, which starts a new history)
+#   obur-backup full-local     a full backup to the local repository only; the off-site one gets its full backup at
+#                              the next nightly backup (the end of a restore, which must not wait for the store)
 #   obur-backup info           list backups
 #   obur-backup restore-check  archive the current position, restore backup + WAL into a throwaway cluster, and
 #                              verify it reached that position and every table reads
@@ -27,6 +29,9 @@ SOCKET=${PGBACKREST_PG1_SOCKET_PATH:-/var/run/postgresql}
 BACKUP_HOUR=${OBUR_BACKUP_HOUR:-2}
 FULL_DAY=${OBUR_FULL_BACKUP_DAY:-7}         # ISO weekday: 7 = Sunday
 CHECK_DAY=${OBUR_RESTORE_CHECK_DAY:-7}
+# Set when the off-site repository still needs a full backup of the current history (a restore finished while the
+# store was away): its next backup is full, whatever the day.
+OFFSITE_FULL_NEEDED=$STATUS_DIR/offsite-full-needed
 # A scheduled backup that failed is tried again, for the repositories that failed, after this long, a few times a day.
 RETRY_SECONDS=${OBUR_BACKUP_RETRY_SECONDS:-3600}
 RETRIES_PER_DAY=3
@@ -244,10 +249,10 @@ backup() {
 		run=local_only
 		;;
 	scheduled) scheduled=true ;;
-	retry)
+	retry | only)
 		targets=${3:?}
-		scheduled=true
-		# The repositories not retried keep their result from the attempt before.
+		[[ $2 == retry ]] && scheduled=true
+		# The repositories not backed up now keep their result from the attempt before.
 		results=$(jq -c '.lastBackup.repos // {}' "$STATUS_FILE" 2>/dev/null || echo '{}')
 		;;
 	esac
@@ -268,9 +273,12 @@ backup() {
 			reachable=false
 			log "the off-site store cannot be reached; WAL is waiting for it"
 		fi
-		if $reachable && $run --repo="$repo" --type="$type" backup; then
+		local repo_type=$type
+		if [[ $repo == 2 && -f $OFFSITE_FULL_NEEDED ]]; then repo_type=full; fi
+		if $reachable && $run --repo="$repo" --type="$repo_type" backup; then
 			# A finished off-site backup is complete in itself, whatever was lost before it.
 			if [[ $repo == 2 ]]; then rm -f "$QUEUE_DIR/gap"; fi
+			if [[ $repo == 2 && $repo_type == full ]]; then rm -f "$OFFSITE_FULL_NEEDED"; fi
 			results=$(jq --arg r "$repo" '. + {($r): true}' <<<"$results")
 		else
 			ok=false
@@ -438,6 +446,17 @@ run) backup "$(scheduled_type)" ;;
 # store. The nightly backup copies the upgraded database off site as usual.
 pre-upgrade) backup incr local ;;
 full) backup full ;;
+full-local)
+	backup full only 1 || exit 1
+	if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then
+		if backup full only 2; then
+			:
+		else
+			touch "$OFFSITE_FULL_NEEDED"
+			log "the off-site copy could not be backed up now; it gets a full backup with the next nightly backup"
+		fi
+	fi
+	;;
 info) pgbackrest info ;;
 restore-check) restore_check ;;
 scheduler) scheduler ;;

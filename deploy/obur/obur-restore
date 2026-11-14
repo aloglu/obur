@@ -11,7 +11,8 @@
 #   obur-restore finish [<account ID>[:shared][@<deletion date>] ...]
 #       With the restored database running: signs everyone out, cancels recovery links, unused invites and setup
 #       links, deletes again each account from the admin's off-server deletion list (":shared" if its shared foods
-#       were removed too), takes a full backup of the new history, and removes the mark.
+#       were removed too), takes a full backup of the new history (locally; the off-site copy too when it can be
+#       reached, otherwise with the next nightly backup), and removes the mark.
 #       Run through `obur restore finish <IDs from the list>`.
 set -euo pipefail
 
@@ -63,8 +64,9 @@ select app_reapply_deletion('$id', $shared, $([[ -n $at ]] && echo "'$at'::times
 commit;"
 	"${sql[@]}" <<<"$statements"
 	say "signed everyone out, cancelled pending links and invites, reapplied $# deletion(s)"
-	# A restore starts a new history (timeline); back it up in full before reopening.
-	obur-backup full
+	# A restore starts a new history (timeline); back it up in full before reopening. Only the local backup must
+	# succeed: an unreachable off-site store must not keep obur closed (it is backed up in full when it answers).
+	obur-backup full-local
 	rm -f "$MARK"
 	say "done"
 }
