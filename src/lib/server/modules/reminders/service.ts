@@ -13,6 +13,8 @@ import {
 } from '../../../shared/reminders.ts';
 import { dayCompletions, diaryEntries } from '../diary/index.ts';
 import { weightEntries } from '../body/index.ts';
+import { profiles } from '../goals/index.ts';
+import type { Language } from '../../../shared/languages.ts';
 import { pushSubscriptions, reminderSends, reminderSettings } from './schema.ts';
 
 /** The browser's PushSubscription as JSON. */
@@ -25,6 +27,8 @@ export interface Delivery {
 	endpoint: string;
 	p256dh: string;
 	auth: string;
+	/** The person's interface language as stored (shared/languages.ts); the text follows it. */
+	language: Language;
 }
 
 /** What delivering one notification to one device came to. */
@@ -184,6 +188,9 @@ export async function sendDueReminders(
 					.returning({ kind: reminderSends.kind });
 				if (recorded.length) kinds.push(kind);
 			}
+			const [profile] = kinds.length
+				? await tx.select({ language: profiles.language }).from(profiles)
+				: [];
 			const devices = kinds.length
 				? await tx
 						.select({
@@ -195,7 +202,10 @@ export async function sendDueReminders(
 						})
 						.from(pushSubscriptions)
 				: [];
-			return { kinds, devices };
+			return {
+				kinds,
+				devices: devices.map((d) => ({ ...d, language: profile?.language ?? 'en' }))
+			};
 		});
 		// Delivered outside the transaction: a slow push service never holds a database connection.
 		for (const kind of kinds) {

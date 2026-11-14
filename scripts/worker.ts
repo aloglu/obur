@@ -5,9 +5,9 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { PgBoss } from 'pg-boss';
 import postgres from 'postgres';
 import webpush from 'web-push';
-import messages from '../messages/en.json' with { type: 'json' };
 import { JOB_SCHEMA, QUEUES } from '../src/lib/server/jobs/setup.ts';
 import { sendDueReminders } from '../src/lib/server/modules/reminders/index.ts';
+import { reminderTitle } from '../src/lib/server/reminder-text.ts';
 
 const url = process.env.DATABASE_WORKER_URL;
 if (!url) throw new Error('DATABASE_WORKER_URL is not set');
@@ -44,8 +44,13 @@ if (vapid.publicKey && vapid.privateKey && vapid.subject) {
 	const db = drizzle(sql);
 	await boss.work(QUEUES.sendReminders, async () => {
 		const sent = await sendDueReminders(db, new Date(), async (to, kind) => {
-			// The reminder is the title; iOS adds "from obur" below it itself (owner's choice, 2026-10-31).
-			const payload = JSON.stringify({ title: messages[`reminder_${kind}`], url: '/', tag: kind });
+			// The reminder is the title, in the person's language; iOS adds "from obur" below it itself (owner's
+			// choice, 2026-10-31).
+			const payload = JSON.stringify({
+				title: reminderTitle(kind, to.language),
+				url: '/',
+				tag: kind
+			});
 			try {
 				await webpush.sendNotification(
 					{ endpoint: to.endpoint, keys: { p256dh: to.p256dh, auth: to.auth } },

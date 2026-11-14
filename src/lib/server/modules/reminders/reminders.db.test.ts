@@ -5,6 +5,7 @@ import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
 import type { ReminderKind } from '../../../shared/reminders.ts';
 import { createBody } from '../body/index.ts';
 import { createDiary } from '../diary/index.ts';
+import { reminderTitle } from '../../reminder-text.ts';
 import {
 	createReminders,
 	sendDueReminders,
@@ -49,9 +50,9 @@ const on = (times: Partial<Record<ReminderKind, string>>) =>
 
 /** Records deliveries; answers per endpoint (sent unless told otherwise). */
 function postbox(answers: Record<string, DeliveryResult> = {}) {
-	const got: { endpoint: string; kind: ReminderKind }[] = [];
+	const got: { endpoint: string; kind: ReminderKind; language: string }[] = [];
 	const deliver = async (to: Delivery, kind: ReminderKind) => {
-		got.push({ endpoint: to.endpoint, kind });
+		got.push({ endpoint: to.endpoint, kind, language: to.language });
 		return answers[to.endpoint] ?? 'sent';
 	};
 	return { got, deliver };
@@ -106,6 +107,20 @@ describe('sending', () => {
 		// Not again the same day.
 		expect(await sendDueReminders(worker, at('14:20'), box.deliver)).toBe(0);
 		expect(box.got).toHaveLength(2);
+		// No profile yet: English.
+		expect(box.got.every((g) => g.language === 'en')).toBe(true);
+	});
+
+	it('tells delivery the person’s language, so the text follows it', async () => {
+		await on({ lunch: '14:00' });
+		await reminders.subscribe(AYSE, device(1));
+		await admin`insert into profiles (user_id, language) values (${AYSE}, 'tr')`;
+		const box = postbox();
+		expect(await sendDueReminders(worker, at('14:05'), box.deliver)).toBe(1);
+		expect(box.got).toEqual([{ endpoint: device(1).endpoint, kind: 'lunch', language: 'tr' }]);
+		expect(reminderTitle('lunch', 'tr', ['en', 'tr'])).toBe('Öğle yemeği henüz kaydedilmedi');
+		// Until Turkish is enabled, it stays English.
+		expect(reminderTitle('lunch', 'tr', ['en'])).toBe("Lunch isn't logged yet");
 	});
 
 	it('stays quiet when the meal, weigh-in or completion is already there', async () => {
