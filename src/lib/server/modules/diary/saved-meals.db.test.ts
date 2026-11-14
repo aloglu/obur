@@ -198,11 +198,13 @@ describe('saving and logging', () => {
 describe('managing', () => {
 	it('renames with revision checks and deletes without touching logged entries', async () => {
 		const meal = await breakfast();
+		expect([await saved.count(ZEYNEP), await saved.count(MEHMET)]).toEqual([1, 0]);
 		const renamed = await saved.rename(ZEYNEP, meal.id, 1, 'Pazar kahvaltısı');
 		expect(renamed).toMatchObject({ name: 'Pazar kahvaltısı', revision: 2 });
 		expect(await errorCode(saved.rename(ZEYNEP, meal.id, 1, 'Stale'))).toBe('conflict');
 		await saved.remove(ZEYNEP, meal.id);
 		expect(await saved.list(ZEYNEP)).toEqual([]);
+		expect(await saved.count(ZEYNEP)).toBe(0);
 		expect(await diary.day(ZEYNEP, '2026-10-25')).toHaveLength(2);
 		expect(await asUser(ZEYNEP, (tx) => tx`select id from saved_meal_items`)).toHaveLength(0);
 	});

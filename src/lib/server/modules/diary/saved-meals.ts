@@ -2,7 +2,7 @@
 // like a diary entry. Logging one creates ordinary, editable entries in one transaction; refreshing items to the
 // catalog's current values is an explicit action. Private to the owner.
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { currentUnit, snapshotNutrients } from '../../../shared/diary-rules.ts';
 import type {
@@ -72,6 +72,12 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 
 	return {
 		/** All of the person's saved meals, most recently changed first. */
+		/** How many saved meals the person has (More's count). */
+		async count(userId: string): Promise<number> {
+			const [row] = await withUser(db, userId, (tx) => tx.select({ n: count() }).from(savedMeals));
+			return row.n;
+		},
+
 		async list(userId: string): Promise<SavedMealSummary[]> {
 			return withUser(db, userId, async (tx) => {
 				const meals = await tx

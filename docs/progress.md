@@ -11,8 +11,10 @@ page loads. Fixing everything found (owner, 2026-11-14):
   unit's keys; `sameRequest` now compares with sorted keys). Regression test in `diary.db.test.ts` (fails without
   the fix).
 - Done: speech requests were logged as slow (`SLOW_BY_NATURE` named `/speak`).
+- Done: More's counts are counted in the database (`trashCount`, `recipes.count`, `savedMeals.count`) instead of
+  loading the trash, every recipe and every saved meal with its items after each page change and save.
 - Next: sign-in limits per real client behind a trusted proxy (all documented remote-access setups share one IP
-  now); More's counts as database counts; a bound on the device's saved pages.
+  now); a bound on the device's saved pages.
 
 ## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
 

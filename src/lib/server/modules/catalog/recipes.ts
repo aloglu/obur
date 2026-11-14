@@ -2,7 +2,7 @@
 // ingredient list only its owner sees. Ingredients keep snapshots like diary entries; the recipe's values are
 // recomputed from them on every save, and catalog edits reach them only through an explicit refresh.
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { snapshotNutrients, snapshotOf } from '../../../shared/diary-rules.ts';
 import type { SnapshotUnit } from '../../../shared/diary-types.ts';
@@ -126,6 +126,18 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 					.orderBy(desc(foods.updatedAt));
 				return rows.map((r) => ({ ...r, archived: r.archived !== null }));
 			});
+		},
+
+		/** How many recipes the person has that are not archived (More's count). */
+		async count(userId: string): Promise<number> {
+			const [row] = await withUser(db, userId, (tx) =>
+				tx
+					.select({ n: count() })
+					.from(recipes)
+					.innerJoin(foods, eq(foods.id, recipes.foodId))
+					.where(isNull(foods.archivedAt))
+			);
+			return row.n;
 		},
 
 		/** The recipe with its ingredients, for its owner only. */

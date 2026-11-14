@@ -299,9 +299,11 @@ describe('recently deleted', () => {
 		expect((await diary.trash(MEHMET)).map((e) => e.description)).toEqual(['second', 'first']);
 		expect((await diary.trash(MEHMET)).map((e) => e.id)).not.toContain(live.id);
 		expect(await diary.trash(ZEYNEP)).toEqual([]);
+		expect([await diary.trashCount(MEHMET), await diary.trashCount(ZEYNEP)]).toEqual([2, 0]);
 
 		await admin`update diary_entries set deleted_at = now() - interval '31 days' where id = ${first.id}`;
 		expect((await diary.trash(MEHMET)).map((e) => e.description)).toEqual(['second']);
+		expect(await diary.trashCount(MEHMET)).toBe(1);
 	});
 });
 

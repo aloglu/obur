@@ -185,6 +185,15 @@ describe('pinning and editing', () => {
 		expect(again.ingredients).toHaveLength(2);
 		expect(await errorCode(soup({ id: recipe.id, name: 'Başka' }))).toBe('conflict');
 	});
+
+	it('counts the person’s own recipes that are not archived', async () => {
+		const recipe = await soup();
+		await soup();
+		expect(await recipes.count(MEHMET)).toBe(2);
+		expect(await recipes.count(ZEYNEP)).toBe(0);
+		await catalog.setArchived(MEHMET, recipe.id, true);
+		expect(await recipes.count(MEHMET)).toBe(1);
+	});
 });
 
 describe('privacy', () => {

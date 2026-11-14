@@ -2,7 +2,7 @@
 // Nutrition is always computed on the server from a snapshot of the food; clients send only food, amount,
 // unit, day and meal.
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { snapshotNutrients, snapshotOf } from '../../../shared/diary-rules.ts';
 import type {
@@ -207,6 +207,18 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 					.orderBy(desc(diaryEntries.deletedAt))
 			);
 			return rows.map(toEntry);
+		},
+
+		/** How many entries are in the trash (More's count). */
+		async trashCount(userId: string): Promise<number> {
+			const since = new Date(now().getTime() - TRASH_DAYS * 24 * 3600 * 1000);
+			const [row] = await withUser(db, userId, (tx) =>
+				tx
+					.select({ n: count() })
+					.from(diaryEntries)
+					.where(and(isNotNull(diaryEntries.deletedAt), gte(diaryEntries.deletedAt, since)))
+			);
+			return row.n;
 		},
 
 		async logFood(

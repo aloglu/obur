@@ -68,18 +68,18 @@ export const load: LayoutServerLoad = async ({ locals, depends, parent }) => {
 	if (locals.session?.kind === 'normal') {
 		try {
 			const { userId, role } = locals.session;
-			const [deleted, own, recipeList, meals, newerVersion] = await Promise.all([
-				diary.trash(userId),
+			const [deletedCount, own, recipeCount, mealCount, newerVersion] = await Promise.all([
+				diary.trashCount(userId),
 				catalog.ownFoods(userId, 0, 1),
-				recipes.list(userId),
-				savedMeals.list(userId),
+				recipes.count(userId),
+				savedMeals.count(userId),
 				updates.known(userId, role === 'admin').catch(() => null)
 			]);
 			more = {
-				deletedCount: deleted.length,
+				deletedCount,
 				foodCount: own.total,
-				recipeCount: recipeList.filter((r) => !r.archived).length,
-				mealCount: meals.length,
+				recipeCount,
+				mealCount,
 				newerVersion
 			};
 		} catch (e) {
