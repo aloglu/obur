@@ -33,7 +33,16 @@ page loads. Fixing everything found (owner, 2026-11-14):
 - Done: exports carry which LoseIt rows were imported (`data/loseit-identities.json`), so a later LoseIt import
   after a move by export/import adds only new rows. Test in `loseit.db.test.ts` (fresh installation; fails without).
   The exact-file repeat check does not travel: the same LoseIt file again is then 0 new, not "already imported".
-- Next: retry a failed nightly backup; an offline message for food search in the recipe and saved-meal editors.
+- Done: a failed nightly backup is retried for the failed repositories after an hour, three times a day at most
+  (`OBUR_BACKUP_RETRY_SECONDS`; `OBUR_SCHEDULER_SECONDS` shortens the scheduler's 10-minute tick for tests). Also
+  fixed: a backup before an upgrade between midnight and the backup hour stood in for that night's (off-site
+  included); the scheduler now keeps `lastScheduledBackupAt`. Checks: image built, smoke test, off-site test with a
+  new step (nightly backup with the store away, then retried once it returns).
+- Done: the recipe and saved-meal editors' food search says it needs a connection instead of showing nothing (new
+  message `foods_search_offline`, English and Turkish); household measures that failed to load are asked for again
+  (they stayed failed until a reload, and the amount sheet then never opened offline). Checks: type-check, e2e for
+  recipes, saved meals and offline (28 passed, 3 skipped by design).
+- Next: full checks, then the owner decides on a release.
 
 ## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
 

@@ -31,7 +31,8 @@ isn't on obur's private network:
 `docker logout ghcr.io` in its terminal and try again.
 
 **Members → Backups shows a failed backup.** The log shows why (`obur-backup:` lines). A full disk is the usual
-cause. `docker exec obur obur backup now` tries again.
+cause. A failed nightly backup is tried again after an hour, up to three times; `docker exec obur obur backup now`
+tries again at once.
 
 **An update failed.** obur stops and the log says which step failed. The database change runs as one step, so a
 failure leaves the database as it was. Go back to the previous version ([Updating](updating.md)) and report the log

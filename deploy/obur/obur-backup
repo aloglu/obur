@@ -27,6 +27,11 @@ SOCKET=${PGBACKREST_PG1_SOCKET_PATH:-/var/run/postgresql}
 BACKUP_HOUR=${OBUR_BACKUP_HOUR:-2}
 FULL_DAY=${OBUR_FULL_BACKUP_DAY:-7}         # ISO weekday: 7 = Sunday
 CHECK_DAY=${OBUR_RESTORE_CHECK_DAY:-7}
+# A scheduled backup that failed is tried again, for the repositories that failed, after this long, a few times a day.
+RETRY_SECONDS=${OBUR_BACKUP_RETRY_SECONDS:-3600}
+RETRIES_PER_DAY=3
+# How often the scheduler looks at the time (shorter only in tests).
+TICK_SECONDS=${OBUR_SCHEDULER_SECONDS:-600}
 # WAL files waiting for the off-site store, compressed. Over the limit the queue is emptied: the off-site copy then
 # cannot replay past that point until its next backup, which starts a complete history again.
 QUEUE_DIR=${OBUR_OFFSITE_QUEUE_DIR:-/data/offsite-queue}
@@ -228,18 +233,31 @@ archive_status() {
 }
 
 # A backup of type $1 to every repository, or with "local" after it only to the local one, as if no off-site store
-# were configured (the backup before an upgrade).
+# were configured (the backup before an upgrade). "scheduled" marks the scheduler's own, which it retries on failure;
+# "retry" with repository numbers after it backs up only to those.
 backup() {
-	local type=$1 ok=true repo results='{}' started targets run=pgbackrest
+	local type=$1 ok=true repo results='{}' started targets run=pgbackrest scheduled=false
 	targets=$(repos)
-	if [[ ${2:-} == local ]]; then
+	case ${2:-} in
+	local)
 		targets=1
 		run=local_only
-	fi
+		;;
+	scheduled) scheduled=true ;;
+	retry)
+		targets=${3:?}
+		scheduled=true
+		# The repositories not retried keep their result from the attempt before.
+		results=$(jq -c '.lastBackup.repos // {}' "$STATUS_FILE" 2>/dev/null || echo '{}')
+		;;
+	esac
 	started=$(now)
 	if ! ensure_stanza; then
 		log "the local backup repository could not be set up; no backup was taken"
-		status --arg at "$started" '.lastBackup = {at: $at, type: "none", ok: false, repos: {"1": false}}'
+		status --arg at "$started" --argjson s "$scheduled" \
+			--arg nightly "$([[ ${2:-} == scheduled ]] && echo yes)" \
+			'.lastBackup = {at: $at, type: "none", ok: false, repos: {"1": false}, scheduled: $s}
+			| if $nightly == "yes" then .lastScheduledBackupAt = $at else . end'
 		return 1
 	fi
 	for repo in $targets; do
@@ -260,9 +278,13 @@ backup() {
 			log "backup to repository $repo failed"
 		fi
 	done
+	if [[ $(jq '[.[]] | all' <<<"$results") != true ]]; then ok=false; fi
 	status --arg at "$started" --arg type "$type" --argjson ok "$ok" --argjson repos "$results" \
-		'.lastBackup = {at: $at, type: $type, ok: $ok, repos: $repos}
-		| if $ok then .lastSuccessfulBackupAt = $at else . end'
+		--argjson s "$scheduled" \
+		--arg nightly "$([[ ${2:-} == scheduled ]] && echo yes)" \
+		'.lastBackup = {at: $at, type: $type, ok: $ok, repos: $repos, scheduled: $s}
+		| if $ok then .lastSuccessfulBackupAt = $at else . end
+		| if $nightly == "yes" then .lastScheduledBackupAt = $at else . end'
 	archive_status
 	queue_status || true
 	$ok
@@ -366,25 +388,42 @@ scheduler() {
 	done
 	if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then queue_loop $$ & fi
 	log "scheduler started (backups after ${BACKUP_HOUR}:00, restore check on weekday $CHECK_DAY)"
+	local retries=0
 	while true; do
-		local today hour last_backup last_check
+		local today hour last_backup last_scheduled last_check
 		today=$(date +%F)
 		hour=$((10#$(date +%H)))
 		last_backup=$(jq -r '.lastBackup.at // ""' "$STATUS_FILE" 2>/dev/null || true)
+		# The scheduler's own last run: a backup taken by hand or before an upgrade doesn't replace tonight's (older
+		# status files have only lastBackup).
+		last_scheduled=$(jq -r '.lastScheduledBackupAt // .lastBackup.at // ""' "$STATUS_FILE" 2>/dev/null || true)
 		last_check=$(jq -r '.lastRestoreCheck.at // ""' "$STATUS_FILE" 2>/dev/null || true)
 		# Status times are UTC; compare by the local date of the stored instant.
 		local backup_day='' check_day=''
-		[[ -n $last_backup ]] && backup_day=$(date -d "$last_backup" +%F)
+		[[ -n $last_scheduled ]] && backup_day=$(date -d "$last_scheduled" +%F)
 		[[ -n $last_check ]] && check_day=$(date -d "$last_check" +%F)
 		# A new installation is backed up straight away rather than at night.
-		if [[ -z $last_backup ]] || { ((hour >= BACKUP_HOUR)) && [[ $backup_day != "$today" ]]; }; then
-			backup "$(scheduled_type)" || true
+		if [[ -z $last_scheduled ]] || { ((hour >= BACKUP_HOUR)) && [[ $backup_day != "$today" ]]; }; then
+			retries=0
+			backup "$(scheduled_type)" scheduled || true
+		elif [[ $backup_day == "$today" ]] && ((retries < RETRIES_PER_DAY)); then
+			# Today's scheduled backup failed somewhere: try those repositories again once enough time has passed.
+			local failed since
+			failed=$(jq -r 'if .lastBackup.ok == false and .lastBackup.scheduled == true
+				then [.lastBackup.repos | to_entries[] | select(.value == false) | .key] | join(" ") else "" end' \
+				"$STATUS_FILE" 2>/dev/null || true)
+			since=$(($(date +%s) - $(date -d "$last_backup" +%s)))
+			if [[ -n $failed ]] && ((since >= RETRY_SECONDS)); then
+				retries=$((retries + 1))
+				log "retrying the failed backup to repository $failed (attempt $retries of $RETRIES_PER_DAY)"
+				backup "$(scheduled_type)" retry "$failed" || true
+			fi
 		fi
 		if [[ $(date +%u) == "$CHECK_DAY" ]] && ((hour >= BACKUP_HOUR)) && [[ $check_day != "$today" ]]; then
 			restore_check || true
 		fi
 		archive_status || true
-		sleep 600
+		sleep "$TICK_SECONDS"
 	done
 }
 

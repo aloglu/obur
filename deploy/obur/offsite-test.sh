@@ -2,7 +2,8 @@
 # Checks that the local backups never wait for the off-site store. Starts an obur image with a second repository in
 # a folder standing in for the off-site store, takes that folder away, and checks that WAL keeps reaching the local
 # repository, that what the store missed waits and is sent when it returns, that restores from both then pass, and
-# that a queue over its limit is dropped and reported until the next off-site backup.
+# that a queue over its limit is dropped and reported until the next off-site backup, and that a nightly backup that
+# could not reach the store is tried again.
 # Usage: deploy/obur/offsite-test.sh <image>
 set -euo pipefail
 image=${1:?usage: offsite-test.sh <image>}
@@ -43,7 +44,8 @@ in_repo() { docker exec "$name" bash -c "find $1/archive -name '$2-*' | grep -q 
 docker run -d --name "$name" -v "$data:/data" -v "$offsite:/offsite" \
 	-e PUBLIC_ORIGIN=http://localhost:3198 -e OBUR_BACKUP_PASSPHRASE=offsite-test-passphrase \
 	-e PGBACKREST_REPO2_TYPE=posix -e PGBACKREST_REPO2_PATH=/offsite \
-	-e OBUR_OFFSITE_QUEUE_MAX_MB=2 -e OBUR_OFFSITE_RETRY_SECONDS=3 "$image" >/dev/null
+	-e OBUR_OFFSITE_QUEUE_MAX_MB=2 -e OBUR_OFFSITE_RETRY_SECONDS=3 \
+	-e OBUR_BACKUP_HOUR=0 -e OBUR_SCHEDULER_SECONDS=3 -e OBUR_BACKUP_RETRY_SECONDS=10 "$image" >/dev/null
 docker exec "$name" chown postgres:postgres /offsite
 for _ in $(seq 120); do
 	[[ $(status '.lastBackup.repos["2"]' 2>/dev/null) == true ]] && break
@@ -90,4 +92,26 @@ docker exec "$name" obur backup now >/dev/null 2>&1 || fail "the backup after th
 sleep 4
 [[ $(status '.offsiteQueue.gapAt') == null ]] || fail "the gap is still reported after an off-site backup"
 out=$(docker exec "$name" obur backup restore-check 2>&1) || fail "restore check after the gap: $out"
+
+echo "a nightly backup while the store is away is tried again"
+docker exec "$name" chmod 000 /offsite
+# Last night's backup was yesterday: the scheduler takes tonight's now (the backup hour is 0 here).
+yesterday=$(date -u -d yesterday +%Y-%m-%dT%H:%M:%SZ)
+docker exec "$name" gosu postgres bash -c "jq --arg y '$yesterday' '.lastScheduledBackupAt = \$y | .lastBackup.at = \$y' \
+	/data/status/backup.json >/data/status/backup.json.tmp && mv /data/status/backup.json.tmp /data/status/backup.json"
+for _ in $(seq 60); do
+	[[ $(status '[.lastBackup.scheduled, .lastBackup.repos["2"]]') == '[true,false]' ]] && break
+	sleep 2
+done
+[[ $(status '[.lastBackup.scheduled, .lastBackup.repos]') == '[true,{"1":true,"2":false}]' ]] ||
+	fail "the nightly backup did not run, or reached the store that was away"
+docker exec "$name" chmod 700 /offsite
+for _ in $(seq 60); do
+	[[ $(status '.lastBackup.ok') == true ]] && break
+	sleep 2
+done
+[[ $(status '[.lastBackup.ok, .lastBackup.repos]') == '[true,{"1":true,"2":true}]' ]] ||
+	fail "the failed off-site backup was not tried again"
+docker logs "$name" 2>&1 | grep -q 'retrying the failed backup to repository 2 (attempt 1 of 3)' ||
+	fail "the retry was not logged, or retried more than the off-site repository"
 echo "off-site test passed"
