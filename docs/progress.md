@@ -29,8 +29,8 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Review done (owner, 2026-11-14, https://claude.ai/artifact/1D6vQwDnAYtRhHLxccs5ii, collection `review`, ids `tr-*`):
   no dealbreaker, so it goes ahead. Six stops right with small wording fixes, two to change (tab bar wording, Help
   text). Glossary approved and saved with the fixes: `docs/tr-glossary.md`.
-- Open, waiting for the owner: a fit for "Aktivite" on the budget card's pill; final Help wording (owner rewrote
-  both answers; the formula lost its minus, the second answer mixes "siz" into "sen" and calls a difference "oran").
+- Settled 2026-11-14 (glossary): "Aktivite" fits the pill as it is (measured); water "Miktar gir"; Progress switch
+  "Son kilo"; both Help answers in the owner's wording with the agreed fixes.
 - Next: language setting (hidden), then the full translation in `messages/tr.json`.
 
 ## After beta.12 (2026-11-13), released as `v1.0.0-beta.13`
