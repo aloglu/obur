@@ -2,7 +2,11 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Turkish interface (planned 2026-11-14)
+## Turkish interface (2026-11-14), released as `v1.0.0-beta.14` (Turkish in preview only)
+
+Checks before the tag: type-check, lint, 1109 unit and database tests, e2e 239 passed (18 skipped by design), image
+built, smoke test, off-site outage test. Migrations 0050–0052 run on update. The owner keeps English; to read Turkish,
+`OBUR_PREVIEW_LANGUAGES=tr` in `.env`, then More → Settings → Language.
 
 - Agreed plan: design.md, "Interface language". Nothing built in the app.
 - Done (owner, 2026-11-14): Household renamed Members (friends aren't a household); Turkish "Kullanıcılar". About 80
