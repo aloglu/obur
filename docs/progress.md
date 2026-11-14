@@ -9,13 +9,13 @@ Coverage ([x] read in full; findings in the list below, fixed only after the own
 - [x] A. Database: every migration (RLS policies, SECURITY DEFINER functions, grants), `db/`, `jobs/setup.ts`
 - [x] B. Server modules: auth (rest), goals, body, catalog (service, recipes, curated, usda), diary (saved meals),
   progress, reminders (rest), remote-models, updates, imports-exports (plan, write, LoseIt rest, account deletion)
-- [ ] C. Server glue (`src/lib/server/*.ts`), every API route and page server load
-- [ ] D. Shared logic (`src/lib/shared/`): goals and budget math, quantities, nutrients, dates and zones, history,
+- [x] C. Server glue (`src/lib/server/*.ts`), every API route and page server load
+- [x] D. Shared logic (`src/lib/shared/`): goals and budget math, quantities, nutrients, dates and zones, history,
   achievements, reminder times, search folding, formatting
-- [ ] E. Client (`src/lib/client/`), every screen and component (`src/lib/ui/`, `src/routes/`)
-- [ ] F. Deploy: Dockerfile, `deploy/obur/*` (init, restore, CLI), `server.js`, compose, release workflow,
+- [x] E. Client (`src/lib/client/`), every screen and component (`src/lib/ui/`, `src/routes/`)
+- [x] F. Deploy: Dockerfile, `deploy/obur/*` (init, restore, CLI), `server.js`, compose, release workflow,
   `scripts/`, the speech and labels services
-- [ ] G. Configuration and docs: lint rules, Vite/Svelte config, `.env.example`, install guides against the commands
+- [x] G. Configuration and docs: lint rules, Vite/Svelte config, `.env.example`, install guides against the commands
 
 Findings so far (A–B):
 1. A calculated (weight-loss) budget stays in force after someone marks pregnancy or breastfeeding, unless they
@@ -28,6 +28,19 @@ Findings so far (A–B):
    recipe and saved-meal saves don't check the version on the final update (two devices at once: last one wins
    silently); importing an archive into an account with a profile can warn "profile kept" when only defaults
    differ; the GitHub tag list is read 100 at a time.
+Findings (C–G):
+5. A failed Undo (offline or refused) closes the toast and does nothing, with no message (`shell/Toast.svelte`);
+   marking a day complete fails silently the same way (Today `toggleComplete`).
+6. `obur restore finish` stops if the full backup fails anywhere, so an unreachable off-site store keeps the app
+   closed after a restore (`deploy/obur/obur-restore`).
+7. Signing out offline clears the device's queue, then the sign-out request fails silently: still signed in.
+8. "Keep the calories" for a refused entry discards the original before saving the replacement; if that save is
+   refused too, both are gone.
+9. A reminder subscription accepts any https address, so the worker can be pointed at any host.
+10. Small: achievements are worked out twice on Journal, Progress and Achievements (layout and page); links to the
+    owner's private review pages sit in this file; correction to finding 2: the app's screens round amounts to two
+    decimals, so only API clients and weights typed with three decimals hit it.
+Screens (E) were read for their logic and failure handling, not every line of markup.
 
 ## Pre-release audit fixes (2026-11-14)
 
