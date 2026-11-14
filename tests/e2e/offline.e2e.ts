@@ -387,3 +387,29 @@ test('an entry the server refused after waiting offline stays until the person c
 	await expect(page).toHaveURL(/\/log\?/);
 	await expect(page.getByRole('searchbox').first()).toHaveValue(name);
 });
+
+test('an Undo that cannot reach the server says so instead of looking done', async ({
+	page,
+	context
+}) => {
+	await signedInAs(page, 'Zeynep');
+	await page.goto('/');
+	const snacks = page.getByRole('region', { name: 'Snacks' });
+	await snacks.getByRole('button', { name: 'Add food to Snacks' }).click();
+	await openCaloriesOnly(page);
+	const sheet = page.getByRole('dialog', { name: 'Log calories only' });
+	await sheet.getByLabel('Calories (kcal)').fill('120');
+	await sheet.getByLabel('What was it? (optional)').fill('Apple');
+	await sheet.getByRole('button', { name: 'Save' }).click();
+	if (isPhone(page))
+		await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await snacks.getByRole('button', { name: /Apple/ }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+	await expect(snacks.getByRole('button', { name: /Apple/ })).toHaveCount(0);
+
+	await context.setOffline(true);
+	await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
+	await expect(page.getByRole('status')).toContainText("Couldn't undo");
+	await expect(snacks.getByRole('button', { name: /Apple/ })).toHaveCount(0);
+	await context.setOffline(false);
+});

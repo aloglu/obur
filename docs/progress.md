@@ -45,6 +45,8 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
 - Done: finding 1. Details that no longer allow a calculation end a calculated budget from today (a `none`
   version; outcome `ended`, a toast in setup, which then offers the person's own number). Tests in
   `goals.db.test.ts` (pregnant and under 18; earlier days keep theirs; saving again records nothing).
+- Done: finding 5. A failed Undo says "Couldn't undo" (`shell/Toast.svelte`); marking a day complete says when it
+  failed. E2e `offline.e2e.ts` (fails without the fix, both browsers).
 
 ## Pre-release audit fixes (2026-11-14)
 

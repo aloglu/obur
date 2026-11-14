@@ -11,6 +11,8 @@
 	"common_copied": "Copied",
 	"common_try_again": "Try again",
 	"common_working": "Working…",
+	"toast_undo_failed": "Couldn't undo",
+	"toast_undo_failed_detail": "Nothing changed. Check the connection and try again from the day.",
 	"error_generic": "Something went wrong. Please try again.",
 	"error_cancelled": "The passkey prompt was closed. Try again when you're ready.",
 	"error_rate_limited": "Too many attempts. Please wait a few minutes and try again.",

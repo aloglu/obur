@@ -3,7 +3,7 @@
 	import Check from '@lucide/svelte/icons/check';
 	import { m } from '#lib/paraglide/messages.js';
 	import { onMount } from 'svelte';
-	import { dismissToast, restoreToast, toast } from '#lib/client/toast.svelte.ts';
+	import { dismissToast, restoreToast, showToast, toast } from '#lib/client/toast.svelte.ts';
 	import AchievementToast from '../achievements/AchievementToast.svelte';
 
 	onMount(restoreToast);
@@ -11,7 +11,12 @@
 	async function undo() {
 		const action = toast.current?.undo;
 		dismissToast();
-		await action?.();
+		try {
+			await action?.();
+		} catch {
+			// Offline or refused: say so, or the person would think it was undone.
+			showToast({ message: m.toast_undo_failed(), detail: m.toast_undo_failed_detail() });
+		}
 	}
 </script>
 

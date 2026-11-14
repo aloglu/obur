@@ -344,8 +344,13 @@
 	}
 
 	async function toggleComplete() {
-		await api('PUT', `/api/v1/diary/days/${data.date}`, { complete: !data.complete });
-		await invalidateAll();
+		try {
+			await api('PUT', `/api/v1/diary/days/${data.date}`, { complete: !data.complete });
+			await invalidateAll();
+		} catch {
+			// Offline or refused: the day stays as it was, and says so.
+			showToast({ message: m.error_generic() });
+		}
 	}
 
 	async function conflict() {
