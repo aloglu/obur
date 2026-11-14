@@ -56,6 +56,7 @@ their deletions are applied again after every restore.
    ```
    docker exec obur obur restore finish 2b7c…e1:shared@2026-10-20 9f41…0a@2026-10-27
    ```
+   It first waits until the restored database has finished replaying its history (it is read-only until then).
    This signs everyone out, cancels unused recovery links, invites and setup links, deletes those accounts again,
    takes a full backup of the new history, and reopens obur. If the off-site store can't be reached then, obur
    reopens anyway after the local backup, says so, and the off-site copy gets its full backup with the next nightly

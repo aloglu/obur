@@ -60,6 +60,16 @@ restore_finish() {
 		pg_isready -q -h "$OBUR_SOCKET" -U obur_admin -d obur && break
 		sleep 1
 	done
+	# Accepting connections is not enough: until the restored database has replayed its archived WAL it is read-only,
+	# and signing everyone out would fail (seen on a fast machine, 2026-11-15).
+	echo "obur: waiting for the restored database to finish replaying its history ..."
+	local recovering=t
+	for _ in $(seq 600); do
+		recovering=$(obur_psql -c 'select pg_is_in_recovery()' 2>/dev/null || echo t)
+		[[ $recovering == f ]] && break
+		sleep 1
+	done
+	[[ $recovering == f ]] || obur_fail "the restored database is still replaying after 10 minutes; run 'obur restore finish' again later"
 	obur-restore finish "$@"
 	echo "obur: obur reopens in a few seconds. Then check Members → Backups, and run: obur backup restore-check"
 }

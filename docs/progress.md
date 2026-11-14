@@ -7,7 +7,11 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 Checks before the tag: type-check, lint, build, 1133 unit and database tests, e2e 251 passed (18 skipped by design,
 no failures), image built, smoke test, off-site outage test (with the new retry and restore steps). Migrations
 0053–0054 run on update. `docs/install/for-ai-agents.md` checked: no new settings, commands or start-up log lines.
-Tag pushed; the release workflow publishes the images (not yet confirmed).
+Tag pushed. The workflow published `obur-speech` and `obur-labels` 1.0.0-beta.17, but the `obur` image failed its
+off-site test on GitHub: `obur restore finish` ran while the restored database was still replaying WAL (read-only),
+so "delete from sessions" failed. It passed locally by timing; a real restore on a fast machine would have failed the
+same way. Fixed: `obur restore finish` waits until `pg_is_in_recovery()` is false (10 minutes at most). No `obur`
+1.0.0-beta.17 image exists; the release is redone as beta.18.
 - Next: confirm the workflow published all three images; then the owner updates their server, uses beta.17 for a
   week, tries the changed flows on the iPhone (Undo and sign-out offline, pregnancy in About you on a test
   account) and rehearses a restore once on a scratch copy; then 1.0.0 (version, guide check, a fresh install from
