@@ -50,6 +50,8 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
 - Done: finding 2. Weights (0.01 kg), water (0.1 ml) and food amounts (0.0001) are rounded to what their columns
   keep before saving, so a retry matches and the reply shows the stored value. Tests in `body.db.test.ts` and
   `diary.db.test.ts` (both fail without the fix).
+- Done: finding 3. A LoseIt identity over 100 characters is stored as its start plus a hash and found again; ones
+  cut at 100 by earlier imports still match. Test in `loseit.db.test.ts` (fails without the fix).
 
 ## Pre-release audit fixes (2026-11-14)
 

@@ -246,6 +246,28 @@ describe('LoseIt import', () => {
 		expect(theirs.counts.diary.new).toBe(18);
 	});
 
+	it('finds a database food with a long name again in a later export, also as earlier imports stored it', async () => {
+		const name =
+			`Grande caramel macchiato with oat milk and an extra shot ${'of something long '.repeat(4)}`.trim();
+		const row = (day: number) =>
+			`1/${day}/2026,${name},Coffee,Breakfast,1.0,Each,250.0,0,7.0,9.0,35.0,4.0,30.0,0.0,20.0,150.0`;
+		const withRows = (...days: number[]) => ({
+			...files,
+			'food-logs.csv': [files['food-logs.csv'].trimEnd(), ...days.map(row), ''].join('\n')
+		});
+		await portability.applyLoseIt(MEHMET, zip(withRows(7)), options);
+		const later = await portability.previewLoseIt(MEHMET, zip(withRows(7, 8)), options);
+		expect(later.counts.food.new).toBe(0);
+		expect(later.counts.diary.new).toBe(1);
+		// An earlier import kept the identity cut at 100 characters: still the same food.
+		const cut =
+			await admin`update import_identities set source_id = left('log:' || ${name.toLowerCase()}, 100)
+			where user_id = ${MEHMET} and kind = 'food' and source_id like 'log:grande%'`;
+		expect(cut.count).toBe(1);
+		const again = await portability.previewLoseIt(MEHMET, zip(withRows(7, 8)), options);
+		expect(again.counts.food.new).toBe(0);
+	});
+
 	it('leaves another person’s data alone', async () => {
 		await portability.applyLoseIt(ZEYNEP, zip(), options);
 		await portability.applyLoseIt(MEHMET, zip(), options);

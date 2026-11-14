@@ -73,6 +73,13 @@ export interface LoseItSummary {
 const sha = (text: string) => createHash('sha256').update(text).digest('hex').slice(0, 40);
 const empty = (): LoseItCounts => ({ new: 0, unchanged: 0, missing: 0, skipped: 0 });
 
+/**
+ * A source identity as stored (at most 100 characters): a longer one, such as a database food with a long name, keeps
+ * its start and a hash of the whole, so two long names can't collide and the same one is found again.
+ */
+export const storedSourceId = (id: string) =>
+	id.length <= 100 ? id : `${id.slice(0, 59)}#${sha(id)}`;
+
 /** Identity per row: content hash plus occurrence among identical rows, in file order. */
 function identities<T>(rows: T[], content: (row: T) => string): string[] {
 	const seen = new Map<string, number>();
@@ -202,9 +209,13 @@ export async function planLoseIt(
 		target: new Map<string, string>()
 	};
 	const decide = (kind: Kind, sourceId: string) => {
-		if (known.has(`${kind}:${sourceId}`)) {
+		// Imports before 2026-11-14 stored a long identity cut at 100 characters, and are found that way too.
+		const earlier =
+			known.get(`${kind}:${storedSourceId(sourceId)}`) ??
+			(sourceId.length > 100 ? known.get(`${kind}:${sourceId.slice(0, 100)}`) : undefined);
+		if (earlier) {
 			counts[kind].unchanged++;
-			return known.get(`${kind}:${sourceId}`)!;
+			return earlier;
 		}
 		const id = create[kind].get(sourceId) ?? randomUUID();
 		if (!create[kind].has(sourceId)) {
@@ -396,7 +407,7 @@ export async function writeLoseIt(
 			userId,
 			sourceInstall: LOSEIT_SOURCE,
 			kind,
-			sourceId: sourceId.slice(0, 100),
+			sourceId: storedSourceId(sourceId),
 			localId
 		});
 
