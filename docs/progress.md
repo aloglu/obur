@@ -42,7 +42,9 @@ page loads. Fixing everything found (owner, 2026-11-14):
   message `foods_search_offline`, English and Turkish); household measures that failed to load are asked for again
   (they stayed failed until a reload, and the amount sheet then never opened offline). Checks: type-check, e2e for
   recipes, saved meals and offline (28 passed, 3 skipped by design).
-- Next: full checks, then the owner decides on a release.
+- Checks (everything since beta.16): type-check, lint, build, 1123 unit and database tests, e2e 247 passed (18
+  skipped by design, no failures), image built, smoke test, off-site test.
+- Next: the owner decides on a release (beta.17).
 
 ## Owner's Turkish fixes released (2026-11-14), as `v1.0.0-beta.16`
 
