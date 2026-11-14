@@ -4,6 +4,7 @@
 // detect damage; they do not make an archive trustworthy, so the content is validated as untrusted input.
 import { APP_ICONS } from '../../../shared/app-icons.ts';
 import { PALETTES } from '../../../shared/themes.ts';
+import { LANGUAGES } from '../../../shared/languages.ts';
 import { createHash } from 'node:crypto';
 import { strFromU8, strToU8, unzipSync, zipSync, type Unzipped } from 'fflate';
 import * as v from 'valibot';
@@ -283,6 +284,8 @@ export const ProfileRecord = v.object({
 	appIcon: v.optional(
 		v.nullable(v.picklist(APP_ICONS.map((i) => i.id).filter((id) => id !== 'pazar')))
 	),
+	// Added 2026-11-14; older archives keep English.
+	language: v.optional(v.picklist(LANGUAGES)),
 	themeMode: v.optional(v.picklist(['system', 'light', 'dark'])),
 	palette: v.optional(v.picklist(PALETTES.map((p) => p.id))),
 	timeFormat: v.optional(v.picklist(['device', '24', '12'])),

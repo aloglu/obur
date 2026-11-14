@@ -38,6 +38,9 @@ export const profiles = pgTable(
 		firstDayOfWeek: smallint('first_day_of_week').notNull().default(1),
 		// Settings that follow the person (shared/preferences.ts). The app icon is null for the default.
 		appIcon: text('app_icon'),
+		language: text('language', { enum: ['en', 'tr'] })
+			.notNull()
+			.default('en'),
 		themeMode: text('theme_mode', { enum: ['system', 'light', 'dark'] })
 			.notNull()
 			.default('system'),
@@ -72,6 +75,7 @@ export const profiles = pgTable(
 		),
 		check('profiles_waist_range', sql`${t.waistCm} is null or ${t.waistCm} between 30 and 250`),
 		check('profiles_sex_valid', sql`${t.sex} is null or ${t.sex} in ('female', 'male')`),
+		check('profiles_language_valid', sql`${t.language} in ('en', 'tr')`),
 		check('profiles_theme_mode_valid', sql`${t.themeMode} in ('system', 'light', 'dark')`),
 		check(
 			'profiles_palette_valid',

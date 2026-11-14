@@ -82,6 +82,7 @@ const toProfile = (r: ProfileRow): Profile => ({
 });
 
 const toPreferences = (r: ProfileRow): Preferences => ({
+	language: r.language,
 	themeMode: r.themeMode,
 	palette: isPalette(r.palette) ? r.palette : DEFAULT_PREFERENCES.palette,
 	appIcon: isAppIcon(r.appIcon) ? r.appIcon : DEFAULT_APP_ICON,

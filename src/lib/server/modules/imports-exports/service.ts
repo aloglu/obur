@@ -173,6 +173,7 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 							isAppIcon(profile.appIcon) && profile.appIcon !== DEFAULT_APP_ICON
 								? profile.appIcon
 								: null,
+						language: profile.language,
 						themeMode: profile.themeMode,
 						palette: isPalette(profile.palette) ? profile.palette : DEFAULT_PALETTE,
 						timeFormat: profile.timeFormat,

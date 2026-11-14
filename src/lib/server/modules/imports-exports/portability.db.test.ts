@@ -142,6 +142,8 @@ async function buildHistory() {
 
 	await goals.saveProfile(MEHMET, { heightCm: 180, birthDate: '1990-05-01', sex: 'male' });
 	await goals.savePreferences(MEHMET, { palette: 'kaset', appIcon: 'zerde', timeFormat: '24' });
+	// A language stored before it can be chosen here (a later version's archive) still travels with the account.
+	await admin`update profiles set language = 'tr' where user_id = ${MEHMET}`;
 	await goals.setTarget(
 		MEHMET,
 		{ mode: 'manual', effectiveFrom: '2026-10-01', budgetKcal: 2200 },
@@ -402,7 +404,13 @@ describe('import', () => {
 		await portability.applyImport(ZEYNEP, archive);
 		// Settings come along, and count as saved.
 		expect(await goals.preferences(ZEYNEP)).toMatchObject({
-			preferences: { palette: 'kaset', appIcon: 'zerde', timeFormat: '24', themeMode: 'system' },
+			preferences: {
+				language: 'tr',
+				palette: 'kaset',
+				appIcon: 'zerde',
+				timeFormat: '24',
+				themeMode: 'system'
+			},
 			saved: true
 		});
 		const before = readArchive(archive).data;

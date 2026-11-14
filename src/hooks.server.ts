@@ -1,6 +1,6 @@
 import { json, redirect } from '@sveltejs/kit';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
-import { getTextDirection } from '#lib/paraglide/runtime.js';
+import { defineCustomServerStrategy, getTextDirection } from '#lib/paraglide/runtime.js';
 import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { auth, SESSION_COOKIE } from '#lib/server/auth.ts';
 import { config } from '#lib/server/config.ts';
@@ -10,9 +10,36 @@ import { m } from '#lib/paraglide/messages.js';
 import { isValidZone } from '#lib/shared/diary-rules.ts';
 import { DEFAULT_PALETTE, isPalette, paletteOf } from '#lib/shared/themes.ts';
 import { DEFAULT_APP_ICON, isAppIcon } from '#lib/shared/app-icons.ts';
+import { LANGUAGE_COOKIE, pickLanguage } from '#lib/shared/languages.ts';
+
+const cookieOf = (header: string | null, name: string) =>
+	header
+		?.split(';')
+		.map((c) => c.trim())
+		.find((c) => c.startsWith(`${name}=`))
+		?.slice(name.length + 1);
+
+// The account's or this device's last language (cookie), else the phone's (shared/languages.ts).
+defineCustomServerStrategy('custom-obur', {
+	getLocale: (request) =>
+		pickLanguage(
+			cookieOf(request?.headers.get('cookie') ?? null, LANGUAGE_COOKIE),
+			request?.headers.get('accept-language')
+		)
+});
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
+		// The browser reads the same cookie, so the page and its scripts agree, and the device remembers the
+		// language for the sign-in pages.
+		if (event.cookies.get(LANGUAGE_COOKIE) !== locale)
+			event.cookies.set(LANGUAGE_COOKIE, locale, {
+				path: '/',
+				maxAge: 60 * 60 * 24 * 365,
+				sameSite: 'lax',
+				httpOnly: false,
+				secure: config.secureCookies
+			});
 		return resolve(
 			{ ...event, request },
 			{

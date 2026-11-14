@@ -1,9 +1,12 @@
 import { goals } from '#lib/server/goals.ts';
 import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '#lib/shared/preferences.ts';
+import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, usable, type Language } from '#lib/shared/languages.ts';
+import { config } from '#lib/server/config.ts';
+import { getLocale } from '#lib/paraglide/runtime.js';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ locals, depends }) => {
+export const load: LayoutServerLoad = async ({ locals, depends, cookies }) => {
 	// Asked for again after every page change (the app layout, ACCOUNT_DATA), so a setting changed on another device
 	// arrives without a reload, and the Home Screen icon link in the page's head is always the account's (docs/ui.md,
 	// "App icon"). After, not during: a page never waits for this before it opens.
@@ -12,6 +15,8 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 	// This browser's own choices (cookies): what shows before signing in.
 	const device: Preferences = {
 		...DEFAULT_PREFERENCES,
+		// The language this page is drawn in: the device's last one, else the phone's (hooks.server.ts).
+		language: getLocale() as Language,
 		themeMode: locals.theme ?? 'system',
 		palette: locals.palette,
 		appIcon: locals.appIcon,
@@ -28,6 +33,7 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 		preferences =
 			!stored.saved && changed
 				? await goals.savePreferences(s.userId, {
+						language: device.language,
 						themeMode: device.themeMode,
 						palette: device.palette,
 						appIcon: device.appIcon,
@@ -39,6 +45,16 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 		locals.palette = preferences.palette;
 		locals.appIcon = preferences.appIcon;
 		locals.timeFormat = preferences.timeFormat;
+		// The next page is drawn in the account's language; this one asks the browser to reload (+layout.svelte).
+		const language = usable(preferences.language) ?? DEFAULT_LANGUAGE;
+		if (language !== device.language)
+			cookies.set(LANGUAGE_COOKIE, language, {
+				path: '/',
+				maxAge: 60 * 60 * 24 * 365,
+				sameSite: 'lax',
+				httpOnly: false,
+				secure: config.secureCookies
+			});
 	}
 	return {
 		user:
@@ -47,6 +63,7 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 		palette: preferences.palette,
 		appIcon: preferences.appIcon,
 		timeFormat: preferences.timeFormat,
+		language: usable(preferences.language) ?? DEFAULT_LANGUAGE,
 		preferences
 	};
 };

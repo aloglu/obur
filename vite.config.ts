@@ -39,6 +39,8 @@ export default defineConfig({
 		paraglideVitePlugin({
 			project: './project.inlang',
 			outdir: './src/lib/paraglide',
+			// shared/languages.ts decides (hooks.server.ts, hooks.client.ts), so only enabled languages ever show.
+			strategy: ['custom-obur', 'baseLocale'],
 			emitTsDeclarations: true
 		})
 	],

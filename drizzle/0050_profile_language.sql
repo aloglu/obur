@@ -1,0 +1,2 @@
+ALTER TABLE "profiles" ADD COLUMN "language" text DEFAULT 'en' NOT NULL;--> statement-breakpoint
+ALTER TABLE "profiles" ADD CONSTRAINT "profiles_language_valid" CHECK ("profiles"."language" in ('en', 'tr'));

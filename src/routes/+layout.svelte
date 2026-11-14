@@ -2,7 +2,8 @@
 	import './layout.css';
 	import { untrack } from 'svelte';
 	import { appIconFile, manifestHref } from '#lib/shared/app-icons.ts';
-	import { applyLook } from '#lib/client/prefs.ts';
+	import { applyLook, showLanguage } from '#lib/client/prefs.ts';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import type { LayoutProps } from './$types';
 
 	let { children, data }: LayoutProps = $props();
@@ -16,6 +17,10 @@
 	$effect(() => {
 		// Not offline: saved copies of pages may disagree, and it would reload on every page change.
 		if (data.appIcon !== loadedIcon && navigator.onLine) location.reload();
+	});
+	// A language chosen on another device (or before this one signed in): the page is drawn again in it.
+	$effect(() => {
+		if (data.language !== getLocale() && navigator.onLine) void showLanguage(data.language);
 	});
 </script>
 

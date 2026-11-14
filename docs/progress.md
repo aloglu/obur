@@ -31,7 +31,13 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   text). Glossary approved and saved with the fixes: `docs/tr-glossary.md`.
 - Settled 2026-11-14 (glossary): "Aktivite" fits the pill as it is (measured); water "Miktar gir"; Progress switch
   "Son kilo"; both Help answers in the owner's wording with the agreed fixes.
-- Next: language setting (hidden), then the full translation in `messages/tr.json`.
+- Done (2026-11-14): language setting, hidden (design.md, "Interface language"). Migrations 0050 (profiles.language,
+  'en' default) and 0051 (grant). `npm run i18n` now passes the same strategy as the Vite plugin. Tests:
+  `languages.test.ts`, settings and export round trip (a stored 'tr' travels), `language.e2e.ts` (a hidden language
+  never shows). Checks: type-check, lint, 1100 unit and database tests, build, e2e 231 passed (18 skipped by design);
+  one earlier run had the phone-WebKit offline test (offline.e2e.ts:237) fail once and pass on retry.
+- Next: the full translation in `messages/tr.json` (add 'tr' to project.inlang locales; keep it out of
+  `ENABLED_LANGUAGES`), with the key and placeholder parity test, Turkish dates, numbers and reminders.
 
 ## After beta.12 (2026-11-13), released as `v1.0.0-beta.13`
 

@@ -2,6 +2,8 @@
 // pages before signing in look the same, and applied to the page at once when changed. The time zone cookie is the
 // device's own.
 import { api } from './api.ts';
+import { forgetPrepared } from './prepare.ts';
+import { LANGUAGE_COOKIE, type Language } from '#lib/shared/languages.ts';
 import type { Preferences } from '#lib/shared/preferences.ts';
 import { DEFAULT_PALETTE, paletteOf, type PaletteId } from '#lib/shared/themes.ts';
 import {
@@ -71,6 +73,26 @@ export function setTimeFormat(choice: TimeFormat): void {
 /** Saves settings to the account; rejects when it couldn't (offline, say). */
 export async function savePreferences(change: Partial<Preferences>): Promise<void> {
 	await api('PATCH', '/api/v1/profile/preferences', change);
+}
+
+/**
+ * Shows the app in another language: the cookie the server draws pages in, then a reload. Saved copies of pages hold
+ * their text, so the prepared ones and the cached ones go first (docs/design.md, "Interface language").
+ */
+export async function showLanguage(language: Language): Promise<void> {
+	// Once per language and tab: a browser that refuses the cookie would otherwise reload forever.
+	try {
+		if (sessionStorage.getItem('obur-language-reload') === language) return;
+		sessionStorage.setItem('obur-language-reload', language);
+	} catch {
+		return;
+	}
+	document.cookie = `${LANGUAGE_COOKIE}=${language}; path=/; max-age=${YEAR}; samesite=lax${secure()}`;
+	forgetPrepared();
+	if ('caches' in globalThis)
+		for (const key of await caches.keys())
+			if (key.startsWith('obur-data')) await caches.delete(key);
+	location.reload();
 }
 
 /** Brings this page and this browser's cookies in line with the account's look. */
