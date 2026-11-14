@@ -51,11 +51,11 @@ test('weight: decimal comma input, validation, and readings stay private', async
 
 	await weight.getByRole('button', { name: 'New weigh-in' }).click();
 	await weight.getByLabel('New weight').fill('82,4,1');
-	await expect(weight).toContainText('Enter a weight such as 82,4');
+	await expect(weight).toContainText('Enter a weight such as 82.4');
 	await weight.getByLabel('New weight').fill('82,4');
 	await weight.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('status')).toContainText('Saved 82,4 kg');
-	await expect(weight).toContainText('82,4 kg');
+	await expect(page.getByRole('status')).toContainText('Saved 82.4 kg');
+	await expect(weight).toContainText('82.4 kg');
 	await expect(weight).toContainText('First weigh-in');
 	await expect(weight.getByLabel('New weight')).toBeHidden();
 
@@ -87,8 +87,8 @@ test('weight: the card shows the change since the last weigh-in; a tap elsewhere
 	}
 	await page.goto('/');
 	const weight = page.getByRole('region', { name: 'Weight' });
-	await expect(weight).toContainText('82,8 kg');
-	await expect(weight).toContainText(/−0,3 kg\s+since/);
+	await expect(weight).toContainText('82.8 kg');
+	await expect(weight).toContainText(/−0\.3 kg\s+since/);
 	await expect(weight.getByRole('img', { name: 'Last seven weigh-ins' })).toBeVisible();
 
 	// Only one field open at a time, and a tap on nothing closes it.
@@ -109,7 +109,7 @@ test('weight: the card shows the change since the last weigh-in; a tap elsewhere
 	await weight.getByRole('button', { name: 'New weigh-in' }).click();
 	await weight.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(weight.getByLabel('New weight')).toBeHidden();
-	await expect(weight).toContainText('82,8 kg');
+	await expect(weight).toContainText('82.8 kg');
 });
 
 test('water: a reading can be edited or deleted after the toast is gone', async ({ page }) => {
@@ -167,10 +167,10 @@ test('weight: older weigh-ins page in and can be edited or deleted', async ({ pa
 	await sheet.getByRole('button', { name: 'Show older' }).click();
 	await expect(sheet.getByRole('button', { name: 'Show older' })).toHaveCount(0); // nothing older left
 
-	await sheet.getByRole('button', { name: /^Edit 84,2 kg, Today/ }).click();
+	await sheet.getByRole('button', { name: /^Edit 84\.2 kg, Today/ }).click();
 	await sheet.getByLabel(/New value in kg/).fill('83,9');
 	await sheet.getByRole('button', { name: 'Save' }).click();
-	await expect(weight).toContainText('83,9 kg');
-	await sheet.getByRole('button', { name: /^Delete 83,9 kg, Today/ }).click();
+	await expect(weight).toContainText('83.9 kg');
+	await sheet.getByRole('button', { name: /^Delete 83\.9 kg, Today/ }).click();
 	await expect(weight).toContainText('85 kg');
 });

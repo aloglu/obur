@@ -28,7 +28,7 @@ test('Help: from More, searched without Turkish letters, answers open in place',
 	await page.getByRole('searchbox', { name: 'Search help' }).fill('budget');
 	await page.getByRole('button', { name: 'How is my daily budget worked out?' }).click();
 	await expect(
-		page.getByText('Budget = base burn (BMR × about 1,2) + activity − deficit')
+		page.getByText('Budget = base burn (BMR × about 1.2) + activity − deficit')
 	).toBeVisible();
 
 	await page.getByRole('searchbox', { name: 'Search help' }).fill('pizza oven');

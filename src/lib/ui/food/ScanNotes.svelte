@@ -109,8 +109,8 @@
 			out.push({
 				check: false,
 				text: m.scan_note_energy_match({
-					kcal: formatDecimal(kcalValue.value, ',', 1),
-					kj: formatDecimal(kjValue.value, ',', 1)
+					kcal: formatDecimal(kcalValue.value, 1),
+					kj: formatDecimal(kjValue.value, 1)
 				})
 			});
 		}

@@ -21,7 +21,7 @@
 		<ListCard title={m.recipes_list_head()} unit={m.recipes_list_unit()}>
 			{#each data.recipes as r (r.id)}
 				{@const who = r.visibility === 'shared' ? m.foods_shared() : m.food_visibility_private()}
-				{@const line = m.recipes_row_detail({ servings: formatDecimal(r.servings, ',', 2), who })}
+				{@const line = m.recipes_row_detail({ servings: formatDecimal(r.servings, 2), who })}
 				<ListRow
 					href={resolve('/(app)/recipes/[id]', { id: r.id })}
 					icon={r.icon}

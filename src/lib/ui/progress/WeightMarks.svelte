@@ -6,7 +6,7 @@
 	// the rest fades in. Tap, drag or use the arrow keys to look at a weigh-in.
 	import { getChartContext } from 'layerchart';
 	import { m } from '#lib/paraglide/messages.js';
-	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import { fixedDecimal, formatDecimal } from '#lib/shared/numbers.ts';
 
 	interface Point {
 		n: number;
@@ -129,7 +129,7 @@
 	<line x1="0" x2={ctx.width} y1={y(v)} y2={y(v)} class="stroke-line" />
 	{#if clearOfGoal(v) && y(v) < ctx.height - 6}
 		<text x={ctx.width + gutter} y={y(v)} dy=".35em" text-anchor="end" class={axis}
-			>{formatDecimal(v, ',', v % 1 ? 1 : 0)}</text
+			>{formatDecimal(v, v % 1 ? 1 : 0)}</text
 		>
 	{/if}
 {/each}
@@ -158,8 +158,8 @@
 		text-anchor="end"
 		class="fill-good text-[0.65625rem] font-semibold desk:text-[0.84375rem]"
 		>{m.history_goal_below({
-			goal: formatDecimal(goalKg, ',', 1),
-			distance: (value(end) - goalKg).toFixed(1).replace('.', ',')
+			goal: formatDecimal(goalKg, 1),
+			distance: fixedDecimal(value(end) - goalKg, 1)
 		})}</text
 	>
 {/if}

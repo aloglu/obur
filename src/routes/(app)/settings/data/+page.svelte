@@ -132,8 +132,8 @@
 	const toAdd = $derived(rows.reduce((n, r) => n + r.new, 0));
 	const size = (bytes: number) =>
 		bytes < 1_000_000
-			? `${formatDecimal(bytes / 1000, ',', 0)} kB`
-			: `${formatDecimal(bytes / 1_000_000, ',', 1)} MB`;
+			? `${formatDecimal(bytes / 1000, 0)} kB`
+			: `${formatDecimal(bytes / 1_000_000, 1)} MB`;
 	/** What the picker says about the chosen file once it has been read. */
 	const fileDetail = $derived.by(() => {
 		if (!file) return m.data_import_choose_hint();
@@ -404,7 +404,7 @@
 									{#if summary.firstWeight != null}<small
 											class="block text-[0.8125rem] font-normal text-muted"
 											>{m.data_first_weight({
-												value: formatDecimal(summary.firstWeight, ',', 1),
+												value: formatDecimal(summary.firstWeight, 1),
 												unit: weightUnit
 											})}</small
 										>{/if}

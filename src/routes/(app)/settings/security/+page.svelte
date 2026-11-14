@@ -4,6 +4,8 @@
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
+	import { dateWithYear } from '#lib/shared/format.ts';
+	import { localDate } from '#lib/shared/diary-rules.ts';
 	import { api } from '#lib/client/api.ts';
 	import { describeError, register, suggestedLabel, withRecentAuth } from '#lib/client/passkeys.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -29,8 +31,8 @@
 	let busy = $state(false);
 	let newCodes = $state<string[] | undefined>();
 
-	const date = (iso: string) =>
-		new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
+	// The day in the person's own zone, written like every other date in obur (shared/format.ts).
+	const date = (iso: string) => dateWithYear(localDate(new Date(iso), data.zone));
 
 	// The lists come with the page; after a change, the page's data is fetched again.
 	const refresh = () => invalidateAll();

@@ -81,7 +81,7 @@ test('a fraction of a container and a portion named by its own word (owner repor
 		.fill(`I ate 1/3s of a container of ricotta peyniri ${tag} and 2 cups of oat drink ${tag}`);
 	const ricotta = sheet.getByRole('region', { name: `Ricotta Peyniri ${tag}` });
 	await expect(ricotta).toContainText('150'); // a third of 300 g at 150 kcal per 100 g
-	await expect(ricotta).toContainText('0,33 Container (300 g)');
+	await expect(ricotta).toContainText('0.33 Container (300 g)');
 	const oat = sheet.getByRole('region', { name: `Oat Drink ${tag}` });
 	await expect(oat).toContainText('240'); // 2 × 240 ml at 50 kcal per 100 ml
 	await expect(oat).toContainText('2 Cup (240 ml)');
@@ -93,7 +93,7 @@ test('weight, calories-only and a curated food with a bare count', async ({ page
 	await page.getByRole('button', { name: 'Type it' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
 	await sheet.getByLabel('You typed').fill('bugün 80,5 kiloydum');
-	await expect(sheet.getByLabel('Weight (kg)')).toHaveValue('80,5');
+	await expect(sheet.getByLabel('Weight (kg)')).toHaveValue('80.5');
 	// Change the sentence: a curated banana and a calories-only snack.
 	await sheet.getByLabel('You typed').fill('bir muz ve 120 kcal snack');
 	const banana = sheet.getByRole('region', { name: 'Banana' });

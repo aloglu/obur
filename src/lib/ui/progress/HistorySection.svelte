@@ -10,7 +10,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { dateWithYear, dayAndMonth, kcal, shortDate } from '#lib/shared/format.ts';
 	import type { CalorieBar, ProgressHistory, WeightPoint } from '#lib/shared/history.ts';
-	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import { fixedDecimal, formatDecimal } from '#lib/shared/numbers.ts';
 	import { untrack } from 'svelte';
 	import Roll from '../Roll.svelte';
 	import WeighIn from '../today/WeighIn.svelte';
@@ -37,7 +37,7 @@
 	const uid = $props.id();
 
 	// Weights always with one decimal ("83,0 kg"), as the person reads a scale.
-	const kg = (v: number) => v.toFixed(1).replace('.', ',');
+	const kg = (v: number) => fixedDecimal(v, 1);
 	const signed = (v: number, f: (n: number) => string) =>
 		`${v > 0 ? '+' : v < 0 ? '−' : '±'}${f(Math.abs(v))}`;
 	const within = $derived(
@@ -342,9 +342,7 @@
 				<div class={row}>
 					<span>{m.history_water()}</span>
 					<b class={value}
-						>{a.waterMl.value === null
-							? '–'
-							: `${formatDecimal(a.waterMl.value / 1000, ',', 1)} l`}</b
+						>{a.waterMl.value === null ? '–' : `${formatDecimal(a.waterMl.value / 1000, 1)} l`}</b
 					>
 				</div>
 			</div>

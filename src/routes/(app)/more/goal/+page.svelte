@@ -55,7 +55,7 @@
 		}
 	}
 	function openGoal() {
-		goalText = t?.goalWeightKg ? formatDecimal(t.goalWeightKg, ',', 1) : '';
+		goalText = t?.goalWeightKg ? formatDecimal(t.goalWeightKg, 1) : '';
 		editing = !editing;
 	}
 	const options = $derived(
@@ -88,7 +88,7 @@
 				>
 					{m.goal_weight()}
 					<span class="flex items-center gap-1 text-[0.875rem] font-medium text-muted tabular-nums">
-						{t.goalWeightKg ? `${formatDecimal(t.goalWeightKg, ',', 1)} kg` : m.details_no_goal()}
+						{t.goalWeightKg ? `${formatDecimal(t.goalWeightKg, 1)} kg` : m.details_no_goal()}
 						<ChevronRight
 							size={18}
 							aria-hidden="true"

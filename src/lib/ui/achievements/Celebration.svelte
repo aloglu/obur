@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDecimal } from '#lib/shared/numbers.ts';
 	// The full-screen celebration, opened from the achievement toast: the number counting up, the picture dropping in,
 	// the comparison and its line, and confetti that falls and stays (client/confetti.ts). A tap on the background
 	// throws it up like a snow globe. Reduced motion shows the same screen still, without confetti. Done or Escape
@@ -180,9 +181,9 @@
 			<p
 				class="font-display text-[4rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums"
 			>
-				{a.kind === 'goal'
-					? String(a.level).replace('.', ',')
-					: shown}{#if a.kind !== 'streak'}<small class="font-sans text-[1.75rem] text-muted">
+				{a.kind === 'goal' ? formatDecimal(a.level, 2) : shown}{#if a.kind !== 'streak'}<small
+						class="font-sans text-[1.75rem] text-muted"
+					>
 						kg</small
 					>{/if}
 			</p>

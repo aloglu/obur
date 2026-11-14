@@ -37,7 +37,7 @@
 	let { data } = $props();
 	const start = untrack(() => data);
 	const num = (v: number | null | undefined, digits = 1) =>
-		v === null || v === undefined ? '' : formatDecimal(v, ',', digits);
+		v === null || v === undefined ? '' : formatDecimal(v, digits);
 
 	type Step = 1 | 2 | 3 | 'manual';
 	let step = $state<Step>(1);
@@ -260,7 +260,7 @@
 			{:else if step === 2 && facts && bmiValue !== null && burn}
 				<div class={estimate}>
 					<p class={label}>{m.onb_bmi_label()}</p>
-					<p class={big}>{formatDecimal(bmiValue, ',', 1)}</p>
+					<p class={big}>{formatDecimal(bmiValue, 1)}</p>
 					<p class="font-[650]">
 						{allowed ? categoryText[whoAdultCategory(bmiValue)]() : m.onb_bmi_no_category()}
 					</p>
@@ -286,7 +286,7 @@
 					<p class={why}>{m.onb_bmi_note()}</p>
 					{#if waistCm}
 						<p class={why}>
-							{m.onb_whtr({ value: formatDecimal(waistCm / facts.heightCm, ',', 2) })}
+							{m.onb_whtr({ value: formatDecimal(waistCm / facts.heightCm, 2) })}
 						</p>
 					{/if}
 				</div>
@@ -360,7 +360,7 @@
 						bind:value={rate}
 						options={rates.map((r) => ({
 							value: r,
-							label: r === '0' ? m.onb_rate_maintain() : formatDecimal(Number(r), ',', 2),
+							label: r === '0' ? m.onb_rate_maintain() : formatDecimal(Number(r), 2),
 							disabled: Number(r) > cap
 						}))}
 					/>

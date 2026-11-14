@@ -119,7 +119,7 @@
 					: [field];
 		const found = codes.map(find).find(Boolean);
 		return {
-			text: found ? formatDecimal(found.value, ',', 4) : '',
+			text: found ? formatDecimal(found.value, 4) : '',
 			lessThan: found?.qualifier === 'less_than'
 		};
 	}
@@ -134,7 +134,7 @@
 	let basis = $state<Basis>(start?.basis ?? '100g');
 	let servingLabel = $state(start?.servingLabel ?? '');
 	let servingSizeText = $state(
-		start?.servingSize ? formatDecimal(start.servingSize.amount, ',', 4) : ''
+		start?.servingSize ? formatDecimal(start.servingSize.amount, 4) : ''
 	);
 	let servingSizeUnit = $state<'g' | 'ml'>(start?.servingSize?.unit ?? 'g');
 	let rows = $state(
@@ -146,7 +146,7 @@
 	let portions = $state(
 		(start?.servings ?? []).map((s) => ({
 			name: s.name,
-			text: formatDecimal(s.amount, ',', 4),
+			text: formatDecimal(s.amount, 4),
 			unit: s.unit
 		}))
 	);
@@ -157,7 +157,7 @@
 				return [
 					code,
 					{
-						text: found ? formatDecimal(found.value, ',', 4) : '',
+						text: found ? formatDecimal(found.value, 4) : '',
 						lessThan: found?.qualifier === 'less_than'
 					}
 				];
@@ -263,7 +263,7 @@
 		labelType = labelTypeOf(food.nutrients);
 		basis = food.basis;
 		servingLabel = food.servingLabel ?? '';
-		servingSizeText = food.servingSize ? formatDecimal(food.servingSize.amount, ',', 4) : '';
+		servingSizeText = food.servingSize ? formatDecimal(food.servingSize.amount, 4) : '';
 		servingSizeUnit = food.servingSize?.unit ?? 'g';
 		rows = Object.fromEntries(FIELDS.map((f) => [f, initialRow(f, find)])) as typeof rows;
 		extras = extraRows(find);

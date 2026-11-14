@@ -113,7 +113,7 @@
 		<p
 			class="font-display text-[1.625rem] leading-[1.1] font-[750] tracking-[-0.02em] tabular-nums"
 		>
-			<Roll value={formatDecimal(totalMl, ',', 0)} />
+			<Roll value={formatDecimal(totalMl, 0)} />
 			<small class="font-sans text-[0.8125rem] font-semibold tracking-normal text-muted">ml</small>
 		</p>
 		<p class="text-[0.8125rem] leading-[1.3] text-muted">

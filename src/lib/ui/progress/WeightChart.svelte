@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fixedDecimal } from '#lib/shared/numbers.ts';
 	// Weight over the range (docs/ui.md, "Progress charts"): LayerChart's frame with our marks. Readings shows the weigh-ins;
 	// Trend the smoothed weight with the weigh-ins faint behind it. The goal never stretches the scale. Looking at a
 	// weigh-in reports it through `onlook`, and the headline above the chart shows it; screen readers get the same as text.
@@ -36,7 +37,7 @@
 		onlook(index === null ? null : (points[index] ?? null));
 	}
 	// Weights always with one decimal ("83,0 kg"), as the person reads a scale.
-	const kg = (v: number) => v.toFixed(1).replace('.', ',');
+	const kg = (v: number) => fixedDecimal(v, 1);
 	const pace = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${kg(Math.abs(v))}`;
 	const readout = $derived.by(() => {
 		if (!current) return '';

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fixedDecimal } from '#lib/shared/numbers.ts';
 	// docs/ui.md, "Achievements, Journal and Help": the month's weeks, newest first, each a summary line and only the
 	// moments that mattered. Achievements show as small versions of their badges and open the badge page; other
 	// highlights sit in neutral circles.
@@ -7,7 +8,7 @@
 	import TrendingDown from '@lucide/svelte/icons/trending-down';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
-	import { kcal, shortDate, shortWeekday } from '#lib/shared/format.ts';
+	import { kcal, shortDate, shortDay } from '#lib/shared/format.ts';
 	import type { JournalEvent, JournalWeek } from '#lib/shared/journal.ts';
 	import Badge from '../achievements/Badge.svelte';
 	import { achievementTitle, comparison } from '../achievements/text.ts';
@@ -15,9 +16,9 @@
 	let { weeks, monthName, current }: { weeks: JournalWeek[]; monthName: string; current: boolean } =
 		$props();
 
-	const kg = (v: number) => v.toFixed(1).replace('.', ',');
+	const kg = (v: number) => fixedDecimal(v, 1);
 	const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${kg(Math.abs(v))}`;
-	const day = (date: string) => `${shortWeekday(date)} ${shortDate(date)}`;
+	const day = (date: string) => shortDay(date);
 	// "26–31 Oct", or "1 Oct" for a week of one day.
 	function span(w: JournalWeek): string {
 		if (w.current) return m.journal_this_week();

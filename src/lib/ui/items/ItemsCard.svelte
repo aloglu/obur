@@ -56,7 +56,7 @@
 	function macros(values: ReturnType<typeof asValues>) {
 		const find = (code: string) => values?.find((n) => n.code === code);
 		const grams = (n: ReturnType<typeof find>) =>
-			n ? `${formatDecimal(n.value, ',', 1)} g` : m.amount_unknown_short();
+			n ? `${formatDecimal(n.value, 1)} g` : m.amount_unknown_short();
 		return [
 			{ color: 'var(--protein)', label: m.nutrient_short_protein(), value: grams(find('protein')) },
 			{

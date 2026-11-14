@@ -14,5 +14,5 @@ export function paceLabel(rate: number): string {
 				: rate <= 0.75
 					? m.pace_fast()
 					: m.pace_fastest();
-	return m.pace_label({ name, kg: formatDecimal(rate, ',', 2) });
+	return m.pace_label({ name, kg: formatDecimal(rate, 2) });
 }

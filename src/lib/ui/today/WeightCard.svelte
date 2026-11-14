@@ -30,7 +30,7 @@
 		latest && previous ? Math.round((latest.value - previous.value) * 10) / 10 : null
 	);
 	const spark = $derived(recent.map((r) => r.value).toReversed());
-	const show = (kg: number) => formatDecimal(kg, ',', 2);
+	const show = (kg: number) => formatDecimal(kg, 2);
 
 	const PAGE = 20;
 	const history_page = (after?: BodyReading) =>
@@ -103,7 +103,7 @@
 				{m.weight_same_as({ day: weekdayShort(previous.localDate) })}
 			{:else}
 				<b class={['font-semibold tabular-nums', change! < 0 ? 'text-good' : 'text-text']}
-					>{change! < 0 ? '−' : '+'}{formatDecimal(Math.abs(change!), ',', 1)} kg</b
+					>{change! < 0 ? '−' : '+'}{formatDecimal(Math.abs(change!), 1)} kg</b
 				>
 				{m.weight_since({ day: weekdayShort(previous.localDate) })}
 			{/if}

@@ -36,7 +36,7 @@
 	let noMore = $state(false);
 
 	const unit = $derived(kind === 'weight' ? 'kg' : 'ml');
-	const show = (value: number) => formatDecimal(value, ',', kind === 'weight' ? 2 : 0);
+	const show = (value: number) => formatDecimal(value, kind === 'weight' ? 2 : 0);
 	const time = (iso: string) => clockTime(iso, page.data.timeFormat ?? 'device');
 	const value = $derived(parseDecimal(text));
 	// The same ranges as the database: weight under 700 kg, water up to 10 litres.

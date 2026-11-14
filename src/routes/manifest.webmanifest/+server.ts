@@ -1,6 +1,8 @@
 // The web app manifest, with the icons of the app icon chosen on Appearance (its id in the query, as the page links
 // it; docs/ui.md, "App icon"). Public: browsers fetch it without the session. Never cached (server.js).
 import { DEFAULT_APP_ICON, appIconFile, isAppIcon } from '#lib/shared/app-icons.ts';
+import { m } from '#lib/paraglide/messages.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ url }) => {
@@ -9,7 +11,8 @@ export const GET: RequestHandler = ({ url }) => {
 	const manifest = {
 		name: 'obur',
 		short_name: 'obur',
-		description: 'Calories, weight and water, on your own server.',
+		description: m.app_tagline(),
+		lang: getLocale(),
 		start_url: '/',
 		scope: '/',
 		display: 'standalone',

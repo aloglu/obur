@@ -41,9 +41,9 @@ test('on an empty Progress, New weigh-in opens in place and starts the weight li
 	await page.getByRole('button', { name: 'New weigh-in' }).click();
 	await page.getByLabel('New weight').fill('81,4');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(page.getByRole('status')).toContainText('81,4');
+	await expect(page.getByRole('status')).toContainText('81.4');
 	await expect(page.getByText('Your weight line starts with your first weigh-in.')).toBeHidden();
-	await expect(page.getByRole('tabpanel')).toContainText('81,4');
+	await expect(page.getByRole('tabpanel')).toContainText('81.4');
 	// The first weigh-in is the first achievement: the outlines give way to the row to the badge page.
 	await expect(firsts).toBeHidden();
 	await expect(page.getByRole('link', { name: /^Achievements/ })).toContainText('1 so far');
@@ -119,22 +119,22 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 		'aria-checked',
 		'true'
 	);
-	await expect(weight).toContainText(/82,6\s*kg/);
-	await expect(weight).toContainText('−1,4 kg');
+	await expect(weight).toContainText(/82\.6\s*kg/);
+	await expect(weight).toContainText('−1.4 kg');
 	await expect(weight.getByText('Average change per week')).toBeVisible();
-	await expect(weight).toContainText(/Average change per week\s*−0,5 kg/);
+	await expect(weight).toContainText(/Average change per week\s*−0\.5 kg/);
 	await expect(weight).toContainText('Weigh-ins5');
 	const weightReadout = weight.locator('[aria-live="polite"]');
-	await expect(weightReadout).toContainText(': 82,6 kg');
+	await expect(weightReadout).toContainText(': 82.6 kg');
 	await weight.getByRole('slider', { name: 'Weight' }).focus();
 	await page.keyboard.press('ArrowLeft');
-	await expect(weightReadout).toContainText(': 82,4 kg');
+	await expect(weightReadout).toContainText(': 82.4 kg');
 	// Looking at a weigh-in turns the headline into it, and leaving goes back to the latest.
-	await expect(weight.locator('p').filter({ hasText: /^82,4\s*kg$/ })).toBeVisible();
-	await expect(weight).not.toContainText('−1,4 kg');
+	await expect(weight.locator('p').filter({ hasText: /^82\.4\s*kg$/ })).toBeVisible();
+	await expect(weight).not.toContainText('−1.4 kg');
 	await page.locator('h1').click();
-	await expect(weight).toContainText('−1,4 kg');
-	await expect(weightReadout).toContainText(': 82,6 kg');
+	await expect(weight).toContainText('−1.4 kg');
+	await expect(weightReadout).toContainText(': 82.6 kg');
 	// Trend: the smoothed weight and pace, remembered on this device; the card keeps its height.
 	const before = (await weight.boundingBox())!.height;
 	await show.getByRole('radio', { name: 'Smoothed' }).click();
@@ -144,7 +144,7 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	);
 	await expect(weight).toContainText(/kg a week/);
 	await expect(weightReadout).toContainText('smoothed');
-	await expect(weightReadout).toContainText('weighed 82,6 kg');
+	await expect(weightReadout).toContainText('weighed 82.6 kg');
 	expect((await weight.boundingBox())!.height).toBeCloseTo(before, 1);
 	await page.reload();
 	await expect(page.getByRole('radio', { name: 'Smoothed' })).toHaveAttribute(

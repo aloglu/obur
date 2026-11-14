@@ -75,7 +75,7 @@ export function unitOptions(
 		if ((s.unit === 'g' && dims.mass) || (s.unit === 'ml' && dims.volume)) {
 			options.push({
 				key: `serving:${s.id}`,
-				label: `${s.name} (${formatDecimal(s.amount, ',', 1)} ${s.unit})`,
+				label: `${s.name} (${formatDecimal(s.amount, 1)} ${s.unit})`,
 				input: { kind: 'serving', servingId: s.id },
 				defaultAmount: 1
 			});
@@ -98,7 +98,7 @@ export function unitOptions(
 		for (const m of measures) {
 			options.push({
 				key: `measure:${m.code}`,
-				label: `${m.name} (${formatDecimal(m.ml, ',', 0)} ml)`,
+				label: `${m.name} (${formatDecimal(m.ml, 0)} ml)`,
 				input: { kind: 'measure', code: m.code },
 				defaultAmount: 1
 			});

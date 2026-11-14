@@ -1,6 +1,7 @@
 // The words for an achievement, wherever it appears (toast, celebration, badge page, Journal).
 import { m } from '#lib/paraglide/messages.js';
 import type { Achievement } from '#lib/shared/achievements.ts';
+import { formatDecimal } from '#lib/shared/numbers.ts';
 import {
 	FIRST_PICTURES,
 	GOAL_PICTURE,
@@ -9,7 +10,7 @@ import {
 } from '#lib/shared/achievement-display.ts';
 
 const messages = m as unknown as Record<string, (() => string) | undefined>;
-const kg = (v: number) => String(v).replace('.', ',');
+const kg = (v: number) => formatDecimal(v, 2);
 
 /** "a chihuahua": the weight comparison for a mark, if there is one. */
 export const comparison = (level: number) => messages[`achievement_weight_${level}`]?.() ?? null;

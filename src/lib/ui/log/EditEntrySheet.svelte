@@ -39,8 +39,8 @@
 
 	let measures = $state<MeasureOption[]>([]);
 	let optionKey = $state(start.unit ? optionKeyFor(start.unit) : '');
-	let amountText = $state(start.amount !== null ? formatDecimal(start.amount, ',', 2) : '');
-	let kcalText = $state(formatDecimal(start.nutrients.energy_kcal?.value ?? 0, ',', 0));
+	let amountText = $state(start.amount !== null ? formatDecimal(start.amount, 2) : '');
+	let kcalText = $state(formatDecimal(start.nutrients.energy_kcal?.value ?? 0, 0));
 	let description = $state(start.description ?? '');
 	let day = $state(start.localDate);
 	let meal = $state<Meal>(start.meal);

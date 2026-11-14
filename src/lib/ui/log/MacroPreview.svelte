@@ -21,7 +21,7 @@
 	const grams = (n: NutrientValue | undefined) =>
 		!n
 			? m.amount_unknown_short()
-			: `${n.qualifier === 'less_than' ? '< ' : n.qualifier === 'estimate' ? '≈ ' : ''}${formatDecimal(n.value, ',', 1)} g`;
+			: `${n.qualifier === 'less_than' ? '< ' : n.qualifier === 'estimate' ? '≈ ' : ''}${formatDecimal(n.value, 1)} g`;
 	const macros = $derived([
 		{ label: m.nutrient_short_protein(), color: 'var(--protein)', value: grams(find('protein')) },
 		{ label: m.nutrient_short_carbohydrate(), color: 'var(--carb)', value: grams(carbs) },

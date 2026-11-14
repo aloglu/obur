@@ -80,7 +80,7 @@
 		| { kind: 'weight'; id: string; kgText: string; open: boolean }
 		| { kind: 'activity'; id: string; kcalText: string; note: string; open: boolean };
 
-	const num = (n: number | null) => (n === null ? '' : formatDecimal(n, ',', 2));
+	const num = (n: number | null) => (n === null ? '' : formatDecimal(n, 2));
 	const keyOf = (u: UnitOption['input'] | null) =>
 		!u
 			? ''

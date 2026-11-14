@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDecimal } from '#lib/shared/numbers.ts';
 	// docs/ui.md, "Achievements, Journal and Help": the badge page. Kilos lost and streaks newest first after the one
 	// next mark; the goal and firsts only once reached. Tapping an earned badge plays its celebration again.
 	import PageHead from '#lib/ui/PageHead.svelte';
@@ -20,7 +21,7 @@
 	const goals = $derived(of('goal'));
 	const streaks = $derived(of('streak'));
 	const firsts = $derived(data.achievements.filter((a) => a.kind === 'first'));
-	const kg = (v: number) => String(v).replace('.', ',');
+	const kg = (v: number) => formatDecimal(v, 2);
 
 	const card = 'flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card';
 	const grid = 'grid grid-cols-4 gap-x-2 gap-y-3 desk:grid-cols-6';

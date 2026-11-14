@@ -155,7 +155,7 @@
 					<div class="flex min-h-11 items-center justify-between gap-3">
 						<dt class="text-[0.9375rem]">{nutrientName[n.code]?.() ?? n.code}</dt>
 						<dd class="text-[0.9375rem] font-semibold tabular-nums">
-							{n.qualifier === 'less_than' ? '< ' : ''}{formatDecimal(n.value, ',', 2)}
+							{n.qualifier === 'less_than' ? '< ' : ''}{formatDecimal(n.value, 2)}
 							{#if n.qualifier === 'derived'}<span class="text-[0.75rem] font-normal text-muted"
 									>({m.food_derived()})</span
 								>{/if}

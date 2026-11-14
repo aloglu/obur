@@ -102,10 +102,10 @@ test('Scan with a key: the copied table fills the form, read by the company and 
 		columns: ['per 100 g', 'per serving (30 g)'],
 		rows: [
 			{ name: 'Energy', values: ['1673 kJ / 400 kcal', '502 kJ / 120 kcal'] },
-			{ name: 'Fat', values: ['18 g', '5,4 g'] },
-			{ name: 'Carbohydrate', values: ['52 g', '15,6 g'] },
-			{ name: 'Protein', values: ['6,5 g', '2 g'] },
-			{ name: 'Salt', values: ['<0,1 g', '<0,1 g'] }
+			{ name: 'Fat', values: ['18 g', '5.4 g'] },
+			{ name: 'Carbohydrate', values: ['52 g', '15.6 g'] },
+			{ name: 'Protein', values: ['6.5 g', '2 g'] },
+			{ name: 'Salt', values: ['<0.1 g', '<0.1 g'] }
 		]
 	};
 	await nextAnswer(key, 200, { choices: [{ message: { content: JSON.stringify(table) } }] });
@@ -120,7 +120,7 @@ test('Scan with a key: the copied table fills the form, read by the company and 
 		'Read by OpenAI. Check each value against your photo.'
 	);
 	await expect(page.locator('#n-energy_kcal')).toHaveValue('400');
-	await expect(page.locator('#n-protein')).toHaveValue('6,5');
+	await expect(page.locator('#n-protein')).toHaveValue('6.5');
 	expect(await lastRequest(key)).toMatchObject({
 		path: '/chat/completions',
 		model: 'gpt-5-mini',

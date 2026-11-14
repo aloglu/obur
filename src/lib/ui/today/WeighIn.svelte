@@ -35,7 +35,7 @@
 		if (!open) text = '';
 	});
 
-	const show = (kg: number) => formatDecimal(kg, ',', 2);
+	const show = (kg: number) => formatDecimal(kg, 2);
 	const kg = $derived(parseDecimal(text));
 	const invalid = $derived(text.trim() !== '' && (kg === undefined || kg <= 0 || kg >= 700));
 

@@ -80,7 +80,7 @@
 		food = await api<FoodDetail>('GET', `/api/v1/foods/${id}`);
 		const first = unitOptions(food, measures)[0];
 		optionKey = first?.key ?? '';
-		amountText = first ? formatDecimal(first.defaultAmount, ',', 2) : '';
+		amountText = first ? formatDecimal(first.defaultAmount, 2) : '';
 	}
 
 	function add(event: SubmitEvent) {
@@ -152,7 +152,7 @@
 				units={options.map((o) => ({ value: o.key, label: o.label }))}
 				invalid={amount === undefined}
 				onunit={(key) =>
-					(amountText = formatDecimal(options.find((o) => o.key === key)!.defaultAmount, ',', 2))}
+					(amountText = formatDecimal(options.find((o) => o.key === key)!.defaultAmount, 2))}
 			/>
 			<MacroPreview nutrients={preview} />
 			{#if nested}<Notice>{m.recipe_no_nesting()}</Notice>{/if}

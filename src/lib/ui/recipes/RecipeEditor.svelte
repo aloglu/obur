@@ -41,8 +41,8 @@
 	// The chosen icon; null shows the one the name suggests.
 	let icon = $state<string | null>(start?.icon ?? null);
 	let choosingIcon = $state(false);
-	let servingsText = $state(start ? formatDecimal(start.servings, ',', 2) : '');
-	let yieldText = $state(start?.cookedYieldG ? formatDecimal(start.cookedYieldG, ',', 2) : '');
+	let servingsText = $state(start ? formatDecimal(start.servings, 2) : '');
+	let yieldText = $state(start?.cookedYieldG ? formatDecimal(start.cookedYieldG, 2) : '');
 	let items = $state<Draft[]>((start?.ingredients ?? []).map((i) => keptDraft(i)));
 	let measures = $state<MeasureOption[]>([]);
 	let busy = $state(false);
@@ -234,7 +234,7 @@
 				<h2 id="per-serving" class="text-[1.1875rem] font-bold">{m.recipe_per_serving()}</h2>
 				<span class="text-[0.875rem] text-muted tabular-nums"
 					>{servings && cookedYieldG
-						? m.recipe_serving_weight({ g: formatDecimal(cookedYieldG / servings, ',', 0) })
+						? m.recipe_serving_weight({ g: formatDecimal(cookedYieldG / servings, 0) })
 						: m.recipe_no_cooked_weight()}</span
 				>
 			</div>

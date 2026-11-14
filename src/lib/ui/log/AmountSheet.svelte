@@ -55,7 +55,7 @@
 		]);
 		const first = unitOptions(food, measures)[0];
 		optionKey = first?.key ?? '';
-		amountText = first ? formatDecimal(first.defaultAmount, ',', 2) : '';
+		amountText = first ? formatDecimal(first.defaultAmount, 2) : '';
 	});
 
 	function toUnit(o: UnitOption): Unit {
@@ -94,8 +94,8 @@
 			const kcalValue = food.nutrients.find((n) => n.code === 'energy_kcal')?.value;
 			const quantity =
 				option.input.kind === 'mass' || option.input.kind === 'volume'
-					? `${formatDecimal(amount, ',', 2)} ${option.label}`
-					: `${formatDecimal(amount, ',', 2)} × ${option.label}`;
+					? `${formatDecimal(amount, 2)} ${option.label}`
+					: `${formatDecimal(amount, 2)} × ${option.label}`;
 			const result = await submit<DiaryEntry>(
 				'/api/v1/diary/entries',
 				{
@@ -156,7 +156,7 @@
 					units={options.map((o) => ({ value: o.key, label: o.label }))}
 					invalid={amount === undefined}
 					onunit={(key) =>
-						(amountText = formatDecimal(options.find((o) => o.key === key)!.defaultAmount, ',', 2))}
+						(amountText = formatDecimal(options.find((o) => o.key === key)!.defaultAmount, 2))}
 				/>
 				{#if amountText.trim() && amount === undefined}<p class="text-[0.8125rem] text-bad">
 						{m.amount_invalid()}

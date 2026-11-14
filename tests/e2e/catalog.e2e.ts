@@ -39,10 +39,10 @@ test('a member creates a shared per-serving food that another member can find an
 	await expect(page.getByRole('heading', { level: 1, name: 'Edit food' })).toBeVisible();
 	await expect(page.getByLabel('Name', { exact: true })).toHaveValue(new RegExp('HighPro\\+'));
 	await expect(nutrient(page, 'fibre')).toHaveValue('');
-	await expect(nutrient(page, 'fat')).toHaveValue('8,1');
+	await expect(nutrient(page, 'fat')).toHaveValue('8.1');
 	// The edit form opens More nutrients when the food has any, with the value and its "<".
 	await expect(nutrient(page, 'iron')).toBeVisible();
-	await expect(nutrient(page, 'iron')).toHaveValue('1,2');
+	await expect(nutrient(page, 'iron')).toHaveValue('1.2');
 	await expect(page.getByRole('button', { name: 'Iron: less than' })).toHaveAttribute(
 		'aria-pressed',
 		'true'
@@ -81,5 +81,5 @@ test('the food form warns about implausible values without blocking the save', a
 		page.getByRole('alert').filter({ hasText: 'more than 100 g per 100 g' })
 	).toBeVisible();
 	await nutrient(page, 'sugars').fill('12,5,3');
-	await expect(page.locator('label[for="n-sugars"]')).toContainText('Use a number such as 12,5');
+	await expect(page.locator('label[for="n-sugars"]')).toContainText('Use a number such as 12.5');
 });

@@ -82,7 +82,7 @@
 				: m.food_basis_100ml();
 	const who = (r: FoodSearchResult) =>
 		r.visibility === 'private' ? m.food_visibility_private() : m.foods_shared();
-	const energy = (r: FoodSearchResult) => (r.kcal === null ? null : formatDecimal(r.kcal, ',', 0));
+	const energy = (r: FoodSearchResult) => (r.kcal === null ? null : formatDecimal(r.kcal, 0));
 </script>
 
 <svelte:head><title>{m.foods_title()} · {m.app_name()}</title></svelte:head>

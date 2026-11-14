@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deriveNutrients, type NutrientValue } from './nutrients.ts';
-import { formatDecimal, parseDecimal } from './numbers.ts';
+import { fixedDecimal, formatDecimal, parseDecimal, percentText } from './numbers.ts';
+import { overwriteLocale } from './test-locale.ts';
 import {
 	basisFactor,
 	scaleNutrients,
@@ -58,17 +59,23 @@ describe('parseDecimal', () => {
 		}
 	);
 
-	it('formats with the person’s decimal mark', () => {
-		expect(formatDecimal(82.4)).toBe('82,4');
-		expect(formatDecimal(82.4, '.')).toBe('82.4');
+	it('formats with the language’s decimal mark: a period in English, a comma in Turkish', () => {
+		expect(formatDecimal(82.4)).toBe('82.4');
+		expect(overwriteLocale('tr', () => formatDecimal(82.4))).toBe('82,4');
+		expect(formatDecimal(82.4, 2, ',')).toBe('82,4');
 		expect(formatDecimal(2)).toBe('2');
-		expect(formatDecimal(0.125, ',', 2)).toBe('0,13');
+		expect(formatDecimal(0.125, 2)).toBe('0.13');
 		// Regression: whole numbers keep their zeros (200 once became "2").
-		expect(formatDecimal(200, ',', 0)).toBe('200');
-		expect(formatDecimal(1500, ',', 2)).toBe('1500');
-		expect(formatDecimal(330, ',', 1)).toBe('330');
-		expect(formatDecimal(2.5, ',', 2)).toBe('2,5');
-		expect(formatDecimal(0, ',', 2)).toBe('0');
+		expect(formatDecimal(200, 0)).toBe('200');
+		expect(formatDecimal(1500, 2)).toBe('1500');
+		expect(formatDecimal(330, 1)).toBe('330');
+		expect(formatDecimal(2.5, 2, ',')).toBe('2,5');
+		expect(formatDecimal(0, 2)).toBe('0');
+		// Fixed decimals keep their zeros; percentages put the sign where the language does.
+		expect(fixedDecimal(84, 1)).toBe('84.0');
+		expect(overwriteLocale('tr', () => fixedDecimal(84, 1))).toBe('84,0');
+		expect(percentText(18.5)).toBe('18.5 %');
+		expect(overwriteLocale('tr', () => percentText(18.5))).toBe('%18,5');
 	});
 });
 

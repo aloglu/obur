@@ -36,8 +36,13 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   `languages.test.ts`, settings and export round trip (a stored 'tr' travels), `language.e2e.ts` (a hidden language
   never shows). Checks: type-check, lint, 1100 unit and database tests, build, e2e 231 passed (18 skipped by design);
   one earlier run had the phone-WebKit offline test (offline.e2e.ts:237) fail once and pass on retry.
-- Next: the full translation in `messages/tr.json` (add 'tr' to project.inlang locales; keep it out of
-  `ENABLED_LANGUAGES`), with the key and placeholder parity test, Turkish dates, numbers and reminders.
+- Done (2026-11-14): full Turkish catalog (glossary terms, no suffix on a placeholder, the owner's Help wording),
+  dates and numbers per language (English shows 72.5 now; e2e expectations and the Today screenshots updated, only
+  the decimal marks changed), reminders in the person's language, passkey names and manifest from the catalog.
+  Checks: type-check, lint, 1106 unit and database tests, e2e 231 passed (18 skipped by design).
+- Next: USDA names and portions in Turkish (design.md "Built-in USDA foods"; `catalog/metric-portion.ts` still writes
+  decimal commas), household measures' names per language, cup labels with their size. Then layout checks and Turkish
+  screenshot tests, then the owner's full text review.
 
 ## After beta.12 (2026-11-13), released as `v1.0.0-beta.13`
 

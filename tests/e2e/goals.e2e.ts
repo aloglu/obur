@@ -32,13 +32,13 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 
 	await fillDetails(page, bornYearsAgo(30));
 	await expect(page.getByText('Step 2 of 3 · Your estimate')).toBeVisible();
-	await expect(page.getByText('24,7', { exact: true })).toBeVisible();
+	await expect(page.getByText('24.7', { exact: true })).toBeVisible();
 	await expect(page.getByText('Healthy weight (WHO adult category)')).toBeVisible();
 	await expect(page.getByText("can't tell muscle from fat")).toBeVisible();
 	// Mifflin–St Jeor: 10·80 + 6.25·180 − 5·30 + 5 = 1,780; × 1.2 = 2,136.
 	await expect(page.getByText('2136', { exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Choose a goal' }).click();
-	await page.getByRole('radio', { name: '0,5', exact: true }).click();
+	await page.getByRole('radio', { name: '0.5', exact: true }).click();
 	await expect(page.getByText('1586', { exact: true }).first()).toBeVisible();
 	await expect(page.getByText('not medical advice').first()).toBeVisible();
 	await page.getByRole('button', { name: 'Save my budget' }).click();
@@ -114,10 +114,10 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await page.getByLabel('New goal weight').fill('74');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('button', { name: /^Goal weight/ })).toContainText('74 kg');
-	await choose(page, 'Pace', 'Steady · 0,25 kg a week');
+	await choose(page, 'Pace', 'Steady · 0.25 kg a week');
 	await expect(page.getByRole('status')).toContainText('Budget settings saved');
 	await page.getByRole('link', { name: 'Settings', exact: true }).click();
-	await expect(page.getByRole('link', { name: /^Goal/ })).toContainText('Steady · 0,25 kg a week');
+	await expect(page.getByRole('link', { name: /^Goal/ })).toContainText('Steady · 0.25 kg a week');
 });
 
 test('under-18s get no calculated target but can enter a professional’s number; over budget shows red', async ({
@@ -168,7 +168,7 @@ test('day totals replace each other, and the budget settings apply from today', 
 	await page.goto('/onboarding');
 	await fillDetails(page, bornYearsAgo(30));
 	await page.getByRole('button', { name: 'Choose a goal' }).click();
-	await page.getByRole('radio', { name: '0,5', exact: true }).click();
+	await page.getByRole('radio', { name: '0.5', exact: true }).click();
 	await page.getByLabel(/Goal weight/).fill('75');
 	await page.getByRole('button', { name: 'Save my budget' }).click();
 	await expectBreakdown(page, 2136, 0, 550);
@@ -267,7 +267,7 @@ test('a budget set by hand takes a goal weight, which leaves the budget as it is
 	await page.getByRole('button', { name: /Goal weight/ }).click();
 	await page.getByLabel('New goal weight').fill('78,5');
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('button', { name: /Goal weight/ })).toContainText('78,5 kg');
+	await expect(page.getByRole('button', { name: /Goal weight/ })).toContainText('78.5 kg');
 	await expect(page.getByText('Your budget stays as you set it.')).toBeVisible();
 	// No pace or worked-out budget for a budget set by hand.
 	await expect(page.getByText('Pace')).toHaveCount(0);

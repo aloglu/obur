@@ -58,11 +58,11 @@ export function suggestedLabel(): string {
 	const ua = navigator.userAgent;
 	if (/iPhone/.test(ua)) return 'iPhone';
 	if (/iPad/.test(ua)) return 'iPad';
-	if (/Android/.test(ua)) return 'Android phone';
+	if (/Android/.test(ua)) return m.passkey_name_android();
 	if (/Macintosh/.test(ua)) return 'Mac';
-	if (/Windows/.test(ua)) return 'Windows PC';
-	if (/Linux/.test(ua)) return 'Linux PC';
-	return 'Passkey';
+	if (/Windows/.test(ua)) return m.passkey_name_windows();
+	if (/Linux/.test(ua)) return m.passkey_name_linux();
+	return m.passkey_name_default();
 }
 
 /** A message for a failed ceremony or API call. */

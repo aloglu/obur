@@ -47,7 +47,7 @@
 		}
 		const plus = t.unknown > 0 || t.approximate ? '+' : '';
 		return {
-			text: `${formatDecimal(t.value, ',', 1)} g${plus}`,
+			text: `${formatDecimal(t.value, 1)} g${plus}`,
 			note: t.unknown > 0 ? m.nutrients_unknown_entries({ count: t.unknown }) : null
 		};
 	}
@@ -66,7 +66,7 @@
 	});
 	const carbNote = $derived(
 		carbs.stated.entries && carbs.unstated.entries
-			? m.nutrients_carbs_plus_unstated({ value: formatDecimal(carbs.unstated.value, ',', 1) })
+			? m.nutrients_carbs_plus_unstated({ value: formatDecimal(carbs.unstated.value, 1) })
 			: !carbs.stated.entries && carbs.unstated.entries
 				? m.nutrients_carbs_unstated()
 				: null

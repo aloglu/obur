@@ -91,11 +91,11 @@ test('the highlights follow the calendar’s month', async ({ page }, testInfo) 
 	// Averages only over the complete day; the weight change since the last weigh-in before the week.
 	await expect(week).toContainText('1800 kcal a day');
 	await expect(week).toContainText('200 under');
-	await expect(week).toContainText('−0,6 kg');
+	await expect(week).toContainText('−0.6 kg');
 	const items = week.getByRole('listitem');
 	// The first day logged and first complete day are achievements, and lead their day.
 	await expect(items).toHaveText([
-		/New lowest weight: 89,4 kg Wed 2 Sep$/,
+		/New lowest weight: 89\.4 kg Wed 2 Sep$/,
 		/First day logged Tue 1 Sep$/,
 		/First complete day Tue 1 Sep$/,
 		/Budget set to 2000 kcal Tue 1 Sep$/
@@ -146,6 +146,6 @@ test('a day with a weigh-in but no food keeps its columns', async ({ page }, tes
 	});
 	await page.goto('/journal?day=2026-09-05');
 	const calendar = page.getByRole('region', { name: 'September 2026' });
-	await expect(calendar).toContainText('82,4 kg');
+	await expect(calendar).toContainText('82.4 kg');
 	await expect(calendar).toContainText('Nothing logged');
 });

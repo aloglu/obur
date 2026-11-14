@@ -54,7 +54,7 @@ export function keptDraft(i: {
 		kind,
 		name: kind === 'quick' ? (i.description ?? i.quickName ?? '') : displayName(i.food!),
 		snapshot: i.food,
-		amountText: i.amount !== null ? formatDecimal(i.amount, ',', 2) : '',
+		amountText: i.amount !== null ? formatDecimal(i.amount, 2) : '',
 		optionKey: key,
 		startAmount: i.amount,
 		startKey: key,
@@ -80,7 +80,7 @@ export function newDraft(food: FoodDetail, amount: number, option: UnitOption): 
 			basisNutrients: food.nutrients,
 			icon: food.icon
 		},
-		amountText: formatDecimal(amount, ',', 2),
+		amountText: formatDecimal(amount, 2),
 		optionKey: option.key,
 		stored: {}
 	};

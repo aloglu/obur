@@ -74,7 +74,7 @@
 			</span>
 			<span class="truncate text-right">
 				{#if weight !== null}
-					<Roll value={`${formatDecimal(weight, ',', 2)} kg`} />
+					<Roll value={`${formatDecimal(weight, 2)} kg`} />
 				{:else}
 					<span class="text-muted">–</span>
 				{/if}

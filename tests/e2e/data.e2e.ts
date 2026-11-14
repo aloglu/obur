@@ -185,9 +185,9 @@ test('a LoseIt export imports after a preview that checks it against LoseIt’s 
 	await expect(preview.getByRole('row', { name: /Deleted in LoseIt/ })).toContainText('1');
 	await expect(preview).toContainText('First weigh-in');
 	await preview.getByRole('radio', { name: 'lb' }).click();
-	await expect(preview).toContainText(/First weigh-in: [\d,]+ lb/);
+	await expect(preview).toContainText(/First weigh-in: [\d.]+ lb/);
 	await preview.getByRole('radio', { name: 'kg' }).click();
-	await expect(preview).toContainText(/First weigh-in: [\d,]+ kg/);
+	await expect(preview).toContainText(/First weigh-in: [\d.]+ kg/);
 	await preview.getByRole('button', { name: /^Import/ }).click();
 	await expect(page.getByRole('status')).toContainText('Import finished');
 	const day = await apiAs<{ entries: { food: { name: string } | null }[] }>(
@@ -200,6 +200,6 @@ test('a LoseIt export imports after a preview that checks it against LoseIt’s 
 	// The page may still be refreshing after the import, which can interrupt a navigation.
 	await expect(() => page.goto('/?date=2026-01-07')).toPass();
 	const nutrients = page.getByRole('region', { name: 'Nutrients' });
-	await expect(nutrients).toContainText('84,4 g');
+	await expect(nutrients).toContainText('84.4 g');
 	await expect(nutrients).toContainText('Definition not stated (imported)');
 });

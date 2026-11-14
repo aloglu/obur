@@ -14,7 +14,7 @@
 	import Switch from '#lib/ui/Switch.svelte';
 	import { dateWithYear, dayTitle, kcal } from '#lib/shared/format.ts';
 	import { budgetForDay } from '#lib/shared/goals.ts';
-	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import { formatDecimal, percentText } from '#lib/shared/numbers.ts';
 	import Card from '#lib/ui/Card.svelte';
 	import MacroSettings from '#lib/ui/profile/MacroSettings.svelte';
 
@@ -31,13 +31,13 @@
 	const setupHref = `${resolve('/(app)/onboarding')}?from=profile`;
 	const notSet = m.details_not_set();
 	const about = $derived([
-		[m.details_height(), p?.heightCm ? `${formatDecimal(p.heightCm, ',', 1)} cm` : notSet],
+		[m.details_height(), p?.heightCm ? `${formatDecimal(p.heightCm, 1)} cm` : notSet],
 		[m.details_birth(), p?.birthDate ? dateWithYear(p.birthDate) : notSet],
 		[
 			m.details_sex(),
 			p?.sex === 'female' ? m.onb_female() : p?.sex === 'male' ? m.onb_male() : notSet
 		],
-		[m.details_body_fat(), p?.bodyFatPct ? `${formatDecimal(p.bodyFatPct, ',', 1)} %` : notSet]
+		[m.details_body_fat(), p?.bodyFatPct ? percentText(p.bodyFatPct) : notSet]
 	]);
 	const group = 'flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card';
 
