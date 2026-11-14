@@ -70,6 +70,13 @@ Fixing (owner, 2026-11-14: finding 1 as recommended, then the rest):
 - Done (small): recipe and saved-meal saves check the version on their final update, so of two saves at once the
   second gets a conflict instead of silently replacing the first. Tests in `recipes.db.test.ts` and
   `saved-meals.db.test.ts` (both fail without the fix; the saved-meal one holds a row lock to force the overlap).
+- Not a bug (finding 4, "profile kept"): checked with a test; fields an older archive lacks are not compared, and
+  the stored and exported forms of defaults match. No change.
+- Done (small): the update check follows GitHub's next-page links (up to 5 pages of 100 tags; unit test).
+- Done (small): links to the owner's private review pages removed from this file (they are in the owner's app).
+- Left as is (small): achievements are worked out on the page and again by the layout's refresh after it. The
+  layout's run is behind the page and only writes what changed; removing it would delay celebrations. Not worth
+  the change.
 
 ## Pre-release audit fixes (2026-11-14)
 
@@ -160,7 +167,7 @@ built, smoke test, off-site outage test. Migrations 0050–0052 run on update. P
   the stray `.claude/worktrees` copy, which Prettier also scans), 1096 unit and database tests, e2e 227 passed (18
   skipped by design).
 - Done (2026-11-13, overnight cloud session): review page published to the existing review artifact
-  (https://claude.ai/artifact/1D6vQwDnAYtRhHLxccs5ii, version 10, db collection `review`). Source:
+  ((a private review page in the owner’s Claude app), version 10, db collection `review`). Source:
   `docs/ui/review-2026-11/turkish.html`. Old Scan docs left untouched; the page reads only `tr-` docs.
 - Stop doc ids: `tr-tabs`, `tr-today`, `tr-names`, `tr-dates`, `tr-foods`, `tr-numbers`, `tr-help`, `tr-glossary`.
   Fields `stop`, `verdict` (`ok` / `change` / `dealbreaker`), `note`, `at`.
@@ -174,7 +181,7 @@ built, smoke test, off-site outage test. Migrations 0050–0052 run on update. P
 - Checked: every stop, screen, Phone/Desktop, Light/Dark and Both/Türkçe view walked in headless Chromium at 390 and
   1280 px: no script errors, no page overflow, no clipped text. Saving verdicts verified only by reading the
   collection (no test write); the real save runs when the owner taps a verdict.
-- Review done (owner, 2026-11-14, https://claude.ai/artifact/1D6vQwDnAYtRhHLxccs5ii, collection `review`, ids `tr-*`):
+- Review done (owner, 2026-11-14, (a private review page in the owner’s Claude app), collection `review`, ids `tr-*`):
   no dealbreaker, so it goes ahead. Six stops right with small wording fixes, two to change (tab bar wording, Help
   text). Glossary approved and saved with the fixes: `docs/tr-glossary.md`.
 - Settled 2026-11-14 (glossary): "Aktivite" fits the pill as it is (measured); water "Miktar gir"; Progress switch
@@ -227,7 +234,7 @@ built, smoke test, off-site outage test. No migration. The owner checks the page
 
 - Done: page changes (owner's report: going into More's sections and deeper felt inconsistent and not in line with
   Stageshow). Found by filming: an empty frame between pages, the title blinking, and no difference between going in
-  and coming out. Demo artifact https://claude.ai/artifact/CHUPNz27wfDy4sP4tUUHdr (Current / A Dissolve / B Push);
+  and coming out. Demo artifact (a private review page in the owner’s Claude app) (Current / A Dissolve / B Push);
   owner picked B. Built with view transitions: push on phones down and up `shared/page-tree.ts` (unit tests), dissolve
   for everything else and on desktop. docs/ui.md, "Page changes".
 

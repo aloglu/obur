@@ -9,18 +9,39 @@ const SOURCE = UPDATES_TEST_URL
 	? `${UPDATES_TEST_URL}/updates/tags`
 	: 'https://api.github.com/repos/aloglu/obur/tags?per_page=100';
 
+/** GitHub lists 100 tags a page; a few pages are plenty, and the next page is only ever GitHub's own address. */
+const MAX_PAGES = 5;
+
+/** The page after this one, from GitHub's Link header, when it is on the same host. */
+export function nextPage(link: string | null, current: string): string | null {
+	const next = link?.match(/<([^>]+)>;\s*rel="next"/)?.[1];
+	if (!next) return null;
+	try {
+		return new URL(next).host === new URL(current).host ? next : null;
+	} catch {
+		return null;
+	}
+}
+
 async function published(): Promise<string[]> {
-	const response = await fetch(SOURCE, {
-		headers: { accept: 'application/vnd.github+json', 'user-agent': 'obur' },
-		redirect: 'error',
-		signal: AbortSignal.timeout(4000)
-	});
-	if (!response.ok) throw new Error(`status ${response.status}`);
-	const body: unknown = await response.json();
-	if (!Array.isArray(body)) throw new Error('unexpected answer');
-	return body
-		.map((tag: unknown) => (tag as { name?: unknown } | null)?.name)
-		.filter((name): name is string => typeof name === 'string');
+	const names: string[] = [];
+	let url: string | null = SOURCE;
+	for (let page = 0; url && page < MAX_PAGES; page++) {
+		const response: Response = await fetch(url, {
+			headers: { accept: 'application/vnd.github+json', 'user-agent': 'obur' },
+			redirect: 'error',
+			signal: AbortSignal.timeout(4000)
+		});
+		if (!response.ok) throw new Error(`status ${response.status}`);
+		const body: unknown = await response.json();
+		if (!Array.isArray(body)) throw new Error('unexpected answer');
+		for (const tag of body) {
+			const name = (tag as { name?: unknown } | null)?.name;
+			if (typeof name === 'string') names.push(name);
+		}
+		url = nextPage(response.headers.get('link'), url);
+	}
+	return names;
 }
 
 export const updates = createUpdates(db, { current: __OBUR_VERSION__, published });
