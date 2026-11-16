@@ -6,7 +6,8 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 beta.18 plus the owner's daily-use reports below (menus, unit menu, archive food). Checks before the tag: build,
 image built, smoke test, off-site outage test; the code checks as listed below. `docs/install/for-ai-agents.md`: no
-new settings, commands or start-up log lines. Tag pushed; publishing not yet confirmed.
+new settings, commands or start-up log lines. Tag pushed; the release workflow passed (checks, all three images,
+smoke and off-site tests on GitHub) and published them as 1.0.0-beta.19.
 - Next: the owner updates (`OBUR_VERSION=1.0.0-beta.19`), tests archive food and the menus on the iPhone.
 
 ## Owner's daily-use reports (2026-11-16)
