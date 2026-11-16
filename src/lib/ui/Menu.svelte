@@ -1,8 +1,9 @@
 <script lang="ts" generics="T extends string">
 	// A short list of choices that opens over the page (docs/ui.md, "Choices"). It sits in the top layer, so sheets and
-	// scrolling lists can't clip it, and the browser closes it on Escape or a tap elsewhere. `width="trigger"` matches
-	// the field that opened it (Day, Meal); `width="content"` is only as wide as its longest option and lines up with
-	// the opener's right edge.
+	// scrolling lists can't clip it, and the browser closes it on Escape. A tap elsewhere only closes it: whatever was
+	// tapped does nothing, so dismissing a menu never presses something by accident. `width="trigger"` matches the
+	// field that opened it (Day, Meal); `width="content"` is only as wide as its longest option, up to MAX_WIDTH (longer
+	// options wrap), and lines up with the opener's right edge.
 	import Check from '@lucide/svelte/icons/check';
 	import type { Snippet } from 'svelte';
 
@@ -42,6 +43,7 @@
 
 	const GAP = 6;
 	const EDGE = 8;
+	const MAX_WIDTH = 288;
 
 	function place() {
 		if (!trigger || !list) return;
@@ -58,7 +60,7 @@
 			s.left = `${box.left}px`;
 		} else {
 			s.width = 'max-content';
-			s.maxWidth = `${viewWidth - 2 * EDGE}px`;
+			s.maxWidth = `${Math.min(MAX_WIDTH, viewWidth - 2 * EDGE)}px`;
 			s.right = `${Math.max(EDGE, viewWidth - box.right)}px`;
 		}
 		const below = viewBottom - box.bottom - GAP - EDGE;
@@ -121,11 +123,45 @@
 		const close = (event: Event) => {
 			if (!list?.contains(event.target as Node)) list?.hidePopover();
 		};
+		// A press outside the menu (and its opener, which toggles it itself) closes it and is used up.
+		const pressOutside = (event: PointerEvent) => {
+			const target = event.target as Node;
+			if (list?.contains(target) || trigger?.contains(target)) return;
+			swallow = true;
+			clearTimeout(swallowTimer);
+			swallowTimer = setTimeout(() => (swallow = false), 800);
+			list?.hidePopover();
+		};
 		window.addEventListener('scroll', close, { capture: true, passive: true });
 		window.addEventListener('resize', close);
+		window.addEventListener('pointerdown', pressOutside, { capture: true });
 		return () => {
 			window.removeEventListener('scroll', close, { capture: true });
 			window.removeEventListener('resize', close);
+			window.removeEventListener('pointerdown', pressOutside, { capture: true });
+		};
+	});
+
+	// Stops the rest of that press (focus, click) from reaching what was under it. Lives past the menu closing, since
+	// the click comes after. A press that turns into a scroll ends in pointercancel and has no click to stop.
+	let swallow = false;
+	let swallowTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		const block = (event: Event) => {
+			if (!swallow) return;
+			event.preventDefault();
+			event.stopPropagation();
+			if (event.type === 'click') swallow = false;
+		};
+		const cancel = () => (swallow = false);
+		window.addEventListener('mousedown', block, { capture: true });
+		window.addEventListener('click', block, { capture: true });
+		window.addEventListener('pointercancel', cancel, { capture: true });
+		return () => {
+			clearTimeout(swallowTimer);
+			window.removeEventListener('mousedown', block, { capture: true });
+			window.removeEventListener('click', block, { capture: true });
+			window.removeEventListener('pointercancel', cancel, { capture: true });
 		};
 	});
 </script>
@@ -202,9 +238,11 @@
 		color: var(--text);
 		background: var(--surface);
 		border-radius: var(--radius-input);
+		/* A visible edge in every theme and mode, so the menu reads as its own layer over a white card. */
 		box-shadow:
-			0 12px 36px rgba(0, 0, 0, 0.2),
-			0 0 0 1px var(--line);
+			0 0 0 1px color-mix(in srgb, var(--text) 16%, transparent),
+			0 2px 6px rgba(0, 0, 0, 0.08),
+			0 16px 40px rgba(0, 0, 0, 0.24);
 	}
 	.menu-panel:popover-open {
 		display: flex;
@@ -222,12 +260,13 @@
 		justify-content: space-between;
 		gap: 16px;
 		min-height: 44px;
-		padding: 6px 12px;
+		padding: 8px 12px;
 		border-radius: var(--radius-menu);
 		font-size: 0.9375rem;
 		font-weight: 600;
+		line-height: 1.3;
 		text-align: left;
-		white-space: nowrap;
+		text-wrap: pretty;
 	}
 	.menu-option:hover,
 	.menu-option:focus-visible {

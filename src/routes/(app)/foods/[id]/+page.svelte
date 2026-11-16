@@ -54,10 +54,30 @@
 			await goto(resolve('/(app)/foods/[id]', { id }));
 		});
 
+	const archiveCall = (id: string, archived: boolean) =>
+		api('POST', `/api/v1/foods/${id}?action=${archived ? 'archive' : 'restore'}`, {});
+
+	// Archiving goes back to Foods, where the food now sits faded at the end, with Undo (back to the food); restoring
+	// stays here.
 	const setArchived = (archived: boolean) =>
 		run(async () => {
-			await api('POST', `/api/v1/foods/${food.id}?action=${archived ? 'archive' : 'restore'}`, {});
-			await invalidateAll();
+			const id = food.id;
+			await archiveCall(id, archived);
+			if (!archived) {
+				await invalidateAll();
+				showToast({ message: m.food_restored_toast() });
+				return;
+			}
+			await goto(resolve('/(app)/foods'), { invalidateAll: true });
+			showToast({
+				message: m.food_archived_toast(),
+				detail: m.food_archived_detail(),
+				// Undo puts the person back where they were, on the food.
+				undo: async () => {
+					await archiveCall(id, false);
+					await goto(resolve('/(app)/foods/[id]', { id }));
+				}
+			});
 		});
 
 	const nutrientName: Record<string, () => string> = {
@@ -118,7 +138,7 @@
 		title={editing ? m.food_edit_title() : fullFoodName(food)}
 	/>
 	{#if problem}<Notice>{problem}</Notice>{/if}
-	{#if food.archived}<Notice tone="info">{m.food_archived()}</Notice>{/if}
+	{#if food.archived}<p class="text-[0.875rem] text-muted">{m.food_archived()}</p>{/if}
 	{#if food.curatedDataset}<p class="text-[0.875rem] text-muted">
 			{m.food_source_usda({
 				dataset: food.curatedDataset === 'sr_legacy' ? 'SR Legacy' : 'Foundation Foods'
