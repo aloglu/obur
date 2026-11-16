@@ -2,6 +2,13 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Menu fixes released (2026-11-16), as `v1.0.0-beta.19`
+
+beta.18 plus the owner's daily-use reports below (menus, unit menu, archive food). Checks before the tag: build,
+image built, smoke test, off-site outage test; the code checks as listed below. `docs/install/for-ai-agents.md`: no
+new settings, commands or start-up log lines. Tag pushed; publishing not yet confirmed.
+- Next: the owner updates (`OBUR_VERSION=1.0.0-beta.19`), tests archive food and the menus on the iPhone.
+
 ## Owner's daily-use reports (2026-11-16)
 
 - Unit menu too wide with long USDA portion names: the owner rejected wrapping and picked option B of a demo: menus
