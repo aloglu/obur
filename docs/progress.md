@@ -4,14 +4,18 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 ## Owner's daily-use reports (2026-11-16)
 
-- Unit menu too wide with long USDA portion names: menus that size to their content are now at most 288 px wide and
-  long options wrap (`ui/Menu.svelte`).
+- Unit menu too wide with long USDA portion names: the owner rejected wrapping and picked option B of a demo: menus
+  that size to their content are at most 288 px wide, every option on one line cut with "…", and the unit menu's
+  size ("125 g") apart on the right, always whole (`ui/Menu.svelte` `detail`, `unitChoices` in `unit-options.ts`).
+- Menu edge: the owner picked the hairline (B) in a demo. Tap outside only closes: confirmed for every dropdown.
+- Archive food: built before the owner's go (my mistake); kept for the owner to test, may change.
 - A tap outside an open menu now only closes it; whatever was tapped does nothing. Menus have a visible edge (text
   colour hairline, stronger shadow) in every theme and mode.
 - Archive food: goes back to Foods with a "Food archived" toast and Undo (restores, back to the food); the archived
   page shows a muted line instead of a notice at the top; Restore shows a toast.
-- Checks: type-check, lint, 1133 unit and database tests, full e2e (254 passed, 18 skipped by design; one flaky
-  phone run of the saved-meals test passed on 3 repeats), new `menu-dismiss.e2e.ts`. Not yet tried on the iPhone.
+- Checks: type-check, lint, 1133 unit and database tests, full e2e (the unit menu change broke the trigger's
+  accessible name, fixed; then the failed files and `menu-dismiss.e2e.ts` passed, 83 tests), including a one-line,
+  288 px unit menu check. Not yet tried on the iPhone.
 - Next: the owner tries these on the iPhone with the next release.
 
 ## Audit fixes released (2026-11-15), as `v1.0.0-beta.18`

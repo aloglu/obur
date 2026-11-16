@@ -8,7 +8,11 @@ import { measureName } from '#lib/shared/measure-names.ts';
 
 export interface UnitOption {
 	key: string;
+	/** The whole name, size included: "medium (8 cm across) (182 g)". */
 	label: string;
+	/** The name alone and the size alone, for the unit menu, which keeps the size whole and shortens the name. */
+	name: string;
+	size?: string;
 	/** The unit as the API accepts it. */
 	input:
 		| { kind: 'mass'; unit: 'g' }
@@ -53,6 +57,12 @@ export function offeredAmount(
 	};
 }
 
+const sized = (name: string, size: string) => ({ label: `${name} (${size})`, name, size });
+
+/** The unit menu's choices for an amount field. */
+export const unitChoices = (options: UnitOption[]) =>
+	options.map((o) => ({ value: o.key, label: o.label, name: o.name, size: o.size }));
+
 /** `keepBasis` keeps the basis serving even when redundant, so an entry logged in it can still be edited. */
 export function unitOptions(
 	food: QuantityModel & { servingLabel: string | null; curated?: boolean; origin?: string },
@@ -66,9 +76,11 @@ export function unitOptions(
 	const physicalDefault = (unit: 'g' | 'ml', fallback: number) =>
 		hidden && food.servingSize?.unit === unit ? food.servingSize.amount : fallback;
 	if (food.basis === 'serving' && !hidden) {
+		const label = food.servingLabel ? servingLabelName(food.servingLabel) : '1';
 		options.push({
 			key: 'basis',
-			label: food.servingLabel ? servingLabelName(food.servingLabel) : '1',
+			label,
+			name: label,
 			input: { kind: 'basis_serving' },
 			defaultAmount: 1
 		});
@@ -77,7 +89,7 @@ export function unitOptions(
 		if ((s.unit === 'g' && dims.mass) || (s.unit === 'ml' && dims.volume)) {
 			options.push({
 				key: `serving:${s.id}`,
-				label: `${portionName(s.name, isCurated(food))} (${formatDecimal(s.amount, 1)} ${s.unit})`,
+				...sized(portionName(s.name, isCurated(food)), `${formatDecimal(s.amount, 1)} ${s.unit}`),
 				input: { kind: 'serving', servingId: s.id },
 				defaultAmount: 1
 			});
@@ -87,6 +99,7 @@ export function unitOptions(
 		options.push({
 			key: 'g',
 			label: 'g',
+			name: 'g',
 			input: { kind: 'mass', unit: 'g' },
 			defaultAmount: physicalDefault('g', 100)
 		});
@@ -94,13 +107,14 @@ export function unitOptions(
 		options.push({
 			key: 'ml',
 			label: 'ml',
+			name: 'ml',
 			input: { kind: 'volume', unit: 'ml' },
 			defaultAmount: physicalDefault('ml', 200)
 		});
 		for (const m of measures) {
 			options.push({
 				key: `measure:${m.code}`,
-				label: `${measureName(m.code, m.name)} (${formatDecimal(m.ml, 0)} ml)`,
+				...sized(measureName(m.code, m.name), `${formatDecimal(m.ml, 0)} ml`),
 				input: { kind: 'measure', code: m.code },
 				defaultAmount: 1
 			});

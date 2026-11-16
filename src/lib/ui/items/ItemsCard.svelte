@@ -9,7 +9,7 @@
 	import type { FoodDetail, FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { kcal } from '#lib/shared/format.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
-	import type { MeasureOption, UnitOption } from '#lib/shared/unit-options.ts';
+	import { unitChoices, type MeasureOption, type UnitOption } from '#lib/shared/unit-options.ts';
 	import FoodIcon from '../FoodIcon.svelte';
 	import Roll from '../Roll.svelte';
 	import AddFoodSheet from './AddFoodSheet.svelte';
@@ -130,7 +130,7 @@
 									id="amount-{d.key}"
 									bind:amount={d.amountText}
 									bind:unit={d.optionKey}
-									units={optionsFor(d, measures).map((o) => ({ value: o.key, label: o.label }))}
+									units={unitChoices(optionsFor(d, measures))}
 								/>
 								<dl
 									class="flex flex-wrap gap-x-3.5 gap-y-1 text-[0.8125rem] text-muted tabular-nums"

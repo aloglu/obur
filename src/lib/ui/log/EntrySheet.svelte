@@ -28,7 +28,12 @@
 	import { dayTitle, kcal, mealName, mealShortName, mealNameTo } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import { basisFactor, scaleNutrients, type Unit } from '#lib/shared/quantity.ts';
-	import { unitOptions, type MeasureOption, type UnitOption } from '#lib/shared/unit-options.ts';
+	import {
+		unitChoices,
+		unitOptions,
+		type MeasureOption,
+		type UnitOption
+	} from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
@@ -626,7 +631,7 @@
 											large={false}
 											bind:amount={card.amountText}
 											bind:unit={card.optionKey}
-											units={options.map((o) => ({ value: o.key, label: o.label }))}
+											units={unitChoices(options)}
 										/>
 										{#if !card.amountText.trim()}<p class="text-[0.8125rem] text-warn">
 												{m.entry_how_much()}

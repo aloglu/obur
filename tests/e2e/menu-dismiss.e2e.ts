@@ -46,3 +46,22 @@ test('archiving a food returns to Foods with Undo', async ({ page }) => {
 	await expect(page.getByRole('status').filter({ hasText: 'Food restored' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Archive food' })).toBeVisible();
 });
+
+test('the unit menu keeps every option on one line, at most 288 px wide, with the size always shown', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Birim ${testInfo.project.name}`);
+	await page.goto('/log');
+	await page.getByRole('searchbox').fill('apple');
+	await page.getByRole('button', { name: /^Apple, with skin/ }).click();
+	await page.getByRole('button', { name: /^Unit:/ }).click();
+	const menu = page.getByRole('listbox', { name: 'Unit' });
+	const long = menu.getByRole('option', { name: 'US cup (237 ml), quartered or chopped (125 g)' });
+	await expect(long).toBeVisible();
+	await expect(long.getByText('125 g', { exact: true })).toBeVisible();
+	expect((await menu.boundingBox())!.width).toBeLessThanOrEqual(288);
+	for (const box of await menu
+		.getByRole('option')
+		.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height)))
+		expect(box).toBeLessThan(50);
+});

@@ -8,7 +8,8 @@
 	interface Props {
 		amount: string;
 		unit: T;
-		units: { value: T; label: string }[];
+		/** `label` is the whole name; with `size`, the menu shows `name` (shortened if need be) and the size apart. */
+		units: { value: T; label: string; name?: string; size?: string }[];
 		label?: string;
 		id?: string;
 		invalid?: boolean;
@@ -28,6 +29,9 @@
 	const uid = $props.id();
 	const fieldId = $derived(id ?? `amount-${uid}`);
 	const current = $derived(units.find((u) => u.value === unit)?.label);
+	const choices = $derived(
+		units.map((u) => (u.size ? { value: u.value, label: u.name ?? u.label, detail: u.size } : u))
+	);
 </script>
 
 <div class="flex flex-col gap-1.5">
@@ -51,7 +55,7 @@
 		{#if units.length > 1}
 			<Menu
 				bind:value={unit}
-				options={units}
+				options={choices}
 				label={m.amount_unit()}
 				onchange={onunit}
 				class="flex h-11 max-w-[60%] min-w-0 shrink-0 items-center gap-1.5 rounded-small bg-surface px-3 text-[0.9375rem] font-semibold"

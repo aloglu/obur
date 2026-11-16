@@ -13,6 +13,7 @@
 	import {
 		optionKeyFor,
 		snapshotUnitFor,
+		unitChoices,
 		unitOptions,
 		type MeasureOption
 	} from '#lib/shared/unit-options.ts';
@@ -154,7 +155,7 @@
 				id="edit-amount"
 				bind:amount={amountText}
 				bind:unit={optionKey}
-				units={options.map((o) => ({ value: o.key, label: o.label }))}
+				units={unitChoices(options)}
 			/>
 		{/if}
 		<DayMealFields

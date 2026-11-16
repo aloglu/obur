@@ -12,7 +12,12 @@
 	import { kcal } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import { basisFactor, scaleNutrients } from '#lib/shared/quantity.ts';
-	import { unitOptions, type MeasureOption, type UnitOption } from '#lib/shared/unit-options.ts';
+	import {
+		unitChoices,
+		unitOptions,
+		type MeasureOption,
+		type UnitOption
+	} from '#lib/shared/unit-options.ts';
 	import Button from '../Button.svelte';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
@@ -166,7 +171,7 @@
 				id="meal-add-amount"
 				bind:amount={amountText}
 				bind:unit={optionKey}
-				units={options.map((o) => ({ value: o.key, label: o.label }))}
+				units={unitChoices(options)}
 				invalid={amount === undefined}
 				onunit={(key) =>
 					(amountText = formatDecimal(options.find((o) => o.key === key)!.defaultAmount, 2))}

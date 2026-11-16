@@ -34,6 +34,12 @@ describe('unitOptions', () => {
 			'ml',
 			'Su bardağı (200 ml)'
 		]);
+		// The menu keeps the size apart, so a long name can be shortened without losing it.
+		expect(options.map((o) => [o.name, o.size])).toEqual([
+			['can', '330 ml'],
+			['ml', undefined],
+			['Water glass', '200 ml']
+		]);
 	});
 
 	it('offers the serving, and grams only when the serving weight is known', () => {

@@ -2,8 +2,9 @@
 	// A short list of choices that opens over the page (docs/ui.md, "Choices"). It sits in the top layer, so sheets and
 	// scrolling lists can't clip it, and the browser closes it on Escape. A tap elsewhere only closes it: whatever was
 	// tapped does nothing, so dismissing a menu never presses something by accident. `width="trigger"` matches the
-	// field that opened it (Day, Meal); `width="content"` is only as wide as its longest option, up to MAX_WIDTH (longer
-	// options wrap), and lines up with the opener's right edge.
+	// field that opened it (Day, Meal); `width="content"` is only as wide as its longest option, up to MAX_WIDTH, and
+	// lines up with the opener's right edge. Options stay on one line: a long one is cut with "…", except its `detail`
+	// (a unit's size), which is always shown whole at the right.
 	import Check from '@lucide/svelte/icons/check';
 	import type { Snippet } from 'svelte';
 
@@ -11,6 +12,7 @@
 		value: T;
 		label: string;
 		hint?: string;
+		detail?: string;
 	}
 	interface Props {
 		value: T;
@@ -34,6 +36,9 @@
 		onchange,
 		children
 	}: Props = $props();
+
+	const current = $derived(options.find((o) => o.value === value));
+	const fullName = (o: Option) => (o.detail ? `${o.label} (${o.detail})` : o.label);
 
 	const uid = $props.id();
 	const listId = `menu-${uid}`;
@@ -172,9 +177,7 @@
 	{id}
 	{disabled}
 	popovertarget={listId}
-	aria-label={label
-		? `${label}: ${options.find((o) => o.value === value)?.label ?? ''}`
-		: undefined}
+	aria-label={label ? `${label}: ${current ? fullName(current) : ''}` : undefined}
 	aria-haspopup="listbox"
 	aria-expanded={open}
 	class={extra as string}
@@ -199,15 +202,17 @@
 			type="button"
 			role="option"
 			aria-selected={option.value === value}
+			aria-label={option.detail ? fullName(option) : undefined}
 			onclick={() => choose(option.value)}
 			class="menu-option"
 		>
-			<span class="min-w-0">
-				<span class="block">{option.label}</span>
+			<span class="min-w-0 flex-1">
+				<span class="block truncate">{option.label}</span>
 				{#if option.hint}<small class="block text-[0.78125rem] font-medium text-muted"
 						>{option.hint}</small
 					>{/if}
 			</span>
+			{#if option.detail}<span class="menu-detail">{option.detail}</span>{/if}
 			<Check
 				size={18}
 				strokeWidth={2.4}
@@ -257,16 +262,23 @@
 	.menu-option {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 16px;
+		gap: 12px;
 		min-height: 44px;
-		padding: 8px 12px;
+		padding: 6px 12px;
 		border-radius: var(--radius-menu);
 		font-size: 0.9375rem;
 		font-weight: 600;
-		line-height: 1.3;
 		text-align: left;
-		text-wrap: pretty;
+		white-space: nowrap;
+	}
+	.menu-detail {
+		flex-shrink: 0;
+		color: var(--muted);
+		font-weight: 500;
+		font-variant-numeric: tabular-nums;
+	}
+	.menu-option[aria-selected='true'] .menu-detail {
+		color: inherit;
 	}
 	.menu-option:hover,
 	.menu-option:focus-visible {
