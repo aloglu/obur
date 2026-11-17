@@ -1,0 +1,52 @@
+<script lang="ts">
+	// The bar while list items are selected (docs/ui.md, "Archived and deleted"): the count, Cancel, and the actions,
+	// like Today's. On a phone it sits over the tab bar; on desktop at the bottom right of the page.
+	import { onMount } from 'svelte';
+	import { m } from '#lib/paraglide/messages.js';
+
+	interface Props {
+		count: number;
+		busy: boolean;
+		oncancel: () => void;
+		actions: { label: string; danger?: boolean; run: () => void }[];
+	}
+	let { count, busy, oncancel, actions }: Props = $props();
+	const action =
+		'min-h-12 rounded-[14px] bg-toast-text/12 text-[0.875rem] font-bold disabled:opacity-40';
+
+	// Escape ends selecting, as on Today.
+	onMount(() => {
+		const key = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') oncancel();
+		};
+		window.addEventListener('keydown', key);
+		return () => window.removeEventListener('keydown', key);
+	});
+</script>
+
+<div
+	role="toolbar"
+	aria-label={m.items_toolbar()}
+	class="fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-40 flex flex-col gap-1.5 rounded-[22px] bg-toast-bg p-2 text-toast-text shadow-toast desk:right-7 desk:left-auto desk:w-[420px]"
+>
+	<div class="flex items-center justify-between px-2 pt-0.5">
+		<span class="text-[0.875rem] font-bold tabular-nums" aria-live="polite"
+			>{count === 0 ? m.items_selected_none() : m.items_selected({ count: String(count) })}</span
+		>
+		<button
+			type="button"
+			onclick={oncancel}
+			class="min-h-9 px-1 text-[0.875rem] font-semibold opacity-85">{m.select_cancel()}</button
+		>
+	</div>
+	<div class="grid gap-1.5" style:grid-template-columns="repeat({actions.length}, minmax(0, 1fr))">
+		{#each actions as a (a.label)}
+			<button
+				type="button"
+				class={[a.danger && 'text-[color-mix(in_srgb,var(--bad)_70%,var(--toast-text))]', action]}
+				disabled={!count || busy}
+				onclick={a.run}>{a.label}</button
+			>
+		{/each}
+	</div>
+</div>

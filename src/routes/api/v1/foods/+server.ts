@@ -11,8 +11,14 @@ export const GET: RequestHandler = ({ url, locals }) =>
 	respondCatalog(async () => {
 		const userId = locals.session!.userId;
 		if (url.searchParams.get('mine') !== null) {
+			// The person's foods in use, or (with `archived`) their archive, narrowed by `q`.
 			const offset = Number(url.searchParams.get('offset') ?? 0);
-			return json(await catalog.ownFoods(userId, Number.isInteger(offset) ? offset : 0));
+			return json(
+				await catalog.ownFoods(userId, Number.isInteger(offset) ? offset : 0, 50, {
+					archived: url.searchParams.get('archived') !== null,
+					query: (url.searchParams.get('q') ?? '').slice(0, 200)
+				})
+			);
 		}
 		const q = (url.searchParams.get('q') ?? '').slice(0, 200);
 		const recent = await diary.recentFoodIds(userId, 20);

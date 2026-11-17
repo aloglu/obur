@@ -193,6 +193,27 @@ describe('pinning and editing', () => {
 	});
 });
 
+describe('deleting', () => {
+	it('keeps a recipe whose ingredient food is deleted, and names it; a deleted recipe is gone from the list', async () => {
+		const recipe = await soup();
+		await catalog.bulk(MEHMET, 'archive', { ids: [lentilsId] });
+		const deleted = await catalog.bulk(MEHMET, 'delete', { ids: [lentilsId] });
+		expect(deleted).toEqual({ ids: [lentilsId], usedIn: ['Mercimek çorbası'] });
+		const kept = await recipes.get(MEHMET, recipe.id);
+		expect(kept.ingredients.map((i) => i.food.name)).toEqual(['Kırmızı mercimek', 'Kuru soğan']);
+
+		await catalog.bulk(MEHMET, 'archive', { ids: [recipe.id] });
+		await catalog.bulk(MEHMET, 'delete', { ids: [recipe.id] });
+		expect(await recipes.list(MEHMET)).toEqual([]);
+		expect(await errorCode(recipes.get(MEHMET, recipe.id))).toBe('not_found');
+		// A recipe already deleted is not named again.
+		await catalog.bulk(MEHMET, 'undelete', { ids: [lentilsId] });
+		await catalog
+			.bulk(MEHMET, 'delete', { ids: [lentilsId] })
+			.then((r) => expect(r.usedIn).toEqual([]));
+	});
+});
+
 describe('two devices', () => {
 	it('refuses the second of two saves made at once from the same version', async () => {
 		const recipe = await soup();

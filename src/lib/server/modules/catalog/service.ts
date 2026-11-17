@@ -9,7 +9,14 @@ import { matchKey, sameFood, type MatchableFood } from '../../../shared/food-mat
 import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';
 import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
 import type { ScanEdits } from '../../../shared/scan-edits.ts';
-import { foodNutrients, foods, foodServings, householdMeasures, labelScanEdits } from './schema.ts';
+import {
+	foodNutrients,
+	foods,
+	foodServings,
+	householdMeasures,
+	labelScanEdits,
+	recipeIngredients
+} from './schema.ts';
 
 /** Most foods one bulk action changes (Select all on the archive of a large LoseIt import). */
 export const MAX_BULK_FOODS = 5000;
@@ -318,13 +325,14 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		 * Archives, restores, deletes or brings back the person's own foods or recipes, all or none, in one step.
 		 * `ids` names them; `all` takes every one the action applies to (every archived food for Select all). Each must be
 		 * in the state the action starts from (in use, archived, archived, deleted), or nothing changes. Returns the IDs
-		 * changed, so the same step can be undone.
+		 * changed, so the same step can be undone, and for a delete the names of recipes that used them (which keep
+		 * their own copies of the values), at most three.
 		 */
 		async bulk(
 			userId: string,
 			action: FoodAction,
 			target: { ids: string[] } | { all: 'food' | 'recipe' }
-		): Promise<string[]> {
+		): Promise<{ ids: string[]; usedIn: string[] }> {
 			const from = {
 				archive: and(isNull(foods.archivedAt), isNull(foods.deletedAt)),
 				restore: and(sql`${foods.archivedAt} is not null`, isNull(foods.deletedAt)),
@@ -353,7 +361,19 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					.returning({ id: foods.id });
 				if (ids && changed.length !== ids.length) throw new CatalogError('not_found');
 				if (!ids && changed.length > MAX_BULK_FOODS) throw new CatalogError('not_found');
-				return changed.map((r) => r.id);
+				const changedIds = changed.map((r) => r.id);
+				let usedIn: string[] = [];
+				if (action === 'delete' && changedIds.length) {
+					const rows = await tx
+						.selectDistinct({ name: foods.name })
+						.from(recipeIngredients)
+						.innerJoin(foods, eq(foods.id, recipeIngredients.recipeId))
+						.where(and(inArray(recipeIngredients.foodId, changedIds), isNull(foods.deletedAt)))
+						.orderBy(asc(foods.name))
+						.limit(3);
+					usedIn = rows.map((r) => r.name);
+				}
+				return { ids: changedIds, usedIn };
 			});
 		},
 

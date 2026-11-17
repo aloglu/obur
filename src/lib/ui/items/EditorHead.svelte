@@ -12,14 +12,14 @@
 		title: string;
 		/** The destructive action behind the … menu, when there's something to act on. */
 		remove?: { label: string; confirm: string; yes: string; run: () => void };
-		/** Done straight away, without a confirmation (Restore). */
-		direct?: { label: string; run: () => void };
+		/** Done straight away, without a confirmation (Restore; Delete, which has Undo and Recently deleted). */
+		direct?: { label: string; danger?: boolean; run: () => void }[];
 		busy: boolean;
 	}
 	let { backHref, backLabel, title, remove, direct, busy }: Props = $props();
 	let confirming = $state(false);
 	const items = $derived([
-		...(direct ? [{ label: direct.label, action: direct.run }] : []),
+		...(direct ?? []).map((d) => ({ label: d.label, danger: d.danger, action: d.run })),
 		...(remove ? [{ label: remove.label, danger: true, action: () => (confirming = true) }] : [])
 	]);
 </script>

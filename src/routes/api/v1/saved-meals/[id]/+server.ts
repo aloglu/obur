@@ -62,7 +62,7 @@ export const PUT: RequestHandler = ({ params, request, locals }) =>
 		);
 	});
 
-/** Deletes the saved meal; entries logged from it stay. */
+/** Moves the saved meal to Recently deleted (restorable for 30 days); entries logged from it stay. */
 export const DELETE: RequestHandler = ({ params, locals }) =>
 	respondDiary(async () => {
 		await savedMeals.remove(locals.session!.userId, validId(params.id));

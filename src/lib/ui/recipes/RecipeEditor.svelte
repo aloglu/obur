@@ -141,11 +141,28 @@
 			await api('POST', `/api/v1/foods/${id}?action=${archived ? 'archive' : 'restore'}`, {});
 			await goto(resolve('/(app)/recipes'), { invalidateAll: true });
 		});
+
+	// Delete (archived recipes only) goes back to Archived recipes with Undo, which brings it back and reopens it.
+	const remove = () =>
+		run(async () => {
+			const bulk = (action: 'delete' | 'undelete') =>
+				api('POST', '/api/v1/foods/bulk', { action, ids: [id] });
+			await bulk('delete');
+			await goto(resolve('/(app)/recipes/archived'), { invalidateAll: true });
+			showToast({
+				message: m.items_deleted_one({ name: start!.name }),
+				detail: m.items_deleted_detail(),
+				undo: async () => {
+					await bulk('undelete');
+					await goto(resolve('/(app)/recipes/[id]', { id }));
+				}
+			});
+		});
 </script>
 
 <EditorHead
-	backHref={resolve('/(app)/recipes')}
-	backLabel={m.recipes_title()}
+	backHref={start?.archived ? resolve('/(app)/recipes/archived') : resolve('/(app)/recipes')}
+	backLabel={start?.archived ? m.archived_recipes_title() : m.recipes_title()}
 	title={start ? m.recipe_edit_title() : m.recipe_new_title()}
 	{busy}
 	remove={start && !start.archived
@@ -156,9 +173,17 @@
 				run: () => setArchived(true)
 			}
 		: undefined}
-	direct={start?.archived ? { label: m.food_restore(), run: () => setArchived(false) } : undefined}
+	direct={start?.archived
+		? [
+				{ label: m.food_restore(), run: () => setArchived(false) },
+				{ label: m.recipe_delete(), danger: true, run: remove }
+			]
+		: undefined}
 />
-{#if start?.archived}<p class="text-[0.875rem] text-muted">{m.food_archived()}</p>{/if}
+{#if start?.archived}<p class="text-[0.875rem] text-muted">
+		{m.food_archived()}
+		{m.food_delete_hint()}
+	</p>{/if}
 
 <form class="flex flex-col gap-3" onsubmit={save} novalidate>
 	<section class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">

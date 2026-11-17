@@ -99,12 +99,20 @@
 			});
 		});
 
+	// No confirmation: the meal waits in Recently deleted for 30 days, and the toast has Undo, which reopens it.
 	const removeMeal = () =>
 		run(async () => {
 			// A JSON body: SvelteKit refuses a bodyless cross-origin-looking DELETE behind the proxy as a form post.
 			await api('DELETE', `/api/v1/saved-meals/${id}`, {});
 			await goto(resolve('/(app)/saved-meals'), { invalidateAll: true });
-			showToast({ message: m.saved_deleted({ name: start!.name }) });
+			showToast({
+				message: m.saved_deleted({ name: start!.name }),
+				detail: m.items_deleted_detail(),
+				undo: async () => {
+					await api('POST', '/api/v1/saved-meals/restore', { ids: [id] });
+					await goto(resolve('/(app)/saved-meals/[id]', { id }));
+				}
+			});
 		});
 </script>
 
@@ -113,14 +121,7 @@
 	backLabel={m.saved_title()}
 	title={start ? m.saved_edit_title() : m.saved_new_title()}
 	{busy}
-	remove={start
-		? {
-				label: m.saved_delete(),
-				confirm: m.saved_delete_ask({ name: start.name }),
-				yes: m.saved_delete_confirm(),
-				run: removeMeal
-			}
-		: undefined}
+	direct={start ? [{ label: m.saved_delete(), danger: true, run: removeMeal }] : undefined}
 />
 
 <form class="flex flex-col gap-3" onsubmit={save} novalidate>

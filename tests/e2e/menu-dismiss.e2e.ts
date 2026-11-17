@@ -33,13 +33,16 @@ test('archiving a food returns to Foods with Undo', async ({ page }) => {
 	await expect(page).toHaveURL(/\/foods$/);
 	const toast = page.getByRole('status').filter({ hasText: 'Food archived' });
 	await expect(toast).toBeVisible();
-	await expect(page.getByRole('link', { name: /Archive test bar.*Archived/ })).toBeVisible();
+	// It leaves the list; the archive opens from the row under New food.
+	await expect(page.getByRole('link', { name: /Archive test bar/ })).toHaveCount(0);
+	await expect(page.getByRole('link', { name: /Archived foods\s*1/ })).toBeVisible();
 
 	await toast.getByRole('button', { name: 'Undo' }).click();
 	await expect(page).toHaveURL(new RegExp(`/foods/${id}$`));
 	await expect(page.getByRole('button', { name: 'Archive food' })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Archive food' }).click();
+	await page.getByRole('link', { name: /Archived foods/ }).click();
 	await page.getByRole('link', { name: /Archive test bar/ }).click();
 	await expect(page.getByText('It no longer appears in search;', { exact: false })).toBeVisible();
 	await page.getByRole('button', { name: 'Restore' }).click();

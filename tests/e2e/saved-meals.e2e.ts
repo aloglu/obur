@@ -121,10 +121,20 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 	await page.getByRole('button', { name: 'Update to current food values' }).click();
 	await expect(page.getByRole('status')).toContainText('Updated: 1 · Kept as saved: 0');
 	await page.getByRole('button', { name: 'More actions' }).click();
+	// No question first: it goes to Recently deleted, and Undo brings it back.
 	await page.getByRole('menuitem', { name: 'Delete saved meal' }).click();
-	await page.getByRole('button', { name: 'Delete', exact: true }).click();
-	await expect(page.getByRole('status')).toContainText('Deleted “Hafta sonu”');
+	const deleted = page.getByRole('status');
+	await expect(deleted).toContainText('Deleted “Hafta sonu”');
+	await expect(deleted).toContainText('In Recently deleted for 30 days.');
 	await expect(page.getByRole('main')).toContainText('No saved meals yet.');
+	await deleted.getByRole('button', { name: 'Undo' }).click();
+	await expect(page.getByRole('heading', { name: 'Edit saved meal' })).toBeVisible();
+	await page.getByRole('button', { name: 'More actions' }).click();
+	await page.getByRole('menuitem', { name: 'Delete saved meal' }).click();
+	await expect(page.getByRole('main')).toContainText('No saved meals yet.');
+	await page.goto('/more/deleted');
+	await expect(page.getByRole('heading', { name: /Saved meals/ })).toBeVisible();
+	await expect(page.getByRole('main')).toContainText('Hafta sonu');
 
 	// The diary entries it was saved from are untouched.
 	await page.goto('/');

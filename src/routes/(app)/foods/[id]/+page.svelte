@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { fullFoodName } from '#lib/shared/curated-names.ts';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto, invalidate, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
+	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
 	import PageHead from '#lib/ui/PageHead.svelte';
@@ -57,7 +58,7 @@
 	const archiveCall = (id: string, archived: boolean) =>
 		api('POST', `/api/v1/foods/${id}?action=${archived ? 'archive' : 'restore'}`, {});
 
-	// Archiving goes back to Foods, where the food now sits faded at the end, with Undo (back to the food); restoring
+	// Archiving goes back to Foods, which no longer lists it, with Undo (back to the food); restoring
 	// stays here.
 	const setArchived = (archived: boolean) =>
 		run(async () => {
@@ -75,6 +76,33 @@
 				// Undo puts the person back where they were, on the food.
 				undo: async () => {
 					await archiveCall(id, false);
+					await goto(resolve('/(app)/foods/[id]', { id }));
+				}
+			});
+		});
+
+	// Delete (archived foods only) goes back to Archived foods with Undo, which brings the food back and reopens it.
+	const remove = () =>
+		run(async () => {
+			const id = food.id;
+			const bulk = (action: 'delete' | 'undelete') =>
+				api<{ ids: string[]; usedIn: string[] }>('POST', '/api/v1/foods/bulk', {
+					action,
+					ids: [id]
+				});
+			const { usedIn } = await bulk('delete');
+			await goto(resolve('/(app)/foods/archived'), { invalidateAll: true });
+			void invalidate(ACCOUNT_DATA);
+			showToast({
+				message: m.items_deleted_one({ name: fullFoodName(food) }),
+				detail:
+					usedIn.length === 1
+						? m.items_deleted_detail_recipe({ recipe: usedIn[0] })
+						: usedIn.length > 1
+							? m.items_deleted_detail_recipes()
+							: m.items_deleted_detail(),
+				undo: async () => {
+					await bulk('undelete');
 					await goto(resolve('/(app)/foods/[id]', { id }));
 				}
 			});
@@ -127,21 +155,34 @@
 				disabled={busy}
 				onclick={() => setArchived(!food.archived)}
 				class="flex min-h-14 items-center text-left text-[0.9375rem] font-semibold {food.archived
-					? ''
+					? 'text-accent'
 					: 'text-bad'}">{food.archived ? m.food_restore() : m.food_archive_row()}</button
 			>
+			<!-- Only an archived food can be deleted, so one still in use is never deleted by mistake. -->
+			{#if food.archived}
+				<button
+					type="button"
+					disabled={busy}
+					onclick={remove}
+					class="flex min-h-14 items-center text-left text-[0.9375rem] font-semibold text-bad"
+					>{m.food_delete_row()}</button
+				>
+			{/if}
 		{/if}
 	</div>
 {/snippet}
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<PageHead
-		href={resolve('/(app)/foods')}
-		label={m.foods_title()}
+		href={food.archived ? resolve('/(app)/foods/archived') : resolve('/(app)/foods')}
+		label={food.archived ? m.archived_foods_title() : m.foods_title()}
 		title={editing ? m.food_edit_title() : fullFoodName(food)}
 	/>
 	{#if problem}<Notice>{problem}</Notice>{/if}
-	{#if food.archived}<p class="text-[0.875rem] text-muted">{m.food_archived()}</p>{/if}
+	{#if food.archived}<p class="text-[0.875rem] text-muted">
+			{m.food_archived()}
+			{#if food.mine && food.origin !== 'recipe'}{m.food_delete_hint()}{/if}
+		</p>{/if}
 	{#if food.curatedDataset}<p class="text-[0.875rem] text-muted">
 			{m.food_source_usda({
 				dataset: food.curatedDataset === 'sr_legacy' ? 'SR Legacy' : 'Foundation Foods'

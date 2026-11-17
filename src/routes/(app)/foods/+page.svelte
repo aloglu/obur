@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { foodName, servingLabelName } from '#lib/shared/curated-names.ts';
-	// Foods (docs/ui.md, "Recipes and saved meals"): the person's own foods and scans, and a search that also reaches what
-	// other members share and the curated foods. New food stays above the list: an import can bring hundreds.
+	// Foods (docs/ui.md, "Recipes and saved meals"): the person's own foods and scans in use, and a search that also
+	// reaches the built-in foods. New food stays above the list: an import can bring hundreds. Archived foods have their
+	// own page, opened from the row under New food (docs/ui.md, "Archived and deleted").
 	import { onMount, untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
@@ -12,6 +13,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import ListCard from '#lib/ui/items/ListCard.svelte';
 	import ListRow from '#lib/ui/items/ListRow.svelte';
+	import NavRow from '#lib/ui/shell/NavRow.svelte';
 	import TextField from '#lib/ui/TextField.svelte';
 
 	type OwnFood = FoodSearchResult & { archived: boolean };
@@ -86,16 +88,14 @@
 
 <svelte:head><title>{m.foods_title()} · {m.app_name()}</title></svelte:head>
 
-{#snippet row(r: FoodSearchResult, archived: boolean)}
-	{@const line = per(r)}
+{#snippet row(r: FoodSearchResult)}
 	<ListRow
 		href={resolve('/(app)/foods/[id]', { id: r.id })}
 		icon={r.icon}
 		name={foodName(r.name, r.curated)}
 		brand={r.brand}
-		detail={archived ? `${line} · ${m.foods_archived()}` : line}
+		detail={per(r)}
 		kcal={energy(r)}
-		faded={archived}
 		highlight={r.id === highlight}
 	/>
 {/snippet}
@@ -116,19 +116,28 @@
 		class="grid min-h-[52px] place-items-center rounded-button bg-fill px-4 text-[1.0625rem] font-[750] text-on-accent"
 		>{m.foods_new()}</a
 	>
+	{#if data.own.archivedTotal > 0 && !query.trim()}
+		<div class="rounded-card bg-surface px-[18px] shadow-card">
+			<NavRow
+				href={resolve('/(app)/foods/archived')}
+				label={m.archived_foods_row()}
+				value={data.own.archivedTotal}
+			/>
+		</div>
+	{/if}
 	{#if query.trim()}
 		{#if searched && results.length === 0}
 			<p class="text-[0.875rem] text-muted">{m.foods_none()}</p>
 		{:else if results.length > 0}
 			<ListCard title={m.foods_title()} unit={m.list_kcal()}>
-				{#each results as r (r.id)}{@render row(r, false)}{/each}
+				{#each results as r (r.id)}{@render row(r)}{/each}
 			</ListCard>
 		{/if}
 	{:else if own.length === 0}
 		<p class="text-[0.9375rem] text-muted">{m.foods_empty()}</p>
 	{:else}
 		<ListCard title={m.foods_list_head()} unit={m.list_kcal()}>
-			{#each own as r (r.id)}{@render row(r, r.archived)}{/each}
+			{#each own as r (r.id)}{@render row(r)}{/each}
 		</ListCard>
 		{#if more}
 			<Button variant="ghost" disabled={loading} onclick={showMore}>{m.foods_show_more()}</Button>
