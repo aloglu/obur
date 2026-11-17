@@ -2,6 +2,25 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Audit of the private-foods change (owner, 2026-11-17), for `v1.0.0-beta.21`
+
+beta.20 was tagged before the owner could ask for an audit (my mistake: releases only when asked). Found and fixed:
+Enter or Go in a field saved past "Already in your foods" (its Save mine anyway was the form's only submit
+button; now an ordinary button, and the form ignores a submit while the card shows); the card stayed after an
+edit (any change now clears it and Save checks again); copies made by the old variant bug claimed to be variants
+of a built-in food (migration 0057 keeps a variant's source only when it is built-in; archive imports likewise).
+Left as is: an entry queued offline for someone else's food before the update is refused into the usual card;
+a copy of an archived shared food arrives archived. Tests added: the migration with recipe ingredients and an own
+variant; an export from before the update (shared flags, someone else's food); browser tests of the card on Scan
+and Create it as food, Enter and editing, the LoseIt Keep separate copies switch, the card in the accessibility
+check; `deploy/obur/upgrade-test.sh` (beta.19 data updated by the new image, then its backup restored with a
+`:shared` list), passed locally. Vitest: 1149 passed; e2e 266 passed (18 skipped by design) with one flake
+(`saved-meals.e2e.ts` in phone WebKit under the full parallel run; it then passed 3 of 3 alone; `goals.e2e.ts`
+flaked once the same way in an earlier run). Found on the side, not fixed (owner to decide): in Type it, a food
+chosen for a card after the sentence named "ml" (Create it as food or Which one?) keeps asking "Choose a unit for
+ml" even when the food is per 100 ml; grams carry over.
+- Next: owner's go for beta.21 (not tagged).
+
 ## Private foods released (2026-11-17), as `v1.0.0-beta.20`
 
 Foods private, copies for members who used someone else's food, the variant fix and "Already in your foods" (see

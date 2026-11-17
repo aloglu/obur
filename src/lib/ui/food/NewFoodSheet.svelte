@@ -49,6 +49,7 @@
 		onsave={save}
 		startName={name}
 		{match}
+		onedit={() => (match = null)}
 		onuse={() => match && oncreated(match.id)}
 	/>
 </Sheet>

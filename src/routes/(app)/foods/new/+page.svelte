@@ -176,6 +176,7 @@
 		valueNotes={data.scanSource ? valueNotes : undefined}
 		valuesTop={data.scanSource ? photoPanel : undefined}
 		{match}
+		onedit={() => (match = null)}
 		onuse={() => match && goto(resolve('/(app)/foods/[id]', { id: match.id }))}
 	/>
 </main>

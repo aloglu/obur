@@ -99,5 +99,41 @@ test('every page passes the automated accessibility checks in light and dark', a
 				);
 		}
 	}
+	// The "Already in your foods" card, which only a save can show.
+	for (const dark of [false, true]) {
+		await page.emulateMedia({ colorScheme: dark ? 'dark' : 'light', reducedMotion: 'reduce' });
+		await page.goto('/foods/new');
+		await page.getByLabel('Name', { exact: true }).fill('Ev yapımı mercimek çorbası');
+		await page.locator('#n-energy_kcal').fill('92');
+		await page.getByRole('button', { name: 'Save food' }).click();
+		await expect(page.getByRole('region', { name: 'Already in your foods' })).toBeVisible();
+		await page.evaluate(async () => {
+			await Promise.all(document.getAnimations().map((x) => x.finished.catch(() => {})));
+		});
+		const check = () =>
+			new AxeBuilder({ page })
+				.withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+				.disableRules(['meta-viewport'])
+				.analyze();
+		await page.waitForTimeout(300);
+		let r = await check();
+		// As above: under load a page can be caught mid-paint; a real problem is still there a second later.
+		if (r.violations.length) {
+			await page.waitForTimeout(1000);
+			r = await check();
+		}
+		for (const v of r.violations)
+			out.push(
+				`${dark ? 'dark' : 'light'} already-in-foods [${v.impact}] ${v.id}: ${v.help}\n   ${v.nodes
+					.slice(0, 3)
+					.map(
+						(n) =>
+							n.target.join(' ') +
+							' :: ' +
+							(n.failureSummary ?? '').split('\n').slice(1, 2).join('')
+					)
+					.join('\n   ')}`
+			);
+	}
 	expect(out, out.join('\n')).toEqual([]);
 });

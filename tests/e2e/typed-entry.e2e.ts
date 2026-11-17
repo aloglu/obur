@@ -294,3 +294,33 @@ test('a match that ignores some of the words asks, so a food cannot drop out unn
 	await expect(sheet).toContainText('Not sure. Which one?');
 	await expect(sheet).toContainText(`yumurtam${tag} karpuz?`);
 });
+
+test('Create it as food hands back a food the person already has when the name is corrected to it', async ({
+	page
+}, testInfo) => {
+	const word = testInfo.project.name === 'phone-webkit' ? 'zzqqvvmm' : 'zzqqvvdd';
+	await signedInAs(page, `Düzelten ${testInfo.project.name}`);
+	await createFood(page, {
+		name: `Ayran ${word}`,
+		brand: 'Sütaş',
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 36, qualifier: 'reported' }]
+	});
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Type it' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
+	await sheet.getByLabel('You typed').fill(`200 g qq${word}`);
+	await sheet.getByRole('button', { name: 'Create it as food' }).click();
+	const form = page.getByRole('dialog', { name: 'New food' });
+	await form.getByLabel('Name', { exact: true }).fill(`ayran ${word}`);
+	await form.getByLabel('Brand (optional)').fill('SUTAS');
+	await form.getByRole('button', { name: 'Save food' }).click();
+	await form
+		.getByRole('region', { name: 'Already in your foods' })
+		.getByRole('button', { name: 'Use this one' })
+		.click();
+	await expect(form).toBeHidden();
+	await expect(sheet).not.toContainText('Not in your foods yet');
+	await sheet.getByRole('button', { name: /^Log 1 to/ }).click();
+	await expect(page.getByRole('main')).toContainText(`Ayran ${word}`);
+});

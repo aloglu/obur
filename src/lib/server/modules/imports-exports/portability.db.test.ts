@@ -598,6 +598,45 @@ describe('import', () => {
 		expect(seen).toHaveLength(0);
 	});
 
+	it('reads an export from before foods were private: their shared flag is ignored, someone else’s food becomes a copy', async () => {
+		await buildHistory();
+		// As an older version wrote it: every food says who could see it, and the bread was a member's shared food.
+		const files = unzipSync(await portability.exportArchive(MEHMET));
+		const older = JSON.parse(strFromU8(files['data/foods.json'])).map(
+			(f: { mine: boolean; name: string; origin: string }) => ({
+				...f,
+				visibility: f.mine ? 'private' : 'shared',
+				origin: !f.mine && f.name === 'Premium Light Ekmek' ? 'manual' : f.origin
+			})
+		);
+		const bytes = strToU8(JSON.stringify(older));
+		const manifest = JSON.parse(strFromU8(files['manifest.json']));
+		manifest.files.find((f: { path: string }) => f.path === 'data/foods.json').sha256 =
+			sha256(bytes);
+		const archive = fromElsewhere(
+			zipSync({
+				...files,
+				'data/foods.json': bytes,
+				'manifest.json': strToU8(JSON.stringify(manifest))
+			})
+		);
+		await portability.applyImport(ZEYNEP, archive);
+		const hers =
+			await admin`select name, origin, derived_from from foods where owner_id = ${ZEYNEP}`;
+		expect(hers.map((f) => f.origin)).not.toContain('curated');
+		expect(
+			hers
+				.filter((f) => f.name === 'Premium Light Ekmek')
+				.map((f) => f.origin)
+				.sort()
+		).toEqual(['manual', 'variant']);
+		// The bread (his variant's source) is no longer built-in in this archive, so the variant keeps no source;
+		// the built-in ayran becomes her copy.
+		expect(hers.find((f) => f.name === 'Ayran')?.origin).toBe('variant');
+		expect(hers.every((f) => f.derived_from === null)).toBe(true);
+		expect(await diary.day(ZEYNEP, '2026-10-01')).toHaveLength(2);
+	});
+
 	it('leaves nothing behind when an import fails part-way', async () => {
 		await buildHistory();
 		const files = unzipSync(fromElsewhere(await portability.exportArchive(MEHMET)));

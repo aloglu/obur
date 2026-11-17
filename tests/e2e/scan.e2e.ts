@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { SPEECH_STUB } from '../../playwright.config.ts';
-import { scanEditsFor, signedInAs } from './fixtures.ts';
+import { apiAs, createFood, scanEditsFor, signedInAs } from './fixtures.ts';
 
 // Small images: the stand-in OCR answers by the photo's width (3, 5, 7 or 9 px), so each test gets its own made-up
 // table even while both browsers run at once. A width's answer is never changed while the other browser may use it.
@@ -31,6 +31,9 @@ const WIDE17 = png(
 );
 const WIDE19 = png(
 	'iVBORw0KGgoAAAANSUhEUgAAABMAAAACCAIAAAA1uHClAAAAEUlEQVR4nGNocFAgDzGQrRMAl50hQR7bJ2sAAAAASUVORK5CYII='
+);
+const WIDE21 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAABUAAAACCAIAAAA4pgDiAAAAD0lEQVR4nGNooAwwUKgfAMFhPwEbx7sNAAAAAElFTkSuQmCC'
 );
 const line = (text: string, x: number, y: number, w = text.length * 8) => ({
 	text,
@@ -337,4 +340,38 @@ test('New food: Scan label fills the Nutrition card in place, asks before replac
 	await page.goto('/');
 	// In the day itself: the "Saved" confirmation may still be showing (it survives a page load for its 5 s).
 	await expect(page.getByRole('main').getByText(name)).toHaveCount(0);
+});
+
+test('a scanned label of a food the person already has goes on to that food instead', async ({
+	page,
+	request
+}, testInfo) => {
+	const tag = testInfo.project.name;
+	await signedInAs(page, `Tekrar tarayan ${tag}`);
+	const existing = await createFood(page, {
+		name: `Gofret ${tag}`,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 405, qualifier: 'reported' }]
+	});
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: { width: 21, status: 200, body: { lines: TABLE, ocrMs: 1 } }
+	});
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Scan a label' }).click();
+	await page.waitForLoadState('networkidle');
+	await page.getByLabel('Choose photo').setInputFiles({
+		name: 'label.png',
+		mimeType: 'image/png',
+		buffer: WIDE21
+	});
+	await expect(page.getByRole('heading', { level: 1, name: 'Check the label' })).toBeVisible();
+	await page.getByLabel('Name', { exact: true }).fill(`gofret ${tag}`);
+	await page.getByRole('button', { name: 'Save and choose amount' }).click();
+	const card = page.getByRole('region', { name: 'Already in your foods' });
+	await expect(card).toContainText('405 kcal per 100 g');
+	await card.getByRole('button', { name: 'Use this one' }).click();
+	await expect(page.getByRole('dialog', { name: `Gofret ${tag}` })).toBeVisible();
+	// Nothing new was saved.
+	const own = await apiAs<{ foods: { id: string }[] }>(page, 'GET', '/api/v1/foods?mine');
+	expect(own.foods.map((f) => f.id)).toEqual([existing]);
 });

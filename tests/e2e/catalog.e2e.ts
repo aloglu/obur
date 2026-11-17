@@ -121,8 +121,19 @@ test('a new food the person already has offers it instead, or saves it anyway', 
 	const card = page.getByRole('region', { name: 'Already in your foods' });
 	await expect(card).toContainText(`Greek Yogurt ${tag}, Sütaş`);
 	await expect(card).toContainText('97 kcal per 100 g');
+	// Enter (Go on a phone) in a field doesn't save past the match.
+	await page.getByLabel('Brand (optional)').press('Enter');
+	await expect(card).toBeVisible();
+	await expect(page).toHaveURL(/\/foods\/new/);
 	await card.getByRole('button', { name: 'Use this one' }).click();
 	await expect(page).toHaveURL(new RegExp(`/foods/${existing}$`));
+
+	// A change after the match gives Save back, and Save checks again.
+	await fill();
+	await expect(card).toBeVisible();
+	await page.getByLabel('Brand (optional)').fill('Pınar');
+	await expect(card).toBeHidden();
+	await expect(page.getByRole('button', { name: 'Save food' })).toBeVisible();
 
 	await fill();
 	await page.getByRole('button', { name: 'Save mine anyway' }).click();

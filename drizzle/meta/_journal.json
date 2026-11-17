@@ -400,6 +400,13 @@
       "when": 1794932420500,
       "tag": "0056_private_foods_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1794936492443,
+      "tag": "0057_variant_sources",
+      "breakpoints": true
     }
   ]
 }

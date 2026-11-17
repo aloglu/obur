@@ -798,6 +798,7 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 		if (remaining.size === before)
 			remaining.forEach((f) => (newFoods.push(f), remaining.delete(f)));
 	}
+	const builtInIds = new Set(data.foods.filter((f) => f.origin === 'curated').map((f) => f.id));
 	const cyclic = new Set<string>();
 	const placed = new Set<string>();
 	for (const f of newFoods) {
@@ -827,8 +828,11 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 				// A built-in food from another installation becomes the person's own copy.
 				origin: f.origin === 'curated' ? ('variant' as const) : f.origin,
 				sourceMeta: { ...(f.sourceMeta ?? {}), importedFrom: source },
+				// A variant keeps its source only when that is a built-in food (variants of other foods are not made).
 				derivedFrom:
-					f.derivedFrom && !cyclic.has(f.id) ? (p.foodMap.get(f.derivedFrom) ?? null) : null,
+					f.derivedFrom && !cyclic.has(f.id) && builtInIds.has(f.derivedFrom)
+						? (p.foodMap.get(f.derivedFrom) ?? null)
+						: null,
 				createdAt: new Date(f.createdAt),
 				updatedAt: new Date(f.updatedAt)
 			}))

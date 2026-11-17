@@ -50,6 +50,8 @@
 		match?: FoodSearchResult | null;
 		/** Use this one, for `match`. */
 		onuse?: () => void;
+		/** The form changed while `match` showed: the parent clears it, so Save comes back and checks again. */
+		onedit?: () => void;
 	}
 
 	const UNITS: { value: 'g' | 'ml'; label: string }[] = [
@@ -70,7 +72,8 @@
 		valuesHint,
 		valuesTop,
 		match = null,
-		onuse
+		onuse,
+		onedit
 	}: Props = $props();
 	const start = untrack(() => initial);
 
@@ -247,6 +250,14 @@
 		});
 	const startState = formState();
 	const dirty = $derived(formState() !== startState);
+	// The form as it was when the match appeared; any change after it hands the decision back to Save.
+	let matchedState: string | null = null;
+	$effect(() => {
+		const now = formState();
+		if (!match) matchedState = null;
+		else if (matchedState === null) matchedState = now;
+		else if (now !== matchedState) onedit?.();
+	});
 	let extrasShown = $state(extrasOpen);
 
 	/** Whether any value of the Nutrition card has been typed, so filling it from a label would replace something. */
@@ -285,7 +296,12 @@
 
 	function submit(event: SubmitEvent) {
 		event.preventDefault();
-		const anyway = (event.submitter as HTMLElement | null)?.dataset.anyway === '1';
+		// While a match shows, only its buttons decide: Enter or Go in a field does nothing.
+		if (match) return;
+		save(false);
+	}
+
+	function save(anyway: boolean) {
 		showErrors = true;
 		const anyInvalid =
 			FIELDS.some((f) => invalid(rows[f].text)) ||
@@ -539,7 +555,7 @@
 	{@render actions?.()}
 
 	{#if match && onuse}
-		<AlreadyInFoods {match} {busy} {onuse} />
+		<AlreadyInFoods {match} {busy} {onuse} onanyway={() => save(true)} />
 	{:else}
 		<Button type="submit" wide disabled={busy || !name.trim() || (!!start && !unsaved && !dirty)}
 			>{busy ? m.common_working() : (saveLabel ?? m.food_save())}</Button

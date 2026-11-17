@@ -194,3 +194,46 @@ test('a LoseIt export imports after a preview that checks it against LoseIt’s 
 	await expect(nutrients).toContainText('84.4 g');
 	await expect(nutrients).toContainText('Definition not stated (imported)');
 });
+
+test('a LoseIt import uses a food the person already has, unless they keep separate copies', async ({
+	page
+}) => {
+	const dir = path.resolve(import.meta.dirname, '../fixtures/loseit');
+	const loseit = zipSync(
+		Object.fromEntries(
+			readdirSync(dir)
+				.filter((f) => f.endsWith('.csv'))
+				.map((f) => [f, strToU8(readFileSync(path.join(dir, f), 'utf8'))])
+		)
+	);
+	await signedInAs(page, 'Okan again');
+	// LoseIt's Ayran is 95 kcal per 250 ml: 38 per 100 ml, as here.
+	await createFood(page, {
+		name: 'Ayran',
+		brand: 'Örnek Süt',
+		basis: '100ml',
+		nutrients: [{ code: 'energy_kcal', value: 38, qualifier: 'reported' }]
+	});
+	await page.goto('/settings/data');
+	const chooser = page.locator('input[type=file]');
+	await expect(chooser).toBeEnabled();
+	await chooser.setInputFiles({
+		name: 'loseit.zip',
+		mimeType: 'application/zip',
+		buffer: Buffer.from(loseit)
+	});
+	const preview = page.getByTestId('import-preview');
+	const foods = preview.getByRole('row', { name: /^Foods/ });
+	await expect(preview).toContainText('1 food is already in your foods, so that one is used.');
+	const used = await foods.textContent();
+	await preview.getByRole('switch', { name: 'Keep separate copies' }).click();
+	await expect(foods).not.toHaveText(used ?? '');
+	// The explanation stays while the switch is on, so it can be turned off again.
+	await expect(preview).toContainText('1 food is already in your foods, so that one is used.');
+	await preview.getByRole('switch', { name: 'Keep separate copies' }).click();
+	await expect(foods).toHaveText(used ?? '');
+	await preview.getByRole('button', { name: /^Import/ }).click();
+	await expect(page.getByRole('status')).toContainText('Import finished');
+	const own = await apiAs<{ foods: { name: string }[] }>(page, 'GET', '/api/v1/foods?mine');
+	expect(own.foods.filter((f) => f.name === 'Ayran')).toHaveLength(1);
+});

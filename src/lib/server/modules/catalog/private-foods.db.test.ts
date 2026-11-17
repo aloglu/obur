@@ -27,6 +27,8 @@ const ids = {
 	unused: randomUUID(),
 	curated: randomUUID(),
 	variant: randomUUID(),
+	ownVariant: randomUUID(),
+	recipe: randomUUID(),
 	meal: randomUUID()
 };
 const snapshot = (name: string) => ({
@@ -124,6 +126,30 @@ beforeAll(async () => {
 		origin: 'variant',
 		derived_from: ids.ayran
 	});
+	// A copy Ayşe made of her own food (the variant row offered it then), pointing at it.
+	await food(migrator, ids.ownVariant, AYSE, 'Ayşe’s own', {
+		visibility: 'private',
+		origin: 'variant',
+		derived_from: ids.unused
+	});
+	// Mehmet's recipe with Ayşe's ayran in it.
+	await food(migrator, ids.recipe, MEHMET, 'Ayranlı çorba', {
+		visibility: 'private',
+		origin: 'recipe',
+		basis: 'serving',
+		serving_label: 'serving'
+	});
+	await migrator`insert into recipes (food_id, owner_id, servings) values (${ids.recipe}, ${MEHMET}, 2)`;
+	await migrator`insert into recipe_ingredients ${migrator({
+		recipe_id: ids.recipe,
+		owner_id: MEHMET,
+		position: 0,
+		food_id: ids.ayran,
+		food: migrator.json(snapshot('Ayran')),
+		amount: 200,
+		unit: migrator.json({ kind: 'volume', unit: 'ml' }),
+		nutrients: migrator.json(kcal(76))
+	})}`;
 	await entry(migrator, MEHMET, ids.ayran, 'Ayran');
 	await entry(migrator, MEHMET, ids.ayran, 'Ayran', true); // in the trash
 	await entry(migrator, MEHMET, ids.soup, 'Soup');
@@ -169,6 +195,7 @@ describe('foods become private', () => {
 			where owner_id = ${MEHMET} order by name`;
 		expect(mine.map((f) => [f.name, f.origin])).toEqual([
 			['Ayran', 'variant'],
+			['Ayranlı çorba', 'recipe'],
 			['Gone’s bread', 'variant'],
 			['Mehmet’s ayran', 'variant'],
 			['Soup', 'variant']
@@ -208,6 +235,9 @@ describe('foods become private', () => {
 		);
 		const [item] = await migrator`select food_id from saved_meal_items where user_id = ${MEHMET}`;
 		expect(item.food_id).toBe(copies.get('Gone’s bread'));
+		const [ingredient] =
+			await migrator`select food_id from recipe_ingredients where owner_id = ${MEHMET}`;
+		expect(ingredient.food_id).toBe(copies.get('Ayran'));
 		const [identity] =
 			await migrator`select local_id from import_identities where user_id = ${MEHMET}`;
 		expect(identity.local_id).toBe(copies.get('Ayran'));
@@ -215,7 +245,16 @@ describe('foods become private', () => {
 
 	it('leaves Ayşe her foods and her own entries, and removes foods nobody owns', async () => {
 		const hers = await migrator`select name from foods where owner_id = ${AYSE} order by name`;
-		expect(hers.map((f) => f.name)).toEqual(['Ayran', 'Ayşe’s own', 'Nobody else used it', 'Soup']);
+		expect(hers.map((f) => f.name)).toEqual([
+			'Ayran',
+			'Ayşe’s own',
+			'Ayşe’s own',
+			'Nobody else used it',
+			'Soup'
+		]);
+		// A copy of her own food no longer claims to be a variant (0057): only built-in sources are kept.
+		const [copy] = await migrator`select derived_from from foods where id = ${ids.ownVariant}`;
+		expect(copy.derived_from).toBeNull();
 		const [own] = await migrator`select food_id from diary_entries where user_id = ${AYSE}`;
 		expect(own.food_id).toBe(ids.ayran);
 		expect(await migrator`select 1 from foods where id = ${ids.gonesBread}`).toHaveLength(0);
@@ -229,6 +268,7 @@ describe('foods become private', () => {
 			(await asUser(userId, (tx) => tx`select name from foods order by name`)).map((f) => f.name);
 		expect(await seen(MEHMET)).toEqual([
 			'Ayran',
+			'Ayranlı çorba',
 			'Banana',
 			'Gone’s bread',
 			'Mehmet’s ayran',
@@ -236,6 +276,7 @@ describe('foods become private', () => {
 		]);
 		expect(await seen(AYSE)).toEqual([
 			'Ayran',
+			'Ayşe’s own',
 			'Ayşe’s own',
 			'Banana',
 			'Nobody else used it',

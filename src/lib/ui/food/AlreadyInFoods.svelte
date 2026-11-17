@@ -1,6 +1,6 @@
 <script lang="ts">
 	// "Already in your foods" (docs/ui.md): above Save, when the food being saved is the same as one the person has
-	// (or a built-in one). Use this one opens that food and saves nothing; Save mine anyway submits the form as it is.
+	// (or a built-in one). Use this one opens that food and saves nothing; Save mine anyway saves the form as it is.
 	import { m } from '#lib/paraglide/messages.js';
 	import { foodName, servingLabelName } from '#lib/shared/curated-names.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
@@ -12,8 +12,9 @@
 		match: FoodSearchResult;
 		busy?: boolean;
 		onuse: () => void;
+		onanyway: () => void;
 	}
-	let { match, busy = false, onuse }: Props = $props();
+	let { match, busy = false, onuse, onanyway }: Props = $props();
 
 	const per = $derived(
 		match.basis === 'serving'
@@ -49,8 +50,7 @@
 	</div>
 	<div class="grid grid-cols-2 gap-2">
 		<Button disabled={busy} onclick={onuse}>{m.food_already_use()}</Button>
-		<Button type="submit" variant="ghost" disabled={busy} data-anyway="1"
-			>{m.food_already_anyway()}</Button
-		>
+		<!-- An ordinary button, not a submit: Enter or Go on the keyboard must never save past the match. -->
+		<Button variant="ghost" disabled={busy} onclick={onanyway}>{m.food_already_anyway()}</Button>
 	</div>
 </section>

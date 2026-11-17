@@ -158,6 +158,7 @@
 				saveLabel={m.scan_save_and_amount()}
 				valueNotes={proposal.nutrients.length && initial ? scanNotes : undefined}
 				{match}
+				onedit={() => (match = null)}
 				onuse={() => match && goto(logFoodHref(match.id))}
 			/>{/key}
 		{#if data.scanSource}
