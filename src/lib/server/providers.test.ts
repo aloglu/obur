@@ -38,12 +38,12 @@ describe('label requests', () => {
 	it('send the photo with a strict table schema; OpenRouter only to endpoints that keep nothing', () => {
 		const jpeg = new Uint8Array([0xff, 0xd8, 0xff]);
 		const openai = labelRequest('openai', jpeg) as unknown as ChatRequest;
-		expect(openai.model).toBe('gpt-5-mini');
+		expect(openai.model).toBe('gpt-6.1-terra');
 		expect(openai.response_format.json_schema.strict).toBe(true);
 		expect(openai.messages[1].content[1].image_url?.url).toBe('data:image/jpeg;base64,/9j/');
 		expect(openai.provider).toBeUndefined();
 		const openrouter = labelRequest('openrouter', jpeg) as unknown as ChatRequest;
-		expect(openrouter.model).toBe('openai/gpt-5-mini');
+		expect(openrouter.model).toBe('openai/gpt-6.1-terra');
 		expect(openrouter.provider).toEqual({
 			zdr: true,
 			data_collection: 'deny',

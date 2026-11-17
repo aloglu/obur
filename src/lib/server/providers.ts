@@ -11,10 +11,10 @@ import {
 } from '#lib/server/modules/label-parser/index.ts';
 import type { Provider, RemoteError } from '#lib/shared/remote-models.ts';
 
-/** 1.0.0's models (design: changed only in a release). */
+/** The models (design: changed only in a release). */
 export const MODELS = {
-	openai: { speak: 'gpt-transcribe', scan: 'gpt-5-mini' },
-	openrouter: { speak: 'openai/whisper-large-v3', scan: 'openai/gpt-5-mini' }
+	openai: { speak: 'gpt-transcribe', scan: 'gpt-6.1-terra' },
+	openrouter: { speak: 'openai/whisper-large-v3', scan: 'openai/gpt-6.1-terra' }
 } as const;
 
 const HOSTS: Record<Provider, string> = {

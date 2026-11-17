@@ -123,7 +123,7 @@ test('Scan with a key: the copied table fills the form, read by the company and 
 	await expect(page.locator('#n-protein')).toHaveValue('6.5');
 	expect(await lastRequest(key)).toMatchObject({
 		path: '/chat/completions',
-		model: 'gpt-5-mini',
+		model: 'gpt-6.1-terra',
 		routing: null
 	});
 

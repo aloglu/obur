@@ -2,6 +2,14 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Scan's remote model moved off `gpt-5-mini` (2026-11-18), for tonight's release
+
+- OpenAI shuts down `gpt-5-mini` on 2026-12-11. Scan with a person's own key now uses `gpt-6.1-terra` (OpenAI) and `openai/gpt-6.1-terra` (OpenRouter, listed there), OpenAI's named replacement. Speak is unchanged: `gpt-transcribe` isn't deprecated.
+- The owner accepted the new model without a photo comparison; they'll report problems from real use.
+- Not checked: `openai/whisper-large-v3` on OpenRouter (Speak) doesn't appear in OpenRouter's public model list, which may leave out speech models. Needs a real call with a key.
+- Validation: provider unit tests, `npm run check`, `npm run lint`, own-key browser tests (desktop Chromium, 13 passed).
+- Next: the owner releases tonight.
+
 ## Audit fixes released (2026-11-17), as `v1.0.0-beta.21`
 
 beta.20 plus the two audits below and the Type it unit fix. Checks before the tag (owner's go): type-check, lint,
