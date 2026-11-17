@@ -8,6 +8,8 @@ beta.20 plus the two audits below and the Type it unit fix. Checks before the ta
 1150 unit and database tests, e2e 267 passed (18 skipped by design), build, image built, smoke test, off-site
 outage test, upgrade test from beta.19. Migration 0057 runs on update. `docs/install/for-ai-agents.md`: no new
 settings, commands or start-up log lines.
+Tag pushed; the release workflow passed (checks, all three images, smoke and off-site tests on GitHub) and
+published them as 1.0.0-beta.21.
 - Next: the owner updates (`OBUR_VERSION=1.0.0-beta.21`) and checks members' foods and diaries, the variant row,
   and "Already in your foods" on New food, Scan and Type it.
 
