@@ -2,6 +2,12 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Archived and deleted foods: design review (2026-11-18), waiting for the owner
+
+- Owner asked: archived foods out of the Foods list into their own place, reachable from the top; delete archived foods one at a time or several at once; same for recipes. Agreed: delete goes to Recently deleted (30 days, restorable); only archived items can be deleted; diary, saved meals and recipes keep their snapshots; a later LoseIt import must not bring a deleted food back.
+- Review page with seven stops published as an Artifact (owner's private link). Proposed: a row "Archived foods" under New food (or "In use / Archived" chips), Select with Select all, Delete with Undo and no question, Recently deleted grouped by Entries/Foods/Recipes/Saved meals, saved meal delete moves to Recently deleted.
+- Next: read the owner's verdicts, then build; change docs/design.md ("Foods are archived, never deleted") in the same change.
+
 ## Scan's remote model moved off `gpt-5-mini` (2026-11-18), for tonight's release
 
 - OpenAI shuts down `gpt-5-mini` on 2026-12-11. Scan with a person's own key now uses `gpt-6.1-terra` (OpenAI) and `openai/gpt-6.1-terra` (OpenRouter, listed there), OpenAI's named replacement. Speak is unchanged: `gpt-transcribe` isn't deprecated.
