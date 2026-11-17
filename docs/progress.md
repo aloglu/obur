@@ -11,6 +11,10 @@ on rerun), build, image built, smoke test, off-site outage test, upgrade test fr
 start from beta.20 or later: its sample data uses the shared-foods column removed in beta.20 (beta.21 fails at its
 setup), so it still starts from beta.19, which also runs the new migrations. Migrations 0058 and 0059 run on update.
 `docs/install/for-ai-agents.md`: no new settings, commands or start-up log lines.
+- Release workflow, first run: checks and the speech and labels images passed; the `obur` image failed its off-site
+  outage test on GitHub. Cause: the test's `docker logs | grep -q` (with pipefail, grep stopping at the match makes
+  `docker logs` fail on the closed pipe; the smoke test already avoided this). The log line it looked for was there.
+  Fixed on main after the tag (the script isn't in the image); the failed job was rerun on the tag as is.
 - Next: the owner updates (`OBUR_VERSION=1.0.0-beta.22`) and tries the archive, deleting and Recently deleted on a
   phone.
 

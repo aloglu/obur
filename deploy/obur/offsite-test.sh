@@ -112,7 +112,9 @@ for _ in $(seq 60); do
 done
 [[ $(status '[.lastBackup.ok, .lastBackup.repos]') == '[true,{"1":true,"2":true}]' ]] ||
 	fail "the failed off-site backup was not tried again"
-docker logs "$name" 2>&1 | grep -q 'retrying the failed backup to repository 2 (attempt 1 of 3)' ||
+# The whole log first: with pipefail, `docker logs | grep -q` fails when grep stops reading at a match (SIGPIPE).
+logs=$(docker logs "$name" 2>&1)
+grep -q 'retrying the failed backup to repository 2 (attempt 1 of 3)' <<<"$logs" ||
 	fail "the retry was not logged, or retried more than the off-site repository"
 
 echo "a restore finishes while the store is away"
