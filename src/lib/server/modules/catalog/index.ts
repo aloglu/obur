@@ -9,6 +9,13 @@ export {
 	recipes
 } from './schema.ts';
 export { createRecipes, MAX_INGREDIENTS, type IngredientEdit, type Recipes } from './recipes.ts';
-export { CatalogError, createCatalog, type Catalog, type LabelScanTotals } from './service.ts';
+export {
+	CatalogError,
+	createCatalog,
+	matchable,
+	sameFoodIn,
+	type Catalog,
+	type LabelScanTotals
+} from './service.ts';
 export { loadCuratedFoods, readCuratedFile, type CuratedFile } from './curated.ts';
 export type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';

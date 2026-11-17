@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { signedInAs } from './fixtures.ts';
+import { createFood, signedInAs } from './fixtures.ts';
 
 // Nutrient inputs by field; label text alone is ambiguous ("Fat" is inside "Saturated fat").
 const nutrient = (page: Page, field: string) => page.locator(`#n-${field}`);
@@ -96,4 +96,36 @@ test('the food form warns about implausible values without blocking the save', a
 	).toBeVisible();
 	await nutrient(page, 'sugars').fill('12,5,3');
 	await expect(page.locator('label[for="n-sugars"]')).toContainText('Use a number such as 12.5');
+});
+
+test('a new food the person already has offers it instead, or saves it anyway', async ({
+	page
+}, testInfo) => {
+	const tag = testInfo.project.name;
+	await signedInAs(page, `Tekrar ${tag}`);
+	const existing = await createFood(page, {
+		name: `Greek Yogurt ${tag}`,
+		brand: 'Sütaş',
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 97, qualifier: 'reported' }]
+	});
+	const fill = async () => {
+		await page.goto('/foods/new');
+		await page.getByLabel('Name', { exact: true }).fill(`yogurt greek ${tag}`);
+		await page.getByLabel('Brand (optional)').fill('SUTAS');
+		await nutrient(page, 'energy_kcal').fill('100');
+		await page.getByRole('button', { name: 'Save food' }).click();
+	};
+
+	await fill();
+	const card = page.getByRole('region', { name: 'Already in your foods' });
+	await expect(card).toContainText(`Greek Yogurt ${tag}, Sütaş`);
+	await expect(card).toContainText('97 kcal per 100 g');
+	await card.getByRole('button', { name: 'Use this one' }).click();
+	await expect(page).toHaveURL(new RegExp(`/foods/${existing}$`));
+
+	await fill();
+	await page.getByRole('button', { name: 'Save mine anyway' }).click();
+	const saved = page.getByRole('link', { name: new RegExp(`yogurt greek ${tag}`) });
+	await expect(saved).toHaveAttribute('data-highlight', 'true');
 });

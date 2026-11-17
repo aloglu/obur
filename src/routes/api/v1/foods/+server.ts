@@ -22,18 +22,25 @@ export const GET: RequestHandler = ({ url, locals }) =>
 export const POST: RequestHandler = ({ request, locals }) =>
 	respondCatalog(async () => {
 		// A food confirmed from a label scan records that it came from one, and how much the proposal was edited
-		// (counts only); anything else is hand-made.
+		// (counts only); anything else is hand-made. Unless `anyway`, a food the person already has that is the same
+		// comes back as `match` and nothing is saved ("Already in your foods", docs/design.md).
 		const body = await readJson(
 			request,
 			v.object({
 				food: FoodInput,
 				source: v.optional(v.picklist(['manual', 'label_scan'])),
-				scanEdits: v.optional(ScanEditsInput)
+				scanEdits: v.optional(ScanEditsInput),
+				anyway: v.optional(v.boolean())
 			})
 		);
+		const userId = locals.session!.userId;
+		if (!body.anyway) {
+			const match = await catalog.sameFood(userId, body.food);
+			if (match) return json({ match });
+		}
 		return json(
 			{
-				id: await catalog.createFood(locals.session!.userId, body.food, {
+				id: await catalog.createFood(userId, body.food, {
 					origin: body.source ?? 'manual',
 					scanEdits: body.scanEdits
 				})

@@ -14,6 +14,7 @@
 	import { proposalFood, takeOver, type ScanResult } from '#lib/client/scan-result.svelte.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
+	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { scanEdits } from '#lib/shared/scan-edits.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import FoodForm from '#lib/ui/food/FoodForm.svelte';
@@ -50,7 +51,10 @@
 
 	const initial = $derived(proposal ? proposalFood(proposal) : undefined);
 
-	async function save(food: FoodInput) {
+	// A food the person already has that is the same: Use this one goes on to its amount instead.
+	let match = $state<FoodSearchResult | null>(null);
+
+	async function save(food: FoodInput, anyway = false) {
 		busy = true;
 		saveProblem = '';
 		try {
@@ -59,13 +63,18 @@
 				initial && proposal
 					? scanEdits({ ...initial, basisKnown: proposal.basis !== null }, food)
 					: undefined;
-			const { id } = await api<{ id: string }>('POST', '/api/v1/foods', {
+			const saved = await api<{ id?: string; match?: FoodSearchResult }>('POST', '/api/v1/foods', {
 				food,
 				source: 'label_scan',
-				scanEdits: scanEditCounts
+				scanEdits: scanEditCounts,
+				anyway
 			});
+			if (saved.match) {
+				match = saved.match;
+				return;
+			}
 			showToast({ message: m.scan_saved({ name: food.name }) });
-			await goto(logFoodHref(id));
+			await goto(logFoodHref(saved.id!));
 		} catch (e) {
 			saveProblem =
 				e instanceof ApiError && e.code === 'energy_required'
@@ -148,6 +157,8 @@
 				unsaved
 				saveLabel={m.scan_save_and_amount()}
 				valueNotes={proposal.nutrients.length && initial ? scanNotes : undefined}
+				{match}
+				onuse={() => match && goto(logFoodHref(match.id))}
 			/>{/key}
 		{#if data.scanSource}
 			<Button variant="ghost" wide onclick={() => (retaking = true)}

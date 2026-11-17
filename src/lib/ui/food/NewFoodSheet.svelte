@@ -4,6 +4,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
+	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 	import FoodForm from './FoodForm.svelte';
@@ -17,12 +18,19 @@
 	let busy = $state(false);
 	let problem = $state('');
 
-	async function save(food: FoodInput) {
+	// A food the person already has that is the same: Use this one hands it back instead.
+	let match = $state<FoodSearchResult | null>(null);
+
+	async function save(food: FoodInput, anyway = false) {
 		busy = true;
 		problem = '';
 		try {
-			const { id } = await api<{ id: string }>('POST', '/api/v1/foods', { food });
-			oncreated(id);
+			const saved = await api<{ id?: string; match?: FoodSearchResult }>('POST', '/api/v1/foods', {
+				food,
+				anyway
+			});
+			if (saved.match) match = saved.match;
+			else oncreated(saved.id!);
 		} catch (e) {
 			problem =
 				e instanceof ApiError && e.code === 'energy_required'
@@ -36,5 +44,11 @@
 
 <Sheet title={m.food_new_title()} {onclose}>
 	{#if problem}<Notice>{problem}</Notice>{/if}
-	<FoodForm {busy} onsave={save} startName={name} />
+	<FoodForm
+		{busy}
+		onsave={save}
+		startName={name}
+		{match}
+		onuse={() => match && oncreated(match.id)}
+	/>
 </Sheet>

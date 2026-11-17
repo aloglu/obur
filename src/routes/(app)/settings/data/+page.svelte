@@ -42,6 +42,8 @@
 		deletedInLoseIt?: number;
 		firstWeight?: number | null;
 		reconciliation?: { days: number; mismatched: string[] };
+		/** LoseIt foods the person already has, used instead of a copy. */
+		matchedFoods?: number;
 	}
 
 	const KINDS = [
@@ -112,6 +114,13 @@
 	// LoseIt imports: what the export cannot say for itself.
 	let weightUnit = $state<'kg' | 'lb'>('kg');
 	let trashMissing = $state(false);
+	// Foods the person already has are used instead of a copy unless they keep separate copies; the count from the
+	// preview that used them stays shown while the switch is on.
+	let keepCopies = $state(false);
+	let matched = $state(0);
+	$effect(() => {
+		if (summary && !keepCopies) matched = summary.matchedFoods ?? 0;
+	});
 	let confirming = $state(false);
 	let understood = $state(false);
 
@@ -213,7 +222,8 @@
 		const params = new URLSearchParams({
 			zone: deviceZone(),
 			weightUnit,
-			trashMissing: trashMissing ? '1' : '0'
+			trashMissing: trashMissing ? '1' : '0',
+			keepCopies: keepCopies ? '1' : '0'
 		});
 		if (apply) params.set('apply', '1');
 		const response = await fetch(`/api/v1/import?${params}`, {
@@ -237,6 +247,8 @@
 		summary = null;
 		finished = null;
 		trashMissing = false;
+		keepCopies = false;
+		matched = 0;
 		if (file) void preview();
 	}
 
@@ -417,6 +429,16 @@
 									/>
 								</div>
 							</div>
+							{#if matched > 0}
+								<Switch
+									label={m.data_import_keep_copies()}
+									detail={matched === 1
+										? m.data_import_matched_one()
+										: m.data_import_matched({ count: String(matched) })}
+									bind:checked={keepCopies}
+									onchange={preview}
+								/>
+							{/if}
 							{#if missing > 0}
 								<Switch
 									label={m.data_import_missing_label({ count: String(missing) })}

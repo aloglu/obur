@@ -573,3 +573,38 @@ describe('foodsById', () => {
 		expect(ayranFound.servings.map((s) => s.name)).toEqual(['Glass', 'Bottle']);
 	});
 });
+
+describe('already in your foods', () => {
+	it('finds the person’s own food or a built-in one, never someone else’s, an archived one or other calories', async () => {
+		const own = await catalog.createFood(MEHMET, food());
+		await catalog.createFood(ZEYNEP, food({ name: 'Kefir' }));
+		const banana = await builtIn('Banana', 89);
+		const same = (who: string, over: Record<string, unknown>) =>
+			catalog.sameFood(who, food(over)).then((r) => r?.id ?? null);
+
+		// Case, accents, Turkish letters and word order don't matter; the calories must not disagree.
+		expect(await same(MEHMET, { name: 'AYRAN', brand: 'sutas' })).toBe(own);
+		expect(
+			await same(MEHMET, { nutrients: [{ code: 'energy_kcal', value: 38, qualifier: 'reported' }] })
+		).toBe(own);
+		expect(
+			await same(MEHMET, { nutrients: [{ code: 'energy_kcal', value: 60, qualifier: 'reported' }] })
+		).toBeNull();
+		expect(await same(MEHMET, { brand: 'Pınar' })).toBeNull();
+		// A built-in food counts, marked as such.
+		const builtInMatch = await catalog.sameFood(
+			MEHMET,
+			food({
+				name: 'banana',
+				brand: null,
+				basis: '100g',
+				nutrients: [{ code: 'energy_kcal', value: 92, qualifier: 'reported' }]
+			})
+		);
+		expect(builtInMatch).toMatchObject({ id: banana, curated: true, mine: false, kcal: 89 });
+		// Someone else's food is never found, nor an archived one.
+		expect(await same(MEHMET, { name: 'Kefir' })).toBeNull();
+		await catalog.setArchived(MEHMET, own, true);
+		expect(await same(MEHMET, {})).toBeNull();
+	});
+});

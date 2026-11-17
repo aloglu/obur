@@ -14,6 +14,7 @@
 	import { proposalFood, type ScanResult } from '#lib/client/scan-result.svelte.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
+	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { scanEdits } from '#lib/shared/scan-edits.ts';
 	import PageHead from '#lib/ui/PageHead.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -59,12 +60,16 @@
 		form?.fillValues(proposalFood(next.proposal));
 	}
 
-	async function save(food: FoodInput) {
+	// A food the person already has that is the same (docs/design.md, "Already in your foods").
+	let match = $state<FoodSearchResult | null>(null);
+
+	async function save(food: FoodInput, anyway = false) {
 		busy = true;
 		problem = '';
 		try {
-			const { id } = await api<{ id: string }>('POST', '/api/v1/foods', {
+			const saved = await api<{ id?: string; match?: FoodSearchResult }>('POST', '/api/v1/foods', {
 				food,
+				anyway,
 				// A food filled from a label counts as a scan, with how much of it was corrected (counts only).
 				...(result && scanned
 					? {
@@ -73,8 +78,12 @@
 						}
 					: {})
 			});
+			if (saved.match) {
+				match = saved.match;
+				return;
+			}
 			showToast({ message: m.scan_saved({ name: food.name }) });
-			await goto(foodsSavedHref(id));
+			await goto(foodsSavedHref(saved.id!));
 		} catch (e) {
 			problem =
 				e instanceof ApiError && e.code === 'energy_required'
@@ -166,6 +175,8 @@
 		valuesAction={data.scanSource ? scanAction : undefined}
 		valueNotes={data.scanSource ? valueNotes : undefined}
 		valuesTop={data.scanSource ? photoPanel : undefined}
+		{match}
+		onuse={() => match && goto(resolve('/(app)/foods/[id]', { id: match.id }))}
 	/>
 </main>
 

@@ -5,7 +5,7 @@ import { isValidZone } from '#lib/shared/diary-rules.ts';
 import type { RequestHandler } from './$types';
 
 // The archive is the request body: an obur export or a LoseIt export, told apart by its files. ?apply=1 imports;
-// otherwise this is the dry run. A LoseIt import also takes zone, weightUnit (kg|lb) and trashMissing=1.
+// otherwise this is the dry run. A LoseIt import also takes zone, weightUnit (kg|lb), trashMissing=1 and keepCopies=1.
 export const POST: RequestHandler = ({ request, url, locals }) =>
 	respondPortability(async () => {
 		const bytes = await readArchiveBody(request);
@@ -20,7 +20,8 @@ export const POST: RequestHandler = ({ request, url, locals }) =>
 			const options = {
 				zone,
 				weightUnit: weightUnit as 'kg' | 'lb',
-				trashMissing: url.searchParams.get('trashMissing') === '1'
+				trashMissing: url.searchParams.get('trashMissing') === '1',
+				keepCopies: url.searchParams.get('keepCopies') === '1'
 			};
 			const summary = apply
 				? await portability.applyLoseIt(userId, bytes, options)

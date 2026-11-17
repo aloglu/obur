@@ -20,6 +20,12 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   the older function on a backup from before the update. Tests: a real-Postgres test of the migration
   (`private-foods.db.test.ts`: seeded at 0054, upgraded), catalog/recipe/curated/diary/portability/LoseIt tests
   reworked, browser tests (catalog: nobody else finds a food; a variant of a built-in food has no variant row).
+- Done (4): "Already in your foods" (`shared/food-match.ts`: folded name and brand in any word order, calories within
+  10 % or 10 kcal when comparable). `POST /api/v1/foods` answers `{ match }` and saves nothing unless `anyway`; the
+  food form shows the card in Save's place (New food, Scan, Create it as food). The LoseIt import uses the person's
+  own matching foods (`matchedFoods` in the preview, `keepCopies` option, links remembered for the next export).
+  Tests: 9 unit, a real-Postgres lookup test, a LoseIt matching test, a browser test of the card.
+- Next: release as beta.20 for the owner to try (update runs migrations 0055–0056 after the automatic backup).
 - Waist over time: dropped (waist is hard to measure often, so the data would lag and a card would mostly show an
   old number). Waist stays a single value in Profile → About you.
 - Not wanted (owner): weekly budget banking, limits for other nutrients, home-screen shortcuts, a local language

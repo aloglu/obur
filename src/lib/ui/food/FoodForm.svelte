@@ -6,6 +6,7 @@
 	import { untrack, type Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { foodWarnings, type FoodWarning } from '#lib/shared/food-checks.ts';
+	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
 	import { EXTRA_CODES, portionSource, preservedNutrients } from '#lib/shared/food-edit.ts';
@@ -16,6 +17,7 @@
 	import Button from '../Button.svelte';
 	import Chips from '../Chips.svelte';
 	import FoodIcon from '../FoodIcon.svelte';
+	import AlreadyInFoods from './AlreadyInFoods.svelte';
 	import IconPicker from './IconPicker.svelte';
 	import Notice from '../Notice.svelte';
 	import Select from '../Select.svelte';
@@ -24,7 +26,8 @@
 	interface Props {
 		initial?: FoodDetail;
 		busy?: boolean;
-		onsave: (food: FoodInput) => void;
+		/** `anyway`: saved with Save mine anyway, past a food the person already has. */
+		onsave: (food: FoodInput, anyway?: boolean) => void;
 		/** A name to start from, for a new food. */
 		startName?: string;
 		/** The save button's words, where saving also does something else. */
@@ -43,6 +46,10 @@
 		valuesHint?: string;
 		/** Under the Nutrition title, above the basis: the scanned photo on New food. */
 		valuesTop?: Snippet;
+		/** A food the person already has that is the same: shown in place of Save ("Already in your foods"). */
+		match?: FoodSearchResult | null;
+		/** Use this one, for `match`. */
+		onuse?: () => void;
 	}
 
 	const UNITS: { value: 'g' | 'ml'; label: string }[] = [
@@ -61,7 +68,9 @@
 		valueNotes,
 		valuesAction,
 		valuesHint,
-		valuesTop
+		valuesTop,
+		match = null,
+		onuse
 	}: Props = $props();
 	const start = untrack(() => initial);
 
@@ -276,6 +285,7 @@
 
 	function submit(event: SubmitEvent) {
 		event.preventDefault();
+		const anyway = (event.submitter as HTMLElement | null)?.dataset.anyway === '1';
 		showErrors = true;
 		const anyInvalid =
 			FIELDS.some((f) => invalid(rows[f].text)) ||
@@ -284,28 +294,31 @@
 			(basis === 'serving' && invalid(servingSizeText));
 		if (anyInvalid || !name.trim() || (basis === 'serving' && !servingLabel.trim())) return;
 		const size = basis === 'serving' ? parseDecimal(servingSizeText) : undefined;
-		onsave({
-			name,
-			brand: brand || null,
-			basis,
-			servingLabel: basis === 'serving' ? servingLabel : null,
-			servingSize: size ? { amount: size, unit: servingSizeUnit } : null,
-			barcode: start?.barcode ?? null,
-			icon,
-			// Values the form does not show are kept while the basis stays the same (food-edit.ts).
-			nutrients: [
-				...values,
-				...preservedNutrients(
-					start?.nutrients ?? [],
-					basis === start?.basis,
-					values.map((v) => v.code)
-				)
-			],
-			servings: portions.map((p) => {
-				const portion = { name: p.name, amount: parseDecimal(p.text)!, unit: p.unit };
-				return { ...portion, source: portionSource(start?.servings ?? [], portion) };
-			})
-		});
+		onsave(
+			{
+				name,
+				brand: brand || null,
+				basis,
+				servingLabel: basis === 'serving' ? servingLabel : null,
+				servingSize: size ? { amount: size, unit: servingSizeUnit } : null,
+				barcode: start?.barcode ?? null,
+				icon,
+				// Values the form does not show are kept while the basis stays the same (food-edit.ts).
+				nutrients: [
+					...values,
+					...preservedNutrients(
+						start?.nutrients ?? [],
+						basis === start?.basis,
+						values.map((v) => v.code)
+					)
+				],
+				servings: portions.map((p) => {
+					const portion = { name: p.name, amount: parseDecimal(p.text)!, unit: p.unit };
+					return { ...portion, source: portionSource(start?.servings ?? [], portion) };
+				})
+			},
+			anyway
+		);
 	}
 </script>
 
@@ -525,9 +538,13 @@
 
 	{@render actions?.()}
 
-	<Button type="submit" wide disabled={busy || !name.trim() || (!!start && !unsaved && !dirty)}
-		>{busy ? m.common_working() : (saveLabel ?? m.food_save())}</Button
-	>
+	{#if match && onuse}
+		<AlreadyInFoods {match} {busy} {onuse} />
+	{:else}
+		<Button type="submit" wide disabled={busy || !name.trim() || (!!start && !unsaved && !dirty)}
+			>{busy ? m.common_working() : (saveLabel ?? m.food_save())}</Button
+		>
+	{/if}
 	{#if note}<p class="px-1 text-[0.8125rem] text-muted">{note}</p>{/if}
 </form>
 

@@ -6,6 +6,9 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { strToU8, zipSync } from 'fflate';
 import postgres from 'postgres';
 import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
+import * as v from 'valibot';
+import { FoodInput } from '../../../shared/food-input.ts';
+import { createCatalog } from '../catalog/index.ts';
 import { createGoals } from '../goals/index.ts';
 import type { LoseItOptions } from './loseit-import.ts';
 import { createPortability, PortabilityError } from './service.ts';
@@ -259,5 +262,68 @@ describe('LoseIt import', () => {
 		await portability.applyLoseIt(MEHMET, zip(), options);
 		expect(await dayTotals(ZEYNEP)).toEqual(await dayTotals(MEHMET));
 		expect((await admin`select count(*)::int as n from diary_entries`)[0].n).toBe(36);
+	});
+});
+
+describe('already in your foods', () => {
+	const catalog = createCatalog(drizzle(appSql));
+	const own = (input: Record<string, unknown>) =>
+		catalog.createFood(MEHMET, v.parse(FoodInput, { brand: null, servings: [], ...input }));
+
+	it('uses the person’s own food instead of a copy, says so, and can keep copies instead', async () => {
+		// The same bread (240 vs 245 kcal per 100 g) and ayran (95 kcal per 250 ml is 38 per 100 ml).
+		const bread = await own({
+			name: 'ekmek tam bugday',
+			basis: '100g',
+			nutrients: [{ code: 'energy_kcal', value: 245, qualifier: 'reported' }]
+		});
+		const ayran = await own({
+			name: 'Ayran',
+			brand: 'Örnek Süt',
+			basis: '100ml',
+			nutrients: [{ code: 'energy_kcal', value: 38, qualifier: 'reported' }]
+		});
+		// An archived one, and one with other calories, are not the same.
+		const archived = await own({
+			name: 'Haşlanmış yumurta',
+			basis: 'serving',
+			servingLabel: '1 Each',
+			nutrients: [{ code: 'energy_kcal', value: 78, qualifier: 'reported' }]
+		});
+		await catalog.setArchived(MEHMET, archived, true);
+		await own({
+			name: 'Mercimek çorbası',
+			basis: '100g',
+			nutrients: [{ code: 'energy_kcal', value: 200, qualifier: 'reported' }]
+		});
+
+		const plain = await portability.previewLoseIt(MEHMET, zip(), options);
+		const copies = await portability.previewLoseIt(MEHMET, zip(), { ...options, keepCopies: true });
+		expect(plain.matchedFoods).toBe(2);
+		expect(copies.matchedFoods).toBe(0);
+		expect(plain.counts.food.new).toBe(copies.counts.food.new - 2);
+
+		await portability.applyLoseIt(MEHMET, zip(), options);
+		const names =
+			await admin`select name from foods where owner_id = ${MEHMET} and origin = 'loseit'`;
+		expect(names.map((r) => r.name)).not.toContain('Ekmek, tam buğday');
+		expect(names.map((r) => r.name)).not.toContain('Ayran');
+		// LoseIt's two Mercimek çorbası are still both added: neither is the person's own.
+		expect(names.filter((r) => r.name === 'Mercimek çorbası')).toHaveLength(2);
+		const linked = await admin`select distinct food_id, food->>'name' as name from diary_entries
+			where user_id = ${MEHMET} and food->>'name' in ('Ayran', 'Ekmek, tam buğday')`;
+		expect(new Set(linked.map((r) => r.food_id))).toEqual(new Set([bread, ayran]));
+		// Entries keep LoseIt's own values.
+		const [row] = await admin`select energy_kcal from diary_entries
+			where user_id = ${MEHMET} and food->>'name' = 'Ayran' limit 1`;
+		expect(Number(row.energy_kcal)).toBe(95);
+
+		// The next, overlapping export finds them again rather than adding them now.
+		const again = await portability.previewLoseIt(
+			MEHMET,
+			zip({ ...files, 'profile.csv': files['profile.csv'] + '\n' }),
+			options
+		);
+		expect(again.counts.food.new).toBe(0);
 	});
 });

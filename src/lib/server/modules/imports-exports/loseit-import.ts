@@ -17,6 +17,7 @@ import {
 	type NutrientCode,
 	type NutrientValue
 } from '../../../shared/nutrients.ts';
+import { matchKey, sameFood, type MatchableFood } from '../../../shared/food-match.ts';
 import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
 import { activityEntries, waterEntries, weightEntries } from '../body/index.ts';
 import { foodNutrients, foods } from '../catalog/index.ts';
@@ -36,6 +37,8 @@ export interface LoseItOptions {
 	weightUnit: 'kg' | 'lb';
 	/** Move entries imported earlier but missing from this export to the trash. */
 	trashMissing: boolean;
+	/** Add every food, even one the person already has ("Already in your foods" is skipped). */
+	keepCopies?: boolean;
 }
 
 type Kind = 'food' | 'diary' | 'weight' | 'water' | 'activity' | 'target';
@@ -64,6 +67,8 @@ export interface LoseItSummary {
 	firstWeight: number | null;
 	/** Days whose imported entries do not add up to LoseIt's own daily food total (should be none). */
 	reconciliation: { days: number; mismatched: string[] };
+	/** Foods the person already had, used instead of adding a copy (unless keepCopies). */
+	matchedFoods: number;
 	warnings: LoseItWarning[];
 	options: LoseItOptions;
 }
@@ -132,6 +137,8 @@ interface Planned {
 	missing: Record<'diary' | 'weight' | 'water' | 'activity', string[]>;
 	/** Source food key → local food ID, for diary links. */
 	foodLinks: Map<string, string>;
+	/** Source food ID → the person's food it is the same as, used instead of a new one. */
+	matched: Map<string, string>;
 	ids: {
 		entries: string[];
 		weights: string[];
@@ -141,6 +148,38 @@ interface Planned {
 	budgetChanges: { date: string; kcal: number; id: string }[];
 	completions: string[];
 	importProfile: boolean;
+}
+
+/** A LoseIt food as obur would store it: per 100 g or ml when LoseIt states 100 of either, else per serving. */
+function foodShape(f: {
+	quantity: number;
+	unit: LoseItUnit;
+}): Pick<MatchableFood, 'basis' | 'servingLabel' | 'servingSize'> {
+	const per100 =
+		f.quantity === 100 && f.unit.kind !== 'count'
+			? f.unit.kind === 'mass'
+				? '100g'
+				: '100ml'
+			: null;
+	return {
+		basis: per100 ?? 'serving',
+		servingLabel: per100 ? null : portion(f.quantity, f.unit).slice(0, 200),
+		servingSize:
+			per100 || f.unit.kind === 'count'
+				? null
+				: { amount: f.quantity, unit: f.unit.kind === 'mass' ? 'g' : 'ml' }
+	};
+}
+
+/** The diary row each LoseIt database food is made from: its latest. */
+function latestRows(data: LoseItData, foodKey: (name: string) => string | null) {
+	const latest = new Map<string, LoseItEntry>();
+	for (const e of data.entries) {
+		const k = foodKey(e.name);
+		if (k?.startsWith('log:') && (!latest.has(k) || latest.get(k)!.date <= e.date))
+			latest.set(k, e);
+	}
+	return latest;
 }
 
 const foodKeyFor = (data: LoseItData) => {
@@ -231,6 +270,62 @@ export async function planLoseIt(
 	for (const e of data.entries) {
 		const k = foodKey(e.name);
 		if (k?.startsWith('log:') && !foodLinks.has(k)) foodLinks.set(k, decide('food', k));
+	}
+
+	// Already in your foods: a new food the person already has (one of their own, not archived) is used instead.
+	const matched = new Map<string, string>();
+	if (!options.keepCopies && create.food.size) {
+		const own = await tx
+			.select({
+				id: foods.id,
+				name: foods.name,
+				brand: foods.brand,
+				basis: foods.basis,
+				servingLabel: foods.servingLabel,
+				servingAmount: foods.servingAmount,
+				servingUnit: foods.servingUnit,
+				kcal: foodNutrients.value
+			})
+			.from(foods)
+			.leftJoin(
+				foodNutrients,
+				and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
+			)
+			.where(
+				and(eq(foods.ownerId, userId), isNull(foods.archivedAt), sql`${foods.origin} <> 'recipe'`)
+			)
+			.orderBy(sql`${foods.updatedAt} desc`);
+		type Candidate = MatchableFood & { id: string };
+		const byKey = new Map<string, Candidate[]>();
+		for (const r of own) {
+			const k = matchKey(r.name, r.brand);
+			const servingSize =
+				r.servingAmount !== null && r.servingUnit
+					? { amount: r.servingAmount, unit: r.servingUnit }
+					: null;
+			byKey.set(k, [...(byKey.get(k) ?? []), { ...r, servingSize }]);
+		}
+		const latest = latestRows(data, foodKey);
+		const sources = [
+			...data.foods.map((f) => [`custom:${f.uniqueId}`, f] as const),
+			...[...latest].map(([k, e]) => [k, { ...e, brand: null }] as const)
+		];
+		for (const [sourceId, f] of sources) {
+			const createdId = create.food.get(sourceId);
+			if (!createdId) continue;
+			const shape: MatchableFood = {
+				name: f.name,
+				brand: f.brand ?? null,
+				...foodShape(f),
+				kcal: f.nutrients.energy_kcal?.value ?? null
+			};
+			const same = byKey.get(matchKey(shape.name, shape.brand))?.find((c) => sameFood(shape, c));
+			if (!same) continue;
+			matched.set(sourceId, same.id);
+			create.food.delete(sourceId);
+			counts.food.new--;
+			for (const [k, id] of foodLinks) if (id === createdId) foodLinks.set(k, same.id);
+		}
 	}
 
 	// Rows with identities; earlier imports missing from this export are counted, within the export's date range.
@@ -375,12 +470,14 @@ export async function planLoseIt(
 					null
 				)?.value ?? null,
 			reconciliation: { days: data.days.length, mismatched },
+			matchedFoods: matched.size,
 			warnings: [...warnings],
 			options
 		},
 		create,
 		missing,
 		foodLinks,
+		matched,
 		ids,
 		budgetChanges,
 		completions,
@@ -425,22 +522,17 @@ export async function writeLoseIt(
 	) => {
 		const id = p.create.food.get(sourceId);
 		if (!id) return;
-		const per100 =
-			f.quantity === 100 && f.unit.kind !== 'count'
-				? f.unit.kind === 'mass'
-					? '100g'
-					: '100ml'
-				: null;
+		const shape = foodShape(f);
 		foodRows.push({
 			id,
 			ownerId: userId,
 			name: f.name.slice(0, 200),
 			brand: f.brand?.slice(0, 120) || null,
 			searchKey: foodSearchKey(f.name, f.brand),
-			basis: per100 ?? 'serving',
-			servingLabel: per100 ? null : portion(f.quantity, f.unit).slice(0, 200),
-			servingAmount: per100 || f.unit.kind === 'count' ? null : f.quantity,
-			servingUnit: per100 || f.unit.kind === 'count' ? null : f.unit.kind === 'mass' ? 'g' : 'ml',
+			basis: shape.basis,
+			servingLabel: shape.servingLabel,
+			servingAmount: shape.servingSize?.amount ?? null,
+			servingUnit: shape.servingSize?.unit ?? null,
 			origin: 'loseit',
 			sourceMeta: meta
 		});
@@ -452,11 +544,8 @@ export async function writeLoseIt(
 			loseit: 'custom food',
 			uniqueId: f.uniqueId
 		});
-	const latest = new Map<string, LoseItEntry>();
-	for (const e of data.entries) {
-		const k = `log:${foldForSearch(e.name)}`;
-		if (p.create.food.has(k) && (!latest.has(k) || latest.get(k)!.date <= e.date)) latest.set(k, e);
-	}
+	for (const [sourceId, localId] of p.matched) remember('food', sourceId, localId);
+	const latest = latestRows(data, foodKeyFor(data));
 	for (const [k, e] of latest)
 		addFood(
 			k,

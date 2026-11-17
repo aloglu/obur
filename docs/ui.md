@@ -129,7 +129,13 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
   - Cooked weight is empty with the placeholder "Optional", never prefilled, and its label has no tag.
   - Beside "Per serving": "300 g a serving", or "No cooked weight", on one line.
   - Ingredient icons and Add food share one column.
-  - **Already in your foods** (owner, 2026-11-17; `docs/design.md`): when a new food matches one the person has, or a built-in one, a plain card above Save says "Already in your foods: {name} · {kcal} per {basis}" ("Built-in food" for USDA ones) with two equal buttons side by side, **Use this one** and **Save mine anyway**. It appears on the first Save tap and does not block typing.
+  - **Already in your foods** (owner, 2026-11-17; `docs/design.md`): when a new food (New food, Scan, Create it as food)
+  matches one the person has, or a built-in one, Save asks the server, which saves nothing and answers with the
+  match; a plain card titled "Already in your foods" then takes Save's place: the food's icon and name (with brand),
+  "97 kcal per 100 g" and "Built-in food" for USDA ones, and two equal buttons side by side, **Use this one**
+  (New food opens it, Scan goes on to its amount, Create it as food hands it back) and **Save mine anyway**, which
+  saves the form as it is. The LoseIt import preview says "3 foods are already in your foods, so those are used"
+  under a **Keep separate copies** switch (`ui/food/AlreadyInFoods.svelte`, `shared/food-match.ts`).
   - **Food form:** one card each for name and icon, Nutrition and Portions, then the archive row; a built-in food, which can't be edited, shows Make my own variant instead (Archive food goes back to Foods with a toast, "Food archived", and Undo, which restores it and returns to the food; an archived food's page says so in a muted line under the title, and Restore stays on the page with a toast; owner report, 2026-11-16), Save (on only after a change, except for a scanned label), and a line saying the diary keeps what was logged. Kept against the demo: the kJ row, because a label may give only kJ and the kcal check needs it (empty kJ shows a dash rather than Unknown), and the Label type choice, because US and EU carbohydrate are different values.
   - **Lists:** Foods, Recipes and Saved meals are one card each with a small head ("Your recipes", "kcal a serving"), rows with an icon, a detail line and the number at the right, and their counts on More's rows. New recipe and New meal sit under the list. On Foods, the search stays and New food sits above the list, because an import can bring hundreds of foods (2026-11-07, my call against the demo, which had a short list and no search). Archived foods and recipes stay in their lists, faded and last, so they can be restored.
 
