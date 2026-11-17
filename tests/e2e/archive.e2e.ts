@@ -61,6 +61,8 @@ test('archived foods have their own page; several are deleted at once, undone, a
 	await expect(main).toContainText('No archived foods.');
 
 	// Recently deleted: a Foods group; restore one, then the others together.
+	// The step before may still be refreshing the page's data; let it finish first.
+	await page.waitForLoadState('networkidle');
 	await page.goto('/more/deleted');
 	const foods = main.getByRole('region').or(main.locator('section')).filter({ hasText: 'Foods' });
 	await expect(foods).toContainText('Old protein bar');
@@ -78,6 +80,8 @@ test('archived foods have their own page; several are deleted at once, undone, a
 	await expect(main).toContainText('Nothing deleted in the last 30 days.');
 
 	// Back in the archive; one opened shows Restore and Delete food, and its way back leads to the archive.
+	// The step before may still be refreshing the page's data; let it finish first.
+	await page.waitForLoadState('networkidle');
 	await page.goto('/foods/archived');
 	await main.getByRole('link', { name: /Old pizza slice/ }).click();
 	await expect(page.getByRole('link', { name: 'Archived foods' })).toBeVisible();
@@ -109,6 +113,8 @@ test('deleting a food says the recipe using it keeps its values; archived recipe
 	});
 	await apiAs(page, 'POST', '/api/v1/foods/bulk', { action: 'archive', ids: [lentils] });
 
+	// The step before may still be refreshing the page's data; let it finish first.
+	await page.waitForLoadState('networkidle');
 	await page.goto('/foods/archived');
 	const main = page.getByRole('main');
 	await main.getByRole('button', { name: 'Select', exact: true }).click();
@@ -120,6 +126,8 @@ test('deleting a food says the recipe using it keeps its values; archived recipe
 	await expect(page.getByRole('status')).toContainText('Lentil soup keeps its values.');
 
 	// The recipe: archive it, find it under Archived recipes, delete it from its … menu.
+	// The step before may still be refreshing the page's data; let it finish first.
+	await page.waitForLoadState('networkidle');
 	await page.goto(`/recipes/${recipe}`);
 	await page.getByRole('button', { name: 'More actions' }).click();
 	await page.getByRole('menuitem', { name: 'Archive recipe' }).click();
@@ -131,6 +139,8 @@ test('deleting a food says the recipe using it keeps its values; archived recipe
 	await page.getByRole('menuitem', { name: 'Delete recipe' }).click();
 	await expect(page).toHaveURL(/\/recipes\/archived$/);
 	await expect(page.getByRole('status')).toContainText('Deleted “Lentil soup”');
+	// The step before may still be refreshing the page's data; let it finish first.
+	await page.waitForLoadState('networkidle');
 	await page.goto('/more/deleted');
 	await expect(main.locator('section').filter({ hasText: 'Recipes' })).toContainText('Lentil soup');
 });
@@ -144,6 +154,8 @@ test('Select all takes the whole archive, beyond the rows on screen, and Undo br
 		(_, i) => `Imported food ${String(i + 1).padStart(2, '0')}`
 	);
 	await archivedFoods(page, names);
+	// The step before may still be refreshing the page's data; let it finish first.
+	await page.waitForLoadState('networkidle');
 	await page.goto('/foods/archived');
 	const main = page.getByRole('main');
 	await expect(main.getByRole('button', { name: 'Show more' })).toBeVisible();

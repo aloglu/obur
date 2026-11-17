@@ -32,6 +32,19 @@ test('every page passes the automated accessibility checks in light and dark', a
 		zone: 'Europe/Istanbul',
 		value: 72.4
 	});
+	// An archived food, and one in Recently deleted, so the archive and the trash's groups have rows.
+	const kept = await createFood(page, {
+		name: 'Old protein bar',
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 380, qualifier: 'reported' }]
+	});
+	const gone = await createFood(page, {
+		name: 'Old iced latte',
+		basis: '100ml',
+		nutrients: [{ code: 'energy_kcal', value: 40, qualifier: 'reported' }]
+	});
+	await apiAs(page, 'POST', '/api/v1/foods/bulk', { action: 'archive', ids: [kept, gone] });
+	await apiAs(page, 'POST', '/api/v1/foods/bulk', { action: 'delete', ids: [gone] });
 	const pages = [
 		'/',
 		'/log',
@@ -49,6 +62,9 @@ test('every page passes the automated accessibility checks in light and dark', a
 		'/foods',
 		'/foods/new',
 		`/foods/${food}`,
+		'/foods/archived',
+		`/foods/${kept}`,
+		'/recipes/archived',
 		'/recipes',
 		'/recipes/new',
 		'/saved-meals',
