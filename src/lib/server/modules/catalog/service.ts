@@ -124,7 +124,8 @@ function toDetail(row: FoodRow, values: NutrientValue[], servings: FoodDetail['s
 
 /**
  * "Already in your foods": a food the person can use (their own, or a built-in one) that is the same as `food`
- * (shared/food-match.ts), their own first, else the most recently changed. Archived foods and recipes don't count.
+ * (shared/food-match.ts): the closest name first, then their own, then the most recently changed. Archived foods and
+ * recipes don't count.
  */
 export async function sameFoodIn(tx: Tx, food: MatchableFood): Promise<FoodSearchResult | null> {
 	const words = matchKey(food.name, food.brand).split(' ').filter(Boolean);
@@ -155,7 +156,10 @@ export async function sameFoodIn(tx: Tx, food: MatchableFood): Promise<FoodSearc
 				...words.map((w) => sql`${foods.searchKey} like ${`%${w}%`}`)
 			)
 		)
+		// Closest first, so a short name ("Su") is not crowded out by longer ones that contain it; then the person's
+		// own over a built-in one, then the newest.
 		.orderBy(
+			sql`similarity(${foods.searchKey}, ${foodSearchKey(food.name, food.brand)}) desc`,
 			sql`(${foods.ownerId} = app_current_user_id()) desc nulls last`,
 			sql`${foods.updatedAt} desc`
 		)

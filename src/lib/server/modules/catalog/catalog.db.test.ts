@@ -607,4 +607,27 @@ describe('already in your foods', () => {
 		await catalog.setArchived(MEHMET, own, true);
 		expect(await same(MEHMET, {})).toBeNull();
 	});
+
+	it('finds a short name among many longer ones that contain it (a regression: only 50 were looked at)', async () => {
+		const water = await catalog.createFood(
+			MEHMET,
+			food({
+				name: 'Su',
+				brand: null,
+				nutrients: [{ code: 'energy_kcal', value: 0, qualifier: 'reported' }]
+			})
+		);
+		// Every longer one is newer, so ordering by date alone would never reach it.
+		for (let i = 0; i < 60; i++)
+			await catalog.createFood(MEHMET, food({ name: `Sucuk ${i}`, brand: null }));
+		const match = await catalog.sameFood(
+			MEHMET,
+			food({
+				name: 'su',
+				brand: null,
+				nutrients: [{ code: 'energy_kcal', value: 0, qualifier: 'reported' }]
+			})
+		);
+		expect(match?.id).toBe(water);
+	});
 });

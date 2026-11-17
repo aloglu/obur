@@ -21,7 +21,14 @@ food chosen for a card after the sentence (Create it as food, Which one?) droppe
 "Choose a unit for ml" even for a food per 100 ml (grams only seemed to work: a per-100 g food usually has one
 unit, chosen by itself). Grams and millilitres now carry over when the food offers them; portion words ("2
 slices") are still asked. Browser test in `typed-entry.e2e.ts`.
-- Next: a second audit (owner asked) of everything since beta.19, then the owner's go for beta.21.
+- Second audit (owner asked, 2026-11-17), the whole diff since beta.19 and its surroundings: fixed the
+  "Already in your foods" lookup missing a short name ("Su") when over 50 longer foods contained it (candidates are
+  now ranked by closeness, regression test). Checked and fine: no function or policy still names the removed
+  column (the development database migrated 0053–0057 cleanly, with no food links between people left); recipes,
+  saved meals, Speak and Type it only see the person's own and built-in foods; old clients' extra fields are
+  ignored. Left as is: a copy is also made for a food someone only linked through an earlier archive import.
+  Checks: type-check, lint, 1150 unit and database tests, e2e 267 passed (18 skipped by design), no flakes.
+- Next: the owner's go for beta.21 (build, image, smoke, off-site and upgrade tests, then the tag).
 
 ## Private foods released (2026-11-17), as `v1.0.0-beta.20`
 
