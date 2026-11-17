@@ -2,6 +2,15 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Audit fixes released (2026-11-17), as `v1.0.0-beta.21`
+
+beta.20 plus the two audits below and the Type it unit fix. Checks before the tag (owner's go): type-check, lint,
+1150 unit and database tests, e2e 267 passed (18 skipped by design), build, image built, smoke test, off-site
+outage test, upgrade test from beta.19. Migration 0057 runs on update. `docs/install/for-ai-agents.md`: no new
+settings, commands or start-up log lines.
+- Next: the owner updates (`OBUR_VERSION=1.0.0-beta.21`) and checks members' foods and diaries, the variant row,
+  and "Already in your foods" on New food, Scan and Type it.
+
 ## Audit of the private-foods change (owner, 2026-11-17), for `v1.0.0-beta.21`
 
 beta.20 was tagged before the owner could ask for an audit (my mistake: releases only when asked). Found and fixed:
@@ -28,7 +37,7 @@ slices") are still asked. Browser test in `typed-entry.e2e.ts`.
   saved meals, Speak and Type it only see the person's own and built-in foods; old clients' extra fields are
   ignored. Left as is: a copy is also made for a food someone only linked through an earlier archive import.
   Checks: type-check, lint, 1150 unit and database tests, e2e 267 passed (18 skipped by design), no flakes.
-- Next: the owner's go for beta.21 (build, image, smoke, off-site and upgrade tests, then the tag).
+- Released as beta.21 (above).
 
 ## Private foods released (2026-11-17), as `v1.0.0-beta.20`
 
