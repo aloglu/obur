@@ -2,6 +2,18 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Archived and deleted foods released (2026-11-18), as `v1.0.0-beta.22`
+
+beta.21 plus Scan's move to `gpt-6.1-terra` (before `gpt-5-mini` shuts down on 2026-12-11) and archived and deleted
+foods, recipes and saved meals (below). Checks before the tag (owner's go): type-check, lint, 1158 unit and database
+tests, e2e 271 passed (18 skipped by design; 2 phone WebKit failures per full run, different each time, all passing
+on rerun), build, image built, smoke test, off-site outage test, upgrade test from beta.19. The upgrade test can't
+start from beta.20 or later: its sample data uses the shared-foods column removed in beta.20 (beta.21 fails at its
+setup), so it still starts from beta.19, which also runs the new migrations. Migrations 0058 and 0059 run on update.
+`docs/install/for-ai-agents.md`: no new settings, commands or start-up log lines.
+- Next: the owner updates (`OBUR_VERSION=1.0.0-beta.22`) and tries the archive, deleting and Recently deleted on a
+  phone.
+
 ## Archived and deleted foods: design review (2026-11-18), waiting for the owner
 
 - Owner asked: archived foods out of the Foods list into their own place, reachable from the top; delete archived foods one at a time or several at once; same for recipes. Agreed: delete goes to Recently deleted (30 days, restorable); only archived items can be deleted; diary, saved meals and recipes keep their snapshots; a later LoseIt import must not bring a deleted food back.
@@ -11,7 +23,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Step 2 done: routes `POST /api/v1/foods/bulk`, `POST /api/v1/saved-meals/restore`, `GET /api/v1/recipes`, `GET /api/v1/foods?mine&archived&q`; screens: Foods and Recipes list only items in use, with an "Archived foods/recipes · N" row under New; Archived foods/recipes pages (search, Select, Select all over the whole archive, Restore/Delete with Undo); Delete food on an archived food, Delete recipe in an archived recipe's … menu; saved meal Delete without a question, with Undo; Recently deleted grouped (Entries, Foods, Recipes, Saved meals), five each and Show all, Select to restore several; More counts all of it. Turkish strings added. New `tests/e2e/archive.e2e.ts` (3 tests) passes on desktop Chromium; saved-meals and menu-dismiss tests updated. Vitest 1158 passed (one earlier full run failed `private-foods.db.test.ts` at file level, not reproduced in two runs).
 - Step 3 done: docs/design.md ("Archived and deleted foods"; "Foods are archived, never deleted" replaced) and docs/ui.md ("Archived and deleted"). The accessibility check now covers Archived foods and recipes, an archived food, and Recently deleted with a deleted food. Full e2e in the Playwright image: 271 passed, 2 failed, both phone WebKit and different on each of two runs (saved meals' Update button and the Add a food sheet; then the accessibility check catching Today's budget number mid-way to dark mode, and an interrupted offline page load). Each passed when rerun (several times), so they look flaky, not caused by this change. The archive tests needed a wait for the page to settle on WebKit (test-side race with the background refresh after a step).
 - Not checked yet: a real phone.
-- Next: the owner tries it; release when asked.
+- Released as beta.22 (above).
 
 ## Scan's remote model moved off `gpt-5-mini` (2026-11-18), for tonight's release
 
