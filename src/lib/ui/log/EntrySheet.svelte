@@ -229,8 +229,13 @@
 		card.unsure = false;
 		card.searching = false;
 		// The unit chosen for the previous food may not exist for this one.
-		if (!unitOptions(card.food, measures).some((o) => o.key === card.optionKey))
-			card.optionKey = '';
+		const options = unitOptions(card.food, measures);
+		if (!options.some((o) => o.key === card.optionKey)) card.optionKey = '';
+		// Grams or millilitres from the sentence carry over to a food picked or made for it afterwards (it once kept
+		// asking "Choose a unit for “ml”" for a food per 100 ml).
+		const said = card.said;
+		if (!card.optionKey && (said === 'g' || said === 'ml') && options.some((o) => o.key === said))
+			card.optionKey = said;
 	}
 
 	function toUnit(o: UnitOption): Unit {

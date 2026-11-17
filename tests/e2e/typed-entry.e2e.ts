@@ -303,13 +303,13 @@ test('Create it as food hands back a food the person already has when the name i
 	await createFood(page, {
 		name: `Ayran ${word}`,
 		brand: 'Sütaş',
-		basis: '100g',
+		basis: '100ml',
 		nutrients: [{ code: 'energy_kcal', value: 36, qualifier: 'reported' }]
 	});
 	await page.goto('/log');
 	await page.getByRole('button', { name: 'Type it' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
-	await sheet.getByLabel('You typed').fill(`200 g qq${word}`);
+	await sheet.getByLabel('You typed').fill(`200 ml qq${word}`);
 	await sheet.getByRole('button', { name: 'Create it as food' }).click();
 	const form = page.getByRole('dialog', { name: 'New food' });
 	await form.getByLabel('Name', { exact: true }).fill(`ayran ${word}`);
@@ -321,6 +321,9 @@ test('Create it as food hands back a food the person already has when the name i
 		.click();
 	await expect(form).toBeHidden();
 	await expect(sheet).not.toContainText('Not in your foods yet');
+	// The 200 ml from the sentence carries over to the food (regression: it asked for a unit again).
+	await expect(sheet).not.toContainText('Choose a unit');
 	await sheet.getByRole('button', { name: /^Log 1 to/ }).click();
 	await expect(page.getByRole('main')).toContainText(`Ayran ${word}`);
+	await expect(page.getByRole('main')).toContainText('72'); // 200 ml at 36 kcal per 100 ml
 });

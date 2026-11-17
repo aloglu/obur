@@ -16,10 +16,12 @@ and Create it as food, Enter and editing, the LoseIt Keep separate copies switch
 check; `deploy/obur/upgrade-test.sh` (beta.19 data updated by the new image, then its backup restored with a
 `:shared` list), passed locally. Vitest: 1149 passed; e2e 266 passed (18 skipped by design) with one flake
 (`saved-meals.e2e.ts` in phone WebKit under the full parallel run; it then passed 3 of 3 alone; `goals.e2e.ts`
-flaked once the same way in an earlier run). Found on the side, not fixed (owner to decide): in Type it, a food
-chosen for a card after the sentence named "ml" (Create it as food or Which one?) keeps asking "Choose a unit for
-ml" even when the food is per 100 ml; grams carry over.
-- Next: owner's go for beta.21 (not tagged).
+flaked once the same way in an earlier run). Found on the side and fixed (owner's go): in Type it and Speak, a
+food chosen for a card after the sentence (Create it as food, Which one?) dropped the sentence's "ml" and asked
+"Choose a unit for ml" even for a food per 100 ml (grams only seemed to work: a per-100 g food usually has one
+unit, chosen by itself). Grams and millilitres now carry over when the food offers them; portion words ("2
+slices") are still asked. Browser test in `typed-entry.e2e.ts`.
+- Next: a second audit (owner asked) of everything since beta.19, then the owner's go for beta.21.
 
 ## Private foods released (2026-11-17), as `v1.0.0-beta.20`
 
