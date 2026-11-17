@@ -104,8 +104,8 @@ describe('achievements', () => {
 		await admin`insert into day_completions (user_id, local_date)
 			select ${AYSE}, d::date from generate_series('2026-10-20'::date, '2026-10-26'::date, '1 day') d`;
 		// Saved at 23:30 in Istanbul on 1 October, still 30 September in UTC.
-		await admin`insert into foods (owner_id, visibility, name, search_key, basis, origin, created_at)
-			values (${AYSE}, 'private', 'Etiket', 'etiket', '100g', 'label_scan', '2026-10-01T20:30:00Z')`;
+		await admin`insert into foods (owner_id, name, search_key, basis, origin, created_at)
+			values (${AYSE}, 'Etiket', 'etiket', '100g', 'label_scan', '2026-10-01T20:30:00Z')`;
 		await progress.recordFirst(AYSE, 'voice', '2026-10-15');
 		await progress.recordFirst(AYSE, 'voice', '2026-10-16'); // once only
 		expect(await progress.sync(AYSE, TODAY, ZONE)).toEqual([

@@ -7,7 +7,6 @@ export interface FoodDetail extends QuantityModel {
 	id: string;
 	name: string;
 	brand: string | null;
-	visibility: 'private' | 'shared';
 	servingLabel: string | null;
 	barcode: string | null;
 	/** The chosen icon; null shows the one the name suggests. */
@@ -17,10 +16,8 @@ export interface FoodDetail extends QuantityModel {
 	curatedDataset: 'sr_legacy' | 'foundation' | null;
 	archived: boolean;
 	version: number;
-	/** Created by the signed-in person. */
+	/** The signed-in person's own food (they can edit it); false only for built-in foods. */
 	mine: boolean;
-	/** The signed-in person may edit it (creator, or an admin for shared foods). */
-	editable: boolean;
 	derivedFrom: string | null;
 	nutrients: NutrientValue[];
 	/** With where each portion's size comes from (not part of diary snapshots). */
@@ -34,7 +31,6 @@ export interface FoodSearchResult {
 	brand: string | null;
 	basis: QuantityModel['basis'];
 	servingLabel: string | null;
-	visibility: 'private' | 'shared';
 	mine: boolean;
 	kcal: number | null;
 	icon: string | null;

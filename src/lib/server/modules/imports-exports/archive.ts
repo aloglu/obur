@@ -54,9 +54,11 @@ const Serving = v.object({
 
 export const FoodRecord = v.object({
 	id: Uuid,
-	/** Created by the exporting person; otherwise a food they used that someone else shared. */
+	/** Created by the exporting person; otherwise a built-in food they used (or, in archives from before foods were
+	 * private, someone else's shared food). */
 	mine: v.boolean(),
-	visibility: v.picklist(['private', 'shared']),
+	// Archives from before 2026-11-17 say whether a food was shared; it is ignored, since every food is private now.
+	visibility: v.optional(v.picklist(['private', 'shared'])),
 	name: Text(200),
 	brand: v.nullable(Text(120)),
 	basis: v.picklist(['100g', '100ml', 'serving']),

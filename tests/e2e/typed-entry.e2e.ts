@@ -263,7 +263,6 @@ test('Create it as food makes the food on top, then logs it with everything else
 	await expect(form.getByLabel('Name', { exact: true })).toHaveValue(word);
 	await expect(page).toHaveURL(/\/log/);
 	await form.getByRole('textbox', { name: /^Energy kcal/ }).fill('150');
-	await form.getByRole('radio', { name: 'Only me' }).click();
 	await form.getByRole('button', { name: 'Save food' }).click();
 	await expect(form).toBeHidden();
 

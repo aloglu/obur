@@ -130,7 +130,6 @@
 	let icon = $state<string | null>(start?.icon ?? null);
 	let choosingIcon = $state(false);
 	const suggested = $derived(suggestIcon(name, brand));
-	let visibility = $state<'shared' | 'private'>(start?.visibility ?? 'shared');
 	let basis = $state<Basis>(start?.basis ?? '100g');
 	let servingLabel = $state(start?.servingLabel ?? '');
 	let servingSizeText = $state(
@@ -228,7 +227,6 @@
 			name,
 			brand,
 			icon,
-			visibility,
 			basis,
 			servingLabel,
 			servingSizeText,
@@ -289,7 +287,6 @@
 		onsave({
 			name,
 			brand: brand || null,
-			visibility,
 			basis,
 			servingLabel: basis === 'serving' ? servingLabel : null,
 			servingSize: size ? { amount: size, unit: servingSizeUnit } : null,
@@ -524,20 +521,6 @@
 		>
 			<Plus size={18} aria-hidden="true" />{m.food_portion_add()}
 		</button>
-	</section>
-
-	<section class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
-		<Chips
-			label={m.food_visibility()}
-			bind:value={visibility}
-			options={[
-				{ value: 'shared', label: m.food_visibility_shared() },
-				{ value: 'private', label: m.food_visibility_private() }
-			]}
-		/>
-		<p class="text-[0.8125rem] text-muted">
-			{visibility === 'shared' ? m.food_share_note_shared() : m.food_share_note_private()}
-		</p>
 	</section>
 
 	{@render actions?.()}

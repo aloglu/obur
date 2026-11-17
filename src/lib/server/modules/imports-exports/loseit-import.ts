@@ -5,7 +5,7 @@
 // (two identical eggs at one breakfast stay two entries). A later, overlapping export therefore adds only rows not
 // seen before. A row imported earlier that is missing from the new export was deleted or changed in LoseIt; the
 // preview counts these and they move to the trash only when the person chooses so. Entries keep LoseIt's own
-// totals; foods are private unless the person opts to share their custom foods; budgets become manual target
+// totals; foods are private like every food; budgets become manual target
 // versions from the dates they changed, only before the first target set in obur; activity is recorded, never
 // counted toward the budget (its meaning is unmapped).
 import { createHash, randomUUID } from 'node:crypto';
@@ -34,8 +34,6 @@ export interface LoseItOptions {
 	zone: string;
 	/** LoseIt's weights have no unit column. */
 	weightUnit: 'kg' | 'lb';
-	/** Share the person's custom foods with other members (imported foods are private by default). */
-	shareFoods: boolean;
 	/** Move entries imported earlier but missing from this export to the trash. */
 	trashMissing: boolean;
 }
@@ -423,7 +421,6 @@ export async function writeLoseIt(
 			unit: LoseItUnit;
 			nutrients: EntryNutrients;
 		},
-		shared: boolean,
 		meta: Record<string, unknown>
 	) => {
 		const id = p.create.food.get(sourceId);
@@ -437,7 +434,6 @@ export async function writeLoseIt(
 		foodRows.push({
 			id,
 			ownerId: userId,
-			visibility: shared ? 'shared' : 'private',
 			name: f.name.slice(0, 200),
 			brand: f.brand?.slice(0, 120) || null,
 			searchKey: foodSearchKey(f.name, f.brand),
@@ -452,7 +448,7 @@ export async function writeLoseIt(
 		remember('food', sourceId, id);
 	};
 	for (const f of data.foods)
-		addFood(`custom:${f.uniqueId}`, f, options.shareFoods, {
+		addFood(`custom:${f.uniqueId}`, f, {
 			loseit: 'custom food',
 			uniqueId: f.uniqueId
 		});
@@ -465,7 +461,6 @@ export async function writeLoseIt(
 		addFood(
 			k,
 			{ name: e.name, brand: null, quantity: e.quantity, unit: e.unit, nutrients: e.nutrients },
-			false,
 			{
 				loseit: 'database food, from its latest diary row'
 			}

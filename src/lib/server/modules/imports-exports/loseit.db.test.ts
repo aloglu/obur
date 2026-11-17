@@ -23,7 +23,6 @@ const ZEYNEP = randomUUID();
 const options: LoseItOptions = {
 	zone: 'Europe/Istanbul',
 	weightUnit: 'kg',
-	shareFoods: false,
 	trashMissing: false
 };
 
@@ -100,9 +99,8 @@ describe('LoseIt import', () => {
 
 	it('imports foods privately, links diary rows to an unambiguous custom food, and never merges duplicates', async () => {
 		await portability.applyLoseIt(MEHMET, zip(), options);
-		const foods =
-			await admin`select name, visibility, origin, basis from foods where owner_id = ${MEHMET}`;
-		expect(foods.every((f) => f.visibility === 'private' && f.origin === 'loseit')).toBe(true);
+		const foods = await admin`select name, origin, basis from foods where owner_id = ${MEHMET}`;
+		expect(foods.every((f) => f.origin === 'loseit')).toBe(true);
 		expect(foods.filter((f) => f.name === 'Mercimek çorbası')).toHaveLength(2);
 		expect(foods.find((f) => f.name === 'Ekmek, tam buğday')?.basis).toBe('100g');
 		// Ayran has one custom food: linked. Mercimek çorbası has two: left unlinked rather than guessed.
@@ -119,18 +117,6 @@ describe('LoseIt import', () => {
 			return tx`select 1 from foods where owner_id = ${MEHMET}`;
 		});
 		expect(seen).toHaveLength(0);
-	});
-
-	it('can share custom foods, while foods taken from LoseIt’s database stay private', async () => {
-		await portability.applyLoseIt(MEHMET, zip(), { ...options, shareFoods: true });
-		const rows = await admin`select name, visibility, source_meta->>'loseit' as kind from foods
-			where owner_id = ${MEHMET}`;
-		expect(
-			rows.filter((r) => r.kind === 'custom food').every((r) => r.visibility === 'shared')
-		).toBe(true);
-		expect(
-			rows.filter((r) => r.kind !== 'custom food').every((r) => r.visibility === 'private')
-		).toBe(true);
 	});
 
 	it('keeps LoseIt’s budgets for past days, records activity without counting it, and imports the rest', async () => {

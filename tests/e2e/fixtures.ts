@@ -59,11 +59,6 @@ export async function staleSessions(userId: string): Promise<void> {
 	await sql`update sessions set verified_at = now() - interval '1 day' where user_id = ${userId}`;
 }
 
-/** Makes a food private to its owner, as if they changed it while someone else was offline (test setup only). */
-export async function makePrivate(foodId: string): Promise<void> {
-	await sql`update foods set visibility = 'private' where id = ${foodId}`;
-}
-
 /** Calls the app's API as the signed-in browser user, with the Origin header the CSRF check requires. */
 export async function apiAs<T>(
 	page: Page,
@@ -81,10 +76,10 @@ export async function apiAs<T>(
 	return (await response.json()) as T;
 }
 
-/** Creates a shared food through the API and returns its ID. */
+/** Creates a food of the signed-in person's through the API and returns its ID. */
 export async function createFood(page: Page, food: Record<string, unknown>): Promise<string> {
 	const { id } = await apiAs<{ id: string }>(page, 'POST', '/api/v1/foods', {
-		food: { visibility: 'shared', brand: null, servings: [], ...food }
+		food: { brand: null, servings: [], ...food }
 	});
 	return id;
 }

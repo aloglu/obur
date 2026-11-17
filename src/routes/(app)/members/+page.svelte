@@ -10,7 +10,6 @@
 	import { shortDate } from '#lib/shared/format.ts';
 	import PageHead from '#lib/ui/PageHead.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import Chips from '#lib/ui/Chips.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { BackupProblem, BackupReport } from '#lib/shared/backup-health.ts';
 	import type { UpdateStatus } from '#lib/server/modules/updates/index.ts';
@@ -32,13 +31,11 @@
 		displayName: string;
 		role: 'admin' | 'member';
 		createdAt: string;
-		sharedFoods: number;
 	}
 	interface Deletion {
 		accountId: string;
 		deletedAt: string;
 		by: 'self' | 'admin';
-		removedSharedFoods: boolean;
 	}
 
 	let { data } = $props();
@@ -80,7 +77,6 @@
 	const deletions = $derived(data.deletions as Deletion[]);
 	const backups = $derived(data.backups as BackupReport | null);
 	let deleting = $state<Member | null>(null);
-	let removeShared = $state<'keep' | 'remove'>('keep');
 	let note = $state('');
 	let link = $state('');
 	let understood = $state(false);
@@ -135,10 +131,7 @@
 
 	const deleteMember = (member: Member) =>
 		run(async () => {
-			await api('DELETE', '/api/v1/admin/members', {
-				id: member.id,
-				removeSharedFoods: removeShared === 'remove'
-			});
+			await api('DELETE', '/api/v1/admin/members', { id: member.id });
 			deleting = null;
 		});
 
@@ -153,15 +146,10 @@
 		}
 	}
 	const copy = () => copyText(link, m.members_copied(), m.members_copied_detail());
-	// The entries as `obur restore finish` takes them: <ID>[:shared]@<deletion date>.
+	// The entries as `obur restore finish` takes them: <ID>@<deletion date>.
 	const copyDeletions = () =>
 		copyText(
-			deletions
-				.map(
-					(d) =>
-						`${d.accountId}${d.removedSharedFoods ? ':shared' : ''}@${d.deletedAt.slice(0, 10)}`
-				)
-				.join(' '),
+			deletions.map((d) => `${d.accountId}@${d.deletedAt.slice(0, 10)}`).join(' '),
 			m.members_deletions_copied(),
 			m.members_deletions_copied_detail()
 		);
@@ -220,7 +208,7 @@
 						<button
 							type="button"
 							disabled={busy}
-							onclick={() => ((deleting = member), (removeShared = 'keep'), (understood = false))}
+							onclick={() => ((deleting = member), (understood = false))}
 							class="min-h-11 text-[0.875rem] font-bold whitespace-nowrap text-bad large:col-start-2 large:justify-self-start"
 							>{m.members_delete_member()}</button
 						>
@@ -348,8 +336,7 @@
 											date(d.deletedAt),
 											d.by === 'self'
 												? m.members_deletions_by_self()
-												: m.members_deletions_by_admin(),
-											...(d.removedSharedFoods ? [m.members_deletions_shared_removed()] : [])
+												: m.members_deletions_by_admin()
 										].join(' · ')}</span
 									>
 								</li>
@@ -451,23 +438,6 @@
 		onclose={() => (deleting = null)}
 	>
 		<p class="text-[0.9375rem]">{m.members_delete_body()}</p>
-		<!-- Asked only when there is something to decide (owner, 2026-11-10). -->
-		{#if member.sharedFoods > 0}
-			<Chips
-				label={member.sharedFoods === 1
-					? m.members_delete_shared_one({ name: member.displayName })
-					: m.members_delete_shared({
-							name: member.displayName,
-							count: String(member.sharedFoods)
-						})}
-				bind:value={removeShared}
-				options={[
-					{ value: 'keep', label: m.data_delete_keep() },
-					{ value: 'remove', label: m.data_delete_remove() }
-				]}
-			/>
-			<p class="text-[0.8125rem] text-muted">{m.data_delete_shared_note()}</p>
-		{/if}
 		<p class="text-[0.8125rem] text-muted">{m.data_delete_backups()}</p>
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<label class="flex min-h-11 items-center gap-3 text-[0.9375rem] font-semibold">

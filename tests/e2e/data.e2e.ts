@@ -76,23 +76,18 @@ test('a file that is not an intact export is refused', async ({ page }) => {
 test('a person deletes their own account after confirming', async ({ page }) => {
 	await signedInAs(page, 'Kerem');
 	await page.goto('/settings/data');
-	// Nothing shared: no question about shared foods (owner, 2026-11-10).
 	await expect(page.getByText('Delete account', { exact: true })).toBeVisible();
-	await expect(page.getByRole('radiogroup', { name: /shared/ })).toHaveCount(0);
 	await createFood(page, {
 		name: 'Kerem’s soup',
 		basis: '100g',
 		nutrients: [{ code: 'energy_kcal', value: 56, qualifier: 'reported' }]
 	});
 	await page.reload();
-	await expect(
-		page.getByRole('radiogroup', {
-			name: "You shared 1 food with other members. Keep it in everyone's search?"
-		})
-	).toBeVisible();
+	// Foods go with the account: there is nothing to choose about them.
+	await expect(page.getByRole('radiogroup')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Delete my account' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Delete your account?' });
-	await expect(sheet).toContainText('Foods you shared stay for other members.');
+	await expect(sheet).toContainText('Everything listed above goes from this server.');
 	const confirm = sheet.getByRole('button', { name: 'Delete account' });
 	await expect(confirm).toBeDisabled();
 	await sheet.getByLabel("I understand this can't be undone").check();
@@ -125,7 +120,7 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	await page.goto('/members');
 	const refused = await page.request.delete('/api/v1/admin/members', {
 		headers: { origin: new URL(page.url()).origin },
-		data: { id: memberId, removeSharedFoods: false }
+		data: { id: memberId }
 	});
 	expect(refused.status()).toBe(403);
 	expect((await refused.json()).error).toBe('recent_auth_required');
@@ -139,14 +134,10 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 		.getByRole('button', { name: 'Delete account' })
 		.click();
 	const sheet = page.getByRole('dialog', { name: `Delete ${name}'s account?` });
-	// The question names the person and the count (it once said "Foods you shared", meaning the admin).
-	await sheet
-		.getByRole('radiogroup', {
-			name: `${name} shared 2 foods with other members. Keep them in everyone's search?`
-		})
-		.getByRole('radio', { name: 'Remove' })
-		.click();
-	await expect(sheet).toContainText("Meals already logged don't change either way.");
+	await expect(sheet).toContainText(
+		'Deletes their diary, body data, targets, profile, foods and passkeys.'
+	);
+	await expect(sheet.getByRole('radiogroup')).toHaveCount(0);
 	await expect(sheet.getByRole('button', { name: 'Delete account' })).toBeDisabled();
 	await sheet.getByRole('checkbox').check();
 	await sheet.getByRole('button', { name: 'Delete account' }).click();
@@ -154,7 +145,7 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	// Listed under Backups (it matters only for a restore), by ID and who deleted it, never by name.
 	const deletions = page.getByRole('region', { name: 'Backups' }).getByTestId('deletions');
 	await expect(deletions).toContainText(memberId);
-	await expect(deletions).toContainText('Deleted by an admin · Shared foods removed too');
+	await expect(deletions).toContainText('Deleted by an admin');
 	await expect(deletions).not.toContainText(name);
 });
 

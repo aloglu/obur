@@ -56,8 +56,8 @@ export async function loadCuratedFoods(
 			};
 			const searchKey = searchKeyWithAliases(f.name, null, meta);
 			const [created] = await tx`
-				insert into foods (owner_id, visibility, name, search_key, basis, origin, source_meta)
-				values (null, 'shared', ${f.name}, ${searchKey}, '100g', 'curated', ${tx.json(meta)})
+				insert into foods (owner_id, name, search_key, basis, origin, source_meta)
+				values (null, ${f.name}, ${searchKey}, '100g', 'curated', ${tx.json(meta)})
 				on conflict do nothing
 				returning id`;
 			if (created) {

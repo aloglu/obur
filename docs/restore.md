@@ -14,8 +14,8 @@ backup, and taken a fresh full backup. obur never reopens with restored sessions
 - **The backup passphrase** (`OBUR_BACKUP_PASSPHRASE`). Without it no backup can be read.
 - **The off-site credentials** (`OBUR_OFFSITE_*`), if the server's own backups are lost too.
 - **The deleted-accounts list** from Members → Backups → Deleted accounts. Copy it whenever an account is deleted
-  (**Copy list** gives the entries in the form `finish` takes below). Each entry is an account ID, the date and
-  whether shared foods were removed. It never contains diary content.
+  (**Copy list** gives the entries in the form `finish` takes below). Each entry is an account ID and the date. It
+  never contains diary content.
 
 Deleted accounts remain in backups until those expire (`OBUR_BACKUP_KEEP_WEEKS`, 5 weeks by default). That is why
 their deletions are applied again after every restore.
@@ -51,10 +51,11 @@ their deletions are applied again after every restore.
    restores, and starts again showing "obur is being restored from a backup". If the restore fails, obur stays
    stopped: fix the cause and run it again, or run `obur restore cancel` to put the old database back.
 
-3. **Finish.** Pass every entry from the deleted-accounts list, as `<ID>`, `<ID>:shared` when shared foods were
-   removed, optionally followed by `@<date>`. With an empty list, pass nothing.
+3. **Finish.** Pass every entry from the deleted-accounts list, as `<ID>`, optionally followed by `@<date>`. With
+   an empty list, pass nothing. (Lists copied before 2026-11-17 may mark some entries `:shared`; pass them as they
+   are.)
    ```
-   docker exec obur obur restore finish 2b7c…e1:shared@2026-10-20 9f41…0a@2026-10-27
+   docker exec obur obur restore finish 2b7c…e1@2026-10-20 9f41…0a@2026-10-27
    ```
    It first waits until the restored database has finished replaying its history (it is read-only until then).
    This signs everyone out, cancels unused recovery links, invites and setup links, deletes those accounts again,

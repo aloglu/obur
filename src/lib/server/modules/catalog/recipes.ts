@@ -29,7 +29,6 @@ export interface RecipeSave {
 	id: string;
 	version: number | null;
 	name: string;
-	visibility: 'private' | 'shared';
 	icon: string | null;
 	servings: number;
 	cookedYieldG: number | null;
@@ -53,7 +52,6 @@ async function loadRecipe(tx: Tx, id: string): Promise<Recipe> {
 	return {
 		id,
 		name: row.food.name,
-		visibility: row.food.visibility,
 		icon: row.food.icon,
 		version: row.food.version,
 		servings: row.recipe.servings,
@@ -112,7 +110,6 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 						id: foods.id,
 						name: foods.name,
 						icon: foods.icon,
-						visibility: foods.visibility,
 						servings: recipes.servings,
 						archived: foods.archivedAt,
 						kcal: foodNutrients.value
@@ -210,7 +207,6 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 				const columns = {
 					name: input.name,
 					searchKey: foodSearchKey(input.name, null),
-					visibility: input.visibility,
 					icon: input.icon,
 					...servingSize(input.servings, input.cookedYieldG)
 				};

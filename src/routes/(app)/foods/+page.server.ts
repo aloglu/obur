@@ -21,7 +21,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 					basis: food.basis,
 					servingLabel: food.servingLabel,
 					icon: food.icon,
-					visibility: food.visibility,
 					mine: true,
 					kcal: food.nutrients.find((n) => n.code === 'energy_kcal')?.value ?? null,
 					archived: food.archived

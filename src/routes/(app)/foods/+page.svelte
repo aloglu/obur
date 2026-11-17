@@ -81,15 +81,13 @@
 			: r.basis === '100g'
 				? m.food_basis_100g()
 				: m.food_basis_100ml();
-	const who = (r: FoodSearchResult) =>
-		r.visibility === 'private' ? m.food_visibility_private() : m.foods_shared();
 	const energy = (r: FoodSearchResult) => (r.kcal === null ? null : formatDecimal(r.kcal, 0));
 </script>
 
 <svelte:head><title>{m.foods_title()} · {m.app_name()}</title></svelte:head>
 
 {#snippet row(r: FoodSearchResult, archived: boolean)}
-	{@const line = m.foods_row_detail({ basis: per(r), who: who(r) })}
+	{@const line = per(r)}
 	<ListRow
 		href={resolve('/(app)/foods/[id]', { id: r.id })}
 		icon={r.icon}

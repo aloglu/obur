@@ -7,7 +7,19 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Foods become private (owner, 2026-11-17), replacing the merging idea: sharing between members is removed, each
   member who used someone else's food gets their own copy, and new duplicates are caught at Save and in the LoseIt
   import ("Already in your foods"). Also: Make my own variant only on built-in foods (it made copy after copy of the
-  person's own foods). Steps, one commit each: 1 docs (done); 2 database move and server; 3 screens; 4 the check.
+  person's own foods). Steps, one commit each: 1 docs (done); 2–3 database move, server and screens (done, one
+  commit, since dropping the column needs all three); 4 the check.
+- Done (2–3): migrations 0055 (copies for every member who logged, saved, cooked with or imported someone else's
+  food, records pointed at them; ownerless non-curated foods removed; policies: own foods plus curated, only the
+  owner writes; `app_delete_account(uuid)` and `app_reapply_deletion(uuid, timestamptz)`) and 0056 (drops
+  `foods.visibility` and `account_deletions.removed_shared_foods`; owner cascades; a food has no owner exactly when
+  it is curated). Server: no sharing in foods, recipes, the LoseIt import or account deletion; variants only of
+  built-in foods; an archive's built-in food from another installation becomes the person's copy (`variant`).
+  Screens: no Shared/Only me, no share switch in the import, no shared-foods question on deletion, lists without
+  "Shared", the variant row only on built-in foods. `obur restore finish` still takes `:shared` entries and calls
+  the older function on a backup from before the update. Tests: a real-Postgres test of the migration
+  (`private-foods.db.test.ts`: seeded at 0054, upgraded), catalog/recipe/curated/diary/portability/LoseIt tests
+  reworked, browser tests (catalog: nobody else finds a food; a variant of a built-in food has no variant row).
 - Waist over time: dropped (waist is hard to measure often, so the data would lag and a card would mostly show an
   old number). Waist stays a single value in Profile → About you.
 - Not wanted (owner): weekly budget banking, limits for other nutrients, home-screen shortcuts, a local language

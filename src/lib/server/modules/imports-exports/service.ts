@@ -212,7 +212,6 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 			return {
 				id: f.id,
 				mine,
-				visibility: f.visibility,
 				name: f.name,
 				brand: f.brand,
 				basis: f.basis,
@@ -222,7 +221,7 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 				barcode: f.barcode,
 				icon: f.icon,
 				origin: f.origin,
-				// Provenance of someone else's food is not the exporting person's to take along.
+				// A built-in food's provenance belongs to the installation it came from.
 				sourceMeta: mine ? ((f.sourceMeta as Record<string, unknown> | null) ?? null) : null,
 				derivedFrom: f.derivedFrom && exported.has(f.derivedFrom) ? f.derivedFrom : null,
 				archivedAt: iso(f.archivedAt),
@@ -486,11 +485,11 @@ async function plan(
 		}
 	}
 
-	// Foods: the person's own become private copies; foods someone else shared map to the same food when it is
-	// still visible here, otherwise they become private copies too.
+	// Foods: the person's own become theirs again; a food that isn't theirs (a built-in one, or someone else's in an
+	// older archive) maps to the same food when it is visible here, otherwise it becomes a copy of their own.
 	const foodMap = new Map<string, string>();
 	const ownFoods = data.foods.filter((f) => f.mine);
-	const sharedFoods = data.foods.filter((f) => !f.mine);
+	const otherFoods = data.foods.filter((f) => !f.mine);
 	const foodContent = (f: { name: string; brand: string | null; basis: string }, n: unknown) =>
 		canonical([f.name, f.brand, f.basis, n]);
 	const loadFoods = async (ids: string[]) => {
@@ -522,7 +521,7 @@ async function plan(
 		{ load: async (ids) => (await loadFoods(ids)).filter((r) => r.ownerId === userId) },
 		(s, l) => foodContent(s, sortedNutrients(s)) === foodContent(l, l.nutrients)
 	);
-	if (sharedFoods.length) {
+	if (otherFoods.length) {
 		const visible = same
 			? new Set(
 					(
@@ -532,14 +531,14 @@ async function plan(
 							.where(
 								inArray(
 									foods.id,
-									sharedFoods.map((f) => f.id)
+									otherFoods.map((f) => f.id)
 								)
 							)
 					).map((r) => r.id)
 				)
 			: new Set<string>();
-		const copies = sharedFoods.filter((f) => !visible.has(f.id));
-		for (const f of sharedFoods.filter((f) => visible.has(f.id))) {
+		const copies = otherFoods.filter((f) => !visible.has(f.id));
+		for (const f of otherFoods.filter((f) => visible.has(f.id))) {
 			decisions.set(key('food', f.id), { status: 'unchanged', localId: f.id });
 			counts.food.unchanged += 1;
 		}
@@ -816,7 +815,6 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 			chunk.map((f) => ({
 				id: localId('food', f.id),
 				ownerId: userId,
-				visibility: 'private' as const,
 				name: f.name,
 				brand: f.brand,
 				searchKey: foodSearchKey(f.name, f.brand),
@@ -826,7 +824,8 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 				servingUnit: f.servingUnit,
 				barcode: f.barcode,
 				icon: f.icon,
-				origin: f.origin,
+				// A built-in food from another installation becomes the person's own copy.
+				origin: f.origin === 'curated' ? ('variant' as const) : f.origin,
 				sourceMeta: { ...(f.sourceMeta ?? {}), importedFrom: source },
 				derivedFrom:
 					f.derivedFrom && !cyclic.has(f.id) ? (p.foodMap.get(f.derivedFrom) ?? null) : null,
@@ -1197,16 +1196,12 @@ export function createPortability(db: Database) {
 
 		/**
 		 * Deletes an account in one transaction: by the person themselves, or by an admin for someone else (both
-		 * after a recent passkey check). Shared foods stay for other members without an owner unless removed too.
+		 * after a recent passkey check). Their foods go with them.
 		 */
-		async deleteAccount(
-			actorId: string,
-			accountId: string,
-			removeSharedFoods: boolean
-		): Promise<void> {
+		async deleteAccount(actorId: string, accountId: string): Promise<void> {
 			try {
 				await withUser(db, actorId, (tx) =>
-					tx.execute(sql`select app_delete_account(${accountId}::uuid, ${removeSharedFoods})`)
+					tx.execute(sql`select app_delete_account(${accountId}::uuid)`)
 				);
 			} catch (e) {
 				const code =
@@ -1220,8 +1215,7 @@ export function createPortability(db: Database) {
 		},
 
 		/**
-		 * Every account, for an admin (RLS shows others only to admins), with how many foods each has
-		 * shared: deleting the account asks about those only when there are some.
+		 * Every account, for an admin (RLS shows others only to admins).
 		 */
 		async members(userId: string) {
 			const rows = await withUser(db, userId, (tx) =>
@@ -1230,26 +1224,12 @@ export function createPortability(db: Database) {
 						id: users.id,
 						displayName: users.displayName,
 						role: users.role,
-						createdAt: users.createdAt,
-						// Qualified by hand: inside a subquery Drizzle leaves column names bare.
-						sharedFoods: sql<number>`(select count(*) from foods f
-							where f.owner_id = users.id and f.visibility = 'shared')::int`
+						createdAt: users.createdAt
 					})
 					.from(users)
 					.orderBy(users.createdAt)
 			);
 			return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
-		},
-
-		/** How many foods the person has shared (deleting their account asks about those). */
-		async sharedFoodCount(userId: string): Promise<number> {
-			const [row] = await withUser(db, userId, (tx) =>
-				tx
-					.select({ n: sql<number>`count(*)::int` })
-					.from(foods)
-					.where(and(eq(foods.ownerId, userId), eq(foods.visibility, 'shared')))
-			);
-			return row.n;
 		},
 
 		/** Deleted accounts, newest first: opaque ID and date only (admins; RLS returns nothing to others). */
@@ -1263,8 +1243,7 @@ export function createPortability(db: Database) {
 			return rows.map((r) => ({
 				accountId: r.accountId,
 				deletedAt: r.deletedAt.toISOString(),
-				by: r.by,
-				removedSharedFoods: r.removedSharedFoods
+				by: r.by
 			}));
 		}
 	};

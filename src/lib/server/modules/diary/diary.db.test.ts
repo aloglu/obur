@@ -32,7 +32,6 @@ const bread = () =>
 	v.parse(FoodInput, {
 		name: 'Premium Light Ekmek',
 		brand: 'Untad',
-		visibility: 'shared',
 		basis: '100g',
 		nutrients: [
 			{ code: 'energy_kcal', value: 193, qualifier: 'reported' },
@@ -73,8 +72,8 @@ afterAll(async () => {
 describe('snapshots', () => {
 	it('mark a built-in food’s copy, so its name can show in the interface language', async () => {
 		const [banana] = await admin`
-			insert into foods (owner_id, visibility, name, search_key, basis, origin, source_meta)
-			values (null, 'shared', 'Banana', 'banana', '100g', 'curated',
+			insert into foods (owner_id, name, search_key, basis, origin, source_meta)
+			values (null, 'Banana', 'banana', '100g', 'curated',
 				${admin.json({ dataset: 'sr_legacy', fdcId: '173944' })})
 			returning id`;
 		await admin`insert into food_nutrients (food_id, code, value, qualifier)
@@ -122,15 +121,15 @@ describe('snapshots', () => {
 	});
 
 	it('keeps an entry’s nutrition when the food changes later', async () => {
-		const food = await catalog.getFood(ZEYNEP, breadId);
-		const entry = await diary.logFood(ZEYNEP, ctx(), food, 52, grams);
+		const food = await catalog.getFood(MEHMET, breadId);
+		const entry = await diary.logFood(MEHMET, ctx(), food, 52, grams);
 		expect(entry.nutrients.energy_kcal).toEqual({ value: 100.36, qualifier: 'reported' });
 
 		await catalog.updateFood(MEHMET, breadId, 1, {
 			...bread(),
 			nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }]
 		});
-		const [stored] = await diary.day(ZEYNEP, '2026-10-25');
+		const [stored] = await diary.day(MEHMET, '2026-10-25');
 		expect(stored.nutrients.energy_kcal?.value).toBe(100.36);
 		expect(stored.food?.basisNutrients).toContainEqual({
 			code: 'energy_kcal',
@@ -139,25 +138,25 @@ describe('snapshots', () => {
 		});
 
 		// Changing the amount re-scales from the entry's own snapshot, not the new catalog values.
-		const edited = await diary.update(ZEYNEP, entry.id, 1, { amount: 104 });
+		const edited = await diary.update(MEHMET, entry.id, 1, { amount: 104 });
 		expect(edited.nutrients.energy_kcal?.value).toBe(200.72);
 		expect(edited.nutrients.carbohydrate_excl_fibre?.value).toBeCloseTo(44.096);
 	});
 
 	it('logs by a stored portion and refuses conversions the food cannot support', async () => {
-		const food = await catalog.getFood(ZEYNEP, breadId);
+		const food = await catalog.getFood(MEHMET, breadId);
 		const slice = resolveUnit(
 			{ kind: 'serving', servingId: food.servings[0].id },
 			food.servings,
 			[]
 		);
-		const entry = await diary.logFood(ZEYNEP, ctx(), food, 3, slice!);
+		const entry = await diary.logFood(MEHMET, ctx(), food, 3, slice!);
 		expect(entry.nutrients.energy_kcal?.value).toBeCloseTo(150.54);
 
 		const glass = resolveUnit({ kind: 'measure', code: 'su_bardagi' }, food.servings, [
 			{ code: 'su_bardagi', name: 'Su bardağı', ml: 200 }
 		]);
-		expect(await errorCode(diary.logFood(ZEYNEP, ctx(), food, 1, glass!))).toBe(
+		expect(await errorCode(diary.logFood(MEHMET, ctx(), food, 1, glass!))).toBe(
 			'conversion_unknown'
 		);
 		expect(
@@ -242,7 +241,6 @@ describe('retries', () => {
 			MEHMET,
 			v.parse(FoodInput, {
 				name: 'Milk',
-				visibility: 'private',
 				basis: '100ml',
 				nutrients: [{ code: 'energy_kcal', value: 61, qualifier: 'reported' }]
 			})

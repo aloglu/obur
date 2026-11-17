@@ -58,24 +58,8 @@ describe('loading', () => {
 					}
 				: f
 		);
-		const [banana] = await catalog.searchFoods(ADMIN, 'banana');
-		const detail = await catalog.getFood(ADMIN, banana.id);
-		await catalog.updateFood(ADMIN, banana.id, 1, {
-			name: 'Banana (edited)',
-			brand: null,
-			visibility: 'shared',
-			basis: '100g',
-			servingLabel: null,
-			servingSize: null,
-			barcode: null,
-			nutrients: detail.nutrients,
-			servings: detail.servings.map(({ name, amount, unit }) => ({
-				name,
-				amount,
-				unit,
-				source: 'reference' as const
-			}))
-		});
+		// Edited before foods became private, when an admin could still change a built-in food.
+		await admin`update foods set name = 'Banana (edited)', version = 2 where name = 'Banana'`;
 		renamed.foods = renamed.foods.map((f) => (f.name === 'Banana' ? { ...f, name: 'Bananas' } : f));
 		expect(await loadCuratedFoods(migrator, renamed)).toEqual({
 			added: 0,
@@ -113,7 +97,7 @@ describe('using curated foods', () => {
 		await loadCuratedFoods(migrator, subset('Banana'));
 		const [hit] = await catalog.searchFoods(MEHMET, 'muz');
 		const banana = await catalog.getFood(MEHMET, hit.id);
-		expect(banana).toMatchObject({ basis: '100g', mine: false, editable: false });
+		expect(banana).toMatchObject({ basis: '100g', mine: false });
 		const by = Object.fromEntries(banana.nutrients.map((n) => [n.code, n]));
 		expect(by.carbohydrate_total.qualifier).toBe('reported');
 		expect(by.carbohydrate_excl_fibre.qualifier).toBe('estimate');
@@ -128,14 +112,13 @@ describe('using curated foods', () => {
 		expect(kcal).toBeCloseTo(89 * 1.18);
 	});
 
-	it('lets only an admin edit them, and nobody can claim them', async () => {
+	it('lets nobody edit or claim them', async () => {
 		await loadCuratedFoods(migrator, subset('Walnuts'));
 		const [walnuts] = await catalog.searchFoods(MEHMET, 'walnuts');
 		const detail = await catalog.getFood(MEHMET, walnuts.id);
 		const input = {
 			name: 'Mine',
 			brand: null,
-			visibility: 'private' as const,
 			basis: '100g' as const,
 			servingLabel: null,
 			servingSize: null,
@@ -143,13 +126,15 @@ describe('using curated foods', () => {
 			nutrients: detail.nutrients,
 			servings: []
 		};
-		let code: string | undefined;
-		try {
-			await catalog.updateFood(MEHMET, walnuts.id, 1, input);
-		} catch (e) {
-			code = (e as CatalogError).code;
+		for (const who of [MEHMET, ADMIN]) {
+			let code: string | undefined;
+			try {
+				await catalog.updateFood(who, walnuts.id, 1, input);
+			} catch (e) {
+				code = (e as CatalogError).code;
+			}
+			expect(code).toBe('forbidden');
 		}
-		expect(code).toBe('forbidden');
 		// The ownership column is not even writable by the runtime role.
 		await expect(
 			appSql.begin(async (tx) => {

@@ -17,7 +17,7 @@ export const GET: RequestHandler = ({ params, locals }) =>
 	respondCatalog(async () => json(await recipes.get(locals.session!.userId, validId(params.id))));
 
 /**
- * PUT { version | null, name, visibility, servings, cookedYieldG, ingredients }: creates the recipe (version null)
+ * PUT { version | null, name, icon, servings, cookedYieldG, ingredients }: creates the recipe (version null)
  * or replaces it. Units resolve against each kept ingredient's snapshot, or a new food as the person sees it now.
  */
 export const PUT: RequestHandler = ({ params, request, locals }) =>

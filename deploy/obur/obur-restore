@@ -8,10 +8,9 @@
 #       Leaves a restore-pending mark, so the web app answers "restore in progress" until the restore is finished.
 #       Run through `obur restore start`, which stops obur and moves the old database aside first.
 #
-#   obur-restore finish [<account ID>[:shared][@<deletion date>] ...]
+#   obur-restore finish [<account ID>[@<deletion date>] ...]
 #       With the restored database running: signs everyone out, cancels recovery links, unused invites and setup
-#       links, deletes again each account from the admin's off-server deletion list (":shared" if its shared foods
-#       were removed too), takes a full backup of the new history (locally; the off-site copy too when it can be
+#       links, deletes again each account from the admin's off-server deletion list (with its foods), takes a full backup of the new history (locally; the off-site copy too when it can be
 #       reached, otherwise with the next nightly backup), and removes the mark.
 #       Run through `obur restore finish <IDs from the list>`.
 set -euo pipefail
@@ -51,14 +50,24 @@ delete from sessions;
 update recovery_links set used_at = now() where used_at is null;
 update invites set revoked_at = now() where used_at is null and revoked_at is null;
 update bootstrap_tokens set used_at = now() where used_at is null;"
+	# A backup from before foods became private (2026-11-17) still has the older function, which also asks whether
+	# shared foods go. Lists from then mark that with ":shared"; foods kept there lose their owner and are removed by
+	# the upgrade that follows once nobody else uses them.
+	local older
+	older=$("${sql[@]}" -tA -c "select to_regprocedure('app_reapply_deletion(uuid,timestamptz)') is null")
 	local arg id shared at
 	for arg in "$@"; do
 		[[ $arg =~ ^($UUID)(:shared)?(@([0-9]{4}-[0-9]{2}-[0-9]{2}))?$ ]] || fail "not a deletion entry: $arg"
 		id=${BASH_REMATCH[1]}
 		shared=$([[ -n ${BASH_REMATCH[2]} ]] && echo true || echo false)
-		at=${BASH_REMATCH[4]:-}
-		statements+="
-select app_reapply_deletion('$id', $shared, $([[ -n $at ]] && echo "'$at'::timestamptz" || echo 'now()'));"
+		at=$([[ -n ${BASH_REMATCH[4]:-} ]] && echo "'${BASH_REMATCH[4]}'::timestamptz" || echo 'now()')
+		if [[ $older == t ]]; then
+			statements+="
+select app_reapply_deletion('$id', $shared, $at);"
+		else
+			statements+="
+select app_reapply_deletion('$id', $at);"
+		fi
 	done
 	statements+="
 commit;"
@@ -82,7 +91,7 @@ finish)
 	finish "$@"
 	;;
 *)
-	echo "usage: obur-restore start [pgBackRest restore options] | finish [<id>[:shared][@YYYY-MM-DD] ...]" >&2
+	echo "usage: obur-restore start [pgBackRest restore options] | finish [<id>[@YYYY-MM-DD] ...]" >&2
 	exit 2
 	;;
 esac

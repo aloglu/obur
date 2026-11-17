@@ -21,11 +21,10 @@ const MEHMET = randomUUID();
 const ZEYNEP = randomUUID();
 const grams = (amount: number) => ({ amount, unit: { kind: 'mass' as const, unit: 'g' as const } });
 
-const food = (name: string, kcal: number, protein: number, visibility = 'shared') =>
+const food = (name: string, kcal: number, protein: number) =>
 	v.parse(FoodInput, {
 		name,
 		brand: null,
-		visibility,
 		basis: '100g',
 		nutrients: [
 			{ code: 'energy_kcal', value: kcal, qualifier: 'reported' },
@@ -53,7 +52,7 @@ const asUser = <T>(userId: string, run: (tx: postgres.TransactionSql) => Promise
 let lentilsId: string;
 let onionId: string;
 
-/** Mercimek çorbası: 200 g of Mehmet's private lentils and 100 g of Zeynep's shared onion, 4 servings. */
+/** Mercimek çorbası: 200 g of Mehmet's lentils and 100 g of his onion, 4 servings. */
 async function soup(overrides: Partial<RecipeSave> = {}) {
 	const [lentils, onion] = await Promise.all([
 		catalog.getFood(MEHMET, lentilsId),
@@ -63,7 +62,6 @@ async function soup(overrides: Partial<RecipeSave> = {}) {
 		id: randomUUID(),
 		version: null,
 		name: 'Mercimek çorbası',
-		visibility: 'shared',
 		icon: null,
 		servings: 4,
 		cookedYieldG: 1200,
@@ -79,8 +77,8 @@ beforeEach(async () => {
 	await admin`truncate users, foods cascade`;
 	await admin`insert into users (id, display_name, role) values
 		(${ADMIN}, 'Admin', 'admin'), (${MEHMET}, 'Mehmet', 'member'), (${ZEYNEP}, 'Zeynep', 'member')`;
-	lentilsId = await catalog.createFood(MEHMET, food('Kırmızı mercimek', 350, 24, 'private'));
-	onionId = await catalog.createFood(ZEYNEP, food('Kuru soğan', 40, 1.1));
+	lentilsId = await catalog.createFood(MEHMET, food('Kırmızı mercimek', 350, 24));
+	onionId = await catalog.createFood(MEHMET, food('Kuru soğan', 40, 1.1));
 });
 
 afterAll(async () => {
@@ -105,16 +103,17 @@ describe('values', () => {
 		// Without the cooked weight there is no per-gram size: it is never guessed from the raw ingredients.
 		const unweighed = await soup({ cookedYieldG: null, name: 'Tartılmamış' });
 		expect((await catalog.getFood(MEHMET, unweighed.id)).servingSize).toBeNull();
-		expect((await catalog.searchFoods(ZEYNEP, 'mercimek corbasi')).map((r) => r.id)).toContain(
+		expect((await catalog.searchFoods(MEHMET, 'mercimek corbasi')).map((r) => r.id)).toContain(
 			recipe.id
 		);
+		expect(await catalog.searchFoods(ZEYNEP, 'mercimek corbasi')).toEqual([]);
 	});
 });
 
 describe('pinning and editing', () => {
 	it('keeps its values when an ingredient food changes, until refreshed', async () => {
 		const recipe = await soup();
-		await catalog.updateFood(ZEYNEP, onionId, 1, food('Kuru soğan', 80, 1.1));
+		await catalog.updateFood(MEHMET, onionId, 1, food('Kuru soğan', 80, 1.1));
 		const kcal = async () =>
 			(await catalog.getFood(MEHMET, recipe.id)).nutrients.find((n) => n.code === 'energy_kcal')
 				?.value;
@@ -135,13 +134,12 @@ describe('pinning and editing', () => {
 			id: recipe.id,
 			version: 1,
 			name: 'Mercimek çorbası (büyük)',
-			visibility: 'private',
 			icon: '1F372',
 			servings: 5,
 			cookedYieldG: null,
 			ingredients: [{ ingredientId: lentils.id, amount: 300 }]
 		});
-		expect(edited).toMatchObject({ version: 2, servings: 5, visibility: 'private', icon: '1F372' });
+		expect(edited).toMatchObject({ version: 2, servings: 5, icon: '1F372' });
 		expect((await catalog.getFood(MEHMET, recipe.id)).icon).toBe('1F372');
 		expect(edited.ingredients).toHaveLength(1);
 		expect((await catalog.getFood(MEHMET, recipe.id)).nutrients[0]).toMatchObject({
@@ -176,7 +174,6 @@ describe('pinning and editing', () => {
 			id: recipe.id,
 			version: null,
 			name: 'Mercimek çorbası',
-			visibility: 'shared',
 			icon: null,
 			servings: 4,
 			cookedYieldG: 1200,
@@ -205,7 +202,6 @@ describe('two devices', () => {
 				id: recipe.id,
 				version: recipe.version,
 				name,
-				visibility: 'shared',
 				icon: null,
 				servings: 4,
 				cookedYieldG: 1200,
@@ -225,9 +221,10 @@ describe('two devices', () => {
 });
 
 describe('privacy', () => {
-	it('shows others a shared recipe as a plain food, never its ingredients', async () => {
+	it('keeps a recipe and its ingredients to its owner', async () => {
 		const recipe = await soup();
-		expect((await catalog.getFood(ZEYNEP, recipe.id)).nutrients.length).toBeGreaterThan(0);
+		expect(await errorCode(catalog.getFood(ZEYNEP, recipe.id))).toBe('not_found');
+		expect(await errorCode(catalog.getFood(ADMIN, recipe.id))).toBe('not_found');
 		expect(await errorCode(recipes.get(ZEYNEP, recipe.id))).toBe('not_found');
 		expect(await errorCode(recipes.get(ADMIN, recipe.id))).toBe('not_found');
 		expect(await asUser(ZEYNEP, (tx) => tx`select id from recipe_ingredients`)).toHaveLength(0);
@@ -241,17 +238,18 @@ describe('privacy', () => {
 					ingredients: [{ ingredientId: recipe.ingredients[0].id }]
 				})
 			)
-		).toBe('forbidden');
+		).toBe('not_found');
 		expect(await errorCode(catalog.updateFood(ADMIN, recipe.id, 1, food('X', 1, 1)))).toBe(
-			'forbidden'
+			'not_found'
 		);
 		// The database lets a recipe row sit only on one's own food, and ingredients only in one's own recipe.
+		const own = await catalog.createFood(ZEYNEP, food('Kuru soğan', 40, 1.1));
 		expect(
 			await errorCode(
 				asUser(
 					ZEYNEP,
 					(tx) =>
-						tx`insert into recipes (food_id, owner_id, servings) values (${onionId}, ${ZEYNEP}, 1)`
+						tx`insert into recipes (food_id, owner_id, servings) values (${own}, ${ZEYNEP}, 1)`
 				)
 			)
 		).toBeUndefined();
@@ -277,11 +275,10 @@ describe('privacy', () => {
 		).toBe('42501');
 	});
 
-	it('removes the ingredient list with the account, even when the recipe stays shared', async () => {
+	it('goes with the account, ingredients and all', async () => {
 		const recipe = await soup();
-		await asUser(MEHMET, (tx) => tx`select app_delete_account(${MEHMET}, false)`);
-		const kept = await catalog.getFood(ZEYNEP, recipe.id);
-		expect(kept.nutrients.find((n) => n.code === 'energy_kcal')?.value).toBe(185);
+		await asUser(MEHMET, (tx) => tx`select app_delete_account(${MEHMET})`);
+		expect(await admin`select 1 from foods where id = ${recipe.id}`).toHaveLength(0);
 		expect(await admin`select 1 from recipes`).toHaveLength(0);
 		expect(await admin`select 1 from recipe_ingredients`).toHaveLength(0);
 	});

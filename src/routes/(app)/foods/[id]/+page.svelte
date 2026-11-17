@@ -15,7 +15,7 @@
 
 	let { data } = $props();
 	const food = $derived(data.food);
-	const editing = $derived(food.editable && food.origin !== 'recipe');
+	const editing = $derived(food.mine && food.origin !== 'recipe');
 
 	let busy = $state(false);
 	let problem = $state('');
@@ -109,16 +109,19 @@
 
 {#snippet foodActions()}
 	<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
-		<button
-			type="button"
-			disabled={busy}
-			onclick={variant}
-			class="flex min-h-14 items-center justify-between gap-3 text-left text-[0.9375rem] font-semibold"
-		>
-			{m.food_variant()}
-			<ChevronRight size={20} aria-hidden="true" class="shrink-0 text-muted" />
-		</button>
-		{#if food.editable && food.origin !== 'recipe'}
+		<!-- Only built-in foods, which can't be edited; on the person's own foods it made copy after copy. -->
+		{#if !food.mine}
+			<button
+				type="button"
+				disabled={busy}
+				onclick={variant}
+				class="flex min-h-14 items-center justify-between gap-3 text-left text-[0.9375rem] font-semibold"
+			>
+				{m.food_variant()}
+				<ChevronRight size={20} aria-hidden="true" class="shrink-0 text-muted" />
+			</button>
+		{/if}
+		{#if food.mine && food.origin !== 'recipe'}
 			<button
 				type="button"
 				disabled={busy}
@@ -157,7 +160,6 @@
 				>{m.recipe_edit()}</a
 			>
 		</Card>
-		{@render foodActions()}
 	{:else if editing}
 		{#key food.version}<FoodForm
 				initial={food}
@@ -169,7 +171,7 @@
 	{:else}
 		<Card>
 			<p class="text-[0.875rem] text-muted">
-				{food.origin === 'recipe' ? m.recipe_from_others() : m.food_read_only()}
+				{m.food_read_only()}
 			</p>
 			<dl class="flex flex-col divide-y divide-line">
 				{#each food.nutrients as n (n.code)}

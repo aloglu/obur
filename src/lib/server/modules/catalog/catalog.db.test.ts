@@ -1,10 +1,11 @@
-// Catalog visibility, edit rights and search against real PostgreSQL, run as the runtime roles.
+// Catalog privacy, edit rights and search against real PostgreSQL, run as the runtime roles.
 import { randomUUID } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as v from 'valibot';
 import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
 import { FoodInput } from '../../../shared/food-input.ts';
+import { foodSearchKey } from '../../../shared/search-text.ts';
 import { CatalogError, createCatalog } from './service.ts';
 
 const urls = inject('db');
@@ -22,7 +23,6 @@ const food = (overrides: Record<string, unknown> = {}) =>
 	v.parse(FoodInput, {
 		name: 'Ayran',
 		brand: 'Sütaş',
-		visibility: 'shared',
 		basis: '100ml',
 		nutrients: [
 			{ code: 'energy_kcal', value: 36, qualifier: 'reported' },
@@ -42,6 +42,16 @@ async function errorCode(promise: Promise<unknown>): Promise<string | undefined>
 	return undefined;
 }
 
+/** A built-in (curated) food, as `obur migrate` loads them: no owner, readable by everyone. */
+async function builtIn(name: string, kcal = 36): Promise<string> {
+	const [{ id }] = await admin`insert into foods (name, search_key, basis, origin, source_meta)
+		values (${name}, ${foodSearchKey(name, null)}, '100g', 'curated',
+			${admin.json({ dataset: 'sr_legacy', fdcId: randomUUID() })}) returning id`;
+	await admin`insert into food_nutrients (food_id, code, value, qualifier) values (${id}, 'energy_kcal', ${kcal}, 'reported')`;
+	await admin`insert into food_servings (food_id, name, amount, unit, source) values (${id}, 'cup', 245, 'g', 'reference')`;
+	return id;
+}
+
 /** Runs raw SQL as the app role under an identity, to probe RLS directly. */
 const asUser = <T>(userId: string, run: (tx: postgres.TransactionSql) => Promise<T>) =>
 	appSql.begin(async (tx) => {
@@ -50,7 +60,8 @@ const asUser = <T>(userId: string, run: (tx: postgres.TransactionSql) => Promise
 	}) as Promise<T>;
 
 beforeEach(async () => {
-	await admin`truncate users, foods cascade`;
+	await admin`truncate users cascade`;
+	await admin`truncate foods cascade`;
 	await admin`insert into users (id, display_name, role) values
 		(${ADMIN}, 'Admin', 'admin'), (${MEHMET}, 'Mehmet', 'member'), (${ZEYNEP}, 'Zeynep', 'member')`;
 });
@@ -59,40 +70,83 @@ afterAll(async () => {
 	await Promise.all([admin.end(), appSql.end(), workerSql.end()]);
 });
 
-describe('visibility', () => {
-	it('keeps private foods private, even from the admin', async () => {
-		const id = await catalog.createFood(
-			MEHMET,
-			food({ visibility: 'private', name: 'Ev yoğurdu', brand: null })
-		);
+describe('privacy', () => {
+	it('keeps every food to its owner, even from the admin', async () => {
+		const id = await catalog.createFood(MEHMET, food({ name: 'Ev yoğurdu', brand: null }));
 		expect((await catalog.getFood(MEHMET, id)).mine).toBe(true);
 		expect(await errorCode(catalog.getFood(ZEYNEP, id))).toBe('not_found');
 		expect(await errorCode(catalog.getFood(ADMIN, id))).toBe('not_found');
 		expect(await catalog.searchFoods(ZEYNEP, 'yogurt')).toEqual([]);
 		expect(await catalog.searchFoods(ADMIN, 'ev yogurdu')).toEqual([]);
+		expect(await catalog.foodsById(ZEYNEP, [id])).toEqual([]);
 	});
 
-	it('shows shared foods to everyone without revealing their creator', async () => {
-		const id = await catalog.createFood(MEHMET, food());
+	it('shows built-in foods to everyone and lets no one change them', async () => {
+		const id = await builtIn('Yogurt, plain, whole milk');
 		const seen = await catalog.getFood(ZEYNEP, id);
-		expect(seen).toMatchObject({ name: 'Ayran', brand: 'Sütaş', mine: false, editable: false });
-		expect(Object.keys(seen)).not.toContain('ownerId');
-		const [hit] = await catalog.searchFoods(ZEYNEP, 'sutas');
-		expect(Object.keys(hit)).not.toContain('ownerId');
+		expect(seen).toMatchObject({ mine: false, origin: 'curated' });
+		expect((await catalog.searchFoods(MEHMET, 'yogurt plain')).map((r) => r.id)).toEqual([id]);
+		for (const who of [ZEYNEP, ADMIN]) {
+			expect(await errorCode(catalog.updateFood(who, id, 1, food({ name: 'Mine now' })))).toBe(
+				'forbidden'
+			);
+			expect(await errorCode(catalog.setArchived(who, id, true))).toBe('forbidden');
+			const changed = await asUser(
+				who,
+				(tx) => tx`update foods set name = 'X' where id = ${id} returning id`
+			);
+			expect(changed).toHaveLength(0);
+			expect(
+				await errorCode(
+					asUser(
+						who,
+						(tx) => tx`insert into food_nutrients (food_id, code, value, qualifier)
+						values (${id}, 'fat', 99, 'reported')`
+					)
+				)
+			).toBe('42501');
+		}
 	});
 
-	it('lets the worker read shared foods but not write them', async () => {
+	it('lets the worker read only under an identity, and write nothing', async () => {
 		const id = await catalog.createFood(MEHMET, food());
-		const rows = await workerSql.begin(async (tx) => {
-			await tx`select set_config('app.user_id', ${ZEYNEP}, true)`;
-			return tx`select name from foods where id = ${id}`;
-		});
-		expect(rows.map((r) => r.name)).toEqual(['Ayran']);
+		const read = (userId: string) =>
+			workerSql.begin(async (tx) => {
+				await tx`select set_config('app.user_id', ${userId}, true)`;
+				return tx`select name from foods where id = ${id}`;
+			});
+		expect((await read(MEHMET)).map((r) => r.name)).toEqual(['Ayran']);
+		expect(await read(ZEYNEP)).toHaveLength(0);
 		const write = workerSql.begin(async (tx) => {
-			await tx`select set_config('app.user_id', ${ZEYNEP}, true)`;
+			await tx`select set_config('app.user_id', ${MEHMET}, true)`;
 			await tx`update foods set name = 'X' where id = ${id}`;
 		});
 		expect(await errorCode(write)).toBe('42501');
+	});
+
+	it('refuses a food without an owner, or one owned by someone else', async () => {
+		for (const owner of [null, ZEYNEP])
+			expect(
+				await errorCode(
+					asUser(
+						MEHMET,
+						(tx) => tx`insert into foods (owner_id, name, search_key, basis, origin)
+						values (${owner}, 'Fake', 'fake', '100g', 'manual')`
+					)
+				)
+			).toBe('42501');
+		// A built-in food has no owner, and nothing else may lack one.
+		expect(
+			await errorCode(
+				admin`insert into foods (owner_id, name, search_key, basis, origin)
+					values (${MEHMET}, 'Fake', 'fake', '100g', 'curated')`
+			)
+		).toBe('23514');
+		expect(
+			await errorCode(
+				admin`insert into foods (name, search_key, basis, origin) values ('Fake', 'fake', '100g', 'manual')`
+			)
+		).toBe('23514');
 	});
 });
 
@@ -112,20 +166,15 @@ describe('icons', () => {
 });
 
 describe('edit rights', () => {
-	it('lets only the creator, or an admin for shared foods, edit', async () => {
+	it('lets only the owner edit or archive, not even an admin', async () => {
 		const id = await catalog.createFood(MEHMET, food());
-		expect(await errorCode(catalog.updateFood(ZEYNEP, id, 1, food({ name: 'Hacked' })))).toBe(
-			'forbidden'
-		);
-		expect(await catalog.updateFood(ADMIN, id, 1, food({ name: 'Ayran (ev)' }))).toBe(2);
-		expect(await catalog.updateFood(MEHMET, id, 2, food({ name: 'Ayran' }))).toBe(3);
-	});
-
-	it('does not let an admin make someone else’s food private', async () => {
-		const id = await catalog.createFood(MEHMET, food());
-		expect(await errorCode(catalog.updateFood(ADMIN, id, 1, food({ visibility: 'private' })))).toBe(
-			'forbidden'
-		);
+		for (const who of [ZEYNEP, ADMIN]) {
+			expect(await errorCode(catalog.updateFood(who, id, 1, food({ name: 'Hacked' })))).toBe(
+				'not_found'
+			);
+			expect(await errorCode(catalog.setArchived(who, id, true))).toBe('not_found');
+		}
+		expect(await catalog.updateFood(MEHMET, id, 1, food({ name: 'Ayran (ev)' }))).toBe(2);
 	});
 
 	it('rejects a stale edit instead of overwriting a newer one', async () => {
@@ -162,8 +211,8 @@ describe('edit rights', () => {
 			await errorCode(
 				asUser(
 					ZEYNEP,
-					(tx) => tx`insert into foods (owner_id, visibility, name, search_key, basis, origin)
-					values (${MEHMET}, 'shared', 'Fake', 'fake', '100g', 'manual')`
+					(tx) => tx`insert into foods (owner_id, name, search_key, basis, origin)
+					values (${MEHMET}, 'Fake', 'fake', '100g', 'manual')`
 				)
 			)
 		).toBe('42501');
@@ -212,8 +261,8 @@ describe('nutrient contract', () => {
 		const bad = (sql: string) =>
 			errorCode(asUser(MEHMET, (tx) => tx.unsafe(sql.replace('$owner', MEHMET))));
 		expect(
-			await bad(`insert into foods (owner_id, visibility, name, search_key, basis, origin)
-				values ('$owner', 'private', 'Slice', 'slice', 'serving', 'manual')`)
+			await bad(`insert into foods (owner_id, name, search_key, basis, origin)
+				values ('$owner', 'Slice', 'slice', 'serving', 'manual')`)
 		).toBe('23514');
 		const id = await catalog.createFood(MEHMET, food());
 		expect(await bad(`insert into food_nutrients values ('${id}', 'fat', -1, 'reported')`)).toBe(
@@ -250,41 +299,40 @@ describe('nutrient contract', () => {
 });
 
 describe('variants and archiving', () => {
-	it('makes a private variant that records its source', async () => {
-		const id = await catalog.createFood(
-			MEHMET,
-			food({ servings: [{ name: 'glass', amount: 200, unit: 'ml' }] })
-		);
+	it('makes a private variant of a built-in food that records its source', async () => {
+		const id = await builtIn('Bread, white');
 		const variant = await catalog.makeVariant(ZEYNEP, id);
 		const detail = await catalog.getFood(ZEYNEP, variant);
-		expect(detail).toMatchObject({
-			visibility: 'private',
-			mine: true,
-			derivedFrom: id,
-			origin: 'variant'
-		});
-		expect(detail.nutrients).toHaveLength((await catalog.getFood(ZEYNEP, id)).nutrients.length);
-		expect(detail.servings.map((s) => s.name)).toEqual(['glass']);
+		expect(detail).toMatchObject({ mine: true, derivedFrom: id, origin: 'variant' });
+		expect(detail.nutrients).toEqual((await catalog.getFood(ZEYNEP, id)).nutrients);
+		expect(detail.servings.map((s) => s.name)).toEqual(['cup']);
 		expect(await errorCode(catalog.getFood(MEHMET, variant))).toBe('not_found');
 	});
 
-	it('hides archived foods from search and lets the creator restore them', async () => {
+	it('refuses a variant of the person’s own food (a regression: each tap made another copy)', async () => {
+		const own = await catalog.createFood(MEHMET, food());
+		expect(await errorCode(catalog.makeVariant(MEHMET, own))).toBe('forbidden');
+		const variant = await catalog.makeVariant(MEHMET, await builtIn('Bread, white'));
+		expect(await errorCode(catalog.makeVariant(MEHMET, variant))).toBe('forbidden');
+		expect((await catalog.ownFoods(MEHMET)).total).toBe(2);
+	});
+
+	it('hides archived foods from search and lets the owner restore them', async () => {
 		const id = await catalog.createFood(MEHMET, food());
 		await catalog.setArchived(MEHMET, id, true);
-		expect(await catalog.searchFoods(ZEYNEP, 'ayran')).toEqual([]);
-		expect((await catalog.getFood(ZEYNEP, id)).archived).toBe(true);
-		expect(await errorCode(catalog.setArchived(ZEYNEP, id, false))).toBe('forbidden');
+		expect(await catalog.searchFoods(MEHMET, 'ayran')).toEqual([]);
+		expect((await catalog.getFood(MEHMET, id)).archived).toBe(true);
 		await catalog.setArchived(MEHMET, id, false);
-		expect(await catalog.searchFoods(ZEYNEP, 'ayran')).toHaveLength(1);
+		expect(await catalog.searchFoods(MEHMET, 'ayran')).toHaveLength(1);
 	});
 });
 
 describe('imported foods', () => {
 	it('archives and brings back only the person’s own LoseIt foods, in one step', async () => {
-		const imported = await catalog.createFood(MEHMET, food({ visibility: 'private' }), {
+		const imported = await catalog.createFood(MEHMET, food(), {
 			origin: 'loseit'
 		});
-		const shared = await catalog.createFood(MEHMET, food({ name: 'Shared import' }), {
+		const second = await catalog.createFood(MEHMET, food({ name: 'Second import' }), {
 			origin: 'loseit'
 		});
 		const own = await catalog.createFood(MEHMET, food({ name: 'Own ayran' }));
@@ -295,7 +343,7 @@ describe('imported foods', () => {
 
 		expect(await catalog.setImportedArchived(MEHMET, true)).toBe(2);
 		expect((await catalog.getFood(MEHMET, imported)).archived).toBe(true);
-		expect((await catalog.getFood(MEHMET, shared)).archived).toBe(true);
+		expect((await catalog.getFood(MEHMET, second)).archived).toBe(true);
 		expect((await catalog.getFood(MEHMET, own)).archived).toBe(false);
 		expect((await catalog.getFood(ZEYNEP, theirs)).archived).toBe(false);
 		expect((await catalog.searchFoods(MEHMET, 'ayran')).map((f) => f.name)).toEqual(['Own ayran']);
@@ -311,13 +359,13 @@ describe('imported foods', () => {
 
 describe('search', () => {
 	beforeEach(async () => {
-		await catalog.createFood(MEHMET, food());
+		await catalog.createFood(ZEYNEP, food());
 		await catalog.createFood(
-			MEHMET,
+			ZEYNEP,
 			food({ name: 'Körpe Ispanak', brand: 'Superfresh', basis: '100g' })
 		);
 		await catalog.createFood(
-			MEHMET,
+			ZEYNEP,
 			food({ name: 'Mini Top Peynir', brand: 'İçim', basis: '100g' })
 		);
 	});
@@ -335,27 +383,21 @@ describe('search', () => {
 		expect(first?.name).toBe(name);
 	});
 
-	it('ranks the person’s own foods before shared ones among real matches', async () => {
-		await catalog.createFood(
-			ZEYNEP,
-			food({ name: 'Ayran', brand: 'Ev yapımı', visibility: 'private' })
-		);
+	it('ranks the person’s own foods before built-in ones among real matches', async () => {
+		const builtInAyran = await builtIn('Ayran', 40);
 		const results = await catalog.searchFoods(ZEYNEP, 'ayran');
 		expect(results.map((r) => [r.brand, r.mine])).toEqual([
-			['Ev yapımı', true],
-			['Sütaş', false]
+			['Sütaş', true],
+			[null, false]
 		]);
-		expect(results[1].kcal).toBe(36);
+		expect(results[1]).toMatchObject({ id: builtInAyran, kcal: 40, curated: true });
 	});
 
 	it('ranks boosted (recent) foods first among real matches', async () => {
-		const own = await catalog.createFood(
-			ZEYNEP,
-			food({ name: 'Ayran', brand: 'Ev yapımı', visibility: 'private' })
-		);
-		const [shared] = (await catalog.searchFoods(ZEYNEP, 'sutas')).map((r) => r.id);
-		const boosted = await catalog.searchFoods(ZEYNEP, 'ayran', 20, [shared]);
-		expect(boosted.map((r) => r.id)).toEqual([shared, own]);
+		const [own] = (await catalog.searchFoods(ZEYNEP, 'sutas')).map((r) => r.id);
+		const recent = await builtIn('Ayran', 40);
+		const boosted = await catalog.searchFoods(ZEYNEP, 'ayran', 20, [recent]);
+		expect(boosted.map((r) => r.id)).toEqual([recent, own]);
 	});
 
 	it('finds a food in words taken from a sentence, preferring real matches on fewer words', async () => {
@@ -368,11 +410,8 @@ describe('search', () => {
 		expect(await names('zzz qqq')).toEqual([]);
 	});
 
-	it('never proposes another person’s private food', async () => {
-		await catalog.createFood(
-			MEHMET,
-			food({ name: 'Gizli Börek', brand: null, visibility: 'private', basis: '100g' })
-		);
+	it('never proposes another person’s food', async () => {
+		await catalog.createFood(MEHMET, food({ name: 'Gizli Börek', brand: null, basis: '100g' }));
 		expect(await catalog.searchFoodsLoose(ZEYNEP, 'iki dilim gizli börek')).toEqual([]);
 		expect((await catalog.searchFoodsLoose(MEHMET, 'iki dilim gizli börek'))[0]?.name).toBe(
 			'Gizli Börek'
@@ -421,7 +460,7 @@ describe('label scan edit counts', () => {
 			(tx) => tx`select food_id, changed, added from label_scan_edits`
 		);
 		expect(own).toEqual([{ food_id: scanned, changed: 1, added: 2 }]);
-		// Not even an admin reads someone's rows; the food itself is shared, its edit counts are not.
+		// Not even an admin reads someone's rows.
 		expect(await asUser(ZEYNEP, (tx) => tx`select 1 from label_scan_edits`)).toHaveLength(0);
 		expect(await asUser(ADMIN, (tx) => tx`select 1 from label_scan_edits`)).toHaveLength(0);
 	});
@@ -491,7 +530,7 @@ describe('own foods', () => {
 		const names = ['Çörek', 'Ayran', 'Börek'];
 		const ids = [];
 		for (const name of names) ids.push(await catalog.createFood(MEHMET, food({ name })));
-		await catalog.createFood(ZEYNEP, food({ name: 'Zeynep’s shared food' }));
+		await catalog.createFood(ZEYNEP, food({ name: 'Zeynep’s food' }));
 		await catalog.setArchived(MEHMET, ids[1], true);
 
 		const first = await catalog.ownFoods(MEHMET, 0, 1);
@@ -519,14 +558,8 @@ describe('foodsById', () => {
 				]
 			})
 		);
-		const yogurt = await catalog.createFood(
-			ZEYNEP,
-			food({
-				name: 'Yoğurt',
-				nutrients: [{ code: 'energy_kcal', value: 60, qualifier: 'reported' }]
-			})
-		);
-		const hidden = await catalog.createFood(ZEYNEP, food({ name: 'Gizli', visibility: 'private' }));
+		const yogurt = await builtIn('Yogurt', 60);
+		const hidden = await catalog.createFood(ZEYNEP, food({ name: 'Gizli' }));
 
 		const found = await catalog.foodsById(MEHMET, [ayran, yogurt, hidden, randomUUID()]);
 

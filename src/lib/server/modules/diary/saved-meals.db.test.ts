@@ -26,7 +26,6 @@ const bread = (kcal = 193) =>
 	v.parse(FoodInput, {
 		name: 'Premium Light Ekmek',
 		brand: 'Untad',
-		visibility: 'shared',
 		basis: '100g',
 		nutrients: [{ code: 'energy_kcal', value: kcal, qualifier: 'reported' }],
 		servings: [{ name: 'slice', amount: 26, unit: 'g' }]
@@ -67,7 +66,7 @@ async function breakfast(userId = ZEYNEP) {
 beforeEach(async () => {
 	await admin`truncate users, foods, diary_entries cascade`;
 	await admin`insert into users (id, display_name) values (${MEHMET}, 'Mehmet'), (${ZEYNEP}, 'Zeynep')`;
-	breadId = await catalog.createFood(MEHMET, bread());
+	breadId = await catalog.createFood(ZEYNEP, bread());
 });
 
 afterAll(async () => {
@@ -211,7 +210,7 @@ describe('managing', () => {
 
 	it('refreshes only on request, by serving name after a food edit, and keeps what cannot be refreshed', async () => {
 		const meal = await breakfast();
-		await catalog.updateFood(MEHMET, breadId, 1, bread(250));
+		await catalog.updateFood(ZEYNEP, breadId, 1, bread(250));
 		// The catalog edit alone changes nothing.
 		expect((await saved.get(ZEYNEP, meal.id)).kcal).toBeCloseTo(193 * 0.52 + 120);
 
@@ -231,7 +230,7 @@ describe('managing', () => {
 	it('replaces contents in one step: amounts from the snapshot, removals, new foods, order and name', async () => {
 		const meal = await breakfast();
 		const [slices, tea] = meal.items;
-		await catalog.updateFood(MEHMET, breadId, 1, bread(250));
+		await catalog.updateFood(ZEYNEP, breadId, 1, bread(250));
 		const food = await catalog.getFood(ZEYNEP, breadId);
 		const grams = { kind: 'mass' as const, unit: 'g' as const };
 		const edited = await saved.saveContents(ZEYNEP, {

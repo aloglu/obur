@@ -6,6 +6,7 @@ import postgres from 'postgres';
 import * as v from 'valibot';
 import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
 import { FoodInput } from '../../../shared/food-input.ts';
+import { foodSearchKey } from '../../../shared/search-text.ts';
 import { createBody } from '../body/index.ts';
 import { createCatalog, createRecipes } from '../catalog/index.ts';
 import { createDiary, createSavedMeals } from '../diary/index.ts';
@@ -39,6 +40,31 @@ const grams = { kind: 'mass', unit: 'g' } as const;
 
 const food = (input: Record<string, unknown>) => v.parse(FoodInput, input);
 
+/** A built-in (curated) food, as `obur migrate` loads them: no owner, readable by everyone, edited by no one. */
+async function builtIn(input: {
+	name: string;
+	brand?: string;
+	basis: '100g' | '100ml';
+	kcal: number;
+	carbs?: number;
+	portions?: { name: string; amount: number; unit: 'g' | 'ml' }[];
+}): Promise<string> {
+	const [{ id }] =
+		await admin`insert into foods (name, brand, search_key, basis, origin, source_meta)
+		values (${input.name}, ${input.brand ?? null}, ${foodSearchKey(input.name, input.brand ?? null)},
+			${input.basis}, 'curated', ${admin.json({ dataset: 'sr_legacy', fdcId: randomUUID() })})
+		returning id`;
+	await admin`insert into food_nutrients (food_id, code, value, qualifier)
+		values (${id}, 'energy_kcal', ${input.kcal}, 'reported')`;
+	if (input.carbs !== undefined)
+		await admin`insert into food_nutrients (food_id, code, value, qualifier)
+			values (${id}, 'carbohydrate_excl_fibre', ${input.carbs}, 'reported')`;
+	for (const p of input.portions ?? [])
+		await admin`insert into food_servings (food_id, name, amount, unit, source)
+			values (${id}, ${p.name}, ${p.amount}, ${p.unit}, 'reference')`;
+	return id;
+}
+
 beforeEach(async () => {
 	await admin`truncate users, account_deletions cascade`;
 	await admin`insert into users (id, display_name, role) values
@@ -50,10 +76,10 @@ afterAll(async () => {
 });
 
 /**
- * A complex history for Mehmet: a shared food someone else made, his own private serving-only food with an
- * unknown nutrient and a "less than" value, an archived food, a variant, two identical quick adds, trash, weight,
- * water, counted and uncounted activity, targets, a profile, a completed day, and a saved meal whose shared food
- * (Ayran) no diary entry refers to any more, as after its entry was purged from the trash.
+ * A complex history for Mehmet: a built-in food, his own serving-only food with an unknown nutrient and a "less
+ * than" value, an archived food, a variant, two identical quick adds, trash, weight, water, counted and uncounted
+ * activity, targets, a profile, a completed day, and a saved meal whose built-in food (Ayran) no diary entry refers
+ * to any more, as after its entry was purged from the trash.
  */
 async function buildHistory() {
 	// Reminder settings travel with the account; this device's push subscription never does.
@@ -71,26 +97,19 @@ async function buildHistory() {
 	await remoteModels.saveKey(MEHMET, 'openai', MEHMET_KEY);
 	await remoteModels.choose(MEHMET, 'speak', 'openai', true);
 	await remoteModels.countUse(MEHMET, 'openai', 'speak');
-	const ekmek = await catalog.createFood(
-		AYSE,
-		food({
-			name: 'Premium Light Ekmek',
-			brand: 'Untad',
-			visibility: 'shared',
-			basis: '100g',
-			nutrients: [
-				{ code: 'energy_kcal', value: 193, qualifier: 'reported' },
-				{ code: 'carbohydrate_excl_fibre', value: 42.4, qualifier: 'reported' }
-			],
-			servings: [{ name: 'dilim', amount: 26, unit: 'g' }]
-		})
-	);
+	const ekmek = await builtIn({
+		name: 'Premium Light Ekmek',
+		brand: 'Untad',
+		basis: '100g',
+		kcal: 193,
+		carbs: 42.4,
+		portions: [{ name: 'dilim', amount: 26, unit: 'g' }]
+	});
 	const borek = await catalog.createFood(
 		MEHMET,
 		food({
 			name: 'Annemin böreği',
 			icon: '1F967',
-			visibility: 'private',
 			basis: 'serving',
 			servingLabel: '1 dilim',
 			nutrients: [
@@ -104,7 +123,6 @@ async function buildHistory() {
 		MEHMET,
 		food({
 			name: 'Eski yoğurt',
-			visibility: 'private',
 			basis: '100g',
 			nutrients: [{ code: 'energy_kcal', value: 60, qualifier: 'reported' }],
 			servings: []
@@ -161,16 +179,7 @@ async function buildHistory() {
 	);
 	await diary.setDayComplete(MEHMET, '2026-10-01', true);
 
-	const ayran = await catalog.createFood(
-		AYSE,
-		food({
-			name: 'Ayran',
-			visibility: 'shared',
-			basis: '100ml',
-			nutrients: [{ code: 'energy_kcal', value: 38, qualifier: 'reported' }],
-			servings: []
-		})
-	);
+	const ayran = await builtIn({ name: 'Ayran', basis: '100ml', kcal: 38 });
 	const [bread, tea] = await diary.day(MEHMET, '2026-10-02');
 	const drink = await diary.logFood(
 		MEHMET,
@@ -184,12 +193,11 @@ async function buildHistory() {
 		entryIds: [bread.id, tea.id, drink.id]
 	});
 	await admin`delete from diary_entries where id = ${drink.id}`;
-	// A private recipe from the person's own bread and the shared ayran, weighed after cooking.
+	// A recipe from the built-in bread and ayran, weighed after cooking.
 	await recipes.save(MEHMET, {
 		id: randomUUID(),
 		version: null,
 		name: 'Ayranlı tost',
-		visibility: 'private',
 		icon: '1F96A',
 		servings: 2,
 		cookedYieldG: 240,
@@ -332,19 +340,20 @@ describe('export', () => {
 		expect(JSON.stringify(data)).not.toContain('5678');
 
 		const names = Object.fromEntries(
-			data.foods.map((f) => [f.name + (f.mine ? '' : ' (shared)'), f])
+			data.foods.map((f) => [f.name + (f.mine ? '' : ' (built-in)'), f])
 		);
 		expect(Object.keys(names).sort()).toEqual([
 			'Annemin böreği',
-			'Ayran (shared)',
+			'Ayran (built-in)',
 			'Ayranlı tost',
 			'Eski yoğurt',
 			'Premium Light Ekmek',
-			'Premium Light Ekmek (shared)'
+			'Premium Light Ekmek (built-in)'
 		]);
-		// Ayşe's shared bread: content only, not her provenance.
-		const shared = data.foods.find((f) => !f.mine)!;
-		expect(shared).toMatchObject({ name: 'Premium Light Ekmek', sourceMeta: null });
+		// The built-in bread: content only, not the installation's provenance; nothing says shared any more.
+		const builtInBread = data.foods.find((f) => !f.mine && f.name === 'Premium Light Ekmek')!;
+		expect(builtInBread).toMatchObject({ sourceMeta: null, origin: 'curated' });
+		expect(builtInBread).not.toHaveProperty('visibility');
 		expect(data.foods.filter((f) => f.mine)).toHaveLength(4);
 		// The recipe travels with its pinned ingredients; its food is among the person's own.
 		expect(data.recipes).toHaveLength(1);
@@ -416,8 +425,8 @@ describe('import', () => {
 		const before = readArchive(archive).data;
 		const after = readArchive(await portability.exportArchive(ZEYNEP)).data;
 		expect(semantic(after)).toEqual(semantic(before));
-		// Everything imported is Zeynep's own and private, including the copy of the shared bread.
-		expect(after.foods.every((f) => f.mine && f.visibility === 'private')).toBe(true);
+		// Everything imported is Zeynep's own, including her copies of the other installation's built-in foods.
+		expect(after.foods.every((f) => f.mine && f.origin !== 'curated')).toBe(true);
 		const ids = new Set(before.diary.map((e) => e.id));
 		expect(after.diary.some((e) => ids.has(e.id))).toBe(false);
 		// Two identical quick adds stay two entries.
@@ -562,11 +571,11 @@ describe('import', () => {
 		expect((await goals.targetFor(ZEYNEP, '2026-10-05'))?.baseBurnKcal).toBe(1900);
 	});
 
-	it('links to a shared food that is still visible on the same installation instead of copying it', async () => {
+	it('links to a built-in food on the same installation instead of copying it', async () => {
 		const { ekmek } = await buildHistory();
 		const archive = await portability.exportArchive(MEHMET);
 		const preview = await portability.previewImport(ZEYNEP, archive);
-		// Mehmet's own foods are invisible to Zeynep and become her private copies; Ayşe's shared bread is reused.
+		// Mehmet's own foods are invisible to Zeynep and become her copies; the built-in bread and ayran are reused.
 		expect(preview.counts.food).toEqual({ new: 4, unchanged: 2, changed: 0, skipped: 0 });
 		await portability.applyImport(ZEYNEP, archive);
 		// Her copy of the recipe is a working recipe of her own, its ingredients linked to foods she can see.
@@ -611,36 +620,21 @@ describe('import', () => {
 });
 
 describe('account deletion', () => {
-	it('removes everything private in one step and keeps shared foods for other members', async () => {
+	it('removes everything of the person’s in one step, foods included', async () => {
 		const { ekmek } = await buildHistory();
-		const shared = await catalog.createFood(
-			MEHMET,
-			food({
-				name: 'Mercimek çorbası',
-				visibility: 'shared',
-				basis: '100g',
-				nutrients: [{ code: 'energy_kcal', value: 56, qualifier: 'reported' }],
-				servings: []
-			})
-		);
-		await diary.logFood(
-			ZEYNEP,
-			{ localDate: '2026-10-01', meal: 'dinner', ...ist },
-			await catalog.getFood(ZEYNEP, shared),
-			300,
-			grams
-		);
-		// Deleting asks about shared foods only when there are some: the admin and the person see the count.
-		expect(await portability.sharedFoodCount(MEHMET)).toBe(1);
-		expect(await portability.sharedFoodCount(ZEYNEP)).toBe(0);
-		const members = await portability.members(AYSE);
-		expect(members.find((m) => m.id === MEHMET)?.sharedFoods).toBe(1);
-		expect(members.find((m) => m.id === ZEYNEP)?.sharedFoods).toBe(0);
 		await admin`insert into credentials (id, user_id, public_key, device_type, backed_up, label)
 			values ('cred-m', ${MEHMET}, 'pk', 'multiDevice', true, 'iPhone')`;
 		expect(await count('credentials', MEHMET)).toBe(1);
+		const zeynepsOwn = await catalog.createFood(
+			ZEYNEP,
+			food({
+				name: 'Zeynep’s soup',
+				basis: '100g',
+				nutrients: [{ code: 'energy_kcal', value: 56, qualifier: 'reported' }]
+			})
+		);
 
-		await portability.deleteAccount(MEHMET, MEHMET, false);
+		await portability.deleteAccount(MEHMET, MEHMET);
 		for (const table of [
 			'diary_entries',
 			'weight_entries',
@@ -661,63 +655,28 @@ describe('account deletion', () => {
 			expect(await count(table, MEHMET)).toBe(0);
 		expect(await admin`select 1 from users where id = ${MEHMET}`).toHaveLength(0);
 		expect(await admin`select 1 from foods where owner_id = ${MEHMET}`).toHaveLength(0);
-		// His shared soup stays, without an owner; Zeynep's entry keeps its link and snapshot.
-		const [soup] = await admin`select owner_id from foods where id = ${shared}`;
-		expect(soup.owner_id).toBeNull();
-		const [entry] =
-			await admin`select food_id, food->>'name' as name from diary_entries where user_id = ${ZEYNEP}`;
-		expect(entry).toMatchObject({ food_id: shared, name: 'Mercimek çorbası' });
+		expect(await admin`select 1 from recipes`).toHaveLength(0);
+		// Built-in foods and other people's foods stay.
 		expect(await admin`select 1 from foods where id = ${ekmek}`).toHaveLength(1);
+		expect(await admin`select 1 from foods where id = ${zeynepsOwn}`).toHaveLength(1);
 
 		// The admin sees an opaque ID and the date; members see nothing.
 		const list = await portability.deletions(AYSE);
-		expect(list).toEqual([
-			{ accountId: MEHMET, deletedAt: expect.any(String), by: 'self', removedSharedFoods: false }
-		]);
+		expect(list).toEqual([{ accountId: MEHMET, deletedAt: expect.any(String), by: 'self' }]);
 		expect(await portability.deletions(ZEYNEP)).toEqual([]);
 	});
 
-	it('removes shared foods too when asked, keeping other people’s snapshots', async () => {
-		const shared = await catalog.createFood(
-			MEHMET,
-			food({
-				name: 'Mercimek çorbası',
-				visibility: 'shared',
-				basis: '100g',
-				nutrients: [{ code: 'energy_kcal', value: 56, qualifier: 'reported' }],
-				servings: []
-			})
-		);
-		await diary.logFood(
-			ZEYNEP,
-			{ localDate: '2026-10-01', meal: 'dinner', ...ist },
-			await catalog.getFood(ZEYNEP, shared),
-			300,
-			grams
-		);
-		await portability.deleteAccount(MEHMET, MEHMET, true);
-		expect(await admin`select 1 from foods where id = ${shared}`).toHaveLength(0);
-		// The choice is kept in the deletion list, so a restore can reapply it.
-		const [listed] =
-			await admin`select removed_shared_foods from account_deletions where account_id = ${MEHMET}`;
-		expect(listed.removed_shared_foods).toBe(true);
-		const [entry] =
-			await admin`select food_id, energy_kcal from diary_entries where user_id = ${ZEYNEP}`;
-		expect(entry.food_id).toBeNull();
-		expect(Number(entry.energy_kcal)).toBe(168);
-	});
-
 	it('lets only the person or an admin delete an account, and never the last admin', async () => {
-		await expect(portability.deleteAccount(ZEYNEP, MEHMET, false)).rejects.toMatchObject({
+		await expect(portability.deleteAccount(ZEYNEP, MEHMET)).rejects.toMatchObject({
 			code: 'forbidden'
 		});
-		await expect(portability.deleteAccount(AYSE, AYSE, false)).rejects.toMatchObject({
+		await expect(portability.deleteAccount(AYSE, AYSE)).rejects.toMatchObject({
 			code: 'last_admin'
 		});
-		await expect(portability.deleteAccount(AYSE, randomUUID(), false)).rejects.toMatchObject({
+		await expect(portability.deleteAccount(AYSE, randomUUID())).rejects.toMatchObject({
 			code: 'not_found'
 		});
-		await portability.deleteAccount(AYSE, ZEYNEP, false);
+		await portability.deleteAccount(AYSE, ZEYNEP);
 		expect(await portability.deletions(AYSE)).toMatchObject([{ accountId: ZEYNEP, by: 'admin' }]);
 		// The runtime role cannot write the deletion list or delete users directly.
 		const direct = appSql.begin(async (tx) => {
@@ -735,34 +694,31 @@ describe('account deletion', () => {
 
 describe('reapplying deletions after a restore', () => {
 	it('deletes the account again as it was deleted, and only the operator can run it', async () => {
-		const shared = await catalog.createFood(
+		const own = await catalog.createFood(
 			MEHMET,
 			food({
 				name: 'Mercimek çorbası',
-				visibility: 'shared',
 				basis: '100g',
 				nutrients: [{ code: 'energy_kcal', value: 56, qualifier: 'reported' }],
 				servings: []
 			})
 		);
 		await diary.quickAdd(MEHMET, { localDate: '2026-10-01', meal: 'lunch', ...ist }, 300, 'Simit');
-		const [{ existed }] = await admin`select app_reapply_deletion(${MEHMET}::uuid, true,
+		const [{ existed }] = await admin`select app_reapply_deletion(${MEHMET}::uuid,
 			'2026-10-20T10:00:00Z') as existed`;
 		expect(existed).toBe(true);
 		expect(await count('diary_entries', MEHMET)).toBe(0);
-		expect(await admin`select 1 from foods where id = ${shared}`).toHaveLength(0);
-		const [listed] = await admin`select deleted_at, removed_shared_foods from account_deletions
+		expect(await admin`select 1 from foods where id = ${own}`).toHaveLength(0);
+		const [listed] = await admin`select deleted_at from account_deletions
 			where account_id = ${MEHMET}`;
 		expect(listed.deleted_at.toISOString()).toBe('2026-10-20T10:00:00.000Z');
-		expect(listed.removed_shared_foods).toBe(true);
 		// Running the list again is harmless.
-		const [{ again }] =
-			await admin`select app_reapply_deletion(${MEHMET}::uuid, true, now()) as again`;
+		const [{ again }] = await admin`select app_reapply_deletion(${MEHMET}::uuid, now()) as again`;
 		expect(again).toBe(false);
 
 		const asApp = appSql.begin(async (tx) => {
 			await tx`select set_config('app.user_id', ${AYSE}, true)`;
-			await tx`select app_reapply_deletion(${ZEYNEP}::uuid, false, now())`;
+			await tx`select app_reapply_deletion(${ZEYNEP}::uuid, now())`;
 		});
 		await expect(asApp).rejects.toMatchObject({ code: '42501' });
 	});

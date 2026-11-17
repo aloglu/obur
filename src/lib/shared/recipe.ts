@@ -21,7 +21,6 @@ export interface Recipe {
 	/** The recipe's food. */
 	id: string;
 	name: string;
-	visibility: 'private' | 'shared';
 	/** The chosen icon; null shows the name's suggestion. */
 	icon: string | null;
 	version: number;
@@ -35,7 +34,6 @@ export interface RecipeSummary {
 	id: string;
 	name: string;
 	icon: string | null;
-	visibility: 'private' | 'shared';
 	servings: number;
 	/** Energy per serving; null when an ingredient doesn't state it. */
 	kcal: number | null;
@@ -60,7 +58,6 @@ export const SaveRecipe = v.object({
 		v.minLength(1),
 		v.maxLength(200)
 	),
-	visibility: v.picklist(['private', 'shared']),
 	// Absent or null: no chosen icon (the name's suggestion shows).
 	icon: v.optional(v.nullable(v.pipe(v.string(), v.check(isFoodIcon, 'Unknown icon'))), null),
 	servings: v.pipe(v.number(), v.finite(), v.gtValue(0), v.maxValue(1000)),

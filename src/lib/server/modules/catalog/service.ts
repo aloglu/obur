@@ -1,12 +1,12 @@
-// Food catalog operations, all under the signed-in person's identity (RLS decides visibility and edit rights).
-// Shared foods never expose who created them (docs/design.md, "Food catalog and recipes").
+// Food catalog operations, all under the signed-in person's identity (RLS decides who sees and edits what):
+// every food is its owner's alone, and built-in foods are read-only for everyone (docs/design.md, "Foods are private").
 import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { foodWarnings } from '../../../shared/food-checks.ts';
 import type { FoodInput } from '../../../shared/food-input.ts';
 import { deriveNutrients, type NutrientValue } from '../../../shared/nutrients.ts';
 import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';
-import { foldForSearch, foodSearchKey, searchKeyWithAliases } from '../../../shared/search-text.ts';
+import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
 import type { ScanEdits } from '../../../shared/scan-edits.ts';
 import { foodNutrients, foods, foodServings, householdMeasures, labelScanEdits } from './schema.ts';
 
@@ -49,7 +49,6 @@ const columns = (input: FoodInput) => ({
 	name: input.name,
 	brand: input.brand,
 	searchKey: foodSearchKey(input.name, input.brand),
-	visibility: input.visibility,
 	basis: input.basis,
 	servingLabel: input.basis === 'serving' ? input.servingLabel : null,
 	servingAmount: input.basis === 'serving' ? (input.servingSize?.amount ?? null) : null,
@@ -63,9 +62,7 @@ export async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefin
 	const [row] = await tx
 		.select({
 			food: foods,
-			mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
-			editable: sql<boolean>`(${foods.ownerId} = app_current_user_id()
-				or (${foods.visibility} = 'shared' and app_current_user_is_admin()))`
+			mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`
 		})
 		.from(foods)
 		.where(eq(foods.id, foodId));
@@ -92,7 +89,7 @@ export async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefin
 	return toDetail(row, nutrients as NutrientValue[], servings);
 }
 
-type FoodRow = { food: typeof foods.$inferSelect; mine: boolean; editable: boolean };
+type FoodRow = { food: typeof foods.$inferSelect; mine: boolean };
 
 function toDetail(row: FoodRow, values: NutrientValue[], servings: FoodDetail['servings']) {
 	const f = row.food;
@@ -100,7 +97,6 @@ function toDetail(row: FoodRow, values: NutrientValue[], servings: FoodDetail['s
 		id: f.id,
 		name: f.name,
 		brand: f.brand,
-		visibility: f.visibility,
 		basis: f.basis,
 		servingLabel: f.servingLabel,
 		servingSize:
@@ -117,7 +113,6 @@ function toDetail(row: FoodRow, values: NutrientValue[], servings: FoodDetail['s
 		archived: f.archivedAt !== null,
 		version: f.version,
 		mine: Boolean(row.mine),
-		editable: Boolean(row.editable),
 		derivedFrom: f.derivedFrom,
 		nutrients: values,
 		servings,
@@ -185,22 +180,13 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			return withUser(db, userId, async (tx) => {
 				const current = await load(tx, foodId);
 				if (!current) throw new CatalogError('not_found');
-				if (!current.editable) throw new CatalogError('forbidden');
+				if (!current.mine) throw new CatalogError('forbidden');
 				// A recipe's values come from its ingredients; it is edited in the recipe editor.
 				if (current.origin === 'recipe') throw new CatalogError('forbidden');
-				// Only the creator may change who can see a food.
-				if (!current.mine && input.visibility !== current.visibility)
-					throw new CatalogError('forbidden');
-				// An edit keeps a curated food's aliases searchable.
-				const [{ meta }] = await tx
-					.select({ meta: foods.sourceMeta })
-					.from(foods)
-					.where(eq(foods.id, foodId));
 				const updated = await tx
 					.update(foods)
 					.set({
 						...columns(input),
-						searchKey: searchKeyWithAliases(input.name, input.brand, meta),
 						version: expectedVersion + 1,
 						updatedAt: now()
 					})
@@ -216,7 +202,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			await withUser(db, userId, async (tx) => {
 				const current = await load(tx, foodId);
 				if (!current) throw new CatalogError('not_found');
-				if (!current.editable) throw new CatalogError('forbidden');
+				if (!current.mine) throw new CatalogError('forbidden');
 				await tx
 					.update(foods)
 					.set({
@@ -272,13 +258,14 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			return withUser(db, userId, async (tx) => {
 				const source = await load(tx, foodId);
 				if (!source) throw new CatalogError('not_found');
+				// Only built-in foods: the person's own foods are edited instead (repeating made copy after copy).
+				if (source.origin !== 'curated') throw new CatalogError('forbidden');
 				const [row] = await tx
 					.insert(foods)
 					.values({
 						name: source.name,
 						brand: source.brand,
 						searchKey: foodSearchKey(source.name, source.brand),
-						visibility: 'private',
 						basis: source.basis,
 						servingLabel: source.servingLabel,
 						servingAmount: source.servingSize?.amount ?? null,
@@ -314,7 +301,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		/**
 		 * Searches visible, non-archived foods. Every word must appear (in any order), or the whole query must be
 		 * similar enough to tolerate typos. Real matches come before typo-tolerant ones; within them, boosted
-		 * (recent) foods come first, then the person's own foods, then shared ones.
+		 * (recent) foods come first, then the person's own foods, then built-in ones.
 		 */
 		/**
 		 * The person's own foods and scans, alphabetically and a page at a time, with archived ones last so they can
@@ -340,7 +327,6 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						basis: foods.basis,
 						servingLabel: foods.servingLabel,
 						icon: foods.icon,
-						visibility: foods.visibility,
 						kcal: foodNutrients.value,
 						archivedAt: foods.archivedAt
 					})
@@ -403,7 +389,6 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						basis: foods.basis,
 						servingLabel: foods.servingLabel,
 						icon: foods.icon,
-						visibility: foods.visibility,
 						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
 						curated: sql<boolean>`${foods.origin} = 'curated'`,
 						kcal: foodNutrients.value,
@@ -418,7 +403,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						and(sql`${foods.archivedAt} is null`, sql`((${allWords}) or ${foods.searchKey} % ${q})`)
 					)
 					.orderBy(
-						// Real matches before typo-tolerant ones; then boosted (recent), own, and shared foods.
+						// Real matches before typo-tolerant ones; then boosted (recent), own, and built-in foods.
 						sql`(${rank} < 4) desc`,
 						...(boostIds.length
 							? [
@@ -461,7 +446,6 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					brand: r.brand,
 					basis: r.basis,
 					servingLabel: r.servingLabel,
-					visibility: r.visibility,
 					mine: r.mine,
 					kcal: r.kcal,
 					icon: r.icon,
@@ -499,9 +483,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 				const rows = await tx
 					.select({
 						food: foods,
-						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
-						editable: sql<boolean>`(${foods.ownerId} = app_current_user_id()
-							or (${foods.visibility} = 'shared' and app_current_user_is_admin()))`
+						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`
 					})
 					.from(foods)
 					.where(inArray(foods.id, ids));

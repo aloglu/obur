@@ -112,7 +112,6 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 		food: {
 			name: `Beyaz Peynir ${tag}`,
 			brand: null,
-			visibility: 'shared',
 			basis: '100g',
 			nutrients: [{ code: 'energy_kcal', value: 300, qualifier: 'reported' }],
 			servings: []

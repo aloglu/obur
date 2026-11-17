@@ -52,7 +52,6 @@ export function proposalFood(p: LabelProposal): FoodDetail {
 		id: '',
 		name: '',
 		brand: null,
-		visibility: 'shared',
 		basis: p.basis ?? '100g',
 		servingLabel: serving ? (p.portion?.name ?? '') : null,
 		servingSize: serving && p.portion ? { amount: p.portion.amount, unit: p.portion.unit } : null,
@@ -63,7 +62,6 @@ export function proposalFood(p: LabelProposal): FoodDetail {
 		archived: false,
 		version: 0,
 		mine: true,
-		editable: true,
 		derivedFrom: null,
 		// A stated sodium makes the form treat the label as American (carbohydrate as total); with salt there too,
 		// as on Turkish and EU labels, salt is enough.

@@ -20,7 +20,6 @@ export const GET: RequestHandler = async ({ locals }) => {
 				brand: f.brand,
 				basis: f.basis,
 				servingLabel: f.servingLabel,
-				visibility: f.visibility,
 				mine: f.mine,
 				kcal: f.nutrients.find((n) => n.code === 'energy_kcal')?.value ?? null,
 				icon: f.icon,

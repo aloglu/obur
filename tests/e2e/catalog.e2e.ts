@@ -4,7 +4,7 @@ import { signedInAs } from './fixtures.ts';
 // Nutrient inputs by field; label text alone is ambiguous ("Fat" is inside "Saturated fat").
 const nutrient = (page: Page, field: string) => page.locator(`#n-${field}`);
 
-test('a member creates a shared per-serving food that another member can find and copy', async ({
+test('a member creates a per-serving food that only they can find', async ({
 	page,
 	browser
 }, testInfo) => {
@@ -48,27 +48,41 @@ test('a member creates a shared per-serving food that another member can find an
 		'true'
 	);
 
-	// Another member finds it with a folded, reordered query and sees it read-only.
+	// It is found with a folded, reordered query, by its owner only.
+	await page.goto('/foods');
+	await page.getByLabel('Search foods').fill(`highpro fellas ${tag.toLowerCase()}`);
+	const result = page.getByRole('link', { name: new RegExp(`HighPro\\+.*${tag}`) });
+	await expect(result).toContainText('per 1 bar');
+	await expect(result).toContainText('191');
+
 	const other = await browser.newContext({ ...testInfo.project.use });
 	const otherPage = await other.newPage();
 	await signedInAs(otherPage, 'Zeynep');
 	await otherPage.goto('/foods');
 	await otherPage.getByLabel('Search foods').fill(`highpro fellas ${tag.toLowerCase()}`);
-	const result = otherPage.getByRole('link', { name: new RegExp(`HighPro\\+.*${tag}`) });
-	await expect(result).toContainText('per 1 bar');
-	await expect(result).toContainText('191');
-	await expect(result).toContainText('Shared');
-	await result.click();
-	await expect(otherPage.getByText('Shared by another member')).toBeVisible();
-
-	// "Make my own variant" gives an editable private copy.
-	await otherPage.getByRole('button', { name: 'Make my own variant' }).click();
-	await expect(otherPage.getByText('Your variant of a shared food.')).toBeVisible();
-	await expect(otherPage.getByRole('radio', { name: 'Only me' })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
+	await expect(otherPage.getByText('No foods match. Create one with New food.')).toBeVisible();
 	await other.close();
+});
+
+test('makes one editable copy of a built-in food, and offers no copy of a copy', async ({
+	page
+}) => {
+	await signedInAs(page, 'Zeynep');
+	await page.goto('/foods');
+	await page.getByLabel('Search foods').fill('banana');
+	await page
+		.getByRole('link', { name: /^Banana/ })
+		.first()
+		.click();
+	await expect(
+		page.getByText('A built-in food. You can log it or make your own variant.')
+	).toBeVisible();
+	await page.getByRole('button', { name: 'Make my own variant' }).click();
+	await expect(page.getByText('Your variant of a built-in food.')).toBeVisible();
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue(/^Banana/);
+	// It made copy after copy when this button stayed on the copy (owner report, 2026-11-17).
+	await expect(page.getByRole('button', { name: 'Make my own variant' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Archive food' })).toBeVisible();
 });
 
 test('the food form warns about implausible values without blocking the save', async ({ page }) => {

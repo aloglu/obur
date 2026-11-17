@@ -29,9 +29,8 @@ export const foods = pgTable(
 	'foods',
 	{
 		id: uuid('id').primaryKey().defaultRandom(),
-		// Null only for curated reference foods or shared foods whose creator deleted their account.
-		ownerId: uuid('owner_id').references(() => users.id, { onDelete: 'set null' }),
-		visibility: text('visibility', { enum: ['private', 'shared'] }).notNull(),
+		// Every food is its owner's alone (docs/design.md, "Foods are private"); only built-in (curated) foods have none.
+		ownerId: uuid('owner_id').references(() => users.id, { onDelete: 'cascade' }),
 		name: text('name').notNull(),
 		brand: text('brand'),
 		searchKey: text('search_key').notNull(),
@@ -57,7 +56,7 @@ export const foods = pgTable(
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
-		check('foods_private_has_owner', sql`${t.visibility} = 'shared' or ${t.ownerId} is not null`),
+		check('foods_owner_unless_curated', sql`(${t.ownerId} is null) = (${t.origin} = 'curated')`),
 		check('foods_name_length', sql`char_length(${t.name}) between 1 and 200`),
 		check(
 			'foods_brand_length',
@@ -144,9 +143,8 @@ export const householdMeasures = pgTable(
 
 // Recipes (docs/design.md, "Food catalog and recipes"): a recipe is a food (origin 'recipe', per serving) whose
 // values are the sum of its ingredients divided by its servings. Ingredients are pinned as snapshots, like diary
-// entries, so catalog edits never change a recipe until its owner updates it. Only the owner sees the ingredients;
-// others who can see a shared recipe see it as a plain food with totals. owner_id cascades, so deleting an account
-// always removes its ingredient lists, even when the recipe's food stays shared.
+// entries, so catalog edits never change a recipe until its owner updates it. Private like every food; owner_id
+// cascades, so deleting an account removes its recipes.
 export const recipes = pgTable(
 	'recipes',
 	{

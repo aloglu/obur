@@ -35,7 +35,6 @@ export const FoodInput = v.pipe(
 	v.object({
 		name: text(1, 200),
 		brand: optionalText(120),
-		visibility: v.picklist(['private', 'shared']),
 		basis: v.picklist(['100g', '100ml', 'serving']),
 		servingLabel: optionalText(60),
 		servingSize: v.optional(

@@ -24,11 +24,8 @@ export const DELETE: RequestHandler = ({ request, locals }) =>
 		auth.requireAdmin(session);
 		// Sensitive: a fresh passkey check, enforced here and not only by the page (CLAUDE.md).
 		auth.requireRecent(session);
-		const body = await readJson(
-			request,
-			v.object({ id: v.pipe(v.string(), v.uuid()), removeSharedFoods: v.boolean() })
-		);
+		const body = await readJson(request, v.object({ id: v.pipe(v.string(), v.uuid()) }));
 		if (body.id === session.userId) error(400, 'Use account deletion for your own account');
-		await portability.deleteAccount(session.userId, body.id, body.removeSharedFoods);
+		await portability.deleteAccount(session.userId, body.id);
 		return json({ deleted: true });
 	});

@@ -91,8 +91,6 @@
 	// Foods from a LoseIt import, which can be archived all at once (docs/design.md, "LoseIt import").
 	const imported = $derived(data.imported);
 	const loadImported = () => invalidateAll();
-	// Deleting the account asks about shared foods only when there are some.
-	const sharedFoods = $derived(data.sharedFoods);
 	onMount(() => {
 		ready = true;
 	});
@@ -113,9 +111,7 @@
 	let summary = $state<Summary | null>(null);
 	// LoseIt imports: what the export cannot say for itself.
 	let weightUnit = $state<'kg' | 'lb'>('kg');
-	let shareFoods = $state(false);
 	let trashMissing = $state(false);
-	let removeShared = $state<'keep' | 'remove'>('keep');
 	let confirming = $state(false);
 	let understood = $state(false);
 
@@ -217,7 +213,6 @@
 		const params = new URLSearchParams({
 			zone: deviceZone(),
 			weightUnit,
-			share: shareFoods ? '1' : '0',
 			trashMissing: trashMissing ? '1' : '0'
 		});
 		if (apply) params.set('apply', '1');
@@ -270,7 +265,7 @@
 		run(
 			() =>
 				withRecentAuth(async () => {
-					await api('DELETE', '/api/v1/account', { removeSharedFoods: removeShared === 'remove' });
+					await api('DELETE', '/api/v1/account', {});
 					if (data.user) await clearDeviceData(data.user.id);
 					confirming = false;
 					await invalidateAll();
@@ -422,11 +417,6 @@
 									/>
 								</div>
 							</div>
-							<Switch
-								label={m.data_import_share()}
-								detail={m.data_import_share_detail()}
-								bind:checked={shareFoods}
-							/>
 							{#if missing > 0}
 								<Switch
 									label={m.data_import_missing_label({ count: String(missing) })}
@@ -477,19 +467,6 @@
 
 	<Card title={m.data_delete_title()}>
 		<p class="text-[0.8125rem] text-muted">{m.data_delete_body()}</p>
-		{#if sharedFoods > 0}
-			<Chips
-				label={sharedFoods === 1
-					? m.data_delete_shared_one()
-					: m.data_delete_shared({ count: String(sharedFoods) })}
-				bind:value={removeShared}
-				options={[
-					{ value: 'keep', label: m.data_delete_keep() },
-					{ value: 'remove', label: m.data_delete_remove() }
-				]}
-			/>
-			<p class="text-[0.8125rem] text-muted">{m.data_delete_shared_note()}</p>
-		{/if}
 		<p class="text-[0.8125rem] text-muted">{m.data_delete_backups()}</p>
 		<button
 			type="button"
@@ -503,12 +480,7 @@
 
 {#if confirming}
 	<Sheet title={m.data_delete_confirm_title()} onclose={() => (confirming = false)}>
-		<p class="text-[0.9375rem]">
-			{m.data_delete_confirm_body()}
-			{#if sharedFoods > 0}
-				{removeShared === 'keep' ? m.data_delete_confirm_keep() : m.data_delete_confirm_remove()}
-			{/if}
-		</p>
+		<p class="text-[0.9375rem]">{m.data_delete_confirm_body()}</p>
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<label class="flex min-h-11 items-center gap-3 text-[0.9375rem] font-semibold">
 			<input type="checkbox" bind:checked={understood} class="size-5 accent-[var(--bad)]" />

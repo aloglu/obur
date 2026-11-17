@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createFood, signedInAs, choose } from './fixtures.ts';
 
-test('create a recipe, log a serving, edit it without changing the diary, and share it as a plain food', async ({
+test('create a recipe, log a serving, edit it without changing the diary, and keep it private', async ({
 	page,
 	browser
 }, testInfo) => {
@@ -10,7 +10,6 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await createFood(page, {
 		name: `Kırmızı mercimek ${tag}`,
 		brand: null,
-		visibility: 'private',
 		basis: '100g',
 		nutrients: [
 			{ code: 'energy_kcal', value: 350, qualifier: 'reported' },
@@ -59,7 +58,7 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await expect(perServing).toContainText('300 g a serving');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('status')).toContainText(`Saved “Mercimek çorbası ${tag}”`);
-	await expect(page.getByRole('main')).toContainText('4 servings · Shared');
+	await expect(page.getByRole('main')).toContainText('4 servings');
 
 	// Logged from Log like any food: by the serving, or in grams thanks to the cooked weight.
 	await page.goto('/log');
@@ -90,14 +89,12 @@ test('create a recipe, log a serving, edit it without changing the diary, and sh
 	await page.goto('/');
 	await expect(dinner).toContainText('278');
 
-	// Another member sees the shared recipe as a food with totals, not its ingredients.
+	// Nobody else finds it.
 	const other = await browser.newContext({ ...testInfo.project.use });
 	const otherPage = await other.newPage();
 	await signedInAs(otherPage, `Komşu ${tag}`);
 	await otherPage.goto('/foods');
 	await otherPage.getByLabel('Search foods').fill(`mercimek corbasi ${tag}`);
-	await otherPage.getByRole('link', { name: new RegExp(`Mercimek çorbası ${tag}`) }).click();
-	await expect(otherPage.getByText('A recipe: values per serving')).toBeVisible();
-	await expect(otherPage.getByRole('main')).not.toContainText('mercimek ' + tag);
+	await expect(otherPage.getByText('No foods match. Create one with New food.')).toBeVisible();
 	await other.close();
 });

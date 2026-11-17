@@ -1,7 +1,7 @@
 // The bounded offline scope (docs/design.md): queued new entries with ordered, retry-safe sending, visible pending
 // state, cached viewing, and sign-out that never silently drops unsent entries.
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, createFood, makePrivate, signedInAs, openCaloriesOnly } from './fixtures.ts';
+import { apiAs, createFood, signedInAs, openCaloriesOnly } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
@@ -286,7 +286,7 @@ test('an entry the server refused after waiting offline stays until the person c
 	browser
 }, testInfo) => {
 	const tag = testInfo.project.name;
-	// Mehmet shares a food; Ayşe logs it while offline; Mehmet then makes it private.
+	// A queued entry names a food this person can't use (here someone else's), so the server refuses it.
 	const mehmet = await browser.newPage();
 	await signedInAs(mehmet, `Paylaşan ${tag}`);
 	const name = `Mercimek çorbası ${tag}`;
@@ -347,7 +347,6 @@ test('an entry the server refused after waiting offline stays until the person c
 		},
 		{ userId, foodId, name, date }
 	);
-	await makePrivate(foodId);
 	await page.reload();
 
 	// The server refuses it; the phone keeps it and says so at the top of Today.

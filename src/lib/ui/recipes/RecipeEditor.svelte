@@ -15,7 +15,6 @@
 	import type { MeasureOption } from '#lib/shared/unit-options.ts';
 	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 	import Button from '../Button.svelte';
-	import Chips from '../Chips.svelte';
 	import FoodIcon from '../FoodIcon.svelte';
 	import Notice from '../Notice.svelte';
 	import TextField from '../TextField.svelte';
@@ -37,7 +36,6 @@
 	const id = start?.id ?? crypto.randomUUID();
 
 	let name = $state(start?.name ?? '');
-	let visibility = $state<'private' | 'shared'>(start?.visibility ?? 'shared');
 	// The chosen icon; null shows the one the name suggests.
 	let icon = $state<string | null>(start?.icon ?? null);
 	let choosingIcon = $state(false);
@@ -80,7 +78,6 @@
 	const dirty = $derived(
 		!start ||
 			name !== start.name ||
-			visibility !== start.visibility ||
 			icon !== start.icon ||
 			servings !== start.servings ||
 			cookedYieldG !== start.cookedYieldG ||
@@ -113,7 +110,6 @@
 			const saved = await api<Recipe>('PUT', `/api/v1/recipes/${id}`, {
 				version: start?.version ?? null,
 				name,
-				visibility,
 				icon,
 				servings,
 				cookedYieldG,
@@ -186,14 +182,6 @@
 				>{m.icon_change()}</button
 			>
 		</div>
-		<Chips
-			label={m.food_visibility()}
-			bind:value={visibility}
-			options={[
-				{ value: 'shared', label: m.food_visibility_shared() },
-				{ value: 'private', label: m.food_visibility_private() }
-			]}
-		/>
 		<div class="grid grid-cols-2 items-end gap-2">
 			<TextField
 				label={m.recipe_servings()}
