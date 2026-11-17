@@ -51,6 +51,8 @@ export const foods = pgTable(
 			onDelete: 'set null'
 		}),
 		archivedAt: timestamp('archived_at', { withTimezone: true }),
+		// In Recently deleted since then (only an archived food can be deleted); purged for good after 30 days.
+		deletedAt: timestamp('deleted_at', { withTimezone: true }),
 		version: integer('version').notNull().default(1),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
@@ -74,7 +76,12 @@ export const foods = pgTable(
 			sql`${t.icon} is null or ${t.icon} ~ '^[0-9A-F]{4,5}(-[0-9A-F]{4,5}){0,3}$'`
 		),
 		check('foods_version_positive', sql`${t.version} >= 1`),
+		check('foods_deleted_archived', sql`${t.deletedAt} is null or ${t.archivedAt} is not null`),
 		index('foods_owner_id_idx').on(t.ownerId),
+		// Recently deleted and the nightly purge.
+		index('foods_trash_idx')
+			.on(t.ownerId, t.deletedAt)
+			.where(sql`${t.deletedAt} is not null`),
 		index('foods_barcode_idx').on(t.barcode),
 		// A curated food is loaded once per reference record (dataset and ID), so reloading never duplicates it.
 		uniqueIndex('foods_curated_source_idx')

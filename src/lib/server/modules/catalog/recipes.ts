@@ -42,7 +42,8 @@ async function loadRecipe(tx: Tx, id: string): Promise<Recipe> {
 		.select({ food: foods, recipe: recipes })
 		.from(recipes)
 		.innerJoin(foods, eq(foods.id, recipes.foodId))
-		.where(eq(recipes.foodId, id));
+		// A deleted recipe is gone everywhere but Recently deleted.
+		.where(and(eq(recipes.foodId, id), isNull(foods.deletedAt)));
 	if (!row) throw new CatalogError('not_found');
 	const items = await tx
 		.select()
@@ -102,7 +103,7 @@ const servingSize = (servings: number, cookedYieldG: number | null) =>
 
 export function createRecipes(db: Database, now: () => Date = () => new Date()) {
 	return {
-		/** The person's recipes, most recently changed first, with energy per serving when known. */
+		/** The person's recipes, in use and archived, most recently changed first, with energy per serving when known. */
 		async list(userId: string): Promise<RecipeSummary[]> {
 			return withUser(db, userId, async (tx) => {
 				const rows = await tx
@@ -120,6 +121,7 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 						foodNutrients,
 						and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
 					)
+					.where(isNull(foods.deletedAt))
 					.orderBy(desc(foods.updatedAt));
 				return rows.map((r) => ({ ...r, archived: r.archived !== null }));
 			});

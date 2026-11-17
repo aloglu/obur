@@ -115,3 +115,54 @@ describe('housekeeping', () => {
 		await expect(asApp).rejects.toMatchObject({ code: '42501' });
 	});
 });
+
+describe('purging deleted foods and saved meals', () => {
+	it('removes them after 30 days; entries keep their snapshot, and a retried saved meal stays gone', async () => {
+		const { createCatalog } = await import('../catalog/index.ts');
+		const { createSavedMeals } = await import('./saved-meals.ts');
+		const catalog = createCatalog(drizzle(appSql));
+		const saved = createSavedMeals(drizzle(appSql));
+		const id = await catalog.createFood(MEHMET, {
+			name: 'Simit',
+			brand: null,
+			basis: '100g',
+			servingLabel: null,
+			servingSize: null,
+			barcode: null,
+			icon: null,
+			nutrients: [{ code: 'energy_kcal', value: 275, qualifier: 'reported' }],
+			servings: []
+		});
+		const food = await catalog.getFood(MEHMET, id);
+		const entry = await diary.logFood(MEHMET, ctx, food, 100, { kind: 'mass', unit: 'g' });
+		const meal = await saved.createFromEntries(MEHMET, { name: 'Breakfast', entryIds: [entry.id] });
+		await catalog.bulk(MEHMET, 'archive', { ids: [id] });
+		await catalog.bulk(MEHMET, 'delete', { ids: [id] });
+		await saved.remove(MEHMET, meal.id);
+		await admin`update foods set deleted_at = now() - interval '40 days' where id = ${id}`;
+		await admin`update saved_meals set deleted_at = now() - interval '40 days' where id = ${meal.id}`;
+
+		const counts = await purge(new Date(Date.now() - 31 * 86400_000).toISOString());
+		expect(counts.map((r) => ({ ...r }))).toEqual([
+			{ kind: 'food', purged: 1 },
+			{ kind: 'saved_meal', purged: 1 }
+		]);
+		expect(await admin`select id from foods where id = ${id}`).toHaveLength(0);
+		const kept = await diary.get(MEHMET, entry.id);
+		expect(kept).toMatchObject({ foodId: null, food: { name: 'Simit' } });
+		expect(kept.nutrients.energy_kcal?.value).toBe(275);
+		await expect(
+			saved.createFromEntries(MEHMET, { id: meal.id, name: 'Breakfast', entryIds: [entry.id] })
+		).rejects.toEqual(new DiaryError('gone'));
+	});
+
+	it('keeps foods and saved meals deleted less than 30 days ago', async () => {
+		const { createSavedMeals } = await import('./saved-meals.ts');
+		const saved = createSavedMeals(drizzle(appSql));
+		const entry = await diary.quickAdd(MEHMET, ctx, 100, 'Tea');
+		const meal = await saved.createFromEntries(MEHMET, { name: 'Tea', entryIds: [entry.id] });
+		await saved.remove(MEHMET, meal.id);
+		expect(await purge(new Date(Date.now() - 31 * 86400_000).toISOString())).toHaveLength(0);
+		expect(await saved.trashCount(MEHMET)).toBe(1);
+	});
+});

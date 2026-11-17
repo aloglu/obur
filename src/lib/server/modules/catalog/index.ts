@@ -13,8 +13,11 @@ export {
 	CatalogError,
 	createCatalog,
 	matchable,
+	MAX_BULK_FOODS,
 	sameFoodIn,
 	type Catalog,
+	type DeletedFood,
+	type FoodAction,
 	type LabelScanTotals
 } from './service.ts';
 export { loadCuratedFoods, readCuratedFile, type CuratedFile } from './curated.ts';

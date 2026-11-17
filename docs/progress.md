@@ -6,7 +6,9 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 - Owner asked: archived foods out of the Foods list into their own place, reachable from the top; delete archived foods one at a time or several at once; same for recipes. Agreed: delete goes to Recently deleted (30 days, restorable); only archived items can be deleted; diary, saved meals and recipes keep their snapshots; a later LoseIt import must not bring a deleted food back.
 - Review page with seven stops published as an Artifact (owner's private link). Proposed: a row "Archived foods" under New food (or "In use / Archived" chips), Select with Select all, Delete with Undo and no question, Recently deleted grouped by Entries/Foods/Recipes/Saved meals, saved meal delete moves to Recently deleted.
-- Next: read the owner's verdicts, then build; change docs/design.md ("Foods are archived, never deleted") in the same change.
+- Verdicts read (2026-11-18): stops 1–6 approved, the row picked for stop 1; stop 7 (saved meals) built as shown after the owner's go. Saved meals keep no archive; the owner kept both saved meals and recipes.
+- Step 1 done: `foods.deleted_at` (only an archived food), `saved_meals.deleted_at`, the nightly purge takes both after 30 days with markers (`food`, `saved_meal`), catalog `bulk` (archive/restore/delete/undelete by IDs or all), trash lists and counts, export/import carry the dates, a LoseIt import no longer links entries to a purged food. Database tests: 251 passed; all Vitest 1157 passed.
+- Next: API routes (bulk, saved meal restore, Recently deleted), then the screens, then docs.
 
 ## Scan's remote model moved off `gpt-5-mini` (2026-11-18), for tonight's release
 

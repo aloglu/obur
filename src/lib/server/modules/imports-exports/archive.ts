@@ -75,6 +75,8 @@ export const FoodRecord = v.object({
 	sourceMeta: v.nullable(v.record(v.string(), v.unknown())),
 	derivedFrom: v.nullable(Uuid),
 	archivedAt: v.nullable(Timestamp),
+	// Added 2026-11-18: in Recently deleted since then (archived foods only). Older archives have none.
+	deletedAt: v.optional(v.nullable(Timestamp), null),
 	createdAt: Timestamp,
 	updatedAt: Timestamp,
 	nutrients: v.array(NutrientValue),
@@ -185,6 +187,8 @@ export const SavedMealRecord = v.object({
 	id: Uuid,
 	name: Text(120),
 	revision: v.pipe(v.number(), v.integer(), v.minValue(1)),
+	// Added 2026-11-18: in Recently deleted since then. Older archives have none.
+	deletedAt: v.optional(v.nullable(Timestamp), null),
 	createdAt: Timestamp,
 	updatedAt: Timestamp,
 	items: v.pipe(v.array(SavedMealItemRecord), v.minLength(1), v.maxLength(100))

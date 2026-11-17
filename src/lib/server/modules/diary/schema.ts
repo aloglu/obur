@@ -120,8 +120,8 @@ export const dayCompletions = pgTable(
 	]
 );
 
-// Minimal markers for trash rows purged after 30 days (diary and body readings), so a late offline retry of the
-// same client ID is recognised instead of recreating the deleted record. Written only by app_purge_trash().
+// Minimal markers for trash rows purged after 30 days (diary, body readings, foods and saved meals), so a late retry
+// of the same client ID is recognised instead of recreating the deleted record. Written only by app_purge_trash().
 export const purgedRecords = pgTable(
 	'purged_records',
 	{
@@ -129,11 +129,16 @@ export const purgedRecords = pgTable(
 		userId: uuid('user_id')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
-		kind: text('kind', { enum: ['diary', 'weight', 'water', 'activity'] }).notNull(),
+		kind: text('kind', {
+			enum: ['diary', 'weight', 'water', 'activity', 'food', 'saved_meal']
+		}).notNull(),
 		purgedAt: timestamp('purged_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
-		check('purged_records_kind_valid', sql`${t.kind} in ('diary', 'weight', 'water', 'activity')`)
+		check(
+			'purged_records_kind_valid',
+			sql`${t.kind} in ('diary', 'weight', 'water', 'activity', 'food', 'saved_meal')`
+		)
 	]
 );
 
@@ -148,11 +153,16 @@ export const savedMeals = pgTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		name: text('name').notNull(),
 		revision: integer('revision').notNull().default(1),
+		// In Recently deleted since then; purged for good after 30 days.
+		deletedAt: timestamp('deleted_at', { withTimezone: true }),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
 		unique('saved_meals_id_user').on(t.id, t.userId),
+		index('saved_meals_trash_idx')
+			.on(t.userId, t.deletedAt)
+			.where(sql`${t.deletedAt} is not null`),
 		check('saved_meals_name_length', sql`char_length(${t.name}) between 1 and 120`),
 		check('saved_meals_revision_positive', sql`${t.revision} >= 1`),
 		index('saved_meals_user_idx').on(t.userId, t.updatedAt)

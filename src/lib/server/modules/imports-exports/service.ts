@@ -225,6 +225,7 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 				sourceMeta: mine ? ((f.sourceMeta as Record<string, unknown> | null) ?? null) : null,
 				derivedFrom: f.derivedFrom && exported.has(f.derivedFrom) ? f.derivedFrom : null,
 				archivedAt: iso(f.archivedAt),
+				deletedAt: iso(f.deletedAt),
 				createdAt: f.createdAt.toISOString(),
 				updatedAt: f.updatedAt.toISOString(),
 				nutrients: nutrients
@@ -337,6 +338,7 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 			id: sm.id,
 			name: sm.name,
 			revision: sm.revision,
+			deletedAt: iso(sm.deletedAt),
 			createdAt: sm.createdAt.toISOString(),
 			updatedAt: sm.updatedAt.toISOString(),
 			items: mealItems
@@ -849,11 +851,14 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 		(chunk) => tx.insert(foodServings).values(chunk)
 	);
 	for (const f of newFoods) {
-		// New foods are created live (as the insert policy requires), then archived with their date.
+		// New foods are created live (as the insert policy requires), then archived, or deleted, with their dates.
 		if (f.archivedAt) {
 			await tx
 				.update(foods)
-				.set({ archivedAt: new Date(f.archivedAt) })
+				.set({
+					archivedAt: new Date(f.archivedAt),
+					deletedAt: f.deletedAt ? new Date(f.deletedAt) : null
+				})
 				.where(eq(foods.id, localId('food', f.id)));
 		}
 		remember('food', f.id);
@@ -961,6 +966,7 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 				id: localId('saved_meal', sm.id),
 				userId,
 				name: sm.name,
+				deletedAt: sm.deletedAt ? new Date(sm.deletedAt) : null,
 				createdAt: new Date(sm.createdAt),
 				updatedAt: new Date(sm.updatedAt)
 			}))

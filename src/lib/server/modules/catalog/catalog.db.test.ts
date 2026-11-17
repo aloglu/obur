@@ -526,7 +526,7 @@ describe('label scan edit counts', () => {
 });
 
 describe('own foods', () => {
-	it("lists only the person's foods, a page at a time, archived last and left out of the count", async () => {
+	it("lists only the person's foods in use, a page at a time, and the archive apart", async () => {
 		const names = ['Çörek', 'Ayran', 'Börek'];
 		const ids = [];
 		for (const name of names) ids.push(await catalog.createFood(MEHMET, food({ name })));
@@ -534,16 +534,116 @@ describe('own foods', () => {
 		await catalog.setArchived(MEHMET, ids[1], true);
 
 		const first = await catalog.ownFoods(MEHMET, 0, 1);
-		expect(first.total).toBe(2);
-		expect(first.more).toBe(true);
+		expect(first).toMatchObject({ total: 2, archivedTotal: 1, more: true });
 		expect(first.foods.map((f) => f.name)).toEqual(['Börek']);
 
 		const rest = await catalog.ownFoods(MEHMET, 1, 50);
 		expect(rest.more).toBe(false);
-		expect(rest.foods.map((f) => [f.name, f.archived])).toEqual([
-			['Çörek', false],
-			['Ayran', true]
+		expect(rest.foods.map((f) => [f.name, f.archived])).toEqual([['Çörek', false]]);
+
+		const archive = await catalog.ownFoods(MEHMET, 0, 50, { archived: true });
+		expect(archive).toMatchObject({ total: 1, archivedTotal: 1 });
+		expect(archive.foods.map((f) => [f.name, f.archived])).toEqual([['Ayran', true]]);
+		expect((await catalog.ownFoods(MEHMET, 0, 50, { archived: true, query: 'ayr' })).total).toBe(1);
+		expect((await catalog.ownFoods(MEHMET, 0, 50, { archived: true, query: 'börek' })).total).toBe(
+			0
+		);
+	});
+});
+
+describe('archived and deleted foods', () => {
+	async function three(userId = MEHMET) {
+		const ids = [];
+		for (const name of ['Ayran', 'Börek', 'Çörek'])
+			ids.push(await catalog.createFood(userId, food({ name })));
+		return ids;
+	}
+
+	it('deletes only archived foods, all or none, and brings them back to the archive', async () => {
+		const [a, b, c] = await three();
+		expect(await catalog.bulk(MEHMET, 'archive', { ids: [a, b] })).toHaveLength(2);
+		// c is still in use: the whole step is refused and nothing changes.
+		expect(await errorCode(catalog.bulk(MEHMET, 'delete', { ids: [a, c] }))).toBe('not_found');
+		expect((await catalog.getFood(MEHMET, a)).archived).toBe(true);
+
+		expect(await catalog.bulk(MEHMET, 'delete', { ids: [a] })).toEqual([a]);
+		// Gone everywhere but Recently deleted.
+		expect(await errorCode(catalog.getFood(MEHMET, a))).toBe('not_found');
+		expect(await catalog.foodsById(MEHMET, [a, c])).toHaveLength(1);
+		expect(
+			(await catalog.ownFoods(MEHMET, 0, 50, { archived: true })).foods.map((f) => f.id)
+		).toEqual([b]);
+		expect(await catalog.searchFoods(MEHMET, 'Ayran')).toEqual([]);
+		expect(await errorCode(catalog.setArchived(MEHMET, a, false))).toBe('not_found');
+		expect(await errorCode(catalog.updateFood(MEHMET, a, 3, food()))).toBe('not_found');
+		expect((await catalog.trash(MEHMET)).map((f) => [f.name, f.recipe])).toEqual([
+			['Ayran', false]
 		]);
+		expect(await catalog.trashCount(MEHMET)).toBe(1);
+
+		expect(await catalog.bulk(MEHMET, 'undelete', { ids: [a] })).toEqual([a]);
+		expect(await catalog.getFood(MEHMET, a)).toMatchObject({ archived: true });
+		expect(await catalog.trashCount(MEHMET)).toBe(0);
+		expect(await catalog.bulk(MEHMET, 'restore', { ids: [a, b] })).toHaveLength(2);
+		expect(await catalog.searchFoods(MEHMET, 'Ayran')).toHaveLength(1);
+	});
+
+	it('Select all takes every archived food of the person, not their foods in use or recipes', async () => {
+		const [a, b, c] = await three();
+		const [theirs] = await three(ZEYNEP);
+		await catalog.bulk(MEHMET, 'archive', { ids: [a, b] });
+		await catalog.bulk(ZEYNEP, 'archive', { ids: [theirs] });
+		const [{ id: recipe }] =
+			await admin`insert into foods (owner_id, name, search_key, basis, serving_label, origin, archived_at)
+			values (${MEHMET}, 'Soup', 'soup', 'serving', '1 serving', 'recipe', now()) returning id`;
+
+		expect((await catalog.bulk(MEHMET, 'delete', { all: 'food' })).sort()).toEqual([a, b].sort());
+		expect((await catalog.getFood(MEHMET, c)).archived).toBe(false);
+		expect(await catalog.getFood(MEHMET, recipe)).toMatchObject({ archived: true });
+		expect(await catalog.getFood(ZEYNEP, theirs)).toMatchObject({ archived: true });
+		expect(await catalog.bulk(MEHMET, 'delete', { all: 'recipe' })).toEqual([recipe]);
+		expect((await catalog.trash(MEHMET)).map((f) => f.recipe).sort()).toEqual([false, false, true]);
+		expect(await catalog.trash(ZEYNEP)).toEqual([]);
+	});
+
+	it("never touches someone else's foods, through the service or straight SQL", async () => {
+		const [theirs] = await three(ZEYNEP);
+		await catalog.bulk(ZEYNEP, 'archive', { ids: [theirs] });
+		expect(await errorCode(catalog.bulk(MEHMET, 'delete', { ids: [theirs] }))).toBe('not_found');
+		const changed = await asUser(
+			MEHMET,
+			(tx) => tx`update foods set deleted_at = now() where id = ${theirs} returning id`
+		);
+		expect(changed).toHaveLength(0);
+		await catalog.bulk(ZEYNEP, 'delete', { ids: [theirs] });
+		expect(await errorCode(catalog.bulk(MEHMET, 'undelete', { ids: [theirs] }))).toBe('not_found');
+		expect(await catalog.trashCount(MEHMET)).toBe(0);
+		expect(await catalog.trashCount(ZEYNEP)).toBe(1);
+		// Without an identity nothing is visible or changed.
+		const none = await appSql.begin(
+			(tx) => tx`update foods set deleted_at = null where id = ${theirs} returning id`
+		);
+		expect(none).toHaveLength(0);
+	});
+
+	it('refuses deleting a food in use, even with straight SQL', async () => {
+		const [a] = await three();
+		expect(
+			await errorCode(
+				asUser(MEHMET, (tx) => tx`update foods set deleted_at = now() where id = ${a}`)
+			)
+		).toBe('23514');
+	});
+
+	it('LoseIt counts and bulk archive leave deleted foods alone', async () => {
+		const ids = [];
+		for (const name of ['Ayran', 'Börek'])
+			ids.push(await catalog.createFood(MEHMET, food({ name }), { origin: 'loseit' }));
+		await catalog.setImportedArchived(MEHMET, true);
+		await catalog.bulk(MEHMET, 'delete', { ids: [ids[0]] });
+		expect(await catalog.importedFoods(MEHMET)).toEqual({ active: 0, archived: 1 });
+		expect(await catalog.setImportedArchived(MEHMET, false)).toBe(1);
+		expect(await catalog.trashCount(MEHMET)).toBe(1);
 	});
 });
 

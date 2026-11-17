@@ -205,7 +205,25 @@ describe('managing', () => {
 		expect(await saved.list(ZEYNEP)).toEqual([]);
 		expect(await saved.count(ZEYNEP)).toBe(0);
 		expect(await diary.day(ZEYNEP, '2026-10-25')).toHaveLength(2);
-		expect(await asUser(ZEYNEP, (tx) => tx`select id from saved_meal_items`)).toHaveLength(0);
+		// In Recently deleted: gone from everything else, and only its owner sees or restores it.
+		expect((await saved.trash(ZEYNEP)).map((m) => m.name)).toEqual(['Pazar kahvaltısı']);
+		expect(await saved.trashCount(ZEYNEP)).toBe(1);
+		expect(await saved.trash(MEHMET)).toEqual([]);
+		expect(await errorCode(saved.get(ZEYNEP, meal.id))).toBe('not_found');
+		expect(await errorCode(saved.rename(ZEYNEP, meal.id, 2, 'Again'))).toBe('not_found');
+		expect(await errorCode(saved.remove(ZEYNEP, meal.id))).toBe('not_found');
+		expect(await errorCode(saved.restore(MEHMET, [meal.id]))).toBe('not_found');
+		// A late retry of the create, with the same ID, doesn't bring it back.
+		const entryIds = (await diary.day(ZEYNEP, '2026-10-25')).map((e) => e.id);
+		expect(
+			await errorCode(saved.createFromEntries(ZEYNEP, { id: meal.id, name: 'Kahvaltı', entryIds }))
+		).toBe('gone');
+		await saved.restore(ZEYNEP, [meal.id]);
+		expect(await saved.get(ZEYNEP, meal.id)).toMatchObject({
+			name: 'Pazar kahvaltısı',
+			itemCount: 2
+		});
+		expect(await saved.trashCount(ZEYNEP)).toBe(0);
 	});
 
 	it('refreshes only on request, by serving name after a food edit, and keeps what cannot be refreshed', async () => {

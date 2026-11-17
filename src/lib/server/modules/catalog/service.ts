@@ -1,6 +1,6 @@
 // Food catalog operations, all under the signed-in person's identity (RLS decides who sees and edits what):
 // every food is its owner's alone, and built-in foods are read-only for everyone (docs/design.md, "Foods are private").
-import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { foodWarnings } from '../../../shared/food-checks.ts';
 import type { FoodInput } from '../../../shared/food-input.ts';
@@ -10,6 +10,21 @@ import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts
 import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
 import type { ScanEdits } from '../../../shared/scan-edits.ts';
 import { foodNutrients, foods, foodServings, householdMeasures, labelScanEdits } from './schema.ts';
+
+/** Most foods one bulk action changes (Select all on the archive of a large LoseIt import). */
+export const MAX_BULK_FOODS = 5000;
+
+/**
+ * What a bulk action does (docs/design.md, "Archived and deleted foods"): archive a food in use, restore an archived
+ * one, delete an archived one to Recently deleted, or bring a deleted one back to the archive.
+ */
+export type FoodAction = 'archive' | 'restore' | 'delete' | 'undelete';
+
+/** A food, or recipe, in Recently deleted. */
+export interface DeletedFood extends FoodSearchResult {
+	recipe: boolean;
+	deletedAt: string;
+}
 
 /** Totals across members of label scans saved with edit counts (counts only). */
 export interface LabelScanTotals {
@@ -66,7 +81,8 @@ export async function load(tx: Tx, foodId: string): Promise<FoodDetail | undefin
 			mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`
 		})
 		.from(foods)
-		.where(eq(foods.id, foodId));
+		// A deleted food is gone everywhere but Recently deleted.
+		.where(and(eq(foods.id, foodId), isNull(foods.deletedAt)));
 	if (!row) return undefined;
 	const nutrients = await tx
 		.select({
@@ -298,6 +314,95 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			});
 		},
 
+		/**
+		 * Archives, restores, deletes or brings back the person's own foods or recipes, all or none, in one step.
+		 * `ids` names them; `all` takes every one the action applies to (every archived food for Select all). Each must be
+		 * in the state the action starts from (in use, archived, archived, deleted), or nothing changes. Returns the IDs
+		 * changed, so the same step can be undone.
+		 */
+		async bulk(
+			userId: string,
+			action: FoodAction,
+			target: { ids: string[] } | { all: 'food' | 'recipe' }
+		): Promise<string[]> {
+			const from = {
+				archive: and(isNull(foods.archivedAt), isNull(foods.deletedAt)),
+				restore: and(sql`${foods.archivedAt} is not null`, isNull(foods.deletedAt)),
+				delete: and(sql`${foods.archivedAt} is not null`, isNull(foods.deletedAt)),
+				undelete: sql`${foods.deletedAt} is not null`
+			}[action];
+			const set = {
+				archive: { archivedAt: now() },
+				restore: { archivedAt: null },
+				delete: { deletedAt: now() },
+				undelete: { deletedAt: null }
+			}[action];
+			const ids = 'ids' in target ? [...new Set(target.ids)] : null;
+			if (ids && (ids.length === 0 || ids.length > MAX_BULK_FOODS))
+				throw new CatalogError('not_found');
+			return withUser(db, userId, async (tx) => {
+				const which = ids
+					? inArray(foods.id, ids)
+					: target && 'all' in target && target.all === 'recipe'
+						? eq(foods.origin, 'recipe')
+						: ne(foods.origin, 'recipe');
+				const changed = await tx
+					.update(foods)
+					.set({ ...set, version: sql`${foods.version} + 1`, updatedAt: now() })
+					.where(and(sql`${foods.ownerId} = app_current_user_id()`, which, from))
+					.returning({ id: foods.id });
+				if (ids && changed.length !== ids.length) throw new CatalogError('not_found');
+				if (!ids && changed.length > MAX_BULK_FOODS) throw new CatalogError('not_found');
+				return changed.map((r) => r.id);
+			});
+		},
+
+		/** The person's foods and recipes in Recently deleted, most recently deleted first. */
+		async trash(userId: string): Promise<DeletedFood[]> {
+			return withUser(db, userId, async (tx) => {
+				const rows = await tx
+					.select({
+						id: foods.id,
+						name: foods.name,
+						brand: foods.brand,
+						basis: foods.basis,
+						servingLabel: foods.servingLabel,
+						icon: foods.icon,
+						kcal: foodNutrients.value,
+						origin: foods.origin,
+						deletedAt: foods.deletedAt
+					})
+					.from(foods)
+					.leftJoin(
+						foodNutrients,
+						and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
+					)
+					.where(
+						and(sql`${foods.ownerId} = app_current_user_id()`, sql`${foods.deletedAt} is not null`)
+					)
+					.orderBy(desc(foods.deletedAt), asc(foods.searchKey));
+				return rows.map(({ origin, deletedAt, ...r }) => ({
+					...r,
+					mine: true,
+					recipe: origin === 'recipe',
+					deletedAt: deletedAt!.toISOString()
+				}));
+			});
+		},
+
+		/** How many of the person's foods and recipes are in Recently deleted (More's count). */
+		async trashCount(userId: string): Promise<number> {
+			const [row] = await withUser(db, userId, (tx) =>
+				tx
+					.select({ n: sql<number>`count(*)::int` })
+					.from(foods)
+					.where(
+						and(sql`${foods.ownerId} = app_current_user_id()`, sql`${foods.deletedAt} is not null`)
+					)
+			);
+			return row.n;
+		},
+
 		/** How many of the person's own foods came from a LoseIt import, in use and archived. */
 		async importedFoods(userId: string): Promise<{ active: number; archived: number }> {
 			return withUser(db, userId, async (tx) => {
@@ -307,7 +412,9 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						archived: sql<number>`count(*) filter (where ${foods.archivedAt} is not null)::int`
 					})
 					.from(foods)
-					.where(and(eq(foods.ownerId, userId), eq(foods.origin, 'loseit')));
+					.where(
+						and(eq(foods.ownerId, userId), eq(foods.origin, 'loseit'), isNull(foods.deletedAt))
+					);
 				return row;
 			});
 		},
@@ -329,6 +436,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						and(
 							eq(foods.ownerId, userId),
 							eq(foods.origin, 'loseit'),
+							isNull(foods.deletedAt),
 							archived ? sql`${foods.archivedAt} is null` : sql`${foods.archivedAt} is not null`
 						)
 					)
@@ -388,20 +496,39 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		 * (recent) foods come first, then the person's own foods, then built-in ones.
 		 */
 		/**
-		 * The person's own foods and scans, alphabetically and a page at a time, with archived ones last so they can
-		 * be restored. Recipes have their own list. `total` counts the foods still in use.
+		 * The person's own foods and scans, alphabetically and a page at a time: those in use, or the archived ones (with
+		 * `archived`, optionally narrowed by `query`). Recipes have their own list; deleted foods are in Recently deleted.
+		 * `total` counts the whole list asked for, `archivedTotal` the archive (for the row that opens it).
 		 */
 		async ownFoods(
 			userId: string,
 			offset = 0,
-			limit = 50
+			limit = 50,
+			options: { archived?: boolean; query?: string } = {}
 		): Promise<{
 			foods: (FoodSearchResult & { archived: boolean })[];
 			total: number;
+			archivedTotal: number;
 			more: boolean;
 		}> {
+			const archived = options.archived ?? false;
+			const words = foldForSearch(options.query ?? '')
+				.slice(0, 100)
+				.split(' ')
+				.filter(Boolean)
+				.slice(0, 8);
 			return withUser(db, userId, async (tx) => {
-				const own = and(sql`${foods.ownerId} = app_current_user_id()`, ne(foods.origin, 'recipe'));
+				const mine = and(
+					sql`${foods.ownerId} = app_current_user_id()`,
+					ne(foods.origin, 'recipe'),
+					isNull(foods.deletedAt)
+				);
+				const own = and(
+					mine,
+					archived ? sql`${foods.archivedAt} is not null` : isNull(foods.archivedAt),
+					// foldForSearch leaves only letters, digits and spaces, so LIKE wildcards cannot appear.
+					...words.map((w) => sql`${foods.searchKey} like ${`%${w}%`}`)
+				);
 				const size = Math.min(Math.max(limit, 1), 100);
 				const rows = await tx
 					.select({
@@ -420,13 +547,16 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
 					)
 					.where(own)
-					.orderBy(sql`${foods.archivedAt} is not null`, asc(foods.searchKey), asc(foods.id))
+					.orderBy(asc(foods.searchKey), asc(foods.id))
 					.offset(Math.max(offset, 0))
 					.limit(size + 1);
-				const [{ total }] = await tx
-					.select({ total: sql<number>`count(*)::int` })
+				const [{ total, archivedTotal }] = await tx
+					.select({
+						total: sql<number>`count(*) filter (where ${own})::int`,
+						archivedTotal: sql<number>`count(*) filter (where ${foods.archivedAt} is not null)::int`
+					})
 					.from(foods)
-					.where(and(own, sql`${foods.archivedAt} is null`));
+					.where(mine);
 				return {
 					foods: rows.slice(0, size).map(({ archivedAt, ...r }) => ({
 						...r,
@@ -434,6 +564,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						archived: archivedAt !== null
 					})),
 					total,
+					archivedTotal,
 					more: rows.length > size
 				};
 			});
@@ -570,7 +701,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`
 					})
 					.from(foods)
-					.where(inArray(foods.id, ids));
+					.where(and(inArray(foods.id, ids), isNull(foods.deletedAt)));
 				const nutrients = await tx
 					.select({
 						foodId: foodNutrients.foodId,

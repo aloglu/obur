@@ -2,7 +2,7 @@
 // like a diary entry. Logging one creates ordinary, editable entries in one transaction; refreshing items to the
 // catalog's current values is an explicit action. Private to the owner.
 import { randomUUID } from 'node:crypto';
-import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { currentUnit, snapshotNutrients } from '../../../shared/diary-rules.ts';
 import type {
@@ -13,7 +13,7 @@ import type {
 	SnapshotUnit
 } from '../../../shared/diary-types.ts';
 import type { FoodDetail } from '../../../shared/food-types.ts';
-import { diaryEntries, savedMealItems, savedMeals } from './schema.ts';
+import { diaryEntries, purgedRecords, savedMealItems, savedMeals } from './schema.ts';
 import { DiaryError, insertEntry, snapshotOf, type EntryContext } from './service.ts';
 
 export const MAX_ITEMS = 100;
@@ -58,9 +58,28 @@ function summary(
 	};
 }
 
+const live = isNull(savedMeals.deletedAt);
+
+/**
+ * A create that reuses the ID of a meal now in Recently deleted, or purged from it, is gone rather than made again (a
+ * late retry from a phone must not bring a deleted meal back).
+ */
+async function refuseDeleted(tx: Tx, existing: MealRow | undefined, id: string) {
+	if (existing?.deletedAt) throw new DiaryError('gone');
+	if (existing) return;
+	const [purged] = await tx
+		.select({ id: purgedRecords.id })
+		.from(purgedRecords)
+		.where(eq(purgedRecords.id, id));
+	if (purged) throw new DiaryError('gone');
+}
+
 export function createSavedMeals(db: Database, now: () => Date = () => new Date()) {
 	async function load(tx: Tx, id: string): Promise<SavedMeal> {
-		const [meal] = await tx.select().from(savedMeals).where(eq(savedMeals.id, id));
+		const [meal] = await tx
+			.select()
+			.from(savedMeals)
+			.where(and(eq(savedMeals.id, id), live));
 		if (!meal) throw new DiaryError('not_found');
 		const items = await tx
 			.select()
@@ -74,7 +93,9 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 		/** All of the person's saved meals, most recently changed first. */
 		/** How many saved meals the person has (More's count). */
 		async count(userId: string): Promise<number> {
-			const [row] = await withUser(db, userId, (tx) => tx.select({ n: count() }).from(savedMeals));
+			const [row] = await withUser(db, userId, (tx) =>
+				tx.select({ n: count() }).from(savedMeals).where(live)
+			);
 			return row.n;
 		},
 
@@ -83,6 +104,7 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 				const meals = await tx
 					.select()
 					.from(savedMeals)
+					.where(live)
 					.orderBy(desc(savedMeals.updatedAt))
 					.limit(500);
 				if (meals.length === 0) return [];
@@ -126,6 +148,7 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 			if (ids.length === 0 || ids.length > MAX_ITEMS) throw new DiaryError('not_found');
 			return withUser(db, userId, async (tx) => {
 				const [existing] = await tx.select().from(savedMeals).where(eq(savedMeals.id, id));
+				await refuseDeleted(tx, existing, id);
 				if (existing) {
 					if (existing.name !== input.name) throw new DiaryError('conflict');
 					return load(tx, id);
@@ -179,6 +202,7 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 				throw new DiaryError('not_found');
 			return withUser(db, userId, async (tx) => {
 				const [existing] = await tx.select().from(savedMeals).where(eq(savedMeals.id, input.id));
+				await refuseDeleted(tx, existing, input.id);
 				if (input.revision === null && existing) {
 					if (existing.name !== input.name) throw new DiaryError('conflict');
 					return load(tx, input.id);
@@ -266,7 +290,7 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 				const [updated] = await tx
 					.update(savedMeals)
 					.set({ name, revision: expectedRevision + 1, updatedAt: now() })
-					.where(and(eq(savedMeals.id, id), eq(savedMeals.revision, expectedRevision)))
+					.where(and(eq(savedMeals.id, id), eq(savedMeals.revision, expectedRevision), live))
 					.returning();
 				if (!updated) {
 					await load(tx, id); // not_found when it does not exist
@@ -276,15 +300,77 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 			});
 		},
 
-		/** Deletes a saved meal and its items. Entries logged from it are ordinary entries and stay. */
+		/**
+		 * Moves a saved meal to Recently deleted, where it can be restored for 30 days. Entries logged from it are
+		 * ordinary entries and stay.
+		 */
 		async remove(userId: string, id: string): Promise<void> {
 			await withUser(db, userId, async (tx) => {
 				const deleted = await tx
-					.delete(savedMeals)
-					.where(eq(savedMeals.id, id))
+					.update(savedMeals)
+					.set({ deletedAt: now() })
+					.where(and(eq(savedMeals.id, id), live))
 					.returning({ id: savedMeals.id });
 				if (deleted.length === 0) throw new DiaryError('not_found');
 			});
+		},
+
+		/** Brings back saved meals from Recently deleted, all or none. */
+		async restore(userId: string, ids: string[]): Promise<void> {
+			const unique = [...new Set(ids)];
+			if (unique.length === 0 || unique.length > 500) throw new DiaryError('not_found');
+			await withUser(db, userId, async (tx) => {
+				const restored = await tx
+					.update(savedMeals)
+					.set({ deletedAt: null })
+					.where(and(inArray(savedMeals.id, unique), sql`${savedMeals.deletedAt} is not null`))
+					.returning({ id: savedMeals.id });
+				if (restored.length !== unique.length) throw new DiaryError('not_found');
+			});
+		},
+
+		/** The person's saved meals in Recently deleted, most recently deleted first. */
+		async trash(userId: string): Promise<(SavedMealSummary & { deletedAt: string })[]> {
+			return withUser(db, userId, async (tx) => {
+				const meals = await tx
+					.select()
+					.from(savedMeals)
+					.where(sql`${savedMeals.deletedAt} is not null`)
+					.orderBy(desc(savedMeals.deletedAt));
+				if (meals.length === 0) return [];
+				const items = await tx
+					.select({
+						savedMealId: savedMealItems.savedMealId,
+						nutrients: savedMealItems.nutrients,
+						food: savedMealItems.food,
+						position: savedMealItems.position
+					})
+					.from(savedMealItems)
+					.where(
+						inArray(
+							savedMealItems.savedMealId,
+							meals.map((m) => m.id)
+						)
+					);
+				return meals.map((m) => ({
+					...summary(
+						m,
+						items.filter((i) => i.savedMealId === m.id)
+					),
+					deletedAt: m.deletedAt!.toISOString()
+				}));
+			});
+		},
+
+		/** How many saved meals are in Recently deleted (More's count). */
+		async trashCount(userId: string): Promise<number> {
+			const [row] = await withUser(db, userId, (tx) =>
+				tx
+					.select({ n: count() })
+					.from(savedMeals)
+					.where(sql`${savedMeals.deletedAt} is not null`)
+			);
+			return row.n;
 		},
 
 		/**

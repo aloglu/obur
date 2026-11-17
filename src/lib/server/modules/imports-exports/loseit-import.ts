@@ -557,6 +557,22 @@ export async function writeLoseIt(
 	await chunked(foodRows, (c) => tx.insert(foods).values(c));
 	await chunked(nutrientRows, (c) => tx.insert(foodNutrients).values(c));
 
+	// A food imported before may have been deleted and purged since (docs/design.md, "Archived and deleted foods"):
+	// it is not made again, and new entries keep their snapshot without a link to it.
+	const linked = [...new Set(p.foodLinks.values())];
+	const present = new Set<string>();
+	for (let i = 0; i < linked.length; i += 1000) {
+		for (const r of await tx
+			.select({ id: foods.id })
+			.from(foods)
+			.where(inArray(foods.id, linked.slice(i, i + 1000))))
+			present.add(r.id);
+	}
+	const linkTo = (k: string | null) => {
+		const id = k ? p.foodLinks.get(k) : undefined;
+		return id && present.has(id) ? id : null;
+	};
+
 	// Diary entries, in file order within each day.
 	const foodKey = foodKeyFor(data);
 	const entryRows: (typeof diaryEntries.$inferInsert)[] = [];
@@ -572,7 +588,7 @@ export async function writeLoseIt(
 			meal: e.meal,
 			zone: options.zone,
 			kind: 'food',
-			foodId: k ? (p.foodLinks.get(k) ?? null) : null,
+			foodId: linkTo(k),
 			food: snap.food,
 			amount: snap.amount,
 			unit: snap.unit,
