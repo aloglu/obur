@@ -8,6 +8,8 @@ Foods private, copies for members who used someone else's food, the variant fix 
 "Before 1.0.0" below). Checks before the tag: type-check, lint, 1148 unit and database tests, e2e 261 passed (18
 skipped by design), build, image built, smoke test, off-site outage test. Migrations 0055–0056 run on update, after
 the automatic backup. `docs/install/for-ai-agents.md`: no new settings, commands or start-up log lines.
+Tag pushed; the release workflow passed (checks, all three images, smoke and off-site tests on GitHub) and
+published them as 1.0.0-beta.20.
 - Next: the owner updates (`OBUR_VERSION=1.0.0-beta.20`) and checks that members' foods and diaries look right, the
   variant row, and the card on New food and Scan.
 
