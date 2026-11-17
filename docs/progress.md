@@ -4,8 +4,10 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 
 ## Before 1.0.0: features agreed (owner, 2026-11-17)
 
-- Admin merging of duplicate foods (in `docs/design.md`, catalog section, but never built): agreed for 1.0.0. Next: a
-  design proposal for the owner before building.
+- Foods become private (owner, 2026-11-17), replacing the merging idea: sharing between members is removed, each
+  member who used someone else's food gets their own copy, and new duplicates are caught at Save and in the LoseIt
+  import ("Already in your foods"). Also: Make my own variant only on built-in foods (it made copy after copy of the
+  person's own foods). Steps, one commit each: 1 docs (done); 2 database move and server; 3 screens; 4 the check.
 - Waist over time: dropped (waist is hard to measure often, so the data would lag and a card would mostly show an
   old number). Waist stays a single value in Profile → About you.
 - Not wanted (owner): weekly budget banking, limits for other nutrients, home-screen shortcuts, a local language
