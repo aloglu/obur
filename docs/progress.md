@@ -2,6 +2,15 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Private foods released (2026-11-17), as `v1.0.0-beta.20`
+
+Foods private, copies for members who used someone else's food, the variant fix and "Already in your foods" (see
+"Before 1.0.0" below). Checks before the tag: type-check, lint, 1148 unit and database tests, e2e 261 passed (18
+skipped by design), build, image built, smoke test, off-site outage test. Migrations 0055–0056 run on update, after
+the automatic backup. `docs/install/for-ai-agents.md`: no new settings, commands or start-up log lines.
+- Next: the owner updates (`OBUR_VERSION=1.0.0-beta.20`) and checks that members' foods and diaries look right, the
+  variant row, and the card on New food and Scan.
+
 ## Before 1.0.0: features agreed (owner, 2026-11-17)
 
 - Foods become private (owner, 2026-11-17), replacing the merging idea: sharing between members is removed, each
