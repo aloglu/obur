@@ -2,6 +2,15 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Before 1.0.0: features agreed (owner, 2026-11-17)
+
+- Admin merging of duplicate foods (in `docs/design.md`, catalog section, but never built): agreed for 1.0.0. Next: a
+  design proposal for the owner before building.
+- Waist over time: dropped (waist is hard to measure often, so the data would lag and a card would mostly show an
+  old number). Waist stays a single value in Profile → About you.
+- Not wanted (owner): weekly budget banking, limits for other nutrients, home-screen shortcuts, a local language
+  model for parsing, fasting timer, meal photos, social features, barcodes.
+
 ## Menu fixes released (2026-11-16), as `v1.0.0-beta.19`
 
 beta.18 plus the owner's daily-use reports below (menus, unit menu, archive food). Checks before the tag: build,
