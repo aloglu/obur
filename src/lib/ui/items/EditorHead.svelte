@@ -1,44 +1,30 @@
 <script lang="ts">
-	// The top of the recipe and saved meal editors (docs/ui.md, "Recipes and saved meals"): the way back, the title with
-	// a … menu beside it, and the menu's confirmation opening under the title.
-	import { m } from '#lib/paraglide/messages.js';
-	import ActionMenu from '../ActionMenu.svelte';
+	// The top of the recipe and saved meal editors (docs/ui.md, "Recipes and saved meals"): the way back and the title.
+	// A saved meal has its one action, Delete, as a trash icon at the end of the title's line, done straight away
+	// (Undo and Recently deleted cover it). Recipes keep Archive at the end of the page, as foods do.
+	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import PageHead from '../PageHead.svelte';
-	import Button from '../Button.svelte';
 
 	interface Props {
 		backHref: string;
 		backLabel: string;
 		title: string;
-		/** The destructive action behind the … menu, when there's something to act on. */
-		remove?: { label: string; confirm: string; yes: string; run: () => void };
-		/** Done straight away, without a confirmation (Restore; Delete, which has Undo and Recently deleted). */
-		direct?: { label: string; danger?: boolean; run: () => void }[];
+		remove?: { label: string; run: () => void };
 		busy: boolean;
 	}
-	let { backHref, backLabel, title, remove, direct, busy }: Props = $props();
-	let confirming = $state(false);
-	const items = $derived([
-		...(direct ?? []).map((d) => ({ label: d.label, danger: d.danger, action: d.run })),
-		...(remove ? [{ label: remove.label, danger: true, action: () => (confirming = true) }] : [])
-	]);
+	let { backHref, backLabel, title, remove, busy }: Props = $props();
 </script>
 
-{#snippet menu()}<ActionMenu label={m.editor_actions()} {items} />{/snippet}
-<PageHead href={backHref} label={backLabel} {title} end={items.length > 0 ? menu : undefined} />
-{#if remove}
-	<!-- Takes no room while closed; the padding gives the card's shadow somewhere to fall. -->
-	<div class={['collapse-row -mx-3.5 -mt-3', confirming && 'open']}>
-		<div inert={!confirming}>
-			<div
-				class="mx-3.5 mt-3 mb-2 flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card"
-			>
-				<p class="text-[0.9375rem]">{remove.confirm}</p>
-				<div class="grid grid-cols-2 gap-2">
-					<Button variant="ghost" onclick={() => (confirming = false)}>{m.editor_keep()}</Button>
-					<Button variant="danger" disabled={busy} onclick={remove.run}>{remove.yes}</Button>
-				</div>
-			</div>
-		</div>
-	</div>
-{/if}
+{#snippet trash()}
+	<button
+		type="button"
+		aria-label={remove!.label}
+		title={remove!.label}
+		disabled={busy}
+		onclick={remove!.run}
+		class="grid size-11 place-items-center rounded-full text-bad"
+	>
+		<Trash2 size={22} aria-hidden="true" />
+	</button>
+{/snippet}
+<PageHead href={backHref} label={backLabel} {title} end={remove ? trash : undefined} />

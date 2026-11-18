@@ -1,7 +1,7 @@
 // Menus (docs/ui.md, "Choices"): a tap outside an open menu only closes it, and archiving a food says so where the
 // person is looking (owner reports, 2026-11-16).
 import { expect, test } from '@playwright/test';
-import { createFood, signedInAs } from './fixtures.ts';
+import { apiAs, createFood, signedInAs } from './fixtures.ts';
 
 test('a tap outside an open menu closes it without pressing what was under it', async ({
 	page
@@ -19,6 +19,33 @@ test('a tap outside an open menu closes it without pressing what was under it', 
 	// The next tap works as usual.
 	await page.getByRole('link', { name: /^Units/ }).click();
 	await expect(page).toHaveURL(/\/more\/units$/);
+});
+
+test('a tap outside an open … menu closes it without pressing what was under it', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Menü ${testInfo.project.name}`);
+	await apiAs(page, 'POST', '/api/v1/diary/entries', {
+		kind: 'quick',
+		date: new Date().toLocaleDateString('en-CA'),
+		meal: 'breakfast',
+		zone: 'Europe/Istanbul',
+		kcal: 280,
+		description: 'Toast'
+	});
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Breakfast actions' }).click();
+	const menu = page.getByRole('menu', { name: 'Breakfast actions' });
+	await expect(menu).toBeVisible();
+
+	// A tap on Lunch's Add food only closes the menu; the next one works.
+	const addLunch = page.getByRole('button', { name: /Add food to Lunch/ });
+	await addLunch.click();
+	await expect(menu).toBeHidden();
+	await expect(page).toHaveURL(/\/$|\/\?/);
+
+	await addLunch.click();
+	await expect(page).toHaveURL(/\/log/);
 });
 
 test('archiving a food returns to Foods with Undo', async ({ page }) => {

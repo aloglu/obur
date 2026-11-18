@@ -637,8 +637,6 @@
 	"saved_refresh": "Update to current food values",
 	"saved_refreshed": "Updated: {refreshed} · Kept as saved: {kept}",
 	"saved_delete": "Delete saved meal",
-	"editor_actions": "More actions",
-	"editor_keep": "Keep it",
 	"recipe_archive": "Archive recipe",
 	"recipe_archived_toast": "Recipe archived",
 	"recipe_restored_toast": "Recipe restored",

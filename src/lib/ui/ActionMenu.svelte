@@ -1,8 +1,9 @@
 <script lang="ts">
-	// A … button with a short list of actions. Arrow keys move between them; Escape or a click elsewhere closes it and
-	// returns focus to the button.
+	// A … button with a short list of actions. Arrow keys move between them; Escape closes it and returns focus to the
+	// button. A tap elsewhere only closes it, as with every menu (docs/ui.md, "Choices"): what was tapped does nothing.
 	import Ellipsis from '@lucide/svelte/icons/ellipsis';
 	import { tick } from 'svelte';
+	import { swallowRestOfPress } from '#lib/client/swallow-press.ts';
 
 	interface Item {
 		label: string;
@@ -50,10 +51,12 @@
 	$effect(() => {
 		if (!open) return;
 		const outside = (e: PointerEvent) => {
-			if (!menu?.contains(e.target as Node) && !button.contains(e.target as Node)) close(false);
+			if (menu?.contains(e.target as Node) || button.contains(e.target as Node)) return;
+			swallowRestOfPress();
+			close(false);
 		};
-		document.addEventListener('pointerdown', outside);
-		return () => document.removeEventListener('pointerdown', outside);
+		window.addEventListener('pointerdown', outside, { capture: true });
+		return () => window.removeEventListener('pointerdown', outside, { capture: true });
 	});
 </script>
 

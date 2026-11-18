@@ -12,7 +12,13 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   meals keep Delete in a … menu by the title, and Today's meal cards keep theirs (asked the owner about saved meals).
 - Validation: check, lint, desktop Chromium e2e for every recipe/archive/saved-meal file (55 passed). Phone WebKit
   not run.
-- Next: add the placeholders to the Text Review artifact; the owner's picks there come later.
+- Placeholders added to the Text Review artifact (version 2, a Placeholders section at the end).
+- … menus now follow the dropdown rule: a tap outside only closes them (shared `client/swallow-press.ts`, used by
+  `Menu` and `ActionMenu`; new test in `menu-dismiss.e2e.ts`, checked to fail without the fix). Saved meals: Delete
+  is a red trash icon by the title, the page's only action (owner's call); `EditorHead` lost its menu and inline
+  question.
+- Next: report on button placement across lists (New food/recipe/meal, with and without items) and a review page for
+  Today's meal … menu.
 
 ## Archived and deleted foods released (2026-11-18), as `v1.0.0-beta.22`
 

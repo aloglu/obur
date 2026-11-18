@@ -7,6 +7,7 @@
 	// (a unit's size), which is always shown whole at the right.
 	import Check from '@lucide/svelte/icons/check';
 	import type { Snippet } from 'svelte';
+	import { swallowRestOfPress } from '#lib/client/swallow-press.ts';
 
 	interface Option {
 		value: T;
@@ -132,9 +133,7 @@
 		const pressOutside = (event: PointerEvent) => {
 			const target = event.target as Node;
 			if (list?.contains(target) || trigger?.contains(target)) return;
-			swallow = true;
-			clearTimeout(swallowTimer);
-			swallowTimer = setTimeout(() => (swallow = false), 800);
+			swallowRestOfPress();
 			list?.hidePopover();
 		};
 		window.addEventListener('scroll', close, { capture: true, passive: true });
@@ -144,29 +143,6 @@
 			window.removeEventListener('scroll', close, { capture: true });
 			window.removeEventListener('resize', close);
 			window.removeEventListener('pointerdown', pressOutside, { capture: true });
-		};
-	});
-
-	// Stops the rest of that press (focus, click) from reaching what was under it. Lives past the menu closing, since
-	// the click comes after. A press that turns into a scroll ends in pointercancel and has no click to stop.
-	let swallow = false;
-	let swallowTimer: ReturnType<typeof setTimeout> | undefined;
-	$effect(() => {
-		const block = (event: Event) => {
-			if (!swallow) return;
-			event.preventDefault();
-			event.stopPropagation();
-			if (event.type === 'click') swallow = false;
-		};
-		const cancel = () => (swallow = false);
-		window.addEventListener('mousedown', block, { capture: true });
-		window.addEventListener('click', block, { capture: true });
-		window.addEventListener('pointercancel', cancel, { capture: true });
-		return () => {
-			clearTimeout(swallowTimer);
-			window.removeEventListener('mousedown', block, { capture: true });
-			window.removeEventListener('click', block, { capture: true });
-			window.removeEventListener('pointercancel', cancel, { capture: true });
 		};
 	});
 </script>

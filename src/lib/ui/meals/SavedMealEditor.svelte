@@ -121,7 +121,7 @@
 	backLabel={m.saved_title()}
 	title={start ? m.saved_edit_title() : m.saved_new_title()}
 	{busy}
-	direct={start ? [{ label: m.saved_delete(), danger: true, run: removeMeal }] : undefined}
+	remove={start ? { label: m.saved_delete(), run: removeMeal } : undefined}
 />
 
 <form class="flex flex-col gap-3" onsubmit={save} novalidate>
