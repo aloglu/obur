@@ -31,7 +31,10 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   (baselines come from the Docker image); not run in Docker.
 - Round 2 review page (new Artifact, real screenshots): meal … button (dots only vs square with its dots on the
   numbers' edge), saved meal delete (row vs icon, beside how every editor ends), Cancel on the food page.
-- Next: read the round 2 picks and build.
+- Round 2 picks (owner, 2026-11-18): meal … button as dots only, aligned to the calorie numbers' right edge;
+  Delete saved meal as a row at the end (trash icon goes); Cancel next to Save food on the food page (archived too).
+- Next: owner said not to build yet; they will start a new conversation. Build the three round 2 picks when they
+  say go. Also owed: the Text Review picks and the "<" checkbox discussion (see memory).
 
 ## Archived and deleted foods released (2026-11-18), as `v1.0.0-beta.22`
 
