@@ -29,7 +29,9 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Validation: check, lint, desktop Chromium e2e for saved meals, catalog, bulk, menus, goals, own key, speak and
   accessibility (38 passed). `turkish.e2e.ts` screenshot comparisons fail on the host with or without this change
   (baselines come from the Docker image); not run in Docker.
-- Next: the owner's answers on saved meal delete and the meal … button.
+- Round 2 review page (new Artifact, real screenshots): meal … button (dots only vs square with its dots on the
+  numbers' edge), saved meal delete (row vs icon, beside how every editor ends), Cancel on the food page.
+- Next: read the round 2 picks and build.
 
 ## Archived and deleted foods released (2026-11-18), as `v1.0.0-beta.22`
 
