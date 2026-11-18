@@ -42,7 +42,8 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   typed entry and scan (42 passed); the same files on phone WebKit in Docker: 43 passed and 1 failed on the first run
   (not identified), 44 passed on the rerun.
 - Next: the owner tries it. Still owed: the Text Review picks and the "<" checkbox discussion (see memory).
-  Recipe Cancel still leads to Recipes even on an archived recipe (its back button leads to Archived recipes).
+- An archived recipe's Cancel now leads to Archived recipes, like its "<" (owner left it to me); `archive.e2e.ts`
+  checks it. Desktop Chromium archive and recipe tests: 11 passed.
 
 ## Archived and deleted foods released (2026-11-18), as `v1.0.0-beta.22`
 

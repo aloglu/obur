@@ -291,7 +291,7 @@
 	{#if problem}<Notice>{problem}</Notice>{/if}
 	<div class="grid grid-cols-2 gap-2">
 		<a
-			href={resolve('/(app)/recipes')}
+			href={start?.archived ? resolve('/(app)/recipes/archived') : resolve('/(app)/recipes')}
 			class="inline-flex min-h-[52px] items-center justify-center rounded-button border border-line bg-surface text-[1.0625rem] font-[750]"
 			>{m.common_cancel()}</a
 		>

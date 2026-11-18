@@ -142,6 +142,10 @@ test('deleting a food says the recipe using it keeps its values; archived recipe
 	await main.getByRole('button', { name: 'Archive recipe' }).click();
 	await expect(page).toHaveURL(/\/recipes$/);
 	await main.getByRole('link', { name: /Archived recipes\s*1/ }).click();
+	// Cancel leads back where the "<" does: the archive.
+	await main.getByRole('link', { name: /Lentil soup/ }).click();
+	await main.getByRole('link', { name: 'Cancel' }).click();
+	await expect(page).toHaveURL(/\/recipes\/archived$/);
 	await main.getByRole('link', { name: /Lentil soup/ }).click();
 	await main.getByRole('button', { name: 'Delete recipe' }).click();
 	await expect(page).toHaveURL(/\/recipes\/archived$/);
