@@ -2,6 +2,18 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Release candidate (2026-11-18), as `v1.0.0-rc.1`
+
+beta.22 plus: the buttons review (both rounds), the "<" button removed, the Text Review, archive placeholders and
+recipe archive at the page end, menus closing on an outside tap, and the fixes from two audits (Select all on any
+size of archive, SvelteKit 3.3.1 so a malformed address can't crash obur, offline entries sent as soon as the
+connection returns, `requests` 2.33.1 in the speech image). No migration. Checks before the tag (owner's go):
+type-check, lint, 1164 unit and database tests, full e2e 279 passed (18 skipped by design), build, image, smoke test
+(now with malformed addresses), off-site outage test, upgrade test from beta.19, speech image built and healthy.
+`docs/install/for-ai-agents.md`: no new settings, commands or start-up log lines.
+- Next: the owner updates (`OBUR_VERSION=1.0.0-rc.1`) and uses it on the phone for a few days; problems become rc.2;
+  `v1.0.0` (the first `latest`) when nothing turns up.
+
 ## Full audit before 1.0.0 (owner, 2026-11-18), findings reported before fixing
 
 - Checked on the migrated database itself: every table has RLS on and forced (except `schema_migrations`, which the
