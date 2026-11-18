@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { portionSource, preservedNutrients } from './food-edit.ts';
+import { labelValueText, parseLabelValue, portionSource, preservedNutrients } from './food-edit.ts';
 
 describe('editing a food through the form', () => {
 	const initial = [
@@ -30,5 +30,26 @@ describe('editing a food through the form', () => {
 		expect(portionSource(servings, { name: 'medium', amount: 118, unit: 'g' })).toBe('reference');
 		expect(portionSource(servings, { name: 'medium', amount: 120, unit: 'g' })).toBe('user');
 		expect(portionSource(servings, { name: 'large', amount: 136, unit: 'g' })).toBe('user');
+	});
+});
+
+describe('a label value typed in a field', () => {
+	it('reads a leading "<" as "less than", with either decimal mark and spaces', () => {
+		expect(parseLabelValue('<0.5')).toEqual({ value: 0.5, lessThan: true });
+		expect(parseLabelValue(' < 0,5 ')).toEqual({ value: 0.5, lessThan: true });
+		expect(parseLabelValue('12')).toEqual({ value: 12, lessThan: false });
+	});
+
+	it('is unknown when empty or not a number, never zero', () => {
+		expect(parseLabelValue('')).toBeUndefined();
+		expect(parseLabelValue('<')).toBeUndefined();
+		expect(parseLabelValue('<<1')).toBeUndefined();
+		expect(parseLabelValue('1<')).toBeUndefined();
+	});
+
+	it('writes a stored value back the way it was read', () => {
+		const lessThan = { code: 'salt' as const, value: 0.5, qualifier: 'less_than' as const };
+		expect(parseLabelValue(labelValueText(lessThan))).toEqual({ value: 0.5, lessThan: true });
+		expect(labelValueText({ ...lessThan, qualifier: 'reported' })).toBe('0.5');
 	});
 });

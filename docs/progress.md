@@ -2,6 +2,17 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## The "<" button removed from the food form (2026-11-18), unreleased
+
+- Owner: hardly anyone would use a per-row "less than" button, or know when to. Agreed: no control; a value printed
+  "<0.5" shows as "<0.5" in its field (Scan fills it in that way, older foods open that way), typing a leading "<"
+  sets it, and retyping the number without it clears it. The stored qualifier, totals marked approximate and the
+  label checks are unchanged; no migration. `shared/food-edit.ts` (`parseLabelValue`, `labelValueText`, unit tests);
+  the hints drop "tap <" (English and Turkish); docs/ui.md updated.
+- Validation: check, lint, all Vitest (1161 passed), desktop Chromium e2e for catalog, scan, accessibility, typed
+  entry, icons and menus (36 passed). Phone WebKit not run. A phone's number keyboard has no "<": typing it is for a
+  full keyboard; Scan covers the usual case.
+
 ## Archive placeholders and recipe archive at the page end (2026-11-18), unreleased
 
 - Owner reports: the archive searches had no placeholder (now "Name or brand, e.g. greek yogurt" for foods, shared

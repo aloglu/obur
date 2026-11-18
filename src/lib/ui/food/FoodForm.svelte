@@ -9,7 +9,13 @@
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import type { FoodInput } from '#lib/shared/food-input.ts';
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
-	import { EXTRA_CODES, portionSource, preservedNutrients } from '#lib/shared/food-edit.ts';
+	import {
+		EXTRA_CODES,
+		labelValueText,
+		parseLabelValue,
+		portionSource,
+		preservedNutrients
+	} from '#lib/shared/food-edit.ts';
 	import { deriveNutrients, type NutrientCode, type NutrientValue } from '#lib/shared/nutrients.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import type { Basis } from '#lib/shared/quantity.ts';
@@ -133,10 +139,7 @@
 					? ['salt', 'sodium']
 					: [field];
 		const found = codes.map(find).find(Boolean);
-		return {
-			text: found ? formatDecimal(found.value, 4) : '',
-			lessThan: found?.qualifier === 'less_than'
-		};
+		return { text: found ? labelValueText(found) : '' };
 	}
 
 	let name = $state(start?.name || untrack(() => startName));
@@ -152,10 +155,7 @@
 	);
 	let servingSizeUnit = $state<'g' | 'ml'>(start?.servingSize?.unit ?? 'g');
 	let rows = $state(
-		Object.fromEntries(FIELDS.map((f) => [f, initialRow(f)])) as Record<
-			Field,
-			{ text: string; lessThan: boolean }
-		>
+		Object.fromEntries(FIELDS.map((f) => [f, initialRow(f)])) as Record<Field, { text: string }>
 	);
 	let portions = $state(
 		(start?.servings ?? []).map((s) => ({
@@ -168,15 +168,9 @@
 		Object.fromEntries(
 			EXTRA_CODES.map((code) => {
 				const found = find(code);
-				return [
-					code,
-					{
-						text: found ? formatDecimal(found.value, 4) : '',
-						lessThan: found?.qualifier === 'less_than'
-					}
-				];
+				return [code, { text: found ? labelValueText(found) : '' }];
 			})
-		) as Record<Extra, { text: string; lessThan: boolean }>;
+		) as Record<Extra, { text: string }>;
 	let extras = $state(extraRows(reported));
 	const extrasOpen = untrack(() => EXTRA_CODES.some((c) => extras[c].text !== ''));
 	let showErrors = $state(false);
@@ -184,23 +178,28 @@
 	const values = $derived.by(() => {
 		const out: NutrientValue[] = [];
 		for (const field of FIELDS) {
-			const value = parseDecimal(rows[field].text);
-			if (value !== undefined) {
+			const read = parseLabelValue(rows[field].text);
+			if (read)
 				out.push({
 					code: codeFor(field),
-					value,
-					qualifier: rows[field].lessThan ? 'less_than' : 'reported'
+					value: read.value,
+					qualifier: read.lessThan ? 'less_than' : 'reported'
 				});
-			}
 		}
 		for (const code of EXTRA_CODES) {
-			const value = parseDecimal(extras[code].text);
-			if (value !== undefined)
-				out.push({ code, value, qualifier: extras[code].lessThan ? 'less_than' : 'reported' });
+			const read = parseLabelValue(extras[code].text);
+			if (read)
+				out.push({
+					code,
+					value: read.value,
+					qualifier: read.lessThan ? 'less_than' : 'reported'
+				});
 		}
 		return out;
 	});
 	const invalid = (text: string) => text.trim() !== '' && parseDecimal(text) === undefined;
+	// A label value may start with "<" ("less than").
+	const invalidValue = (text: string) => text.trim() !== '' && !parseLabelValue(text);
 	const warnings = $derived<FoodWarning[]>(foodWarnings(basis, deriveNutrients(values)));
 	const label = (field: Field) =>
 		({
@@ -307,8 +306,8 @@
 	function save(anyway: boolean) {
 		showErrors = true;
 		const anyInvalid =
-			FIELDS.some((f) => invalid(rows[f].text)) ||
-			EXTRA_CODES.some((c) => invalid(extras[c].text)) ||
+			FIELDS.some((f) => invalidValue(rows[f].text)) ||
+			EXTRA_CODES.some((c) => invalidValue(extras[c].text)) ||
 			portions.some((p) => parseDecimal(p.text) === undefined || !p.name.trim()) ||
 			(basis === 'serving' && invalid(servingSizeText));
 		if (anyInvalid || !name.trim() || (basis === 'serving' && !servingLabel.trim())) return;
@@ -341,24 +340,17 @@
 	}
 </script>
 
-{#snippet row(
-	id: string,
-	text: string,
-	value: { text: string; lessThan: boolean },
-	core: boolean,
-	bound: boolean,
-	sub = false
-)}
-	{@const bad = invalid(value.text)}
+{#snippet row(id: string, text: string, value: { text: string }, core: boolean, sub = false)}
+	{@const bad = invalidValue(value.text)}
 	{@const { name: rowName, unit } = parts(text)}
 	<div
-		class="grid min-h-[52px] grid-cols-[minmax(0,1fr)_36px_88px_34px] items-center gap-2 border-line not-first:border-t large:grid-cols-[36px_minmax(0,1fr)_auto] large:py-2"
+		class="grid min-h-[52px] grid-cols-[minmax(0,1fr)_88px_34px] items-center gap-2 border-line not-first:border-t large:grid-cols-[minmax(0,1fr)_auto] large:py-2"
 	>
 		<label
 			for={id}
 			class={[
 				sub ? 'pl-3.5 text-[0.875rem] text-muted' : 'text-[0.9375rem] font-[550]',
-				'large:col-span-3'
+				'large:col-span-2'
 			]}
 		>
 			{rowName}<span class="sr-only"> {unit}</span>
@@ -366,18 +358,6 @@
 					>{m.food_invalid_number()}</span
 				>{/if}
 		</label>
-		{#if bound}
-			<button
-				type="button"
-				aria-pressed={value.lessThan}
-				aria-label={m.food_less_than_of({ name: rowName })}
-				onclick={() => (value.lessThan = !value.lessThan)}
-				class={[
-					'size-9 rounded-[10px] text-[0.9375rem] font-[750]',
-					value.lessThan ? 'bg-soft text-accent' : 'bg-surface2 text-muted'
-				]}>&lt;</button
-			>
-		{:else}<span></span>{/if}
 		<input
 			{id}
 			bind:value={value.text}
@@ -481,7 +461,6 @@
 					label(field),
 					rows[field],
 					field !== 'energy_kj',
-					field !== 'energy_kcal' && field !== 'energy_kj',
 					field === 'saturated_fat' || field === 'sugars'
 				)}
 			{/each}
@@ -503,7 +482,7 @@
 			<div inert={!extrasShown}>
 				<div class="flex flex-col pt-3">
 					{#each EXTRA_CODES as code (code)}
-						{@render row(`n-${code}`, extraLabel[code](), extras[code], false, true)}
+						{@render row(`n-${code}`, extraLabel[code](), extras[code], false)}
 					{/each}
 				</div>
 			</div>

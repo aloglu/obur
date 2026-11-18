@@ -23,10 +23,10 @@ test('a member creates a per-serving food that only they can find', async ({
 	await nutrient(page, 'fat').fill('8,1');
 	await nutrient(page, 'protein').fill('20');
 	await nutrient(page, 'salt').fill('0,5');
-	// An optional extra from the label, as an upper bound.
+	// An optional extra from the label, as an upper bound: a leading "<", no separate control.
 	await page.getByRole('button', { name: 'More nutrients' }).click();
-	await nutrient(page, 'iron').fill('1,2');
-	await page.getByRole('button', { name: 'Iron: less than' }).click();
+	await nutrient(page, 'iron').fill('<1,2');
+	await expect(page.getByRole('button', { name: /less than/ })).toHaveCount(0);
 
 	// Empty rows are shown as unknown, never as zero.
 	await expect(nutrient(page, 'fibre')).toHaveAttribute('placeholder', 'Unknown');
@@ -42,11 +42,7 @@ test('a member creates a per-serving food that only they can find', async ({
 	await expect(nutrient(page, 'fat')).toHaveValue('8.1');
 	// The edit form opens More nutrients when the food has any, with the value and its "<".
 	await expect(nutrient(page, 'iron')).toBeVisible();
-	await expect(nutrient(page, 'iron')).toHaveValue('1.2');
-	await expect(page.getByRole('button', { name: 'Iron: less than' })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	await expect(nutrient(page, 'iron')).toHaveValue('<1.2');
 
 	// It is found with a folded, reordered query, by its owner only.
 	await page.goto('/foods');

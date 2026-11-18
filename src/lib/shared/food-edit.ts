@@ -5,6 +5,7 @@
 // unknown. Derived values are always recomputed on the server. A portion keeps its source while its name, size and
 // unit are unchanged.
 import type { NutrientCode, NutrientValue } from './nutrients.ts';
+import { formatDecimal, parseDecimal } from './numbers.ts';
 
 /** The label's core rows: every code they can write. */
 export const FORM_CODES: ReadonlySet<NutrientCode> = new Set<NutrientCode>([
@@ -63,3 +64,19 @@ export function portionSource(
 	);
 	return same?.source ?? 'user';
 }
+
+/**
+ * A label value as typed in a form field. A leading "<" marks a value printed as "less than" ("<0.5"): Scan fills it
+ * in that way and a person may type it, with no separate control (owner, 2026-11-18). Undefined when the rest isn't
+ * a number; empty input is also undefined (unknown, not zero).
+ */
+export function parseLabelValue(input: string): { value: number; lessThan: boolean } | undefined {
+	const s = input.trim();
+	const lessThan = s.startsWith('<');
+	const value = parseDecimal(lessThan ? s.slice(1) : s);
+	return value === undefined ? undefined : { value, lessThan };
+}
+
+/** The field text for a stored value: "<0.5" for a less-than value, "0.5" otherwise. */
+export const labelValueText = (n: NutrientValue): string =>
+	(n.qualifier === 'less_than' ? '<' : '') + formatDecimal(n.value, 4);

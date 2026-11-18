@@ -109,11 +109,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	await expect(page.locator('#n-energy_kcal')).toHaveValue('400');
 	await expect(page.locator('#n-fat')).toHaveValue('18');
 	await expect(page.locator('#n-carbohydrate')).toHaveValue('52');
-	await expect(page.locator('#n-salt')).toHaveValue('0.1');
-	await expect(page.getByRole('button', { name: 'Salt: less than' })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	await expect(page.locator('#n-salt')).toHaveValue('<0.1');
 	await page.getByLabel('Name', { exact: true }).fill(`Fındıklı gofret ${testInfo.project.name}`);
 	await page.getByRole('button', { name: 'Save and choose amount' }).click();
 
