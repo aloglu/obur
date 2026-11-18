@@ -11,6 +11,7 @@ connection returns, `requests` 2.33.1 in the speech image). No migration. Checks
 type-check, lint, 1164 unit and database tests, full e2e 279 passed (18 skipped by design), build, image, smoke test
 (now with malformed addresses), off-site outage test, upgrade test from beta.19, speech image built and healthy.
 `docs/install/for-ai-agents.md`: no new settings, commands or start-up log lines.
+- Published 2026-11-18: release workflow passed (checks, three images, smoke and off-site tests).
 - Next: the owner updates (`OBUR_VERSION=1.0.0-rc.1`) and uses it on the phone for a few days; problems become rc.2;
   `v1.0.0` (the first `latest`) when nothing turns up.
 
