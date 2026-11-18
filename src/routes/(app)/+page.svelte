@@ -511,7 +511,6 @@
 					>
 				</button>
 			</div>
-			<p class="px-1 text-[0.8125rem] text-muted">{m.day_complete_hint()}</p>
 		</div>
 	</div>
 </main>

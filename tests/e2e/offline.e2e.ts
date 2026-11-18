@@ -98,7 +98,7 @@ test('entries made offline wait visibly, then arrive once and in order', async (
 	await expect(snacks).toContainText('Simit');
 	// Offline, a grey card says what is shown and what happens to new entries.
 	await expect(page.getByRole('status').filter({ hasText: /You're offline/ })).toContainText(
-		"New entries wait here and are sent when you're back."
+		"New entries are sent when you're back."
 	);
 	await context.setOffline(false);
 });

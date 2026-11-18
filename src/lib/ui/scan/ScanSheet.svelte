@@ -246,11 +246,7 @@
 			</span>
 		{:else if reading}<span role="status">{m.scan_reading()}</span>{:else}{m.scan_frame()}{/if}
 	</div>
-	<ul class="flex list-disc flex-col gap-0.5 pl-5 text-[0.8125rem] text-muted">
-		<li>{m.scan_tip_frame()}</li>
-		<li>{m.scan_tip_light()}</li>
-		<li>{m.scan_tip_flat()}</li>
-	</ul>
+	<p class="text-[0.8125rem] text-muted">{m.scan_tip()}</p>
 	<div class="grid grid-cols-2 gap-2">
 		{@render camera(true)}
 		<label

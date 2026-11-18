@@ -80,7 +80,6 @@
 				/>
 			</label>
 		{/if}
-		{#if mode === 'copy'}<p class="text-[0.8125rem] text-muted">{m.bulk_copy_note()}</p>{/if}
 		{#if already}<p class="text-[0.8125rem] text-muted">{m.bulk_already_there()}</p>{/if}
 		<Button
 			wide

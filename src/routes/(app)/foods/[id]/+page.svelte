@@ -194,7 +194,6 @@
 
 	{#if food.origin === 'recipe' && food.mine}
 		<Card>
-			<p class="text-[0.875rem] text-muted">{m.recipe_yours()}</p>
 			<a
 				href={resolve('/(app)/recipes/[id]', { id: food.id })}
 				class="inline-flex min-h-11 items-center self-start rounded-button bg-fill px-4 font-[750] text-on-accent"

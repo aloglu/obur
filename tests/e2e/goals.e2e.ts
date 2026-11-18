@@ -56,7 +56,7 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	// Activity is added to the budget.
 	await budget.getByRole('button', { name: 'Add activity' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Activity' });
-	await expect(sheet).toContainText('above an ordinary inactive day');
+	await expect(sheet).toContainText('above an inactive day');
 	await sheet.getByLabel('Calories burned (kcal)').fill('300');
 	await sheet.getByRole('button', { name: 'Add to budget' }).click();
 	await expect(budget).toContainText('1886 kcal');
@@ -87,7 +87,7 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await expect(page.getByText('1586', { exact: true })).toBeVisible();
 	for (const value of ['2136 kcal', '− 550 kcal', '1500 kcal'])
 		await expect(page.getByRole('definition').filter({ hasText: value })).toBeVisible();
-	await expect(page.getByText('Updates from the day you log a new weight.')).toBeVisible();
+	await expect(page.getByText('Updates when you log a new weight.')).toBeVisible();
 
 	// About you: rows that open setup's first step. Saving that step is enough: the calculated budget follows from
 	// today even when setup goes no further.
@@ -249,7 +249,7 @@ test('first day: the welcome offers a budget once, and "Just log" leaves no ment
 	await expect(welcome).toBeHidden();
 	await expect(page.getByRole('link', { name: /budget/i })).toHaveCount(0);
 	await page.goto('/profile');
-	await expect(page.getByText('Optional. A budget shows what')).toBeVisible();
+	await expect(page.getByText('Optional. Shows what')).toBeVisible();
 });
 
 test('a budget set by hand takes a goal weight, which leaves the budget as it is', async ({
@@ -268,7 +268,7 @@ test('a budget set by hand takes a goal weight, which leaves the budget as it is
 	await page.getByLabel('New goal weight').fill('78,5');
 	await page.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByRole('button', { name: /Goal weight/ })).toContainText('78.5 kg');
-	await expect(page.getByText('Your budget stays as you set it.')).toBeVisible();
+	await expect(page.getByText('Your budget stays as you set it;')).toBeVisible();
 	// No pace or worked-out budget for a budget set by hand.
 	await expect(page.getByText('Pace')).toHaveCount(0);
 	await page.goto('/');

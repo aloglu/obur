@@ -70,9 +70,7 @@ test('makes one editable copy of a built-in food, and offers no copy of a copy',
 		.getByRole('link', { name: /^Banana/ })
 		.first()
 		.click();
-	await expect(
-		page.getByText('A built-in food. You can log it or make your own variant.')
-	).toBeVisible();
+	await expect(page.getByText("A built-in food, so it can't be edited.")).toBeVisible();
 	await page.getByRole('button', { name: 'Make my own variant' }).click();
 	await expect(page.getByText('Your variant of a built-in food.')).toBeVisible();
 	await expect(page.getByLabel('Name', { exact: true })).toHaveValue(/^Banana/);

@@ -133,9 +133,7 @@
 				</div>
 			{/if}
 		</div>
-		<p class="px-1 text-[0.8125rem] text-muted">
-			{calculated ? m.goal_note() : m.goal_manual_note()}
-		</p>
+		{#if !calculated}<p class="px-1 text-[0.8125rem] text-muted">{m.goal_manual_note()}</p>{/if}
 	{:else}
 		<div class="flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card">
 			<p class="text-[0.9375rem]">{m.goal_needs_budget()}</p>

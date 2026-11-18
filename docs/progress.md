@@ -2,6 +2,19 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Text Review applied (2026-11-18), unreleased
+
+- Owner answered 17 of the 83 items (all "agree" or "shorten as written") and asked to apply every suggestion as
+  written. Done in English and Turkish: 5 lines cut (day complete hint, Copy to… note, "one of your recipes", Goal's
+  "changes apply from today", the Speak/Scan feature lines), Scan's three tips made one line, about 35 shortened,
+  fixes for `icon_none` (no language mention) and `achievements_weight_off` (Settings → Goal), placeholders: Log's
+  search matches Foods' ("Name or brand, e.g. greek yogurt"), "e.g. cheese, tea, apple", "e.g. slice". The Nutrition
+  hint dropped "Tap <" (button removed). Food archived + delete hint now read "Archived, so it's not in search. Delete
+  keeps it 30 days in Recently deleted." Note formatting stays explained in Help. Keys removed from both catalogs.
+- Validation: check, lint, all Vitest (1161), full e2e in the Playwright image: 277 passed, 18 skipped, 2 phone
+  WebKit failures (accessibility, archive) that passed on rerun. Today and lunch-card screenshot baselines
+  regenerated and reviewed (welcome text, meal … dots).
+
 ## The "<" button removed from the food form (2026-11-18), unreleased
 
 - Owner: hardly anyone would use a per-row "less than" button, or know when to. Agreed: no control; a value printed

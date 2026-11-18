@@ -104,7 +104,7 @@ test('archiving a food returns to Foods with Undo', async ({ page }) => {
 	await page.getByRole('button', { name: 'Archive food' }).click();
 	await page.getByRole('link', { name: /Archived foods/ }).click();
 	await page.getByRole('link', { name: /Archive test bar/ }).click();
-	await expect(page.getByText('It no longer appears in search;', { exact: false })).toBeVisible();
+	await expect(page.getByText("Archived, so it's not in search.")).toBeVisible();
 	await page.getByRole('button', { name: 'Restore' }).click();
 	await expect(page.getByRole('status').filter({ hasText: 'Food restored' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Archive food' })).toBeVisible();

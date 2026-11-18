@@ -123,9 +123,6 @@
 
 	{#each FEATURES as feature (feature)}
 		<Card title={feature === 'speak' ? m.speak_title() : m.models_scan_title()}>
-			<p class="-mt-1 text-[0.875rem] text-muted">
-				{feature === 'speak' ? m.models_speak_line() : m.models_scan_line()}
-			</p>
 			<div
 				role="radiogroup"
 				aria-label={feature === 'speak' ? m.speak_title() : m.models_scan_title()}

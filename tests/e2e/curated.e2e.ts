@@ -24,7 +24,7 @@ test('a curated food is found by its Turkish name and logged by a USDA portion',
 	await page.goto('/foods');
 	await page.getByLabel('Search foods').fill('banana');
 	await page.getByRole('link', { name: /^Banana/ }).click();
-	await expect(page.getByText('USDA FoodData Central (SR Legacy')).toBeVisible();
+	await expect(page.getByText('from USDA (SR Legacy)')).toBeVisible();
 	await expect(page.getByText('Potassium (mg)')).toBeVisible();
 });
 
