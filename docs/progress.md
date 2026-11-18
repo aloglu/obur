@@ -2,6 +2,27 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Full audit before 1.0.0 (owner, 2026-11-18), findings reported before fixing
+
+- Checked on the migrated database itself: every table has RLS on and forced (except `schema_migrations`, which the
+  runtime roles can't read); app and worker roles are not superusers and can't bypass RLS; every policy ties rows to
+  `app_current_user_id()`; updates are column-limited and never touch owner or user columns; SECURITY DEFINER
+  functions have fixed search paths, check identity and are executable only by the roles that need them.
+- Identity: `withUser` sets it per transaction; outside it only the sign-in functions and household measures run.
+  Worker unchanged since the last audit apart from housekeeping. Routes: all need a session except sign-in; every
+  change is same-origin; recent passkey checks match the design's list; uploads are bounded.
+- Cross-feature: imports with purged or deleted foods and saved meals; offline entries for a deleted food (kept for
+  review). Unaudited changes since 2026-11-14 (Type it unit carry-over, match ranking, unit menu) read.
+- Dependencies: `npm audit` and OSV for the Python add-ons. Docs: install guides and settings file against the
+  container's commands and settings.
+- Findings: (1) serious: SvelteKit 3.1.0 crashes the server on one request to a malformed address (our `reroute`
+  hook; GHSA-mw6w-2fmv-pvw3), confirmed on a local build; in the image that stops the whole container, database
+  included, and Docker restarts it, so anyone who can reach the address can keep it restarting. Every published
+  version has it. Fix: @sveltejs/kit 3.3.1 and adapter-node 6.0.1+, plus a smoke-test check. Other SvelteKit
+  advisories don't apply (no remote functions or query.batch; no secret found in the browser bundle). (2) minor:
+  `requests` 2.32.3 in the speech image (used only while building it) has advisories; update to 2.33.x.
+- Waiting for the owner's go on fixes.
+
 ## Release-candidate audit (owner, 2026-11-18), findings reported before fixing
 
 - Read: everything since beta.21 not yet audited (migrations 0058–0059, purge, catalog bulk/trash/ownFoods, saved
