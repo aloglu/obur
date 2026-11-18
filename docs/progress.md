@@ -30,8 +30,13 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - New finding (not fixed, reported): when the connection returns while a send attempt started offline is still
   failing, the "online" signal joins that attempt instead of starting another (`flush` in
   `client/offline/sync.svelte.ts`), so waiting entries go out at the next 30 s retry. Nothing lost. The offline test
-  fails 2 in 25 runs this way on both SvelteKit 3.1.0 and 3.3.1. Proposed fix: a signal during a send starts one more
-  pass afterwards.
+  fails 2 in 25 runs this way on both SvelteKit 3.1.0 and 3.3.1.
+- Fixed (owner's go): `flush` runs one more pass when asked during a pass (`sendWaiting` is one pass). Offline test 50
+  of 50 on desktop Chromium, all offline tests 3 times on both engines. Also fixed a test race in `goals.e2e.ts`
+  (the pace step saw the goal weight's "Budget settings saved" and left before the pace saved; 1 in 50 before, 50 of
+  50 after).
+- Validation: check, lint, Vitest 1164, full e2e 279 passed, 18 skipped, none failed. Image gates passed on 4ab715c
+  (smoke, off-site, upgrade); this change is browser code only. Next: tag `v1.0.0-rc.1` when the owner says so.
 
 ## Release-candidate audit (owner, 2026-11-18), findings reported before fixing
 

@@ -114,7 +114,12 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await page.getByLabel('New goal weight').fill('74');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('button', { name: /^Goal weight/ })).toContainText('74 kg');
+	// The goal weight's save showed the same message: wait for the pace's own save before leaving.
+	const paceSaved = page.waitForResponse(
+		(r) => r.url().includes('/api/v1/targets') && r.request().method() !== 'GET' && r.ok()
+	);
 	await choose(page, 'Pace', 'Steady · 0.25 kg a week');
+	await paceSaved;
 	await expect(page.getByRole('status')).toContainText('Budget settings saved');
 	await page.getByRole('link', { name: 'Settings', exact: true }).click();
 	await expect(page.getByRole('link', { name: /^Goal/ })).toContainText('Steady · 0.25 kg a week');

@@ -30,6 +30,8 @@ export const recentlyUnreachable = () => Date.now() < unreachableUntil;
 /** Resolves once the signed-in account's queue is open; submit() waits for it. */
 let ready: Promise<void> | undefined;
 let flushing: Promise<number> | undefined;
+// Asked to send again while a pass was under way.
+let again = false;
 let timer: ReturnType<typeof setInterval> | undefined;
 const listeners: (() => void)[] = [];
 
@@ -202,47 +204,65 @@ export async function submit<T>(
 	return { status: 'queued' };
 }
 
+/** One pass over the waiting items: sends them in order, stops at the first unreachable attempt. */
+async function sendWaiting(): Promise<number> {
+	let sent = 0;
+	try {
+		// Plain copies: IndexedDB cannot store the reactive proxies in offline.items.
+		const waiting = $state.snapshot(offline.items).filter((i) => i.status === 'pending');
+		for (const item of waiting) {
+			if (!queue || item.ownerId !== offline.ownerId) return sent;
+			item.attempts += 1;
+			try {
+				await post(item.path, item.body);
+				await queue.remove(item.seq!);
+				sent += 1;
+			} catch (e) {
+				if (e instanceof Unreachable) {
+					await queue.put(item);
+					return sent;
+				}
+				const err = e as ApiError;
+				if (err.status === 410) {
+					// Sent long ago, then deleted and purged from the trash: nothing left to do.
+					await queue.remove(item.seq!);
+					continue;
+				}
+				if (err.status === 401) {
+					offline.authRequired = true;
+					return sent;
+				}
+				// A note can't be reviewed the way an entry can, and a later one replaces it anyway.
+				if (item.preview.kind === 'note') await queue.remove(item.seq!);
+				else await queue.put({ ...item, status: 'review', error: err.code });
+			}
+		}
+		offline.authRequired = false;
+		return sent;
+	} finally {
+		await refresh();
+	}
+}
+
 /**
  * Sends waiting items in order and resolves with how many arrived. Stops at the first unreachable attempt; a
- * refused item is kept for review.
+ * refused item is kept for review. A call while a pass is under way (the connection came back while an attempt made
+ * offline was still failing) runs one more pass after it, instead of waiting for the next retry.
  */
 export function flush(): Promise<number> {
-	flushing ??= (async () => {
+	if (flushing) {
+		again = true;
+		return flushing;
+	}
+	flushing = (async () => {
 		let sent = 0;
 		try {
-			// Plain copies: IndexedDB cannot store the reactive proxies in offline.items.
-			const waiting = $state.snapshot(offline.items).filter((i) => i.status === 'pending');
-			for (const item of waiting) {
-				if (!queue || item.ownerId !== offline.ownerId) return sent;
-				item.attempts += 1;
-				try {
-					await post(item.path, item.body);
-					await queue.remove(item.seq!);
-					sent += 1;
-				} catch (e) {
-					if (e instanceof Unreachable) {
-						await queue.put(item);
-						return sent;
-					}
-					const err = e as ApiError;
-					if (err.status === 410) {
-						// Sent long ago, then deleted and purged from the trash: nothing left to do.
-						await queue.remove(item.seq!);
-						continue;
-					}
-					if (err.status === 401) {
-						offline.authRequired = true;
-						return sent;
-					}
-					// A note can't be reviewed the way an entry can, and a later one replaces it anyway.
-					if (item.preview.kind === 'note') await queue.remove(item.seq!);
-					else await queue.put({ ...item, status: 'review', error: err.code });
-				}
-			}
-			offline.authRequired = false;
+			do {
+				again = false;
+				sent += await sendWaiting();
+			} while (again && queue);
 			return sent;
 		} finally {
-			await refresh();
 			flushing = undefined;
 		}
 	})();
