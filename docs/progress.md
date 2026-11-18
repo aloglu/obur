@@ -17,8 +17,9 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   `Menu` and `ActionMenu`; new test in `menu-dismiss.e2e.ts`, checked to fail without the fix). Saved meals: Delete
   is a red trash icon by the title, the page's only action (owner's call); `EditorHead` lost its menu and inline
   question.
-- Next: report on button placement across lists (New food/recipe/meal, with and without items) and a review page for
-  Today's meal … menu.
+- Button placement investigated; a seven-stop review page (Artifact, owner's private link) covers New buttons on lists,
+  editor endings, saved meal delete, button pairs, add links and Today's meal … menu (trigger and contents).
+- Next: read the owner's picks from the review page, then build.
 
 ## Archived and deleted foods released (2026-11-18), as `v1.0.0-beta.22`
 
