@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as v from 'valibot';
 import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
+import { bulkParts, MAX_BULK_FOODS } from '../../../shared/food-bulk.ts';
 import { FoodInput } from '../../../shared/food-input.ts';
 import { foodSearchKey } from '../../../shared/search-text.ts';
 import { CatalogError, createCatalog } from './service.ts';
@@ -606,6 +607,18 @@ describe('archived and deleted foods', () => {
 		expect((await catalog.bulk(MEHMET, 'delete', { all: 'recipe' })).ids).toEqual([recipe]);
 		expect((await catalog.trash(MEHMET)).map((f) => f.recipe).sort()).toEqual([false, false, true]);
 		expect(await catalog.trash(ZEYNEP)).toEqual([]);
+	});
+
+	it('Select all takes an archive bigger than one request of IDs, and Undo brings it back in parts', async () => {
+		const n = MAX_BULK_FOODS + 1;
+		await admin`insert into foods (owner_id, name, search_key, basis, origin, archived_at)
+			select ${MEHMET}, 'Big ' || g, 'big ' || g, '100g', 'loseit', now() from generate_series(1, ${n}) g`;
+		const { ids } = await catalog.bulk(MEHMET, 'delete', { all: 'food' });
+		expect(ids).toHaveLength(n);
+		expect(await catalog.trashCount(MEHMET)).toBe(n);
+		for (const part of bulkParts(ids)) await catalog.bulk(MEHMET, 'undelete', { ids: part });
+		expect(await catalog.trashCount(MEHMET)).toBe(0);
+		expect((await catalog.ownFoods(MEHMET, 0, 1, { archived: true })).total).toBe(n);
 	});
 
 	it("never touches someone else's foods, through the service or straight SQL", async () => {

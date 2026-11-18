@@ -7,6 +7,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
+	import { bulkFoods } from '#lib/client/food-bulk.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { dayTitle, entryName, kcal, mealName } from '#lib/shared/format.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
@@ -125,14 +126,14 @@
 			ids.length === 1
 				? api('POST', `/api/v1/diary/entries/${ids[0]}?action=restore`, {})
 				: entriesBulk('restore', ids),
-		food: (ids) => api('POST', '/api/v1/foods/bulk', { action: 'undelete', ids }),
-		recipe: (ids) => api('POST', '/api/v1/foods/bulk', { action: 'undelete', ids }),
+		food: (ids) => bulkFoods('undelete', ids),
+		recipe: (ids) => bulkFoods('undelete', ids),
 		meal: (ids) => api('POST', '/api/v1/saved-meals/restore', { ids })
 	};
 	const deleteCall: Record<Kind, (ids: string[]) => Promise<unknown>> = {
 		entry: (ids) => entriesBulk('delete', ids),
-		food: (ids) => api('POST', '/api/v1/foods/bulk', { action: 'delete', ids }),
-		recipe: (ids) => api('POST', '/api/v1/foods/bulk', { action: 'delete', ids }),
+		food: (ids) => bulkFoods('delete', ids),
+		recipe: (ids) => bulkFoods('delete', ids),
 		meal: async (ids) => {
 			for (const id of ids) await api('DELETE', `/api/v1/saved-meals/${id}`, {});
 		}

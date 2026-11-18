@@ -8,6 +8,7 @@ import { deriveNutrients, type NutrientValue } from '../../../shared/nutrients.t
 import { matchKey, sameFood, type MatchableFood } from '../../../shared/food-match.ts';
 import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';
 import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
+import { MAX_BULK_FOODS, type FoodAction } from '../../../shared/food-bulk.ts';
 import type { ScanEdits } from '../../../shared/scan-edits.ts';
 import {
 	foodNutrients,
@@ -18,14 +19,9 @@ import {
 	recipeIngredients
 } from './schema.ts';
 
-/** Most foods one bulk action changes (Select all on the archive of a large LoseIt import). */
-export const MAX_BULK_FOODS = 5000;
-
-/**
- * What a bulk action does (docs/design.md, "Archived and deleted foods"): archive a food in use, restore an archived
- * one, delete an archived one to Recently deleted, or bring a deleted one back to the archive.
- */
-export type FoodAction = 'archive' | 'restore' | 'delete' | 'undelete';
+// What a bulk action does (docs/design.md, "Archived and deleted foods"): archive a food in use, restore an archived
+// one, delete an archived one to Recently deleted, or bring a deleted one back to the archive.
+export { MAX_BULK_FOODS, type FoodAction } from '../../../shared/food-bulk.ts';
 
 /** A food, or recipe, in Recently deleted. */
 export interface DeletedFood extends FoodSearchResult {
@@ -360,7 +356,6 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					.where(and(sql`${foods.ownerId} = app_current_user_id()`, which, from))
 					.returning({ id: foods.id });
 				if (ids && changed.length !== ids.length) throw new CatalogError('not_found');
-				if (!ids && changed.length > MAX_BULK_FOODS) throw new CatalogError('not_found');
 				const changedIds = changed.map((r) => r.id);
 				let usedIn: string[] = [];
 				if (action === 'delete' && changedIds.length) {

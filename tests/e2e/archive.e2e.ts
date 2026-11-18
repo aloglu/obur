@@ -1,7 +1,7 @@
 // Archived and deleted foods (docs/ui.md, "Archived and deleted"): the archive has its own page, opened from the top
 // of Foods; several foods are restored or deleted at once, Select all takes the whole archive, every step has Undo,
 // and deleted foods wait in Recently deleted, grouped, until restored.
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { apiAs, createFood, signedInAs } from './fixtures.ts';
 
 const kcal = (value: number) => [{ code: 'energy_kcal', value, qualifier: 'reported' }];
@@ -12,6 +12,12 @@ async function archivedFoods(page: import('@playwright/test').Page, names: strin
 		ids.push(await createFood(page, { name, basis: '100g', nutrients: kcal(100) }));
 	await apiAs(page, 'POST', '/api/v1/foods/bulk', { action: 'archive', ids });
 	return ids;
+}
+
+async function openRecentlyDeleted(page: Page) {
+	await page.getByRole('link', { name: 'More', exact: true }).click();
+	await page.getByRole('link', { name: /^Recently deleted/ }).click();
+	await expect(page).toHaveURL(/\/more\/deleted$/);
 }
 
 test('archived foods have their own page; several are deleted at once, undone, and restored from Recently deleted', async ({
@@ -61,9 +67,9 @@ test('archived foods have their own page; several are deleted at once, undone, a
 	await expect(main).toContainText('No archived foods.');
 
 	// Recently deleted: a Foods group; restore one, then the others together.
-	// The step before may still be refreshing the page's data; let it finish first.
-	await page.waitForLoadState('networkidle');
-	await page.goto('/more/deleted');
+	// Through More, as a person goes: a full page load here could cut off the step's data refresh, whose fallback
+	// reloads the page and cancels the load (seen on phone WebKit).
+	await openRecentlyDeleted(page);
 	const foods = main.getByRole('region').or(main.locator('section')).filter({ hasText: 'Foods' });
 	await expect(foods).toContainText('Old protein bar');
 	await expect(foods).toContainText('30 days left');
@@ -119,16 +125,17 @@ test('deleting a food says the recipe using it keeps its values; archived recipe
 	const main = page.getByRole('main');
 	await main.getByRole('button', { name: 'Select', exact: true }).click();
 	await main.getByRole('button', { name: /Red lentils/ }).click();
+	// The delete refreshes the page's data afterwards; a page load cutting that off would make it reload the page.
+	const refreshed = page.waitForResponse((r) => r.url().includes('__data.json'));
 	await page
 		.getByRole('toolbar', { name: 'Selected items' })
 		.getByRole('button', { name: 'Delete' })
 		.click();
 	await expect(page.getByRole('status')).toContainText('Lentil soup keeps its values.');
+	await refreshed;
 
 	// The recipe: archive it from the end of its page (Undo is offered, no question), find it under Archived recipes
 	// with the search's placeholder, delete it.
-	// The step before may still be refreshing the page's data; let it finish first.
-	await page.waitForLoadState('networkidle');
 	await page.goto(`/recipes/${recipe}`);
 	await expect(page.getByRole('button', { name: 'More actions' })).toHaveCount(0);
 	await main.getByRole('button', { name: 'Archive recipe' }).click();
@@ -150,9 +157,9 @@ test('deleting a food says the recipe using it keeps its values; archived recipe
 	await main.getByRole('button', { name: 'Delete recipe' }).click();
 	await expect(page).toHaveURL(/\/recipes\/archived$/);
 	await expect(page.getByRole('status')).toContainText('Deleted “Lentil soup”');
-	// The step before may still be refreshing the page's data; let it finish first.
-	await page.waitForLoadState('networkidle');
-	await page.goto('/more/deleted');
+	// Through More, as a person goes: a full page load here could cut off the step's data refresh, whose fallback
+	// reloads the page and cancels the load (seen on phone WebKit).
+	await openRecentlyDeleted(page);
 	await expect(main.locator('section').filter({ hasText: 'Recipes' })).toContainText('Lentil soup');
 });
 

@@ -84,8 +84,10 @@ export default defineConfig({
 					include: ['src/**/*.db.test.ts'],
 					globalSetup: ['./tests/db/global-setup.ts'],
 					fileParallelism: false,
-					// Some tests create and drop whole databases, which can exceed 5 s on a loaded machine.
-					testTimeout: 20_000
+					// Some tests create and drop whole databases, which can exceed 5 s on a loaded machine; so can the
+					// cleanup that drops them (it once took over 10 s, failing a file whose tests had all passed).
+					testTimeout: 20_000,
+					hookTimeout: 60_000
 				}
 			}
 		]

@@ -14,7 +14,15 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Findings: (1) Select all on Archived foods fails with "Something went wrong" above 5,000 archived foods
   (`MAX_BULK_FOODS`), plausible after a large LoseIt import; (2) `private-foods.db.test.ts` sometimes fails its
   cleanup (dropping its scratch database takes over 10 s under load; all its tests pass); (3) nothing since beta.22
-  has been checked on a real phone. Waiting for the owner's go on fixes.
+  has been checked on a real phone.
+- Fixed (owner's go): (1) Select all has no limit; ID lists (Undo, Recently deleted) go 5,000 per request
+  (`shared/food-bulk.ts`, `client/food-bulk.ts`; database test with 5,001 archived foods, unit test of the split);
+  (2) database test hooks get 60 s (`vite.config.ts`); three full Vitest runs clean (1164). Also found and fixed:
+  the archive e2e test's phone WebKit flake (a full page load cutting off the step's data refresh, whose fallback
+  reloads the page): it now opens Recently deleted through More and waits for the refresh; 15 repeats clean.
+- Validation: check, lint, Vitest 1164 (three runs), full e2e in the Playwright image 279 passed, 18 skipped, none
+  failed. Image gates passed before these fixes (smoke, off-site, upgrade from beta.19); the fixes touch no deploy
+  files. Next: owner's real-phone check, then tag when asked.
 
 ## Text Review applied (2026-11-18), unreleased
 

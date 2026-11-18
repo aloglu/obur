@@ -25,6 +25,7 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
+	import { bulkFoods } from '#lib/client/food-bulk.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import Button from '../Button.svelte';
@@ -110,8 +111,17 @@
 		everything = more && !query.trim();
 	}
 
-	const bulk = (action: 'restore' | 'delete' | 'archive' | 'undelete', target: object) =>
-		api<{ ids: string[]; usedIn: string[] }>('POST', '/api/v1/foods/bulk', { action, ...target });
+	// Select all names no IDs, however big the archive; a long list of IDs (Undo after it) goes in parts.
+	const bulk = (
+		action: 'restore' | 'delete',
+		target: { all: 'food' | 'recipe' } | { ids: string[] }
+	) =>
+		'all' in target
+			? api<{ ids: string[]; usedIn: string[] }>('POST', '/api/v1/foods/bulk', {
+					action,
+					...target
+				})
+			: bulkFoods(action, target.ids);
 
 	async function act(action: 'restore' | 'delete') {
 		busy = true;
@@ -149,7 +159,7 @@
 				message,
 				detail,
 				undo: async () => {
-					await bulk(action === 'delete' ? 'undelete' : 'archive', { ids });
+					await bulkFoods(action === 'delete' ? 'undelete' : 'archive', ids);
 					await reload();
 					void invalidate(ACCOUNT_DATA);
 				}
