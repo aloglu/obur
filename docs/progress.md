@@ -21,7 +21,17 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   version has it. Fix: @sveltejs/kit 3.3.1 and adapter-node 6.0.1+, plus a smoke-test check. Other SvelteKit
   advisories don't apply (no remote functions or query.batch; no secret found in the browser bundle). (2) minor:
   `requests` 2.32.3 in the speech image (used only while building it) has advisories; update to 2.33.x.
-- Waiting for the owner's go on fixes.
+- Fixed (owner's go): @sveltejs/kit 3.3.1 and adapter-node 6.0.4 (malformed addresses now get an error page and the
+  server keeps running, checked on a local build; the smoke test sends three and checks obur still runs); `requests`
+  2.33.1 in the speech image (both pins; image built and healthy). `npm audit` shows no SvelteKit advisories.
+- Validation: check, lint, Vitest 1164, image build, smoke (with the new check), off-site and upgrade tests passed;
+  full e2e 277 passed, 2 failed: the accessibility check (known phone WebKit flake, passed on rerun) and the offline
+  test below.
+- New finding (not fixed, reported): when the connection returns while a send attempt started offline is still
+  failing, the "online" signal joins that attempt instead of starting another (`flush` in
+  `client/offline/sync.svelte.ts`), so waiting entries go out at the next 30 s retry. Nothing lost. The offline test
+  fails 2 in 25 runs this way on both SvelteKit 3.1.0 and 3.3.1. Proposed fix: a signal during a send starts one more
+  pass afterwards.
 
 ## Release-candidate audit (owner, 2026-11-18), findings reported before fixing
 

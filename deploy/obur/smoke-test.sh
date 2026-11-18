@@ -1,6 +1,6 @@
 #!/bin/bash
 # Starts an obur image with an empty data folder and checks the basics: it becomes healthy, serves the sign-in page,
-# prints a first-account link, has taken its first backup, refuses the administrator to the app's user, and stops
+# prints a first-account link, survives badly encoded addresses, has taken its first backup, refuses the administrator to the app's user, and stops
 # cleanly. Usage: deploy/obur/smoke-test.sh <image>
 set -euo pipefail
 image=${1:?usage: smoke-test.sh <image>}
@@ -31,6 +31,15 @@ done
 [[ $(docker inspect -f '{{.State.Health.Status}}' "$name") == healthy ]] || fail "not healthy after 3 minutes"
 [[ $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3199/login) == 200 ]] || fail "no sign-in page"
 [[ $(logs) == *'http://localhost:3199/setup#'* ]] || fail "no first-account link in the log"
+# Badly encoded addresses get an error page, and obur keeps running (SvelteKit 3.1.0 crashed on them, which stopped
+# the whole container; GHSA-mw6w-2fmv-pvw3).
+for path in '/%E0%A4%A' '/%' '/api/v1/%E0'; do
+	curl -s -o /dev/null "http://127.0.0.1:3199$path" || true
+done
+sleep 2
+[[ $(docker inspect -f '{{.State.Running}}' "$name") == true ]] || fail "a badly encoded address stopped obur"
+[[ $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3199/login) == 200 ]] ||
+	fail "no sign-in page after badly encoded addresses"
 for _ in $(seq 30); do
 	docker exec "$name" test -f /data/backups/backup/obur/backup.info && break
 	sleep 2
