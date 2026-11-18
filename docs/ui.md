@@ -17,6 +17,7 @@ The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app an
   - In sheets, **Day** and **Meal** are two fields side by side. Each opens a menu with a tick on the current choice, as wide as its field.
   - **Settings choices** are rows showing the value; tapping opens a menu (Goal pace, Units, Profile, the LoseIt weight unit).
   - **Every other open menu is only as wide as its longest option** and lines up with the right edge of its row. It never stretches across the row. It is at most 288 px wide, and every option stays on one line: a longer one is cut with "…". In the unit menu the size ("125 g") sits apart on the right, always whole, so only the portion's name is cut (owner picked option B of the unit menu demo, 2026-11-16, over cutting the whole line and over also shortening names).
+  - **Two buttons side by side:** the way back or the lesser choice on the left, the main button on the right, everywhere (owner, 2026-11-18). **Small add links** inside a card are accent text with a + in front (Add portion, Add a key).
   - **A tap outside an open menu only closes it.** What was tapped does nothing, so closing a menu never presses a row or link by accident (owner report, 2026-11-16).
   - **Menus have a visible edge** (a hairline in the text colour at 16 % and a stronger shadow), so they stand apart from the white cards under them in every theme and mode (owner picked it in the menu edge demo, 2026-11-16, over the earlier faint edge and a deeper shadow alone). The tap-outside rule applies to every dropdown and every … menu (owner, 2026-11-16 and 2026-11-18; `client/swallow-press.ts`).
   - **The unit sits inside the amount field:** "piece ⌄" opens a menu when there are several units; a single unit (g, ml) is plain text, not a button.
@@ -143,7 +144,7 @@ The owner expects the motion in the demos, not only their layout (2026-11-06). C
   saves the form as it is. The LoseIt import preview says "3 foods are already in your foods, so those are used"
   under a **Keep separate copies** switch (`ui/food/AlreadyInFoods.svelte`, `shared/food-match.ts`).
   - **Food form:** one card each for name and icon, Nutrition and Portions, then the archive row; a built-in food, which can't be edited, shows Make my own variant instead (Archive food goes back to Foods with a toast, "Food archived", and Undo, which restores it and returns to the food; an archived food's page says so in a muted line under the title, and Restore stays on the page with a toast; owner report, 2026-11-16), Save (on only after a change, except for a scanned label), and a line saying the diary keeps what was logged. Kept against the demo: the kJ row, because a label may give only kJ and the kcal check needs it (empty kJ shows a dash rather than Unknown), and the Label type choice, because US and EU carbohydrate are different values.
-  - **Lists:** Foods, Recipes and Saved meals are one card each with a small head ("Your recipes", "kcal a serving"), rows with an icon, a detail line and the number at the right, and their counts on More's rows. New recipe and New meal sit under the list. On Foods, the search stays and New food sits above the list, because an import can bring hundreds of foods (2026-11-07, my call against the demo, which had a short list and no search). Archived foods and recipes stay in their lists, faded and last, so they can be restored.
+  - **Lists:** Foods, Recipes and Saved meals are one card each with a small head ("Your recipes", "kcal a serving"), rows with an icon, a detail line and the number at the right, and their counts on More's rows. New food, New recipe and New meal sit at the top, under the title (and Foods' search), with or without items (owner, 2026-11-18, buttons review). On Foods, the search stays and New food sits above the list, because an import can bring hundreds of foods (2026-11-07, my call against the demo, which had a short list and no search). Archived foods and recipes stay in their lists, faded and last, so they can be restored.
 
 ### Account and members
 
@@ -225,8 +226,9 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - **Selecting:** a round check on every entry, a tap toggles; the meal headers' buttons step aside; a bar over the tab
   bar (bottom right on desktop) shows the count, Cancel, and **Move to…**, **Copy to…**, **Delete**. Escape or leaving
   the day ends it. Desktop: Ctrl/⌘-click also selects.
-- **The meal … menu** (on meals with entries): Select entries, Move meal to…, Copy meal to…, Delete meal. It does
-  everything a hold or drag does, without the gestures.
+- **The meal … menu** (on meals with entries): Save as a meal, Select entries, Move meal to…, Copy meal to…, Delete meal,
+  each with an icon, and a line above Delete meal (owner, 2026-11-18, buttons review). It does everything a hold or drag
+  does, without the gestures. How its button looks is still open (it must line up with the calorie numbers).
 - **Move to… / Copy to…** sheet: day chips (Today, Yesterday, Another day with a date, never a future day) and meal
   chips; the button names the meal ("Move to Dinner"). Copies keep each entry's own nutrition; a move that leaves
   everything in place says so instead.

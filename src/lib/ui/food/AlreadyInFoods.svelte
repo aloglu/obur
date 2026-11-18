@@ -49,8 +49,8 @@
 		</p>
 	</div>
 	<div class="grid grid-cols-2 gap-2">
-		<Button disabled={busy} onclick={onuse}>{m.food_already_use()}</Button>
 		<!-- An ordinary button, not a submit: Enter or Go on the keyboard must never save past the match. -->
 		<Button variant="ghost" disabled={busy} onclick={onanyway}>{m.food_already_anyway()}</Button>
+		<Button disabled={busy} onclick={onuse}>{m.food_already_use()}</Button>
 	</div>
 </section>

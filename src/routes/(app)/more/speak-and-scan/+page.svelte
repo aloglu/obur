@@ -3,6 +3,7 @@
 	// label photos, their own keys (last four characters only) and this month's counts. Only they see this page's
 	// choices and keys.
 	import PageHead from '#lib/ui/PageHead.svelte';
+	import Plus from '@lucide/svelte/icons/plus';
 	import { untrack } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -195,8 +196,10 @@
 				<button
 					type="button"
 					onclick={() => (adding = true)}
-					class="min-h-11 self-start text-[0.9375rem] font-bold text-accent"
-					>{keys.length ? m.models_add_another() : m.models_add_key()}</button
+					class="flex min-h-11 items-center gap-1.5 self-start text-[0.9375rem] font-bold text-accent"
+					><Plus size={18} aria-hidden="true" />{keys.length
+						? m.models_add_another()
+						: m.models_add_key()}</button
 				>
 			{/if}
 		</Card>

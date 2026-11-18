@@ -227,8 +227,8 @@
 			{problem.line}
 			{#snippet actions()}
 				<div class="grid grid-cols-2 gap-2">
-					<Button onclick={start}>{m.speak_try_again()}</Button>
 					<Button variant="ghost" onclick={ontype}>{m.speak_type_instead()}</Button>
+					<Button onclick={start}>{m.speak_try_again()}</Button>
 				</div>
 			{/snippet}
 		</Notice>

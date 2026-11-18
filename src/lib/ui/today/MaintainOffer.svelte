@@ -25,11 +25,11 @@
 	<h2 class="text-[1.1875rem] font-bold text-balance">{m.maintain_offer_title()}</h2>
 	<p class="text-[0.90625rem] text-muted">{m.maintain_offer_body()}</p>
 	<div class="grid grid-cols-2 gap-2">
-		<Button disabled={busy} onclick={() => answer(switchToMaintain)}
-			>{m.maintain_offer_yes()}</Button
-		>
 		<Button variant="ghost" disabled={busy} onclick={() => answer(() => declineMaintain(goalKg))}
 			>{m.maintain_offer_no()}</Button
+		>
+		<Button disabled={busy} onclick={() => answer(switchToMaintain)}
+			>{m.maintain_offer_yes()}</Button
 		>
 	</div>
 </section>

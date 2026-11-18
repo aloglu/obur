@@ -19,7 +19,17 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   question.
 - Button placement investigated; a seven-stop review page (Artifact, owner's private link) covers New buttons on lists,
   editor endings, saved meal delete, button pairs, add links and Today's meal … menu (trigger and contents).
-- Next: read the owner's picks from the review page, then build.
+- Review page rebuilt with real screenshots, one decision per screen (owner found the drawn version confusing).
+- Owner's picks: New meal at the top (built); keep Cancel and Save on recipe/saved meal editors (no change); main
+  button on the right in every pair (built: Already in your foods, Maintain offer, Speak's failure card); + on Add a key
+  (built); meal menu with icons and a line before Delete meal (built, `ActionMenu` takes `icon`). Saved meal delete:
+  owner picked a row at the end but asked how it sits with archive rows; waiting on their answer (trash icon still in
+  place). Meal … button: owner rejected all options because none lined up with the calorie numbers; step 6 re-shot
+  with each option's right edge on the numbers' edge, waiting for a pick.
+- Validation: check, lint, desktop Chromium e2e for saved meals, catalog, bulk, menus, goals, own key, speak and
+  accessibility (38 passed). `turkish.e2e.ts` screenshot comparisons fail on the host with or without this change
+  (baselines come from the Docker image); not run in Docker.
+- Next: the owner's answers on saved meal delete and the meal … button.
 
 ## Archived and deleted foods released (2026-11-18), as `v1.0.0-beta.22`
 

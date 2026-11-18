@@ -1,6 +1,6 @@
 <script lang="ts">
 	// All saved meals (docs/ui.md, "Saved meals"). Each opens its editor; logging happens from Log (owner review
-	// 2026-10-30: managing a meal and logging it are separate).
+	// 2026-10-30: managing a meal and logging it are separate). New meal sits at the top, as on Foods and Recipes.
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { kcal } from '#lib/shared/format.ts';
@@ -15,6 +15,11 @@
 
 <main class="mx-auto flex max-w-[640px] flex-col gap-3 px-3.5 py-4 desk:px-7">
 	<PageHead href={resolve('/(app)/more')} label={m.nav_more()} title={m.saved_title()} />
+	<a
+		href={resolve('/(app)/saved-meals/new')}
+		class="grid min-h-[52px] place-items-center rounded-button bg-fill px-4 text-[1.0625rem] font-[750] text-on-accent"
+		>{m.saved_new()}</a
+	>
 	{#if data.meals.length === 0}
 		<p class="text-[0.9375rem] text-muted">{m.saved_none()}</p>
 	{:else}
@@ -33,9 +38,4 @@
 			{/each}
 		</ListCard>
 	{/if}
-	<a
-		href={resolve('/(app)/saved-meals/new')}
-		class="grid min-h-[52px] place-items-center rounded-button bg-fill px-4 text-[1.0625rem] font-[750] text-on-accent"
-		>{m.saved_new()}</a
-	>
 </main>

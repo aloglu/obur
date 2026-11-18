@@ -2,12 +2,16 @@
 	// A … button with a short list of actions. Arrow keys move between them; Escape closes it and returns focus to the
 	// button. A tap elsewhere only closes it, as with every menu (docs/ui.md, "Choices"): what was tapped does nothing.
 	import Ellipsis from '@lucide/svelte/icons/ellipsis';
+	import type { Component } from 'svelte';
 	import { tick } from 'svelte';
 	import { swallowRestOfPress } from '#lib/client/swallow-press.ts';
 
 	interface Item {
 		label: string;
 		ariaLabel?: string;
+		/** A Lucide icon before the label. */
+		icon?: Component<{ size?: number; 'aria-hidden'?: 'true' }>;
+		/** Red, after a line that sets it apart from the rest. */
 		danger?: boolean;
 		action: () => void;
 	}
@@ -89,17 +93,22 @@
 				up ? 'bottom-full mb-1' : 'top-full mt-1'
 			]}
 		>
-			{#each items as item (item.label)}
+			{#each items as item, i (item.label)}
+				{#if item.danger && i > 0}<div role="separator" class="mx-1.5 my-1 h-px bg-line"></div>{/if}
 				<button
 					type="button"
 					role="menuitem"
 					aria-label={item.ariaLabel}
 					class={[
-						'flex min-h-11 w-full items-center rounded-[10px] px-3 text-left text-[0.9375rem] font-[550] hover:bg-surface2',
+						'flex min-h-11 w-full items-center gap-3 rounded-[10px] px-3 text-left text-[0.9375rem] font-[550] hover:bg-surface2',
 						item.danger && 'text-bad'
 					]}
-					onclick={() => choose(item.action)}>{item.label}</button
+					onclick={() => choose(item.action)}
 				>
+					{#if item.icon}<span class={['shrink-0', !item.danger && 'text-muted']}
+							><item.icon size={20} aria-hidden="true" /></span
+						>{/if}{item.label}
+				</button>
 			{/each}
 		</div>
 	{/if}
