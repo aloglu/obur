@@ -125,18 +125,25 @@ test('deleting a food says the recipe using it keeps its values; archived recipe
 		.click();
 	await expect(page.getByRole('status')).toContainText('Lentil soup keeps its values.');
 
-	// The recipe: archive it, find it under Archived recipes, delete it from its … menu.
+	// The recipe: archive it from the end of its page (Undo is offered, no question), find it under Archived recipes
+	// with the search's placeholder, delete it.
 	// The step before may still be refreshing the page's data; let it finish first.
 	await page.waitForLoadState('networkidle');
 	await page.goto(`/recipes/${recipe}`);
-	await page.getByRole('button', { name: 'More actions' }).click();
-	await page.getByRole('menuitem', { name: 'Archive recipe' }).click();
-	await page.getByRole('button', { name: 'Archive', exact: true }).click();
+	await expect(page.getByRole('button', { name: 'More actions' })).toHaveCount(0);
+	await main.getByRole('button', { name: 'Archive recipe' }).click();
+	await expect(page).toHaveURL(/\/recipes$/);
+	await expect(page.getByRole('status')).toContainText('Recipe archived');
+	await main.getByRole('link', { name: /Archived recipes\s*1/ }).click();
+	await expect(main.getByRole('searchbox')).toHaveAttribute('placeholder', /lentil soup/);
+	await main.getByRole('link', { name: /Lentil soup/ }).click();
+	await main.getByRole('button', { name: 'Restore' }).click();
+	await expect(page.getByRole('status')).toContainText('Recipe restored');
+	await main.getByRole('button', { name: 'Archive recipe' }).click();
 	await expect(page).toHaveURL(/\/recipes$/);
 	await main.getByRole('link', { name: /Archived recipes\s*1/ }).click();
 	await main.getByRole('link', { name: /Lentil soup/ }).click();
-	await page.getByRole('button', { name: 'More actions' }).click();
-	await page.getByRole('menuitem', { name: 'Delete recipe' }).click();
+	await main.getByRole('button', { name: 'Delete recipe' }).click();
 	await expect(page).toHaveURL(/\/recipes\/archived$/);
 	await expect(page.getByRole('status')).toContainText('Deleted “Lentil soup”');
 	// The step before may still be refreshing the page's data; let it finish first.

@@ -169,6 +169,9 @@
 <div class="pinned-search">
 	<TextField
 		label={kind === 'food' ? m.archived_foods_search() : m.archived_recipes_search()}
+		placeholder={kind === 'food'
+			? m.foods_search_placeholder()
+			: m.archived_recipes_search_placeholder()}
 		bind:value={query}
 		type="search"
 		autocomplete="off"

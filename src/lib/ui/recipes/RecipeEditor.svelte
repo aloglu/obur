@@ -2,7 +2,7 @@
 	// The recipe editor (docs/ui.md, "Recipes"): name, who can use it, servings, the optional cooked weight, the
 	// ingredients (shared with the saved meal editor) and the values per serving, and its icon as in the food form. One Save sends the whole recipe;
 	// kept ingredients re-scale their own snapshot, and only Update to current food values reads the catalog.
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
@@ -136,10 +136,27 @@
 			});
 		});
 
+	const archiveCall = (archived: boolean) =>
+		api('POST', `/api/v1/foods/${id}?action=${archived ? 'archive' : 'restore'}`, {});
+
+	// As on a food's page: archiving goes back to Recipes with Undo (back to the recipe); restoring stays here.
 	const setArchived = (archived: boolean) =>
 		run(async () => {
-			await api('POST', `/api/v1/foods/${id}?action=${archived ? 'archive' : 'restore'}`, {});
+			await archiveCall(archived);
+			if (!archived) {
+				await invalidateAll();
+				showToast({ message: m.recipe_restored_toast() });
+				return;
+			}
 			await goto(resolve('/(app)/recipes'), { invalidateAll: true });
+			showToast({
+				message: m.recipe_archived_toast(),
+				detail: m.food_archived_detail(),
+				undo: async () => {
+					await archiveCall(false);
+					await goto(resolve('/(app)/recipes/[id]', { id }));
+				}
+			});
 		});
 
 	// Delete (archived recipes only) goes back to Archived recipes with Undo, which brings it back and reopens it.
@@ -165,20 +182,6 @@
 	backLabel={start?.archived ? m.archived_recipes_title() : m.recipes_title()}
 	title={start ? m.recipe_edit_title() : m.recipe_new_title()}
 	{busy}
-	remove={start && !start.archived
-		? {
-				label: m.recipe_archive(),
-				confirm: m.recipe_archive_confirm({ name: start.name }),
-				yes: m.food_archive(),
-				run: () => setArchived(true)
-			}
-		: undefined}
-	direct={start?.archived
-		? [
-				{ label: m.food_restore(), run: () => setArchived(false) },
-				{ label: m.recipe_delete(), danger: true, run: remove }
-			]
-		: undefined}
 />
 {#if start?.archived}<p class="text-[0.875rem] text-muted">
 		{m.food_archived()}
@@ -260,6 +263,30 @@
 		<Button variant="ghost" wide disabled={busy} onclick={refresh}>
 			<RefreshCw size={18} aria-hidden="true" />{m.saved_refresh()}
 		</Button>
+	{/if}
+
+	<!-- Archive, Restore and Delete sit at the end, above Save, as on a food's page. -->
+	{#if start}
+		<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
+			<button
+				type="button"
+				disabled={busy}
+				onclick={() => setArchived(!start.archived)}
+				class={[
+					'flex min-h-14 items-center text-left text-[0.9375rem] font-semibold',
+					start.archived ? 'text-accent' : 'text-bad'
+				]}>{start.archived ? m.food_restore() : m.recipe_archive()}</button
+			>
+			{#if start.archived}
+				<button
+					type="button"
+					disabled={busy}
+					onclick={remove}
+					class="flex min-h-14 items-center text-left text-[0.9375rem] font-semibold text-bad"
+					>{m.recipe_delete()}</button
+				>
+			{/if}
+		</div>
 	{/if}
 
 	{#if problem}<Notice>{problem}</Notice>{/if}

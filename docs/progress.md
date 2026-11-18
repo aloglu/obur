@@ -2,6 +2,18 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Archive placeholders and recipe archive at the page end (2026-11-18), unreleased
+
+- Owner reports: the archive searches had no placeholder (now "Name or brand, e.g. greek yogurt" for foods, shared
+  with Foods, and "Recipe name, e.g. lentil soup" for recipes); recipes archived through the … menu with a question
+  while foods use a row at the end of the page. Recipes now match foods: Archive recipe at the end, no question,
+  toast with Undo; an archived recipe has Restore (stays on the page) and Delete recipe there. No … menu on recipes.
+- Owner declined header icons for New food/recipe (my advice) and dropped the … menu redesign. Still open: saved
+  meals keep Delete in a … menu by the title, and Today's meal cards keep theirs (asked the owner about saved meals).
+- Validation: check, lint, desktop Chromium e2e for every recipe/archive/saved-meal file (55 passed). Phone WebKit
+  not run.
+- Next: add the placeholders to the Text Review artifact; the owner's picks there come later.
+
 ## Archived and deleted foods released (2026-11-18), as `v1.0.0-beta.22`
 
 beta.21 plus Scan's move to `gpt-6.1-terra` (before `gpt-5-mini` shuts down on 2026-12-11) and archived and deleted
