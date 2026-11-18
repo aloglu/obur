@@ -2,6 +2,20 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Release-candidate audit (owner, 2026-11-18), findings reported before fixing
+
+- Read: everything since beta.21 not yet audited (migrations 0058–0059, purge, catalog bulk/trash/ownFoods, saved
+  meal delete/restore, export/import and LoseIt changes, new routes, archive and Recently deleted screens, menus,
+  today's button, "<" and text changes) and beta.18–19 (restore replay wait, menu tap guard).
+- Gates passed: check, lint, Vitest 1162, build, image, smoke test, off-site outage test, upgrade test from beta.19;
+  full e2e earlier today (277 passed, 2 phone WebKit failures that passed on rerun).
+- Added: a database test that deleted foods and saved meals export and import still deleted, and can be restored
+  (passed; no bug).
+- Findings: (1) Select all on Archived foods fails with "Something went wrong" above 5,000 archived foods
+  (`MAX_BULK_FOODS`), plausible after a large LoseIt import; (2) `private-foods.db.test.ts` sometimes fails its
+  cleanup (dropping its scratch database takes over 10 s under load; all its tests pass); (3) nothing since beta.22
+  has been checked on a real phone. Waiting for the owner's go on fixes.
+
 ## Text Review applied (2026-11-18), unreleased
 
 - Owner answered 17 of the 83 items (all "agree" or "shorten as written") and asked to apply every suggestion as

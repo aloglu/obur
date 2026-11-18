@@ -458,6 +458,44 @@ describe('import', () => {
 		});
 	});
 
+	it('carries foods and saved meals in Recently deleted, still deleted, into another account', async () => {
+		await buildHistory();
+		const gone = await catalog.createFood(
+			MEHMET,
+			food({
+				name: 'Silinen kraker',
+				basis: '100g',
+				nutrients: [{ code: 'energy_kcal', value: 450, qualifier: 'reported' }],
+				servings: []
+			})
+		);
+		await catalog.setArchived(MEHMET, gone, true);
+		await catalog.bulk(MEHMET, 'delete', { ids: [gone] });
+		const [meal] = await savedMeals.list(MEHMET);
+		await savedMeals.remove(MEHMET, meal.id);
+
+		const archive = fromElsewhere(await portability.exportArchive(MEHMET));
+		const sent = readArchive(archive).data;
+		expect(sent.foods.find((f) => f.name === 'Silinen kraker')?.deletedAt).toEqual(
+			expect.any(String)
+		);
+		expect(sent.savedMeals[0].deletedAt).toEqual(expect.any(String));
+
+		await portability.applyImport(ZEYNEP, archive);
+		// Nowhere in use, and both waiting in Recently deleted, where they can be restored.
+		expect(await savedMeals.list(ZEYNEP)).toEqual([]);
+		const [deletedMeal] = await savedMeals.trash(ZEYNEP);
+		expect(deletedMeal.name).toBe(meal.name);
+		const trash = await catalog.trash(ZEYNEP);
+		expect(trash.map((f) => f.name)).toEqual(['Silinen kraker']);
+		expect(
+			(await catalog.ownFoods(ZEYNEP, 0, 50, { archived: true })).foods.map((f) => f.name)
+		).not.toContain('Silinen kraker');
+		await catalog.bulk(ZEYNEP, 'undelete', { ids: [trash[0].id] });
+		await savedMeals.restore(ZEYNEP, [deletedMeal.id]);
+		expect(await savedMeals.list(ZEYNEP)).toHaveLength(1);
+	});
+
 	it('exports day notes and imports them, keeping whichever version was typed last', async () => {
 		const DAY = '2026-10-25';
 		const diary = createDiary(db);
