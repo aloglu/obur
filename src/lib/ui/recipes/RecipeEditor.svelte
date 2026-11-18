@@ -181,7 +181,6 @@
 	backHref={start?.archived ? resolve('/(app)/recipes/archived') : resolve('/(app)/recipes')}
 	backLabel={start?.archived ? m.archived_recipes_title() : m.recipes_title()}
 	title={start ? m.recipe_edit_title() : m.recipe_new_title()}
-	{busy}
 />
 {#if start?.archived}<p class="text-[0.875rem] text-muted">
 		{m.food_archived()}

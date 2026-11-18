@@ -120,8 +120,6 @@
 	backHref={resolve('/(app)/saved-meals')}
 	backLabel={m.saved_title()}
 	title={start ? m.saved_edit_title() : m.saved_new_title()}
-	{busy}
-	remove={start ? { label: m.saved_delete(), run: removeMeal } : undefined}
 />
 
 <form class="flex flex-col gap-3" onsubmit={save} novalidate>
@@ -148,6 +146,19 @@
 		<Button variant="ghost" wide disabled={busy} onclick={refresh}>
 			<RefreshCw size={18} aria-hidden="true" />{m.saved_refresh()}
 		</Button>
+	{/if}
+
+	<!-- Delete sits at the end, above Save, as Archive does on a recipe or a food (owner, 2026-11-18). -->
+	{#if start}
+		<div class="flex flex-col rounded-card bg-surface px-[18px] shadow-card">
+			<button
+				type="button"
+				disabled={busy}
+				onclick={removeMeal}
+				class="flex min-h-14 items-center text-left text-[0.9375rem] font-semibold text-bad"
+				>{m.saved_delete()}</button
+			>
+		</div>
 	{/if}
 
 	{#if problem}<Notice>{problem}</Notice>{/if}

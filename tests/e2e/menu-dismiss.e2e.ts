@@ -48,6 +48,39 @@ test('a tap outside an open … menu closes it without pressing what was under i
 	await expect(page).toHaveURL(/\/log/);
 });
 
+test("the meal … button's dots end on the calorie numbers' right edge", async ({
+	page
+}, testInfo) => {
+	// Owner, 2026-11-18: the bare dots, lined up with the numbers above them; the tap target stays 44 px.
+	await signedInAs(page, `Noktalar ${testInfo.project.name}`);
+	await apiAs(page, 'POST', '/api/v1/diary/entries', {
+		kind: 'quick',
+		date: new Date().toLocaleDateString('en-CA'),
+		meal: 'breakfast',
+		zone: 'Europe/Istanbul',
+		kcal: 280,
+		description: 'Toast'
+	});
+	await page.goto('/');
+	const button = page.getByRole('button', { name: 'Breakfast actions' });
+	await expect(button).toBeVisible();
+	const box = await button.boundingBox();
+	expect(box?.width).toBeGreaterThanOrEqual(44);
+	expect(box?.height).toBeGreaterThanOrEqual(44);
+	const dotsRight = await button.evaluate((b) =>
+		Math.max(...[...b.querySelectorAll('svg circle')].map((c) => c.getBoundingClientRect().right))
+	);
+	const numberRight = await page
+		.getByRole('button', { name: /Toast/ })
+		.getByText('280', { exact: true })
+		.evaluate((el) => {
+			const range = document.createRange();
+			range.selectNodeContents(el);
+			return range.getBoundingClientRect().right;
+		});
+	expect(Math.abs(dotsRight - numberRight)).toBeLessThanOrEqual(1.5);
+});
+
 test('archiving a food returns to Foods with Undo', async ({ page }) => {
 	await signedInAs(page, 'Arşivleyen');
 	const id = await createFood(page, {
@@ -94,4 +127,29 @@ test('the unit menu keeps every option on one line, at most 288 px wide, with th
 		.getByRole('option')
 		.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height)))
 		expect(box).toBeLessThan(50);
+});
+
+test("Cancel on a food's page leaves without saving, back to where the page came from", async ({
+	page
+}) => {
+	// Owner, 2026-11-18: a food's page ends like the recipe and saved meal editors, Cancel beside Save food.
+	await signedInAs(page, 'Vazgeçen');
+	const id = await createFood(page, {
+		name: 'Cancel test bar',
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 400, qualifier: 'reported' }]
+	});
+	await page.goto(`/foods/${id}`);
+	await page.getByLabel('Name', { exact: true }).fill('Changed name');
+	await page.getByRole('link', { name: 'Cancel' }).click();
+	await expect(page).toHaveURL(/\/foods$/);
+	await expect(page.getByRole('link', { name: /Cancel test bar/ })).toBeVisible();
+
+	await page.goto(`/foods/${id}`);
+	await page.getByRole('button', { name: 'Archive food' }).click();
+	await expect(page.getByRole('status').filter({ hasText: 'Food archived' })).toBeVisible();
+	await page.goto(`/foods/${id}`);
+	await expect(page.getByRole('button', { name: 'Restore' })).toBeVisible();
+	await page.getByRole('link', { name: 'Cancel' }).click();
+	await expect(page).toHaveURL(/\/foods\/archived$/);
 });

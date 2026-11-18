@@ -36,6 +36,8 @@
 		unsaved?: boolean;
 		/** What else can be done with the food, above Save. */
 		actions?: Snippet;
+		/** Where Cancel leads: an existing food's page has Cancel beside Save, as the recipe and meal editors do. */
+		cancelHref?: string;
 		/** A short line under Save. */
 		note?: string;
 		/** In place of the hint on copying a label: what a label scan read and decided. */
@@ -67,6 +69,7 @@
 		unsaved = false,
 		actions,
 		note,
+		cancelHref,
 		valueNotes,
 		valuesAction,
 		valuesHint,
@@ -556,6 +559,19 @@
 
 	{#if match && onuse}
 		<AlreadyInFoods {match} {busy} {onuse} onanyway={() => save(true)} />
+	{:else if cancelHref}
+		<div class="grid grid-cols-2 gap-2">
+			<!-- eslint-disable svelte/no-navigation-without-resolve -- the caller passes resolve(...) -->
+			<a
+				href={cancelHref}
+				class="inline-flex min-h-[52px] items-center justify-center rounded-button border border-line bg-surface text-[1.0625rem] font-[750]"
+				>{m.common_cancel()}</a
+			>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			<Button type="submit" disabled={busy || !name.trim() || (!!start && !unsaved && !dirty)}
+				>{busy ? m.common_working() : (saveLabel ?? m.food_save())}</Button
+			>
+		</div>
 	{:else}
 		<Button type="submit" wide disabled={busy || !name.trim() || (!!start && !unsaved && !dirty)}
 			>{busy ? m.common_working() : (saveLabel ?? m.food_save())}</Button

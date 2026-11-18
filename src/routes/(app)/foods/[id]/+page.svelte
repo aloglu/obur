@@ -207,6 +207,7 @@
 				{busy}
 				onsave={save}
 				actions={foodActions}
+				cancelHref={food.archived ? resolve('/(app)/foods/archived') : resolve('/(app)/foods')}
 				note={m.food_saved_note()}
 			/>{/key}
 	{:else}

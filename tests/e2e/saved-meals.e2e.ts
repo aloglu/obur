@@ -120,7 +120,7 @@ test('save a meal, log it to another day and meal, undo, then edit and delete it
 	await page.getByRole('link', { name: /Hafta sonu/ }).click();
 	await page.getByRole('button', { name: 'Update to current food values' }).click();
 	await expect(page.getByRole('status')).toContainText('Updated: 1 · Kept as saved: 0');
-	// A trash icon by the title, with no question first: it goes to Recently deleted, and Undo brings it back.
+	// A row at the end of the page, with no question first: it goes to Recently deleted, and Undo brings it back.
 	await page.getByRole('button', { name: 'Delete saved meal' }).click();
 	const deleted = page.getByRole('status');
 	await expect(deleted).toContainText('Deleted “Hafta sonu”');

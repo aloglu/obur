@@ -1,6 +1,8 @@
 <script lang="ts">
 	// A … button with a short list of actions. Arrow keys move between them; Escape closes it and returns focus to the
 	// button. A tap elsewhere only closes it, as with every menu (docs/ui.md, "Choices"): what was tapped does nothing.
+	// The button is the bare dots, the last dot's ink on the right edge of the numbers above (owner, 2026-11-18): the
+	// 44 px target reaches 16 px past that edge, which is the Ellipsis icon's room right of its last dot.
 	import Ellipsis from '@lucide/svelte/icons/ellipsis';
 	import type { Component } from 'svelte';
 	import { tick } from 'svelte';
@@ -64,7 +66,7 @@
 	});
 </script>
 
-<div class="relative">
+<div class="relative -mr-4">
 	<button
 		bind:this={button}
 		type="button"
@@ -73,12 +75,9 @@
 		aria-expanded={open}
 		aria-controls={open ? `${uid}-menu` : undefined}
 		onclick={() => (open ? close() : show())}
-		class="group grid size-11 place-items-center"
+		class="grid size-11 place-items-center text-muted hover:text-text"
 	>
-		<span
-			class="grid size-9 place-items-center rounded-full bg-surface2 text-muted group-hover:text-text"
-			><Ellipsis size={18} aria-hidden="true" /></span
-		>
+		<Ellipsis size={18} aria-hidden="true" />
 	</button>
 	{#if open}
 		<div

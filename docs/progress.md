@@ -33,8 +33,16 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
   numbers' edge), saved meal delete (row vs icon, beside how every editor ends), Cancel on the food page.
 - Round 2 picks (owner, 2026-11-18): meal … button as dots only, aligned to the calorie numbers' right edge;
   Delete saved meal as a row at the end (trash icon goes); Cancel next to Save food on the food page (archived too).
-- Next: owner said not to build yet; they will start a new conversation. Build the three round 2 picks when they
-  say go. Also owed: the Text Review picks and the "<" checkbox discussion (see memory).
+- Round 2 built (owner's go): the meal … button is the bare dots, the last dot's ink on the calorie numbers' right
+  edge, 44 px target kept (`ActionMenu`; a new test in `menu-dismiss.e2e.ts` measures it and fails without the
+  fix); Delete saved meal is a red row in a card at the end, above Cancel/Save (`EditorHead` is back to the way back
+  and the title); a food's page has Cancel beside Save food, back to Foods or Archived foods (`FoodForm`'s
+  `cancelHref`; new test). docs/ui.md updated, including the outdated "Small round actions" line.
+- Validation: check, lint; desktop Chromium e2e for bulk, accessibility, icons, catalog, archive, menus, saved meals,
+  typed entry and scan (42 passed); the same files on phone WebKit in Docker: 43 passed and 1 failed on the first run
+  (not identified), 44 passed on the rerun.
+- Next: the owner tries it. Still owed: the Text Review picks and the "<" checkbox discussion (see memory).
+  Recipe Cancel still leads to Recipes even on an archived recipe (its back button leads to Archived recipes).
 
 ## Archived and deleted foods released (2026-11-18), as `v1.0.0-beta.22`
 
