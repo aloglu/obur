@@ -46,6 +46,16 @@ Then the calendar helper, local checks and image tests; ask before tagging.
   amount sheet say so. Two new offline e2e tests (both fail without the server check). Offline, diary, catalog,
   curated, recipes and pinned-search suites: 89 passed, 4 skipped by design. Turkish strings for the three new
   messages (steps 2 and 7) added in a follow-up commit; all Vitest 1181 passed.
+- Step 8 done: `catalog.offlineFoods` / `offlineFoodsStamp` and `GET /api/v1/foods/offline` (ETag, 304); the service
+  worker keeps the copy in `obur-data-v2`, refreshes it at app start (layout warm-up) and 2 s after a write to
+  foods/recipes/import, answers `/__offline/foods?q=` from it and food details when no saved copy exists; LogPanel
+  falls back to it when the server can't be reached. `shared/local-food-search.ts` with unit tests (5,000 foods),
+  DB tests (contents, isolation, stamp), offline e2e test (fails without the local search on both browsers).
+  Full e2e (both browsers, default workers): 289 passed, 19 skipped by design, 3 failed: the offline "stays on the
+  page" test expected "Search needs a connection" (now the copy answers; updated, offline suite 39 passed) and the
+  known WebKit dark-mode axe flake under load (passes 3 of 3 alone). Vitest 1188, lint, check passed.
+- Next: image tests (smoke, off-site, upgrade from beta.19) on the final code, then ask the owner before tagging.
+  Owner's phone check wanted for offline search and the account guard (real iPhone, installed app).
 
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
 

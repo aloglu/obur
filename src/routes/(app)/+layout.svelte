@@ -146,6 +146,9 @@
 				fetch(url, { credentials: 'same-origin', headers: accept ? { accept } : undefined }).catch(
 					() => {}
 				);
+			// The copy of the person's foods for offline search: the service worker answers at once and fetches it
+			// behind the page, only if it changed. Without a service worker there is nowhere to keep it.
+			if (navigator.serviceWorker?.controller) get('/api/v1/foods/offline');
 			for (const href of tabs) {
 				// The page itself (for a reload), and its data as SvelteKit requests it on an in-app move. The
 				// page that was opened first has its data built into the HTML, so it is fetched here explicitly.

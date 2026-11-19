@@ -408,8 +408,9 @@ test('offline, the app stays on the page it is on, says what it cannot do, and n
 		dispatchEvent(new Event('online'));
 		document.dispatchEvent(new Event('visibilitychange'));
 	});
+	// Search answers from this device's copy of the person's foods (none match here) and offers quick add.
 	await page.getByLabel('Search foods').fill('mercimek');
-	await expect(page.getByText('Search needs a connection')).toBeVisible();
+	await expect(page.getByText('No food found for “mercimek”.')).toBeVisible();
 	await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
 
 	// A page never saved on this device says so instead of showing Today.
@@ -666,6 +667,79 @@ test('a food changed on another device while its amount sheet is open is shown a
 	// Saving again, now with what is shown, logs it.
 	await sheet.getByRole('button', { name: /^Log to/ }).click();
 	await expect(sheet).toBeHidden();
+});
+
+test('offline, search finds the foods kept on this device, and one never opened online can be logged', async ({
+	page,
+	context
+}, testInfo) => {
+	const tag = testInfo.project.name;
+	await signedInAs(page, 'Ayşe');
+	await createFood(page, {
+		name: `Barley tea ${tag}`,
+		basis: '100ml',
+		nutrients: [{ code: 'energy_kcal', value: 2, qualifier: 'reported' }]
+	});
+	await primeCache(page);
+	const copyHas = (name: string) =>
+		page.evaluate(async (name) => {
+			const hit = await (
+				await caches.open('obur-data-v2')
+			).match(location.origin + '/api/v1/foods/offline');
+			return hit ? (await hit.text()).includes(name) : false;
+		}, name);
+	await expect.poll(() => copyHas(`Barley tea ${tag}`)).toBe(true);
+
+	// A food added in the app later reaches the copy a moment after it is saved.
+	const added = `Rye bread ${tag}`;
+	await page.evaluate(
+		(name) =>
+			fetch('/api/v1/foods', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					food: {
+						name,
+						brand: null,
+						basis: '100g',
+						servings: [],
+						nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }]
+					}
+				})
+			}),
+		added
+	);
+	await expect.poll(() => copyHas(added), { timeout: 15_000 }).toBe(true);
+
+	await context.setOffline(true);
+	await page
+		.getByRole('region', { name: 'Lunch' })
+		.getByRole('button', { name: 'Add food to Lunch' })
+		.click();
+	await page.getByRole('searchbox').fill('barley');
+	await page.getByRole('button', { name: new RegExp(`Barley tea ${tag}`) }).click();
+	const sheet = page.getByRole('dialog');
+	await expect(sheet.getByText('2 kcal per 100 ml')).toBeVisible();
+	await sheet.getByRole('button', { name: /^Log to/ }).click();
+	await expect(page.getByRole('status').filter({ hasText: 'Saved on this device' })).toBeVisible();
+
+	// Back online, it arrives.
+	await context.setOffline(false);
+	await page.evaluate(() => dispatchEvent(new Event('online')));
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	await expect
+		.poll(
+			async () =>
+				(
+					await apiAs<{ entries: { food: { name: string } | null }[] }>(
+						page,
+						'GET',
+						`/api/v1/diary/${date}`
+					)
+				).entries.map((e) => e.food?.name),
+			{ timeout: 15_000 }
+		)
+		.toEqual([`Barley tea ${tag}`]);
 });
 
 test('an Undo that cannot reach the server says so instead of looking done', async ({

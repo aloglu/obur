@@ -10,6 +10,15 @@
 import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
 import { ACCOUNT_HEADER } from './lib/shared/account-data.ts';
+import type { FoodDetail } from './lib/shared/food-types.ts';
+import {
+	CHANGES_FOODS,
+	FOOD_COPY_PATH,
+	LOCAL_SEARCH_PATH,
+	searchable,
+	searchLocal,
+	type SearchableFood
+} from './lib/shared/local-food-search.ts';
 import { answerFromCopy, mergePageData, nothingNew } from './lib/shared/page-data-copy.ts';
 import { PREPARED_AGAIN_MS, askedLayers, mayAnswer, preparedKey } from './lib/shared/prepare.ts';
 import { TRIM_EVERY_MS, savedCopyExpired } from './lib/shared/saved-copies.ts';
@@ -93,6 +102,7 @@ async function noteAccount(response: Response): Promise<void> {
 	if (now === (await signedIn())) return;
 	account = now;
 	forgetPrepared();
+	foodsCopy = undefined;
 	await caches.delete(DATA);
 	await (await caches.open(ACCOUNT_CACHE)).put(ACCOUNT_KEY, new Response(now ?? ''));
 }
@@ -102,6 +112,75 @@ async function ownCopy(saved: Response | undefined): Promise<Response | undefine
 	if (!saved) return undefined;
 	const owner = saved.headers.get(ACCOUNT_HEADER) || null;
 	return owner !== null && owner === (await signedIn()) ? saved : undefined;
+}
+
+// The person's foods, for search and amount sheets when the server can't be reached (docs/design.md, "Offline
+// scope"). Saved with the other copies (so it goes with them on sign-out or another sign-in), read into memory the
+// first time it's needed offline, and fetched again only when the server says it changed (ETag), never while a
+// write is under way and never ahead of a page.
+let foodsCopy:
+	{ owner: string; foods: SearchableFood[]; byId: Map<string, FoodDetail> } | undefined;
+const foodCopyKey = () => new URL(FOOD_COPY_PATH, location.origin).href;
+
+async function localFoods() {
+	const owner = await signedIn();
+	if (!owner) return undefined;
+	if (foodsCopy?.owner === owner) return foodsCopy;
+	const saved = await ownCopy(await (await caches.open(DATA)).match(foodCopyKey()));
+	if (!saved) return undefined;
+	const { foods } = (await saved.json()) as { foods: FoodDetail[] };
+	foodsCopy = { owner, foods: searchable(foods), byId: new Map(foods.map((f) => [f.id, f])) };
+	return foodsCopy;
+}
+
+let refreshingFoods: Promise<void> | undefined;
+
+function refreshFoods(): Promise<void> {
+	refreshingFoods ??= (async () => {
+		try {
+			if (writes > 0 || Date.now() < unreachableUntil) return;
+			const cache = await caches.open(DATA);
+			const tag = (await ownCopy(await cache.match(foodCopyKey())))?.headers.get('etag');
+			const startedAt = generation;
+			const response = await fetch(foodCopyKey(), {
+				credentials: 'same-origin',
+				headers: tag ? { 'if-none-match': tag } : {},
+				signal: AbortSignal.timeout(30_000)
+			});
+			await noteAccount(response);
+			if (response.status === 304 || !response.ok || response.redirected) return;
+			// A write landed meanwhile: this copy may predate it, and the write asks again.
+			if (generation !== startedAt || writes > 0) return;
+			await cache.put(foodCopyKey(), response);
+			foodsCopy = undefined;
+		} catch {
+			// Not reachable: the copy stays as it was.
+		} finally {
+			refreshingFoods = undefined;
+		}
+	})();
+	return refreshingFoods;
+}
+
+const json = (body: unknown) =>
+	new Response(JSON.stringify(body), {
+		headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store' }
+	});
+
+/** Search from the copy (client: LogPanel, when the server can't be reached). */
+async function searchOnDevice(url: URL): Promise<Response> {
+	const copy = await localFoods().catch(() => undefined);
+	if (!copy) return new Response('No copy', { status: 503 });
+	const boost = (url.searchParams.get('boost') ?? '').split(',').filter(Boolean);
+	return json({ results: searchLocal(copy.foods, url.searchParams.get('q') ?? '', 20, boost) });
+}
+
+/** A food's details from the copy, for one never opened online on this device. */
+async function foodFromCopy(url: URL): Promise<Response | undefined> {
+	const id = /^\/api\/v1\/foods\/([0-9a-f-]{36})$/.exec(url.pathname)?.[1];
+	if (!id) return undefined;
+	const food = (await localFoods().catch(() => undefined))?.byId.get(id);
+	return food ? json(food) : undefined;
 }
 
 /** SvelteKit varies x-sveltekit-invalidated between data requests; it does not change the data's meaning. */
@@ -354,7 +433,8 @@ async function networkFirst(event: FetchEvent): Promise<Response> {
 	// Known to be unreachable a moment ago: answer from the saved copy without waiting, and keep checking the
 	// network in the background (which also refreshes the copy and ends the hold once it is back).
 	if (Date.now() < unreachableUntil) {
-		const cached = await savedCopy(request, cache, key);
+		const cached =
+			(await savedCopy(request, cache, key)) ?? (await foodFromCopy(new URL(request.url)));
 		if (cached) {
 			event.waitUntil(fromNetwork(event, request.clone(), cache, key, false).catch(() => {}));
 			void announce(request, 'cached');
@@ -368,7 +448,8 @@ async function networkFirst(event: FetchEvent): Promise<Response> {
 		const quiet = response.status >= 500 && isPageData(key) && nothingNew(askedParts(request));
 		return quiet ? pageData(quiet) : response;
 	} catch {
-		const cached = await savedCopy(request, cache, key);
+		const cached =
+			(await savedCopy(request, cache, key)) ?? (await foodFromCopy(new URL(request.url)));
 		if (cached) void announce(request, 'cached');
 		if (cached) return cached;
 		// A refresh of what pages share, with nothing saved to answer it: nothing changed, the page stays.
@@ -383,7 +464,26 @@ sw.addEventListener('fetch', (event) => {
 	const url = new URL(request.url);
 	if (url.origin !== location.origin) return;
 	if (request.method !== 'GET') {
-		event.respondWith(write(request));
+		const done = write(request);
+		event.respondWith(done);
+		// Foods may have changed: check the copy a moment later, behind the page's own refresh.
+		if (CHANGES_FOODS.test(url.pathname))
+			event.waitUntil(
+				done
+					.catch(() => undefined)
+					.then(() => new Promise((r) => setTimeout(r, 2000)))
+					.then(refreshFoods)
+			);
+		return;
+	}
+	if (url.pathname === LOCAL_SEARCH_PATH) {
+		event.respondWith(searchOnDevice(url));
+		return;
+	}
+	if (url.pathname === FOOD_COPY_PATH) {
+		// The app asks once per start (after its page has settled); the copy is fetched behind it, if it changed.
+		event.waitUntil(refreshFoods());
+		event.respondWith(new Response(null, { status: 204 }));
 		return;
 	}
 

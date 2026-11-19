@@ -746,3 +746,44 @@ describe('already in your foods', () => {
 		expect(match?.id).toBe(water);
 	});
 });
+
+describe('the copy for offline search', () => {
+	it("holds every food the person can log, in full, and nobody else's", async () => {
+		const ayran = await catalog.createFood(MEHMET, food());
+		const archived = await catalog.createFood(MEHMET, food({ name: 'Old crackers' }));
+		await catalog.setArchived(MEHMET, archived, true);
+		const deleted = await catalog.createFood(MEHMET, food({ name: 'Gone crackers' }));
+		await catalog.setArchived(MEHMET, deleted, true);
+		await catalog.bulk(MEHMET, 'delete', { ids: [deleted] });
+		await catalog.createFood(ZEYNEP, food({ name: 'Zeynep’s soup' }));
+		const yogurt = await builtIn('Yogurt, plain');
+
+		const copy = await catalog.offlineFoods(MEHMET);
+		expect(copy.map((f) => f.id).sort()).toEqual([ayran, yogurt].sort());
+		// The same details the food's own page gets, so an amount sheet works from the copy.
+		expect(copy.find((f) => f.id === ayran)).toEqual(await catalog.getFood(MEHMET, ayran));
+		expect(copy.find((f) => f.id === yogurt)).toEqual(await catalog.getFood(MEHMET, yogurt));
+		expect(await catalog.offlineFoods(randomUUID())).toEqual(copy.filter((f) => f.id === yogurt));
+	});
+
+	it('says it changed when a food is added, edited, archived, restored or deleted, and only then', async () => {
+		const stamp = () => catalog.offlineFoodsStamp(MEHMET);
+		const first = await stamp();
+		expect(await stamp()).toBe(first);
+		const id = await catalog.createFood(MEHMET, food());
+		const added = await stamp();
+		expect(added).not.toBe(first);
+		await catalog.updateFood(MEHMET, id, 1, food({ name: 'Ayran light' }));
+		const edited = await stamp();
+		expect(edited).not.toBe(added);
+		await catalog.setArchived(MEHMET, id, true);
+		const archived = await stamp();
+		expect(archived).not.toBe(edited);
+		await catalog.bulk(MEHMET, 'delete', { ids: [id] });
+		const deleted = await stamp();
+		expect(deleted).not.toBe(archived);
+		// Someone else's changes don't count.
+		await catalog.createFood(ZEYNEP, food());
+		expect(await stamp()).toBe(deleted);
+	});
+});

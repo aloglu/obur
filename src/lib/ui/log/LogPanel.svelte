@@ -26,7 +26,9 @@
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { api, ApiError } from '#lib/client/api.ts';
+	import { recentlyUnreachable } from '#lib/client/offline/sync.svelte.ts';
+	import { LOCAL_SEARCH_PATH } from '#lib/shared/local-food-search.ts';
 	import type { Meal, SavedMealSummary } from '#lib/shared/diary-types.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { dayTitle, kcal, mealNameTo } from '#lib/shared/format.ts';
@@ -149,25 +151,50 @@
 			: m.saved_many_items({ count: String(s.itemCount), kcal: total });
 	};
 
+	/** A server this slow counts as unreachable; the device's copy answers instead. */
+	const SEARCH_TIMEOUT_MS = 3000;
+	/** Food search from the service worker's copy of the person's foods, or undefined without one. */
+	async function searchOnDevice(q: string): Promise<FoodSearchResult[] | undefined> {
+		try {
+			const boost = (recent ?? []).map((r) => r.id).join(',');
+			const response = await fetch(
+				`${LOCAL_SEARCH_PATH}?q=${encodeURIComponent(q)}&boost=${encodeURIComponent(boost)}`
+			);
+			if (!response.ok) return undefined;
+			return ((await response.json()) as { results: FoodSearchResult[] }).results;
+		} catch {
+			return undefined;
+		}
+	}
+
 	$effect(() => {
 		const q = query.trim();
 		clearTimeout(timer);
 		if (!q) return;
 		timer = setTimeout(async () => {
+			let found: FoodSearchResult[] | undefined;
 			try {
-				const data = await api<{ results: FoodSearchResult[] }>(
-					'GET',
-					`/api/v1/foods?q=${encodeURIComponent(q)}`
-				);
-				if (q === query.trim()) {
-					results = data.results;
-					searchedFor = q;
-					searchFailed = false;
-				}
-			} catch {
-				// Offline or unreachable: say so instead of showing nothing.
-				if (q === query.trim()) searchFailed = true;
+				// Unreachable a moment ago: straight to this device's copy (iOS can leave requests hanging).
+				if (recentlyUnreachable()) throw new Error('unreachable');
+				found = (
+					await Promise.race([
+						api<{ results: FoodSearchResult[] }>('GET', `/api/v1/foods?q=${encodeURIComponent(q)}`),
+						new Promise<never>((_, reject) =>
+							setTimeout(() => reject(new Error('timeout')), SEARCH_TIMEOUT_MS)
+						)
+					])
+				).results;
+			} catch (e) {
+				// The server answered and refused (signed out, say): not a case for the copy.
+				if (!(e instanceof ApiError && e.status < 500)) found = await searchOnDevice(q);
 			}
+			if (q !== query.trim()) return;
+			if (found) {
+				results = found;
+				searchedFor = q;
+			}
+			// Nothing on this device either: say it needs a connection instead of showing nothing.
+			searchFailed = !found;
 		}, 180);
 	});
 
