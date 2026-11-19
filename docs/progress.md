@@ -2,7 +2,7 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Owner's audit of rc.3 (2026-11-19): verified, fixing
+## Owner's audit of rc.3 (2026-11-19): verified, fixed (unreleased)
 
 Report outside the repo, checked against `0c2f8de`; every finding real (restore worse than reported: a failed restore
 always refuses the suggested retry). Owner also found that offline food search does nothing. Owner's go, one commit
@@ -54,7 +54,8 @@ Then the calendar helper, local checks and image tests; ask before tagging.
   Full e2e (both browsers, default workers): 289 passed, 19 skipped by design, 3 failed: the offline "stays on the
   page" test expected "Search needs a connection" (now the copy answers; updated, offline suite 39 passed) and the
   known WebKit dark-mode axe flake under load (passes 3 of 3 alone). Vitest 1188, lint, check passed.
-- Next: image tests (smoke, off-site, upgrade from beta.19) on the final code, then ask the owner before tagging.
+- Image tests on the final code (2026-11-19): smoke, off-site and upgrade from beta.19 passed. Next: ask the owner
+  before tagging rc.4.
   Owner's phone check wanted for offline search and the account guard (real iPhone, installed app).
 
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
