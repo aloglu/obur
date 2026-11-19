@@ -10,6 +10,9 @@ icons kept on first use, entries keeping the food values seen, and offline food 
 No migration. Checks before the tag (owner's go): lint, check, Vitest 1188, full e2e (289 passed; the two expected
 offline-search changes updated and passing, the WebKit dark axe flake passing alone), smoke, off-site and upgrade
 tests. `docs/install/for-ai-agents.md`: no new settings, commands or start-up log lines.
+- Published 2026-11-19 (run 44594368168, 23 min): checks, browser tests, the three images and the smoke, off-site
+  and upgrade tests. Next: the owner updates (`OBUR_VERSION=1.0.0-rc.4`), checks offline search and the account
+  guard on the iPhone, and works through the checklist; `v1.0.0` when nothing turns up.
 
 ## Owner's audit of rc.3 (2026-11-19): verified, fixed
 
