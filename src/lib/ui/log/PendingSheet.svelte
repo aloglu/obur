@@ -24,9 +24,11 @@
 	const reason = $derived(
 		op.error === 'not_found'
 			? m.offline_refused_gone()
-			: op.error === 'conversion_unknown' || op.error?.startsWith('Unknown unit')
-				? m.offline_refused_unit()
-				: m.offline_review()
+			: op.error === 'food_changed'
+				? m.offline_refused_changed()
+				: op.error === 'conversion_unknown' || op.error?.startsWith('Unknown unit')
+					? m.offline_refused_unit()
+					: m.offline_review()
 	);
 </script>
 

@@ -41,6 +41,10 @@ Then the calendar helper, local checks and image tests; ask before tagging.
 - Step 6 done: food and achievement icons are kept when first shown, not at install (about 306 files, 2.1 MiB
   instead of about 690, 3.1 MiB); not hashed, so an older version's copy is used only offline. The unused
   `monthSummary` helper removed. Offline, icons, achievements and app-icon suites: 47 passed, 4 skipped by design.
+- Step 7 done: `foodFingerprint` (shared/diary-rules.ts, unit tests); Amount sheet and Speak/typed log send it as
+  `expected`; `POST /api/v1/diary/entries` refuses a changed food (409 `food_changed`); the review sheet and the
+  amount sheet say so. Two new offline e2e tests (both fail without the server check). Offline, diary, catalog,
+  curated, recipes and pinned-search suites: 89 passed, 4 skipped by design.
 
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
 

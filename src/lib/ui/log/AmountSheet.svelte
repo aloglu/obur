@@ -9,7 +9,7 @@
 	import { submit } from '#lib/client/offline/sync.svelte.ts';
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
-	import { addDays, isLateNight } from '#lib/shared/diary-rules.ts';
+	import { addDays, foodFingerprint, isLateNight } from '#lib/shared/diary-rules.ts';
 	import type { DiaryEntry, Meal } from '#lib/shared/diary-types.ts';
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
 	import { dayTitle, kcal, mealShortName, mealNameTo } from '#lib/shared/format.ts';
@@ -112,7 +112,8 @@
 					zone: deviceZone(),
 					foodId: food.id,
 					amount,
-					unit: option.input
+					unit: option.input,
+					expected: foodFingerprint(food)
 				},
 				{
 					kind: 'diary',
@@ -125,10 +126,15 @@
 			);
 			onsaved(result.status === 'sent' ? result.data : null);
 		} catch (e) {
-			problem =
-				e instanceof ApiError && e.status === 422
-					? m.amount_conversion_unknown()
-					: m.error_generic();
+			if (e instanceof ApiError && e.code === 'food_changed') {
+				// Changed on another device since this sheet opened: show the food as it is now.
+				food = await api<FoodDetail>('GET', `/api/v1/foods/${foodId}`).catch(() => food);
+				problem = m.amount_food_changed();
+			} else
+				problem =
+					e instanceof ApiError && e.status === 422
+						? m.amount_conversion_unknown()
+						: m.error_generic();
 		} finally {
 			busy = false;
 		}

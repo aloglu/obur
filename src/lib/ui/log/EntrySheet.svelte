@@ -22,7 +22,7 @@
 	import { api } from '#lib/client/api.ts';
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
-	import { addDays } from '#lib/shared/diary-rules.ts';
+	import { addDays, foodFingerprint } from '#lib/shared/diary-rules.ts';
 	import { MEALS, type Meal } from '#lib/shared/diary-types.ts';
 	import type { EntryItem, LoggedEntry, ParsedEntry } from '#lib/shared/entry-types.ts';
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
@@ -380,7 +380,8 @@
 				zone,
 				foodId: c.food!.id,
 				amount: parseDecimal(c.amountText),
-				unit: option.input
+				unit: option.input,
+				expected: foodFingerprint(c.food!)
 			});
 			return { undo: `/api/v1/diary/entries/${c.id}?action=delete`, diaryId: c.id };
 		}

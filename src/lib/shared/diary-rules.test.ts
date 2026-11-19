@@ -4,6 +4,7 @@ import {
 	anyValuesChanged,
 	carbohydrateDay,
 	dayTotals,
+	foodFingerprint,
 	isIsoDate,
 	isLateNight,
 	isValidZone,
@@ -186,5 +187,44 @@ describe('anyValuesChanged', () => {
 			unit: 'g'
 		} as const;
 		expect(anyValuesChanged([{ ...item, unit }], [food(300)])).toBe(false);
+	});
+});
+
+describe('foodFingerprint', () => {
+	const food = (over: Partial<FoodDetail> = {}) =>
+		({
+			id: 'f1',
+			name: 'Cheddar',
+			brand: null,
+			basis: '100g',
+			servingLabel: null,
+			servingSize: null,
+			icon: null,
+			archived: false,
+			servings: [{ id: 's1', name: 'slice', amount: 20, unit: 'g', source: 'label' }],
+			nutrients: [
+				{ code: 'energy_kcal', value: 400, qualifier: 'reported' },
+				{ code: 'protein', value: 25, qualifier: 'reported' }
+			],
+			...over
+		}) as unknown as FoodDetail;
+
+	it('stays the same for the same values, whatever their order, name, icon or archive', () => {
+		const same = food({
+			name: 'Mature cheddar',
+			icon: '1F9C0',
+			archived: true,
+			nutrients: [...food().nutrients].reverse()
+		});
+		expect(foodFingerprint(same)).toBe(foodFingerprint(food()));
+	});
+	it('changes with any value an entry is worked out from', () => {
+		const base = foodFingerprint(food());
+		const kcal = food({ nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }] });
+		const portion = food({
+			servings: [{ id: 's1', name: 'slice', amount: 30, unit: 'g', source: 'label' }]
+		});
+		const basis = food({ basis: '100ml' });
+		for (const changed of [kcal, portion, basis]) expect(foodFingerprint(changed)).not.toBe(base);
 	});
 });

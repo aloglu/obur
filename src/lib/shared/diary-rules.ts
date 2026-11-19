@@ -25,6 +25,38 @@ export function snapshotOf(food: FoodDetail): FoodSnapshot {
 	};
 }
 
+/**
+ * A short fingerprint of what a food's diary values come from (basis, portions, nutrients). The app sends the one of
+ * the food it showed with a new entry; the server refuses the entry when the food has changed since, so an entry
+ * that waited offline never takes values the person didn't see (docs/design.md, "Offline scope"). Name, icon and
+ * archiving don't change it.
+ */
+export function foodFingerprint(food: FoodDetail): string {
+	const s = snapshotOf(food);
+	const text = JSON.stringify([
+		s.basis,
+		s.servingLabel,
+		s.servingSize,
+		[...s.servings]
+			.sort((a, b) => a.id.localeCompare(b.id))
+			.map((p) => [p.id, p.name, p.amount, p.unit]),
+		[...s.basisNutrients]
+			.sort((a, b) => a.code.localeCompare(b.code))
+			.map((n) => [n.code, n.value, n.qualifier])
+	]);
+	// cyrb53: a quick 53-bit hash, plenty to tell two versions of one food apart (not a security measure).
+	let h1 = 0xdeadbeef;
+	let h2 = 0x41c6ce57;
+	for (let i = 0; i < text.length; i++) {
+		const c = text.charCodeAt(i);
+		h1 = Math.imul(h1 ^ c, 2654435761);
+		h2 = Math.imul(h2 ^ c, 1597334677);
+	}
+	h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+	h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+	return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
 /** Converts a stored unit back to a conversion unit. */
 export function toUnit(unit: SnapshotUnit): Unit {
 	if (unit.kind === 'measure') return { kind: 'measure', ml: unit.ml };

@@ -38,7 +38,9 @@ export const CreateEntry = v.variant('kind', [
 		...Context,
 		foodId: v.pipe(v.string(), v.uuid()),
 		amount: Amount,
-		unit: UnitInput
+		unit: UnitInput,
+		/** The food as the person saw it (shared/diary-rules.ts, foodFingerprint); absent from older apps' queues. */
+		expected: v.optional(v.pipe(v.string(), v.maxLength(32)))
 	}),
 	v.object({ kind: v.literal('quick'), ...Context, kcal: Kcal, description: Description })
 ]);

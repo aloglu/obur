@@ -581,6 +581,93 @@ test('an entry the server refused after waiting offline stays until the person c
 	await expect(page.getByRole('searchbox').first()).toHaveValue(name);
 });
 
+test('an entry that waited offline never takes values the person did not see: a changed food asks first', async ({
+	page,
+	context
+}, testInfo) => {
+	const tag = testInfo.project.name;
+	await signedInAs(page, 'Ayşe');
+	const name = `Lentil soup ${tag}`;
+	const food = {
+		name,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 100, qualifier: 'reported' }]
+	};
+	const foodId = await createFood(page, food);
+	await primeCache(page);
+	await page
+		.getByRole('region', { name: 'Lunch' })
+		.getByRole('button', { name: 'Add food to Lunch' })
+		.click();
+	await page.getByRole('searchbox').fill(name);
+	await page.getByRole('button', { name: new RegExp(name) }).click();
+	const sheet = page.getByRole('dialog');
+	await expect(sheet.getByText('100 kcal per 100 g')).toBeVisible();
+
+	// Saved offline at 100 kcal; meanwhile the food is changed on another device.
+	await context.setOffline(true);
+	await sheet.getByRole('button', { name: /^Log to/ }).click();
+	await expect(page.getByRole('status').filter({ hasText: 'Saved on this device' })).toBeVisible();
+	await apiAs(page, 'PUT', `/api/v1/foods/${foodId}`, {
+		version: 1,
+		food: {
+			...food,
+			brand: null,
+			servings: [],
+			nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }]
+		}
+	});
+	await context.setOffline(false);
+	await page.goto('/');
+
+	// Not logged at the new 250 kcal: kept on the phone, with the reason and the calories that were seen.
+	const card = page.getByRole('button', { name: /1 entry couldn't be saved/ });
+	await expect(card).toBeVisible();
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	const day = await apiAs<{ entries: unknown[] }>(page, 'GET', `/api/v1/diary/${date}`);
+	expect(day.entries).toEqual([]);
+	await card.click();
+	const review = page.getByRole('dialog', { name: "Couldn't save this entry" });
+	await expect(review).toContainText('This food was changed after you logged it.');
+	await expect(
+		review.getByRole('button', { name: 'Keep it as 100 kcal, calories only' })
+	).toBeVisible();
+});
+
+test('a food changed on another device while its amount sheet is open is shown again, not logged', async ({
+	page
+}, testInfo) => {
+	const tag = testInfo.project.name;
+	await signedInAs(page, 'Ayşe');
+	const name = `Oat milk ${tag}`;
+	const food = {
+		name,
+		basis: '100ml',
+		nutrients: [{ code: 'energy_kcal', value: 45, qualifier: 'reported' }]
+	};
+	const foodId = await createFood(page, food);
+	await page.goto('/log?meal=breakfast');
+	await page.getByRole('searchbox').fill(name);
+	await page.getByRole('button', { name: new RegExp(name) }).click();
+	const sheet = page.getByRole('dialog');
+	await expect(sheet.getByText('45 kcal per 100 ml')).toBeVisible();
+	await apiAs(page, 'PUT', `/api/v1/foods/${foodId}`, {
+		version: 1,
+		food: {
+			...food,
+			brand: null,
+			servings: [],
+			nutrients: [{ code: 'energy_kcal', value: 60, qualifier: 'reported' }]
+		}
+	});
+	await sheet.getByRole('button', { name: /^Log to/ }).click();
+	await expect(sheet).toContainText('This food was just changed on another device.');
+	await expect(sheet.getByText('60 kcal per 100 ml')).toBeVisible();
+	// Saving again, now with what is shown, logs it.
+	await sheet.getByRole('button', { name: /^Log to/ }).click();
+	await expect(sheet).toBeHidden();
+});
+
 test('an Undo that cannot reach the server says so instead of looking done', async ({
 	page,
 	context

@@ -4,6 +4,7 @@ import { diary, respondDiary } from '#lib/server/diary.ts';
 import { readJson } from '#lib/server/http.ts';
 import { resolveUnit } from '#lib/server/modules/diary/index.ts';
 import { CreateEntry } from '#lib/shared/diary-input.ts';
+import { foodFingerprint } from '#lib/shared/diary-rules.ts';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) =>
@@ -19,6 +20,9 @@ export const POST: RequestHandler = ({ request, locals }) =>
 			}
 			// The food must be visible to this person (RLS); its snapshot is taken here, on the server.
 			const food = await catalog.getFood(userId, body.foodId);
+			// Changed since the person saw it (often while the entry waited offline): they choose, not the server.
+			if (body.expected !== undefined && body.expected !== foodFingerprint(food))
+				return json({ error: 'food_changed' }, { status: 409 });
 			const unit = resolveUnit(body.unit, food.servings, await catalog.householdMeasures());
 			if (!unit) error(422, 'Unknown unit for this food');
 			return json(await diary.logFood(userId, ctx, food, body.amount, unit), { status: 201 });
