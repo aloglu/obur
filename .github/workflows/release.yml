@@ -57,7 +57,7 @@ jobs:
         run: npx vitest run
 
   e2e:
-    # The browser journeys on phone-size WebKit and desktop Chromium, as `npm run test:e2e` runs them locally.
+    # The browser journeys on phone-size WebKit and desktop Chromium, through `npm run test:e2e` as locally.
     name: Browser tests
     runs-on: ubuntu-24.04
     services:
@@ -79,12 +79,12 @@ jobs:
           cache: npm
       - run: npm install -g npm@11.19.0 --no-audit --no-fund && npm ci --no-audit --no-fund
       - run: cp .env.example .env
-      # Ubuntu 24.04 with Playwright's own browser builds and their system libraries, as in its noble image.
-      - run: npx playwright install --with-deps chromium webkit
-      # One retry: a test that passes only on its second try is reported as flaky, never hidden.
-      - run: npx playwright test --retries=1
-        env:
-          CI: '1'
+      # In Playwright's official image, exactly as locally: browsers installed straight on Ubuntu rendered WebKit's dark
+      # mode differently (rc.2's run). Host networking reaches the PostgreSQL service on localhost.
+      # One worker: two on the runner starved WebKit, which stopped drawing mid-test (reproduced with 2 CPUs and more
+      # workers than that; one worker on 2 CPUs passed everything in 16 min). One retry: a test that passes only on
+      # its second try is reported as flaky, never hidden.
+      - run: npm run test:e2e -- --workers=1 --retries=1
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

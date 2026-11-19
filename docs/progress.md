@@ -20,8 +20,17 @@ settings, commands or start-up log lines.
   never changed. Reproduced locally with 2 CPUs and four suites at once, **on rc.1 too** (not from the audit
   fixes); passes alone. Could be a real lost tap on a slow phone; cause not found yet. (3) `archive.e2e.ts` and
   (4) offline "never swaps in another page" timed out or were interrupted on the slow runner (not investigated).
-- Next: the owner's choice (reported): look for the lost tap first, switch the CI job to the Playwright image, then
-  publish rc.2 again.
+- Investigated (2026-11-19): the "lost tap" is WebKit starving, not the app. Reproduced on 2 CPUs with four
+  workers: the onboarding test stuck at another tap, and the trace shows WebKit stopping drawing mid-animation, with
+  nothing answering after it. One worker on 2 CPUs in the Playwright image ran the whole suite in 15.7 min: 283
+  passed, and the only failure was a real bug: the Journal showed two achievements of one day in the order they
+  were stored, which changes with timing (first day logged / first complete day swapped). Fixed: a fixed order
+  (most notable first, the first steps in their order), unit test. The offline reload (4) did not reproduce in 16
+  runs under load; the archive wait (3) passed in the one-worker run; neither changed.
+- CI: the Browser tests job runs `npm run test:e2e -- --workers=1 --retries=1` (the Playwright image, as locally).
+  Validation: lint, check, Vitest 1169, Journal e2e on both browsers.
+- Next: the fix changed code after the `v1.0.0-rc.2` tag, so publishing needs the owner's choice: tag rc.3 (the
+  tag stays as it was), or run the release by hand first to see the gate pass without publishing.
 
 ## Owner's outside audit of rc.1 (2026-11-19): verified, fixed
 
