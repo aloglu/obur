@@ -25,6 +25,12 @@ export const offline = $state<{
 	cachedCopy: boolean;
 }>({ ownerId: null, items: [], authRequired: false, cachedCopy: false });
 
+/**
+ * What became of the last waiting note sent for a day: the text the server kept (a newer one typed on another device
+ * wins, docs/design.md "Day notes"), or refused. The day's note card reads it once nothing is waiting.
+ */
+export const noteResults = $state<Record<string, { kept: string } | { refused: true }>>({});
+
 let queue: Queue | undefined;
 /** True while new entries skip the direct attempt because the server was unreachable a moment ago. */
 export const recentlyUnreachable = () => Date.now() < unreachableUntil;
@@ -173,6 +179,7 @@ export function stopSync() {
 	offline.ownerId = null;
 	offline.items = [];
 	offline.cachedCopy = false;
+	for (const day of Object.keys(noteResults)) delete noteResults[day];
 	sentHandler = undefined;
 }
 
@@ -236,7 +243,9 @@ async function sendWaiting(): Promise<number> {
 			if (!(await queue.has(item.seq!))) continue;
 			item.attempts += 1;
 			try {
-				await post(item.path, item.body, item.ownerId);
+				const data = await post(item.path, item.body, item.ownerId);
+				if (item.preview.kind === 'note')
+					noteResults[item.preview.localDate] = { kept: (data as { text: string }).text };
 				await queue.remove(item.seq!);
 				sent += 1;
 			} catch (e) {
@@ -259,8 +268,10 @@ async function sendWaiting(): Promise<number> {
 					return sent;
 				}
 				// A note can't be reviewed the way an entry can, and a later one replaces it anyway.
-				if (item.preview.kind === 'note') await queue.remove(item.seq!);
-				else await queue.update({ ...item, status: 'review', error: err.code });
+				if (item.preview.kind === 'note') {
+					noteResults[item.preview.localDate] = { refused: true };
+					await queue.remove(item.seq!);
+				} else await queue.update({ ...item, status: 'review', error: err.code });
 			}
 		}
 		offline.authRequired = false;

@@ -381,6 +381,7 @@
 	"note_saved": "Saved {time} · only you see your notes",
 	"note_saved_device": "Saved on this device. It goes to your server once obur can reach it.",
 	"note_saved_short": "Saved",
+	"note_kept_newer": "A newer version from another device was kept",
 	"note_not_saved": "The note couldn't be saved",
 	"note_done": "Done",
 	"note_edit": "Edit",

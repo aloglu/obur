@@ -398,6 +398,41 @@ test('a note typed offline waits on the device and arrives when the server is ba
 	await expect(note).toContainText('typed on the train');
 });
 
+test('a note typed offline, then a newer one on another device: the card shows the one kept and says so', async ({
+	page,
+	context
+}) => {
+	await signedInAs(page, 'Notlu');
+	await primeCache(page);
+	await context.setOffline(true);
+
+	const note = page.getByRole('region', { name: 'Notes' });
+	await note.getByRole('button', { name: /^Notes/ }).click();
+	await note.getByLabel('Note for this day').fill('typed on the train');
+	await expect(note).toContainText('Saved on this device', { timeout: 15_000 });
+	await note.getByRole('button', { name: 'Done' }).click();
+
+	// Meanwhile the same person writes the day's note on another device, later (the test's own requests are not
+	// offline; the phone is).
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	await apiAs(page, 'POST', `/api/v1/diary/days/${date}/note`, {
+		id: crypto.randomUUID(),
+		text: 'typed at home',
+		typedAt: new Date().toISOString()
+	});
+
+	await context.setOffline(false);
+	await page.evaluate(() => dispatchEvent(new Event('online')));
+	await expect(note).toContainText('A newer version from another device was kept', {
+		timeout: 15_000
+	});
+	await expect(note).toContainText('typed at home');
+	await expect(note).not.toContainText('typed on the train');
+	await expect(note).not.toContainText(/Saved \S+/);
+	await page.reload();
+	await expect(note).toContainText('typed at home');
+});
+
 test('an entry the server refused after waiting offline stays until the person chooses: calories, another food or discard', async ({
 	page,
 	browser

@@ -42,6 +42,10 @@ Then the local checks and image tests, and ask before tagging rc.2.
   not at start-up. `upgrade-test.sh` now restores with replay paused (read-only for as long as needed) and checks
   obur keeps running with the "being restored" page, then resumes. Published rc.1 fails it as the audit said
   ("cannot execute ALTER ROLE in a read-only transaction", container stopped); the new image passes.
+- Step 5 (2026-11-19): the queue records what the server kept for each sent note (`noteResults`), and the card
+  shows the kept note with "A newer version from another device was kept" (new message, Turkish too); a refused note
+  shows "The note couldn't be saved" and is saved again on the next edit. A direct save compares the answer too.
+  `offline.e2e.ts` two-device test (fails with the old card), 5 times on both browsers.
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 

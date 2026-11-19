@@ -381,6 +381,7 @@
 	"note_saved": "Kaydedildi ({time}) · notlarını yalnızca sen görürsün",
 	"note_saved_device": "Bu cihaza kaydedildi. obur sunucuna ulaşınca oraya gönderilir.",
 	"note_saved_short": "Kaydedildi",
+	"note_kept_newer": "Başka bir cihazdaki daha yeni sürüm korundu",
 	"note_not_saved": "Not kaydedilemedi",
 	"note_done": "Bitti",
 	"note_edit": "Düzenle",

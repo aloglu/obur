@@ -5,7 +5,7 @@
 	import { onDestroy, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
-	import { offline, submit } from '#lib/client/offline/sync.svelte.ts';
+	import { noteResults, offline, submit } from '#lib/client/offline/sync.svelte.ts';
 	import { clockTime } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { notePreview, setTask } from '#lib/shared/markdown.ts';
@@ -25,7 +25,8 @@
 	);
 	let open = $state(false);
 	let editing = $state(false);
-	let status = $state<'idle' | 'saving' | 'saved' | 'device'>('idle');
+	// kept: the server kept a newer note typed on another device, and the card now shows that one.
+	let status = $state<'idle' | 'saving' | 'saved' | 'device' | 'kept'>('idle');
 	let savedAt = $state('');
 	let field = $state<HTMLTextAreaElement>();
 	// Opening straight into typing skips the height animation, so the field is already in place when it gets focus and
@@ -34,11 +35,28 @@
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let dirty = false;
 
-	// It reached the server while the card was open.
-	$effect(() => {
-		if (status !== 'device' || waiting) return;
+	/** The server's answer: saved as typed, or it kept a newer note from another device, which the card shows. */
+	function settled(kept: string, typed: string) {
+		if (kept !== typed) {
+			text = kept;
+			status = 'kept';
+			return;
+		}
 		savedAt = clockTime(new Date().toISOString(), page.data.timeFormat ?? 'device');
 		status = 'saved';
+	}
+
+	// What waited on this device was sent (or refused) while the card was open.
+	$effect(() => {
+		if (status !== 'device' || waiting) return;
+		const result = noteResults[date];
+		untrack(() => {
+			if (result && 'refused' in result) {
+				dirty = true;
+				status = 'idle';
+				showToast({ message: m.note_not_saved() });
+			} else settled(result?.kept ?? text, text);
+		});
 	});
 
 	const hasText = $derived(text.trim() !== '');
@@ -49,7 +67,9 @@
 				? m.note_saved({ time: savedAt })
 				: status === 'device'
 					? m.note_saved_device()
-					: m.note_private()
+					: status === 'kept'
+						? m.note_kept_newer()
+						: m.note_private()
 	);
 
 	async function save() {
@@ -65,10 +85,8 @@
 				{ kind: 'note', localDate: date, text: typed }
 			);
 			if (result.status === 'queued') status = 'device';
-			else {
-				savedAt = clockTime(new Date().toISOString(), page.data.timeFormat ?? 'device');
-				status = 'saved';
-			}
+			// Typed again meanwhile: the next save answers for it.
+			else if (!dirty) settled((result.data as { text: string }).text, typed);
 		} catch {
 			dirty = true;
 			status = 'idle';
