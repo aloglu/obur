@@ -27,6 +27,7 @@ import {
 	dayCompletions,
 	dayNotes,
 	diaryEntries,
+	purgedRecords,
 	savedMealItems,
 	savedMeals
 } from '../diary/index.ts';
@@ -62,7 +63,12 @@ export interface Counts {
 	skipped: number;
 }
 export type ImportWarning =
-	'already_imported' | 'changed_kept' | 'targets_kept' | 'profile_kept' | 'food_links_dropped';
+	| 'already_imported'
+	| 'changed_kept'
+	| 'targets_kept'
+	| 'profile_kept'
+	| 'food_links_dropped'
+	| 'purged_skipped';
 
 export interface ImportSummary {
 	sourceInstallation: string;
@@ -384,7 +390,10 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 // Import ----------------------------------------------------------------------------------------------------------
 
 type Decision =
-	{ status: 'new'; localId: string } | { status: 'unchanged' | 'changed'; localId: string };
+	| { status: 'new'; localId: string }
+	| { status: 'unchanged' | 'changed'; localId: string }
+	/** Deleted here and purged from the trash: never added again (owner, 2026-11-19). */
+	| { status: 'purged'; localId: string };
 
 interface Plan {
 	summary: ImportSummary;
@@ -483,10 +492,30 @@ async function plan(
 		for (let i = 0; i < localIds.length; i += 1000) {
 			for (const row of await table.load(localIds.slice(i, i + 1000))) locals.set(row.id, row);
 		}
+		// Where a record would be here (an earlier import's, or the same ID on this installation), deleted and purged.
+		const wouldBe = (r: T) => located.get(r.id) ?? (same ? r.id : undefined);
+		const candidates = [
+			...new Set(
+				records.filter((r) => !locals.has(located.get(r.id) ?? '')).flatMap((r) => wouldBe(r) ?? [])
+			)
+		];
+		const purged = new Set<string>();
+		for (let i = 0; i < candidates.length; i += 1000) {
+			const rows = await tx
+				.select({ id: purgedRecords.id })
+				.from(purgedRecords)
+				.where(inArray(purgedRecords.id, candidates.slice(i, i + 1000)));
+			for (const row of rows) purged.add(row.id);
+		}
 		for (const r of records) {
 			const localId = located.get(r.id);
 			const local = localId ? locals.get(localId) : undefined;
-			if (!local) {
+			const gone = local ? undefined : wouldBe(r);
+			if (gone && purged.has(gone)) {
+				decisions.set(key(kind, r.id), { status: 'purged', localId: gone });
+				counts[kind].skipped += 1;
+				warnings.add('purged_skipped');
+			} else if (!local) {
 				decisions.set(key(kind, r.id), { status: 'new', localId: randomUUID() });
 				counts[kind].new += 1;
 			} else {
@@ -562,13 +591,18 @@ async function plan(
 			(s, l) => foodContent(s, sortedNutrients(s)) === foodContent(l, l.nutrients)
 		);
 	}
-	for (const f of data.foods) foodMap.set(f.id, decisions.get(key('food', f.id))!.localId);
+	// A purged food has no record to link to: entries using it keep their own snapshot, as for a food that's gone.
+	for (const f of data.foods) {
+		const d = decisions.get(key('food', f.id))!;
+		if (d.status !== 'purged') foodMap.set(f.id, d.localId);
+	}
+	const inFile = new Set(data.foods.map((f) => f.id));
 	if (
 		[
 			...data.diary,
 			...data.savedMeals.flatMap((sm) => sm.items),
 			...data.recipes.flatMap((r) => r.ingredients)
-		].some((e) => e.foodId && !foodMap.has(e.foodId))
+		].some((e) => e.foodId && !inFile.has(e.foodId))
 	)
 		warnings.add('food_links_dropped');
 
@@ -1121,7 +1155,7 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 	// archive (purged from the trash) have nothing to point at and are left out.
 	for (const i of data.loseitIdentities) {
 		const here = p.decisions.get(key(i.kind, i.localId));
-		if (here)
+		if (here && here.status !== 'purged')
 			identities.push({
 				userId,
 				sourceInstall: LOSEIT_SOURCE,

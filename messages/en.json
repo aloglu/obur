@@ -876,6 +876,7 @@
 	"data_warn_targets_kept": "You already have targets, so the imported ones are not added. Past days keep your current budgets.",
 	"data_warn_profile_kept": "Your current profile is kept.",
 	"data_warn_food_links_dropped": "Some entries refer to foods that aren't in the file. They keep their own nutrition.",
+	"data_warn_purged_skipped": "Some records were deleted here more than 30 days ago, so they aren't added again.",
 	"data_error_archive": "This file can't be imported. It isn't a complete, unchanged obur export.",
 	"data_error_too_large": "This file is too large to import.",
 	"data_error_version": "This export comes from a newer version of obur.",

@@ -27,6 +27,7 @@ const urls = inject('db');
 const quiet = { onnotice: () => {} };
 const admin = postgres(urls.admin, { max: 1, ...quiet });
 const appSql = postgres(urls.app, { max: 2, ...quiet });
+const workerSql = postgres(urls.worker, { max: 1, ...quiet });
 const db = drizzle(appSql);
 const catalog = createCatalog(db);
 const diary = createDiary(db);
@@ -79,7 +80,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-	await Promise.all([admin.end(), appSql.end()]);
+	await Promise.all([admin.end(), appSql.end(), workerSql.end()]);
 });
 
 /**
@@ -545,6 +546,56 @@ describe('import', () => {
 		await portability.applyImport(ZEYNEP, archive);
 		expect((await diary.dayNote(ZEYNEP, DAY)).text).toBe('from the archive');
 		expect((await diary.dayNote(ZEYNEP, '2026-10-24')).text).toBe('typed later here');
+	});
+
+	it('never adds again what was deleted and purged here, however many overlapping imports follow', async () => {
+		const S = randomUUID();
+		const at = (localDate: string) => ({ localDate, meal: 'lunch' as const, ...ist });
+		const kraker = await catalog.createFood(
+			MEHMET,
+			food({
+				name: 'Kraker',
+				basis: '100g',
+				nutrients: [{ code: 'energy_kcal', value: 450, qualifier: 'reported' }],
+				servings: []
+			})
+		);
+		await diary.quickAdd(MEHMET, { ...at('2026-10-20'), id: randomUUID() }, 350, 'Lunch out');
+		await diary.logFood(MEHMET, at('2026-10-20'), await catalog.getFood(MEHMET, kraker), 50, grams);
+		await portability.applyImport(
+			ZEYNEP,
+			fromElsewhere(await portability.exportArchive(MEHMET), S)
+		);
+
+		// Zeynep deletes all of it; a month later the nightly purge removes it for good.
+		for (const e of await diary.day(ZEYNEP, '2026-10-20')) await diary.remove(ZEYNEP, e.id);
+		const [mine] = (await catalog.ownFoods(ZEYNEP, 0, 50)).foods;
+		await catalog.setArchived(ZEYNEP, mine.id, true);
+		await catalog.bulk(ZEYNEP, 'delete', { ids: [mine.id] });
+		await admin`update diary_entries set deleted_at = now() - interval '40 days' where user_id = ${ZEYNEP}`;
+		await admin`update foods set deleted_at = now() - interval '40 days' where owner_id = ${ZEYNEP}`;
+		await workerSql`select * from app_purge_trash(now() - interval '30 days')`;
+
+		// Mehmet's later exports overlap the first and add a new entry of the same food.
+		await diary.logFood(MEHMET, at('2026-10-21'), await catalog.getFood(MEHMET, kraker), 30, grams);
+		const second = fromElsewhere(await portability.exportArchive(MEHMET), S);
+		const preview = await portability.previewImport(ZEYNEP, second);
+		expect(preview.counts.diary).toMatchObject({ new: 1, skipped: 2 });
+		expect(preview.counts.food).toMatchObject({ new: 0, skipped: 1 });
+		expect(preview.warnings).toContain('purged_skipped');
+		await portability.applyImport(ZEYNEP, second);
+		await diary.quickAdd(MEHMET, { ...at('2026-10-22'), id: randomUUID() }, 90, 'Tea');
+		await portability.applyImport(
+			ZEYNEP,
+			fromElsewhere(await portability.exportArchive(MEHMET), S)
+		);
+
+		expect(await diary.day(ZEYNEP, '2026-10-20')).toEqual([]);
+		const [later] = await diary.day(ZEYNEP, '2026-10-21');
+		expect(later).toMatchObject({ foodId: null }); // its food is gone: it keeps its own snapshot
+		expect(await diary.day(ZEYNEP, '2026-10-21')).toHaveLength(1);
+		expect(await diary.day(ZEYNEP, '2026-10-22')).toHaveLength(1);
+		expect((await catalog.ownFoods(ZEYNEP, 0, 50)).foods).toEqual([]);
 	});
 
 	it('imports an emptied note over an older one, so the cleared text does not come back', async () => {

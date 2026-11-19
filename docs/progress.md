@@ -21,6 +21,10 @@ Then the calendar helper, local checks and image tests; ask before tagging.
 
 - Step 1 done: `service.ts` exports emptied notes, skips one for a day with no note, and the upsert's `setWhere`
   keeps a later note. Two new DB tests (the race test fails without the guard).
+- Step 2 done: `plan` marks a record whose copy here (earlier import's, or the same ID) is in `purged_records` as
+  `purged`: skipped, counted, `purged_skipped` notice; a purged food links nothing, so its entries keep snapshots.
+  Identity mappings stay insert-only (no UPDATE grant, and no stale mapping is left to repoint). New DB test (fails
+  on the old code: 3 new instead of 1).
 
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
 

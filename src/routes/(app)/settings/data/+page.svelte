@@ -77,6 +77,7 @@
 		targets_kept: m.data_warn_targets_kept,
 		profile_kept: m.data_warn_profile_kept,
 		food_links_dropped: m.data_warn_food_links_dropped,
+		purged_skipped: m.data_warn_purged_skipped,
 		budgets_after_own_target: m.data_warn_budgets_after_own_target,
 		height_out_of_range: m.data_warn_height_out_of_range,
 		reconciliation_mismatch: m.data_warn_reconciliation_mismatch
