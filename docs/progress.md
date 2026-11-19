@@ -9,8 +9,9 @@ same-day achievements, and the release workflow running the browser tests in the
 No migration. Checks before the tag (owner's go): lint, check, Vitest 1169, Journal e2e on both browsers; the full
 e2e on 2 CPUs with one worker (283 passed, the one failure being the Journal order, since fixed); image tests as
 for rc.2 (no server or image change since). `docs/install/for-ai-agents.md`: no new settings, commands or log lines.
-- Next: watch the release run; if it publishes, the owner updates (`OBUR_VERSION=1.0.0-rc.3`) and uses it for a
-  few days; `v1.0.0` when nothing turns up.
+- Published 2026-11-19 (run 44554870866, 22 min): checks, browser tests (284 passed, none flaky, 14.6 min on one
+  worker), the three images and the smoke, off-site and upgrade tests. Next: the owner updates
+  (`OBUR_VERSION=1.0.0-rc.3`) and uses it for a few days; `v1.0.0` when nothing turns up.
 
 ## Release candidate 2 (2026-11-19), as `v1.0.0-rc.2`
 
