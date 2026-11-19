@@ -54,6 +54,10 @@ Then the local checks and image tests, and ask before tagging rc.2.
   decision pending.**
 - Step 9, part (2026-11-19): the export groups nutrients and servings by food once (`collect`). Import/export DB
   tests passed.
+- Step 9, rest (2026-11-19): start-up warm-up measured with 400 days of history (10 entries, water, a weigh-in and
+  a complete day each; temporary e2e test, not committed): all 14 requests together about 90 ms of server time,
+  4–12 ms each. Left as it is. 54 messages with no caller removed from both catalogs; `shared/messages.test.ts`
+  fails on a message whose name is nowhere in `src` (names built from a prefix, `help_${id}_q`, count).
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 
