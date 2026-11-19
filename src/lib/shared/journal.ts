@@ -1,10 +1,15 @@
 // The Journal's month of highlights (docs/ui.md, "Achievements, Journal and Help"): the month's weeks, newest first
 // and cut at the month's edges, each with one summary and only the moments that mattered. Averages count only days
 // marked complete, as everywhere else in Progress; nothing unknown is shown as zero.
-import type { Achievement } from './achievements.ts';
+import { FIRSTS, type Achievement } from './achievements.ts';
 import { isoWeekday, targetOn, type CalendarDay, type TargetLike } from './calendar.ts';
 import { addDays } from './diary-rules.ts';
 import { budgetForDay } from './goals.ts';
+
+const KIND_ORDER: Record<Achievement['kind'], number> = { goal: 0, weight: 1, streak: 2, first: 3 };
+/** Same-day achievements: goal, weight, streak (higher levels first), then the first steps in FIRSTS order. */
+const achievementOrder = (a: Achievement) =>
+	KIND_ORDER[a.kind] * 1000 + (a.kind === 'first' ? FIRSTS.indexOf(a.level) : 999 - a.level);
 
 export type JournalEvent =
 	/** The week's lowest weigh-in, below every earlier one. */
@@ -99,9 +104,16 @@ export function journal(input: JournalInput): JournalWeek[] {
 			if (achievement.date >= from && achievement.date <= to)
 				events.push({ kind: 'achievement', date: achievement.date, achievement });
 		}
-		// Newest first; on the same day, achievements lead.
+		// Newest first; on the same day, achievements lead, in a fixed order (they arrive in the order they were
+		// stored, which differs with timing): the most notable first, the first steps in the order they come.
 		const rank = (e: JournalEvent) => (e.kind === 'achievement' ? 0 : 1);
-		events.sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : rank(a) - rank(b)));
+		events.sort(
+			(a, b) =>
+				(a.date !== b.date ? (a.date < b.date ? 1 : -1) : rank(a) - rank(b)) ||
+				(a.kind === 'achievement' && b.kind === 'achievement'
+					? achievementOrder(a.achievement) - achievementOrder(b.achievement)
+					: 0)
+		);
 
 		const logged = week.some((d) => d.status !== 'unlogged');
 		if (!logged && !within.length && !events.length) continue;

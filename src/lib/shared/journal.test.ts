@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { calendarDays, type TargetLike } from './calendar.ts';
 import { journal, type JournalInput } from './journal.ts';
+import type { Achievement } from './achievements.ts';
 
 const manual = (effectiveFrom: string, kcal: number, createdAt = effectiveFrom): TargetLike => ({
 	effectiveFrom,
@@ -180,5 +181,22 @@ describe('journal achievements', () => {
 			})
 		);
 		expect(week.events.map((e) => e.kind)).toEqual(['achievement', 'lowest']);
+	});
+
+	it('orders achievements of the same day the same way whatever order they were stored in', () => {
+		const day = '2026-10-06';
+		const stored: Achievement[] = [
+			{ kind: 'first', level: 'complete_day', date: day },
+			{ kind: 'streak', level: 3, date: day },
+			{ kind: 'first', level: 'day_logged', date: day },
+			{ kind: 'weight', level: 2, date: day }
+		];
+		const order = (achievements: Achievement[]) =>
+			journal(input({ today: '2026-10-07', eaten: { [day]: 1800 }, achievements }))[0].events.map(
+				(e) => (e.kind === 'achievement' ? `${e.achievement.kind}:${e.achievement.level}` : e.kind)
+			);
+		const expected = ['weight:2', 'streak:3', 'first:day_logged', 'first:complete_day'];
+		expect(order(stored)).toEqual(expected);
+		expect(order([...stored].reverse())).toEqual(expected);
 	});
 });
