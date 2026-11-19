@@ -2,7 +2,16 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Owner's audit of rc.3 (2026-11-19): verified, fixed (unreleased)
+## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
+
+rc.3 plus the fixes from the owner's rc.3 audit (below): day-note imports, purged records never imported again,
+failed restores retryable and cancellable, the account check on every browser write, saved pages per account,
+icons kept on first use, entries keeping the food values seen, and offline food search from a copy on the device.
+No migration. Checks before the tag (owner's go): lint, check, Vitest 1188, full e2e (289 passed; the two expected
+offline-search changes updated and passing, the WebKit dark axe flake passing alone), smoke, off-site and upgrade
+tests. `docs/install/for-ai-agents.md`: no new settings, commands or start-up log lines.
+
+## Owner's audit of rc.3 (2026-11-19): verified, fixed
 
 Report outside the repo, checked against `0c2f8de`; every finding real (restore worse than reported: a failed restore
 always refuses the suggested retry). Owner also found that offline food search does nothing. Owner's go, one commit
