@@ -38,6 +38,10 @@ Then the local checks and image tests, and ask before tagging rc.2.
   (`body.firstDay` replaces `firstWeightDay`); body DB test covers water and activity before any weigh-in.
 - Step 8 (2026-11-19): reminders count as sent only when a device took them; failure counts carry between
   reminders due in the same pass; a device dropped for one gets none of the rest. New DB test (fails on the old loop).
+- Step 2 (2026-11-19): `obur-init` sets the administrator password in `upgrade` (after any restore is finished),
+  not at start-up. `upgrade-test.sh` now restores with replay paused (read-only for as long as needed) and checks
+  obur keeps running with the "being restored" page, then resumes. Published rc.1 fails it as the audit said
+  ("cannot execute ALTER ROLE in a read-only transaction", container stopped); the new image passes.
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 

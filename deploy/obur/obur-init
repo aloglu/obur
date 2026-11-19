@@ -110,8 +110,6 @@ start_pg() {
 		gosu postgres psql -X -q -v ON_ERROR_STOP=1 -h "$OBUR_SOCKET" -U obur_admin -d postgres \
 			-c 'create database obur' || fatal "creating the database failed"
 	fi
-	# This installation's own administrator password (also after a restore or a move from another setup).
-	obur_psql >/dev/null <<<"alter role obur_admin password '$OBUR_ADMIN_DB_PASSWORD'"
 	log "database ready"
 }
 
@@ -122,6 +120,10 @@ start_scheduler() {
 
 upgrade() {
 	local known applied
+	# This installation's own administrator password (also after a restore or a move from another setup). Here and
+	# not at start-up: a restored database accepts connections while it is still replaying its history, read-only,
+	# and this runs only once a restore is finished (`obur restore finish` waits for the replay).
+	obur_psql >/dev/null <<<"alter role obur_admin password '$OBUR_ADMIN_DB_PASSWORD'"
 	known=$(jq '.entries | length' /app/drizzle/meta/_journal.json)
 	applied=-1
 	if [[ $(obur_psql -c "select to_regclass('public.schema_migrations') is not null") == t ]]; then

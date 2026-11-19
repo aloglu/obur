@@ -78,8 +78,20 @@ copies=$(sql "select string_agg(name, ',' order by name) from foods where owner_
 	fail "Mehmet's entries do not point at his copies"
 
 echo "the older backup is restored, and its deletions reapplied"
-out=$(docker exec "$name" obur restore start --set="$label" --type=immediate --target-action=promote 2>&1) ||
+# Replay pauses once the database is consistent, so it stays read-only for as long as a long replay would: obur must
+# keep running and say it is being restored (start-up once stopped on a write here, 2026-11-19 audit).
+out=$(docker exec "$name" obur restore start --set="$label" --type=immediate --target-action=pause 2>&1) ||
 	fail "restore start: $out"
+for _ in $(seq 60); do
+	[[ $(sql "select pg_is_wal_replay_paused()" 2>/dev/null) == t ]] && break
+	sleep 2
+done
+[[ $(sql "select pg_is_wal_replay_paused()") == t ]] || fail "the restored database did not pause its replay"
+sleep 10
+[[ $(docker inspect -f '{{.State.Running}}' "$name") == true ]] || fail "obur stopped while the restore was replaying"
+code=$(docker exec "$name" node -e "fetch('http://127.0.0.1:3000/login').then((r) => console.log(r.status), () => console.log('none'))")
+[[ $code == 503 ]] || fail "the page while the restore replays: $code"
+sql "select pg_wal_replay_resume()" >/dev/null
 for _ in $(seq 60); do
 	[[ $(sql "select not pg_is_in_recovery()" 2>/dev/null) == t ]] && break
 	sleep 2
