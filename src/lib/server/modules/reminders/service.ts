@@ -207,16 +207,19 @@ export async function sendDueReminders(
 				devices: devices.map((d) => ({ ...d, language: profile?.language ?? 'en' }))
 			};
 		});
-		// Delivered outside the transaction: a slow push service never holds a database connection.
+		// Delivered outside the transaction: a slow push service never holds a database connection. Several reminders
+		// can be due in one pass: each device's failure count carries from one to the next, and a device dropped for
+		// one gets none of the rest.
+		let live = devices;
 		for (const kind of kinds) {
-			const outcomes = await Promise.all(
-				devices.map(async (d) => ({ d, r: await deliver(d, kind) }))
-			);
-			sent++;
+			if (!live.length) break;
+			const outcomes = await Promise.all(live.map(async (d) => ({ d, r: await deliver(d, kind) })));
+			// Counted as sent only when some device took it.
+			if (outcomes.some(({ r }) => r === 'sent')) sent++;
+			const gone = outcomes
+				.filter(({ d, r }) => r === 'gone' || (r === 'failed' && d.failures + 1 >= MAX_FAILURES))
+				.map(({ d }) => d.id);
 			await withUser(worker, c.user_id, async (tx) => {
-				const gone = outcomes
-					.filter(({ d, r }) => r === 'gone' || (r === 'failed' && d.failures + 1 >= MAX_FAILURES))
-					.map(({ d }) => d.id);
 				if (gone.length)
 					await tx.delete(pushSubscriptions).where(inArray(pushSubscriptions.id, gone));
 				for (const { d, r } of outcomes) {
@@ -227,6 +230,9 @@ export async function sendDueReminders(
 						.where(eq(pushSubscriptions.id, d.id));
 				}
 			});
+			live = outcomes
+				.filter(({ d }) => !gone.includes(d.id))
+				.map(({ d, r }) => ({ ...d, failures: r === 'sent' ? 0 : d.failures + 1 }));
 		}
 	}
 	return sent;

@@ -36,6 +36,8 @@ Then the local checks and image tests, and ask before tagging rc.2.
   without the lock). Import and body DB tests passed.
 - Step 7 (2026-11-19): Progress → All starts at the earliest food entry, weigh-in, water or activity
   (`body.firstDay` replaces `firstWeightDay`); body DB test covers water and activity before any weigh-in.
+- Step 8 (2026-11-19): reminders count as sent only when a device took them; failure counts carry between
+  reminders due in the same pass; a device dropped for one gets none of the rest. New DB test (fails on the old loop).
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 

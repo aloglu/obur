@@ -162,6 +162,19 @@ describe('sending', () => {
 		]);
 	});
 
+	it('counts each failure when two reminders are due at once, and nothing as sent when no device took it', async () => {
+		await on({ lunch: '14:00', dinner: '14:00' });
+		await reminders.subscribe(AYSE, device(1));
+		await reminders.subscribe(AYSE, device(2));
+		const box = postbox({ [device(1).endpoint]: 'failed', [device(2).endpoint]: 'gone' });
+		expect(await sendDueReminders(worker, at('14:05'), box.deliver)).toBe(0);
+		expect(await admin`select endpoint, failures from push_subscriptions`).toEqual([
+			{ endpoint: device(1).endpoint, failures: 2 }
+		]);
+		// The device dropped for the first reminder got nothing more.
+		expect(box.got.filter((g) => g.endpoint === device(2).endpoint)).toHaveLength(1);
+	});
+
 	it('skips disabled accounts and people without a device', async () => {
 		await on({ lunch: '14:00' });
 		const box = postbox();
