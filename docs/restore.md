@@ -49,7 +49,8 @@ their deletions are applied again after every restore.
 
    obur stops, moves the current database aside to `data/postgres-before-restore-<date>` (nothing is deleted),
    restores, and starts again showing "obur is being restored from a backup". If the restore fails, obur stays
-   stopped: fix the cause and run it again, or run `obur restore cancel` to put the old database back.
+   stopped: fix the cause and run it again (what the failed attempt left is cleared first), or run
+   `obur restore cancel` to go back to how it was: the old database, or none if there was none.
 
 3. **Finish.** Pass every entry from the deleted-accounts list, as `<ID>`, optionally followed by `@<date>`. With
    an empty list, pass nothing. (Lists copied before 2026-11-17 may mark some entries `:shared`; pass them as they

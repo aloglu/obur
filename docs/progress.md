@@ -25,6 +25,12 @@ Then the calendar helper, local checks and image tests; ask before tagging.
   `purged`: skipped, counted, `purged_skipped` notice; a purged food links nothing, so its entries keep snapshots.
   Identity mappings stay insert-only (no UPDATE grant, and no stale mapping is left to repoint). New DB test (fails
   on the old code: 3 new instead of 1).
+- Step 3 done: the restore mark gets `restoredAt` only when the restore completes; `obur restore start` retries a
+  failed attempt (clears what it left, keeps the database aside) and refuses only a completed one; where the old
+  database went is noted in `/data/status/restore-aside` (survives a restart); `obur restore cancel` puts it back, or
+  with none clears the attempt so obur waits for a restore as before. `smoke-test.sh` now fails a restore twice,
+  cancels it, then does the same on a new installation with only backups and restores for real. Smoke and upgrade
+  (beta.19) tests passed.
 
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
 
