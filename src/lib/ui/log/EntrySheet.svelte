@@ -3,6 +3,7 @@
 	// Type it, and what Speak heard (docs/ui.md, "Logging"): the text, read again as it changes, one card per item with its
 	// own amount, unit and kcal, the meal as a toggle that follows the text, then Log. Nothing is saved before that. Each
 	// card has its own client ID, so a retry never logs twice; cards that saved leave the sheet.
+	import { accountHeaders } from '#lib/client/account.ts';
 	import AmountField from '../AmountField.svelte';
 	import Chips from '../Chips.svelte';
 	import Select from '../Select.svelte';
@@ -441,7 +442,7 @@
 		if (heard && undo.length) {
 			await fetch('/api/v1/achievements/firsts', {
 				method: 'POST',
-				headers: { 'content-type': 'application/json' },
+				headers: { 'content-type': 'application/json', ...accountHeaders() },
 				body: JSON.stringify({ first: 'voice' })
 			}).catch(() => {});
 		}

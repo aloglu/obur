@@ -15,6 +15,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
+	import { accountHeaders, wrongAccount } from '#lib/client/account.ts';
 	import { BY_HAND, type LabelProposal, type ScanResult } from '#lib/client/scan-result.svelte.ts';
 	import { PROVIDER_NAME, type RemoteError, type Source } from '#lib/shared/remote-models.ts';
 	import Button from '../Button.svelte';
@@ -120,7 +121,7 @@
 			for (;;) {
 				response = await fetch(`/api/v1/scan${viaServer ? '?via=server' : ''}`, {
 					method: 'POST',
-					headers: { 'content-type': 'image/jpeg' },
+					headers: { 'content-type': 'image/jpeg', ...accountHeaders() },
 					body: image
 				});
 				body = await response.json().catch(() => ({}));
@@ -132,6 +133,7 @@
 			}
 			waiting = null;
 			if (!response.ok) {
+				if (wrongAccount(body.error ?? '', response.status)) return;
 				if (source !== 'server' && !viaServer && REMOTE_ERRORS.includes(body.error ?? '')) {
 					remote = remoteProblem(body.error as RemoteError, source, 'scan');
 					return;

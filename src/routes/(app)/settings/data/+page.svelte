@@ -203,11 +203,12 @@
 				const response = await fetch('/api/v1/export', {
 					method: 'POST',
 					credentials: 'same-origin',
-					headers: { 'content-type': 'application/json' },
+					headers: { 'content-type': 'application/json', ...accountHeaders() },
 					body: '{}'
 				});
 				if (!response.ok) {
 					const body = (await response.json().catch(() => ({}))) as { error?: string };
+					wrongAccount(body.error ?? '', response.status);
 					throw new ApiError(body.error ?? 'error', response.status);
 				}
 				const name =

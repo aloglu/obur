@@ -5,6 +5,7 @@ import svelte from 'eslint-plugin-svelte';
 import { defineConfig, includeIgnoreFile } from 'eslint/config';
 import globals from 'globals';
 import ts from 'typescript-eslint';
+import accountHeader from './eslint-rules/account-header.js';
 import moduleBoundaries from './eslint-rules/module-boundaries.js';
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
@@ -36,8 +37,22 @@ export default defineConfig(
 	},
 	{
 		files: ['src/**/*.{js,ts,svelte}'],
-		plugins: { obur: { rules: { 'module-boundaries': moduleBoundaries } } },
+		plugins: {
+			obur: { rules: { 'module-boundaries': moduleBoundaries, 'account-header': accountHeader } }
+		},
 		rules: { 'obur/module-boundaries': 'error' }
+	},
+	{
+		// The browser's own writes; the server and the service worker (which passes pages' requests on) are not.
+		files: ['src/**/*.{js,ts,svelte}'],
+		ignores: [
+			'src/lib/server/**',
+			'src/routes/**/+server.ts',
+			'src/**/*.server.ts',
+			'src/service-worker.ts',
+			'src/**/*.test.ts'
+		],
+		rules: { 'obur/account-header': 'error' }
 	},
 	{
 		// The worker and operator scripts run these files with Node's type stripping, which has no parameter

@@ -31,6 +31,9 @@ Then the calendar helper, local checks and image tests; ask before tagging.
   with none clears the attempt so obur waits for a restore as before. `smoke-test.sh` now fails a restore twice,
   cancels it, then does the same on a new installation with only backups and restores for real. Smoke and upgrade
   (beta.19) tests passed.
+- Step 4 done: Export, Speak, Scan and both achievement calls send `x-obur-account` (and reload on
+  `wrong_account`). New lint rule `obur/account-header` (eslint-rules/, with rule tests): any browser `fetch` with a
+  method other than GET must spread `accountHeaders()`; it flagged exactly these five. Lint, check, rule tests.
 
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
 

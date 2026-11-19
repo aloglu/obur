@@ -1,6 +1,7 @@
 // Achievements waiting to be celebrated (docs/ui.md, "Achievements, Journal and Help"): the most notable gets a toast;
 // tapping it opens the full-screen celebration. Whatever was offered is then marked seen, so it is celebrated once,
 // and the others that arrived with it are kept quietly.
+import { accountHeaders } from '#lib/client/account.ts';
 import { achievementKey, type Achievement } from '#lib/shared/achievements.ts';
 
 /** How long the toast stays before it is taken as seen. */
@@ -24,7 +25,7 @@ function markSeen() {
 	if (!keys.length) return;
 	fetch('/api/v1/achievements/seen', {
 		method: 'POST',
-		headers: { 'content-type': 'application/json' },
+		headers: { 'content-type': 'application/json', ...accountHeaders() },
 		body: JSON.stringify({ keys })
 	}).catch(() => {
 		// Offline: they stay unseen on the server and are offered again next time.

@@ -16,6 +16,7 @@ export async function api<T = unknown>(
 	path: string,
 	body?: unknown
 ): Promise<T> {
+	// eslint-disable-next-line obur/account-header -- every method but GET gets accountHeaders() below
 	const response = await fetch(path, {
 		method,
 		credentials: 'same-origin',

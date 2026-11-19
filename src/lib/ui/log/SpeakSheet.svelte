@@ -14,6 +14,7 @@
 	import MicOff from '@lucide/svelte/icons/mic-off';
 	import Timer from '@lucide/svelte/icons/timer';
 	import { m } from '#lib/paraglide/messages.js';
+	import { accountHeaders, wrongAccount } from '#lib/client/account.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import type { ParsedEntry } from '#lib/shared/entry-types.ts';
 	import Button from '../Button.svelte';
@@ -159,13 +160,18 @@
 		try {
 			const response = await fetch(
 				`/api/v1/speech?date=${date}&zone=${encodeURIComponent(deviceZone())}${viaServer ? '&via=server' : ''}`,
-				{ method: 'POST', headers: { 'content-type': audio.type }, body: audio }
+				{
+					method: 'POST',
+					headers: { 'content-type': audio.type, ...accountHeaders() },
+					body: audio
+				}
 			);
 			const body = (await response.json().catch(() => ({}))) as {
 				entry?: ParsedEntry;
 				error?: string;
 			};
 			if (response.ok && body.entry) return onheard(body.entry);
+			if (wrongAccount(body.error ?? '', response.status)) return;
 			if (source !== 'server' && !viaServer && REMOTE_ERRORS.includes(body.error ?? '')) {
 				remote = remoteProblem(body.error as RemoteError, source, 'speak');
 				phase = 'failed';
