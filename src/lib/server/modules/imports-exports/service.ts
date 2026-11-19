@@ -270,14 +270,12 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 			nutrients: e.nutrients as never,
 			...lifecycle(e)
 		})),
-		// An emptied note stays as a row for the last-typed rule; it is nothing to export.
-		dayNotes: (await tx.select().from(dayNotes).where(eq(dayNotes.userId, userId)))
-			.filter((n) => n.text.trim() !== '')
-			.map((n) => ({
-				localDate: n.localDate,
-				text: n.text,
-				typedAt: n.typedAt.toISOString()
-			})),
+		// An emptied note is exported too: the last-typed rule needs it, or importing it would keep the old text.
+		dayNotes: (await tx.select().from(dayNotes).where(eq(dayNotes.userId, userId))).map((n) => ({
+			localDate: n.localDate,
+			text: n.text,
+			typedAt: n.typedAt.toISOString()
+		})),
 		loseitIdentities: (
 			await tx
 				.select()
@@ -749,9 +747,12 @@ async function plan(
 			n.typedAt.getTime()
 		])
 	);
-	const newNotes = data.dayNotes.filter(
-		(n) => (notesHere.get(n.localDate) ?? -Infinity) < new Date(n.typedAt).getTime()
-	);
+	// An emptied note only clears an older one here; on a day with no note it adds nothing.
+	const newNotes = data.dayNotes.filter((n) => {
+		const here = notesHere.get(n.localDate);
+		if (n.text.trim() === '' && here === undefined) return false;
+		return (here ?? -Infinity) < new Date(n.typedAt).getTime();
+	});
 	counts.dayNote.new = newNotes.length;
 	counts.dayNote.unchanged = data.dayNotes.length - newNotes.length;
 
@@ -1111,7 +1112,9 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 			)
 			.onConflictDoUpdate({
 				target: [dayNotes.userId, dayNotes.localDate],
-				set: { text: sql`excluded.text`, typedAt: sql`excluded.typed_at` }
+				set: { text: sql`excluded.text`, typedAt: sql`excluded.typed_at` },
+				// A note saved here while the import ran, typed after the archive's, stays.
+				setWhere: sql`${dayNotes.typedAt} < excluded.typed_at`
 			})
 	);
 	// What the archive's LoseIt rows became, pointed at the records they are here now. Rows whose record is not in the

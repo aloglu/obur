@@ -2,6 +2,26 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Owner's audit of rc.3 (2026-11-19): verified, fixing
+
+Report outside the repo, checked against `0c2f8de`; every finding real (restore worse than reported: a failed restore
+always refuses the suggested retry). Owner also found that offline food search does nothing. Owner's go, one commit
+each, in this order:
+1. Day notes: emptied notes exported; an import never overwrites a note typed later (also one saved meanwhile).
+2. Imports skip records purged here (owner: a purged record never comes back), and the stale mapping can't double.
+3. Restore: a failed `restore start` can be retried or cancelled, even with no database moved aside.
+4. Export, Speak, Scan and achievements send the tab's account.
+5. Saved pages per account in the service worker (no other account's copy, even before the page clears them).
+6. Food and achievement icons not downloaded at install (cached when first shown).
+7. Offline entries keep the calories confirmed: the queue carries what was shown; a changed food asks for review.
+8. Offline food search from a copy of the person's foods on the device, used only when the server can't be reached
+   (owner agreed without a separate speed test: measured search 0.1 ms for 5,000 foods; the copy refreshes in the
+   service worker, only when changed, never during a page load or a write).
+Then the calendar helper, local checks and image tests; ask before tagging.
+
+- Step 1 done: `service.ts` exports emptied notes, skips one for a day with no note, and the upsert's `setWhere`
+  keeps a later note. Two new DB tests (the race test fails without the guard).
+
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
 
 rc.2's code (never published: its release stopped at the browser tests) plus the Journal's fixed order for

@@ -525,7 +525,7 @@ describe('import', () => {
 			'also from the archive',
 			new Date('2026-10-24T10:00:00Z')
 		);
-		await diary.saveDayNote(MEHMET, '2026-10-23', '', new Date('2026-10-23T10:00:00Z')); // emptied: nothing to export
+		await diary.saveDayNote(MEHMET, '2026-10-23', '', new Date('2026-10-23T10:00:00Z')); // emptied, nothing here
 		await diary.saveDayNote(
 			ZEYNEP,
 			'2026-10-24',
@@ -537,14 +537,42 @@ describe('import', () => {
 			readArchive(archive)
 				.data.dayNotes.map((n) => n.localDate)
 				.sort()
-		).toEqual(['2026-10-24', DAY]);
+		).toEqual(['2026-10-23', '2026-10-24', DAY]);
 		expect((await portability.previewImport(ZEYNEP, archive)).counts.dayNote).toMatchObject({
 			new: 1,
-			unchanged: 1
+			unchanged: 2
 		});
 		await portability.applyImport(ZEYNEP, archive);
 		expect((await diary.dayNote(ZEYNEP, DAY)).text).toBe('from the archive');
 		expect((await diary.dayNote(ZEYNEP, '2026-10-24')).text).toBe('typed later here');
+	});
+
+	it('imports an emptied note over an older one, so the cleared text does not come back', async () => {
+		const DAY = '2026-10-25';
+		await diary.saveDayNote(ZEYNEP, DAY, 'old text', new Date('2026-10-25T09:00:00Z'));
+		await diary.saveDayNote(MEHMET, DAY, '', new Date('2026-10-25T10:00:00Z'));
+		const archive = fromElsewhere(await portability.exportArchive(MEHMET));
+		await portability.applyImport(ZEYNEP, archive);
+		expect((await diary.dayNote(ZEYNEP, DAY)).text).toBe('');
+	});
+
+	it("keeps a note saved while the import runs when it was typed after the archive's", async () => {
+		const DAY = '2026-10-25';
+		await diary.saveDayNote(ZEYNEP, DAY, 'before', new Date('2026-10-25T09:00:00Z'));
+		await diary.saveDayNote(MEHMET, DAY, 'from the archive', new Date('2026-10-25T10:00:00Z'));
+		const archive = fromElsewhere(await portability.exportArchive(MEHMET));
+		// The note's row is held, so the import plans with the old note and then waits to write it; meanwhile a
+		// newer edit is saved, as from the person's phone.
+		let importing: Promise<unknown> | undefined;
+		await admin.begin(async (tx) => {
+			await tx`select 1 from day_notes where user_id = ${ZEYNEP} and local_date = ${DAY} for update`;
+			importing = portability.applyImport(ZEYNEP, archive);
+			await new Promise((r) => setTimeout(r, 500));
+			await tx`update day_notes set text = 'typed during the import', typed_at = '2026-10-25T11:00:00Z'
+				where user_id = ${ZEYNEP} and local_date = ${DAY}`;
+		});
+		await importing;
+		expect((await diary.dayNote(ZEYNEP, DAY)).text).toBe('typed during the import');
 	});
 
 	it('reads an archive made before saved meals were exported', async () => {
