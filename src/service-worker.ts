@@ -23,10 +23,13 @@ const ACCOUNT_CACHE = 'obur-account';
 const ACCOUNT_KEY = '/__account';
 // Paths are relative to the base path; requests are compared by absolute pathname.
 // The other app icons are left out: only a Home Screen asks for them, and all of them together are megabytes.
+// Food and achievement icons (about 390 files) are kept when first shown instead of all at install (2026-11-19
+// audit): a page shows only a few, and an icon seen online is there offline.
+const ON_FIRST_USE = /^\/icons\/(food|achievements)\//;
 const SHELL_ASSETS = new Set(
 	[...immutable, ...assets]
 		.map(({ path }) => `/${path.replace(/^\//, '')}`)
-		.filter((path) => !path.startsWith('/app-icons/'))
+		.filter((path) => !path.startsWith('/app-icons/') && !ON_FIRST_USE.test(path))
 );
 const NETWORK_TIMEOUT_MS = 3000;
 const NO_CACHE_PAGES = /^\/(login|setup|join|recover)(\/|$)/;
@@ -384,19 +387,32 @@ sw.addEventListener('fetch', (event) => {
 		return;
 	}
 
-	// Hashed files never change, so any cached version's copy is right (including the previous version's).
-	if (SHELL_ASSETS.has(url.pathname) || url.pathname.startsWith('/_app/immutable/')) {
+	// Hashed files never change, so any cached version's copy is right (including the previous version's). Icons
+	// kept on first use are the exception (below).
+	if (
+		SHELL_ASSETS.has(url.pathname) ||
+		url.pathname.startsWith('/_app/immutable/') ||
+		ON_FIRST_USE.test(url.pathname)
+	) {
 		// ignoreVary: a module import sends headers (Origin) that the install-time copy was not fetched with.
 		event.respondWith(
 			(async () => {
 				// This version's files first: looking through every cache means searching the saved pages too, which
 				// grow with use. The other caches only matter for a page still running the previous version.
 				const shell = await caches.open(SHELL);
-				const hit =
-					(await shell.match(request, { ignoreVary: true })) ??
-					(await caches.match(request, { ignoreVary: true }));
-				if (hit) return hit;
-				const response = await fetch(request);
+				const own = await shell.match(request, { ignoreVary: true });
+				if (own) return own;
+				// An icon isn't hashed and may have changed: the previous version's copy only when offline.
+				const older = () => caches.match(request, { ignoreVary: true });
+				if (!ON_FIRST_USE.test(url.pathname)) {
+					const hit = await older();
+					if (hit) return hit;
+				}
+				const response = await fetch(request).catch(async (e: unknown) => {
+					const hit = await older();
+					if (hit) return hit;
+					throw e;
+				});
 				// Fill a gap left at install time, so it is there next time the network is not.
 				if (response.ok) event.waitUntil(shell.put(request, response.clone()).catch(() => {}));
 				return response;

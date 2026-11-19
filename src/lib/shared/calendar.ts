@@ -105,22 +105,3 @@ export function calendarDays(month: string, today: string, data: MonthData): Cal
 		return { date, status, eatenKcal, budgetKcal, fill: status === 'over' ? 1 : fill, isToday };
 	});
 }
-
-export interface MonthSummary {
-	under: number;
-	over: number;
-	incomplete: number;
-	unlogged: number;
-}
-
-/** Counts past days only; today is still in progress (docs/ui.md). */
-export function monthSummary(days: CalendarDay[]): MonthSummary {
-	const past = days.filter((d) => !d.isToday && d.status !== 'future');
-	const count = (s: DayStatus) => past.filter((d) => d.status === s).length;
-	return {
-		under: count('under'),
-		over: count('over'),
-		incomplete: count('incomplete') + count('no_budget'),
-		unlogged: count('unlogged')
-	};
-}

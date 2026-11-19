@@ -38,6 +38,9 @@ Then the calendar helper, local checks and image tests; ask before tagging.
   network answers and preparations, serves a saved copy (the offline page too) only to that account, and clears the
   copies when it changes (`obur-data-v2`). New `offline.e2e.ts` test (fails without the filter on both browsers);
   offline, prepared, auth and app-shell suites: 48 passed, 5 skipped by design.
+- Step 6 done: food and achievement icons are kept when first shown, not at install (about 306 files, 2.1 MiB
+  instead of about 690, 3.1 MiB); not hashed, so an older version's copy is used only offline. The unused
+  `monthSummary` helper removed. Offline, icons, achievements and app-icon suites: 47 passed, 4 skipped by design.
 
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
 

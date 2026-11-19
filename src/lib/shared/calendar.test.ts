@@ -3,7 +3,6 @@ import {
 	calendarDays,
 	isoWeekday,
 	monthDays,
-	monthSummary,
 	monthWeeks,
 	shiftMonth,
 	targetOn,
@@ -107,9 +106,5 @@ describe('calendarDays', () => {
 	it('marks logged days without a budget separately', () => {
 		const none = calendarDays('2026-10', '2026-10-05', { ...data, versions: [] });
 		expect(none.find((d) => d.date === '2026-10-01')?.status).toBe('no_budget');
-	});
-
-	it('summarises past days only', () => {
-		expect(monthSummary(days)).toEqual({ under: 2, over: 1, incomplete: 1, unlogged: 0 });
 	});
 });
