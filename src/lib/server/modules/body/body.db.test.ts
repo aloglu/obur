@@ -52,14 +52,19 @@ describe('weight', () => {
 		expect(await body.latestWeight(AYSE, '2026-10-19')).toBeNull();
 	});
 
-	it('finds the first weigh-in day, ignoring deleted readings and other people', async () => {
-		expect(await body.firstWeightDay(AYSE)).toBeNull();
+	it('finds the first day with a weigh-in, water or activity, ignoring deleted ones and other people', async () => {
+		expect(await body.firstDay(AYSE)).toBeNull();
 		const early = await body.logWeight(AYSE, at('2026-09-01'), 85);
 		await body.logWeight(AYSE, at('2026-09-03'), 84.6);
 		await body.logWeight(MEHMET, at('2026-01-01'), 70);
-		expect(await body.firstWeightDay(AYSE)).toBe('2026-09-01');
+		expect(await body.firstDay(AYSE)).toBe('2026-09-01');
 		await body.removeWeight(AYSE, early.id);
-		expect(await body.firstWeightDay(AYSE)).toBe('2026-09-03');
+		expect(await body.firstDay(AYSE)).toBe('2026-09-03');
+		// Someone who logged water or activity before any weigh-in: All starts there.
+		await body.logActivity(AYSE, at('2026-08-20'), 200, 'Yüzme');
+		expect(await body.firstDay(AYSE)).toBe('2026-08-20');
+		await body.logWater(AYSE, at('2026-08-10'), 250);
+		expect(await body.firstDay(AYSE)).toBe('2026-08-10');
 	});
 
 	it('treats a retry with the same ID as the same reading, and rejects changed content', async () => {

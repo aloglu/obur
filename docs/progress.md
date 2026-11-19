@@ -34,6 +34,8 @@ Then the local checks and image tests, and ask before tagging rc.2.
   (`lockImports`). Without it the race usually fails the second import on a row both add (profile, settings) and
   doubles the records when those already exist. `portability.db.test.ts`: two overlapping exports at once (fails
   without the lock). Import and body DB tests passed.
+- Step 7 (2026-11-19): Progress → All starts at the earliest food entry, weigh-in, water or activity
+  (`body.firstDay` replaces `firstWeightDay`); body DB test covers water and activity before any weigh-in.
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 

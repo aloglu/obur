@@ -25,9 +25,9 @@ export async function loadHistory(
 ): Promise<ProgressHistory> {
 	let first: string | null = null;
 	if (range === 'All') {
-		const firsts = (
-			await Promise.all([diary.firstDay(userId), body.firstWeightDay(userId)])
-		).filter((d): d is string => d !== null);
+		const firsts = (await Promise.all([diary.firstDay(userId), body.firstDay(userId)])).filter(
+			(d): d is string => d !== null
+		);
 		first = firsts.sort()[0] ?? null;
 	}
 	const from = rangeStart(range, today, first);

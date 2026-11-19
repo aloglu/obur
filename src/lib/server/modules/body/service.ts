@@ -287,12 +287,14 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 		},
 
 		/** The first day with a live weigh-in, or null. */
-		async firstWeightDay(userId: string): Promise<string | null> {
+		/** The first day with a weigh-in, water or activity (Progress → All starts at the earliest of anything). */
+		async firstDay(userId: string): Promise<string | null> {
 			const [row] = await withUser(db, userId, (tx) =>
-				tx
-					.select({ first: sql<string | null>`min(${weightEntries.localDate})` })
-					.from(weightEntries)
-					.where(isNull(weightEntries.deletedAt))
+				tx.execute<{ first: string | null }>(sql`select least(
+					(select min(${weightEntries.localDate}) from ${weightEntries} where ${weightEntries.deletedAt} is null),
+					(select min(${waterEntries.localDate}) from ${waterEntries} where ${waterEntries.deletedAt} is null),
+					(select min(${activityEntries.localDate}) from ${activityEntries} where ${activityEntries.deletedAt} is null)
+				)::text as first`)
 			);
 			return row?.first ?? null;
 		},
