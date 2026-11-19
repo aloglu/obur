@@ -2,6 +2,35 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Owner's outside audit of rc.1 (2026-11-19): verified, fixing (owner's go)
+
+Report (outside the repo) checked against `1756d52`: every finding real. Owner's go for this plan, one commit each:
+1. A tab's writes carry its account; the server refuses another session's (409 `wrong_account`). **Done.**
+2. Restore start-up: the administrator password is set only once replay is over (in the upgrade step).
+3. Imports lock the account for their transaction (obur and LoseIt), so overlapping imports can't duplicate.
+4. A failed send puts an item back only if it is still in the queue (a discard during the send stays discarded).
+5. Day Notes: when the server kept a newer note, the card shows it and says so; a refused note never says "Saved".
+6. Export size: measure how much history fits in 20 MiB, then a plain message or higher limits; a CSV listed in
+   the manifest but missing is refused.
+7. Progress → All starts at the earliest food, weigh-in, water or activity.
+8. Reminders: counted only when delivered; failure counts carried between reminders of one pass; a removed device
+   gets nothing more.
+9. Export groups nutrients and servings by food once; the startup warm-up's server cost measured (achievement check
+   skipped on those background copies only if it matters); unused strings removed, with a lint check.
+10. Release workflow: the full Playwright run and the upgrade test from beta.19 become gates before publishing.
+Then the local checks and image tests, and ask before tagging rc.2.
+
+- Step 1 (2026-11-19): `client/account.ts` (the layout sets the tab's account; `api`, the offline queue (each item
+  its own owner), import and sign-out send `x-obur-account`); `hooks.server.ts` refuses a write whose account isn't
+  the session's. A refused queued item stays in its owner's queue and the tab reloads as whoever is signed in.
+  `offline.e2e.ts` new test (fails without the server check); `data.e2e.ts` used to swap to another admin mid-page,
+  now a new session for the same admin. Full e2e: 281 passed, 18 skipped by design.
+- Step 4 (2026-11-19): `store.ts` `update` (puts an item back only if it is still there, in one transaction) and
+  `has`; the send loop skips an item discarded since the pass began and never writes back a discarded one. A send
+  that had already reached the server before the discard still logs the entry (it can be deleted as usual).
+  `offline.e2e.ts` new test (Chromium; fails with the old write-back). Offline and prepared suites 5 times on both
+  browsers: 142 passed.
+
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 
 beta.22 plus: the buttons review (both rounds), the "<" button removed, the Text Review, archive placeholders and

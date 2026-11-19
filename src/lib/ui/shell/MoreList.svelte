@@ -1,6 +1,7 @@
 <script lang="ts">
 	// docs/ui.md "More and settings": your foods, recipes and meals, then Settings, Members and Help, then
 	// signing out. Compact rows with their counts.
+	import { accountHeaders, setAccount } from '#lib/client/account.ts';
 	import { stopReminders } from '#lib/client/push.ts';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -47,15 +48,18 @@
 			const response = await fetch('/api/v1/auth/logout', {
 				method: 'POST',
 				credentials: 'same-origin',
-				headers: { 'content-type': 'application/json' },
+				headers: { 'content-type': 'application/json', ...accountHeaders() },
 				body: '{}',
 				signal: AbortSignal.timeout(5000)
 			});
+			// Someone else signed in on this browser since this tab opened: never sign them out from here.
+			if (response.status === 409) return void location.reload();
 			if (!response.ok && response.status !== 401) throw new Error(`status ${response.status}`);
 		} catch {
 			showToast({ message: m.signout_offline(), detail: m.signout_offline_detail() });
 			return;
 		}
+		setAccount(null);
 		if (offline.ownerId) await clearDeviceData(offline.ownerId);
 		await invalidateAll();
 		await goto(resolve('/login'));

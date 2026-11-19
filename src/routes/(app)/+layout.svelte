@@ -20,6 +20,7 @@
 		startSync
 	} from '#lib/client/offline/sync.svelte.ts';
 	import { noteWaiting } from '#lib/client/offline/waiting.ts';
+	import { setAccount } from '#lib/client/account.ts';
 	import { syncZoneCookie } from '#lib/client/prefs.ts';
 	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import { forgetPrepared, startPreparing } from '#lib/client/prepare.ts';
@@ -28,6 +29,9 @@
 	import Notice from '#lib/ui/Notice.svelte';
 
 	let { children, data } = $props();
+
+	// Writes from this tab say whose they are; the server refuses them if someone else has signed in since.
+	$effect.pre(() => setAccount(data.user?.id ?? null));
 
 	// Achievements the server found waiting: the toast offers the most notable (docs/ui.md).
 	$effect(() => offer(data.celebrate));

@@ -7,6 +7,7 @@ import { config } from '#lib/server/config.ts';
 import { clearSessionCookie } from '#lib/server/http.ts';
 import { restorePending } from '#lib/server/restore-guard.ts';
 import { m } from '#lib/paraglide/messages.js';
+import { ACCOUNT_HEADER, WRONG_ACCOUNT } from '#lib/shared/account-data.ts';
 import { isValidZone } from '#lib/shared/diary-rules.ts';
 import { DEFAULT_PALETTE, isPalette, paletteOf } from '#lib/shared/themes.ts';
 import { DEFAULT_APP_ICON, isAppIcon } from '#lib/shared/app-icons.ts';
@@ -137,6 +138,17 @@ const handleSession: Handle = async ({ event, resolve }) => {
 	if (!session && !matches(path, PUBLIC_PATHS)) {
 		if (api) return json({ error: 'unauthenticated' }, { status: 401 });
 		redirect(303, '/login');
+	}
+	// A write made for one account must not land in another: a tab opened before someone else signed in on this
+	// browser still sends its waiting entries with the browser's current session (client/account.ts).
+	const intended = event.request.headers.get(ACCOUNT_HEADER);
+	if (
+		session &&
+		intended &&
+		!SAFE_METHODS.has(event.request.method) &&
+		intended !== session.userId
+	) {
+		return json({ error: WRONG_ACCOUNT }, { status: 409 });
 	}
 	return resolve(event);
 };

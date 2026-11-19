@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import { apiAs, createFood, signedInAs, staleSessions } from './fixtures.ts';
+import { apiAs, createFood, signedInAgain, signedInAs, staleSessions } from './fixtures.ts';
 
 const DAY = '2026-10-20';
 
@@ -124,7 +124,9 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	});
 	expect(refused.status()).toBe(403);
 	expect((await refused.json()).error).toBe('recent_auth_required');
-	await signedInAs(page, 'Gül again', 'admin');
+	// A passkey check just now: a new session for the same admin (another person would be refused on this page).
+	await signedInAgain(page, adminId);
+	await page.reload();
 	// Development and test installations have no backup service, and the page says so.
 	await expect(page.getByText("Backups aren't set up on this installation.")).toBeVisible();
 	const people = page.getByRole('region', { name: 'People' });

@@ -52,7 +52,23 @@ export async function openQueue(ownerId: string) {
 	return {
 		add: (op: QueuedOp) => request(store('readwrite').add(op)) as Promise<number>,
 		put: (op: QueuedOp) => request(store('readwrite').put(op)),
+		/**
+		 * Updates an item only if it is still queued, in one transaction: one discarded (in this tab or another) while
+		 * it was being sent stays discarded.
+		 */
+		update: (op: QueuedOp) =>
+			new Promise<void>((resolve, reject) => {
+				const tx = db.transaction('ops', 'readwrite');
+				const ops = tx.objectStore('ops');
+				const existing = ops.getKey(op.seq!);
+				existing.onsuccess = () => {
+					if (existing.result !== undefined) ops.put(op);
+				};
+				tx.oncomplete = () => resolve();
+				tx.onerror = () => reject(tx.error);
+			}),
 		remove: (seq: number) => request(store('readwrite').delete(seq)),
+		has: async (seq: number) => (await request(store('readonly').getKey(seq))) !== undefined,
 		/** All items in creation order. */
 		all: async () =>
 			((await request(store('readonly').getAll())) as QueuedOp[]).sort((a, b) => a.seq! - b.seq!),

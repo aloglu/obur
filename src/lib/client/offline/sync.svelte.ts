@@ -1,6 +1,7 @@
 // Sends new entries now, or keeps them in the account's queue when the server cannot be reached, and sends them
 // in creation order on load, reconnection and return to the foreground. Offline is inferred from failed requests,
 // never from navigator.onLine (which reported "online" in Airplane Mode on the owner's iPhone in Phase 0).
+import { accountHeaders, wrongAccount } from '../account.ts';
 import { ApiError } from '../api.ts';
 import { deleteQueue, openQueue, type Preview, type Queue, type QueuedOp } from './store.ts';
 import { noteWaiting } from './waiting.ts';
@@ -36,9 +37,19 @@ let timer: ReturnType<typeof setInterval> | undefined;
 const listeners: (() => void)[] = [];
 
 class Unreachable extends Error {}
+/** Someone else signed in on this browser since this tab opened; the page is reloading (client/account.ts). */
+class OtherAccount extends Error {}
 
-/** POSTs JSON; throws Unreachable when the server cannot be reached or is failing, ApiError when it refuses. */
-async function post(path: string, body: unknown, timeoutMs = TIMEOUT_MS): Promise<unknown> {
+/**
+ * POSTs JSON for `owner`'s account; throws Unreachable when the server cannot be reached or is failing, ApiError when
+ * it refuses, OtherAccount when someone else is signed in on this browser now.
+ */
+async function post(
+	path: string,
+	body: unknown,
+	owner: string,
+	timeoutMs = TIMEOUT_MS
+): Promise<unknown> {
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 	let response: Response;
@@ -46,7 +57,7 @@ async function post(path: string, body: unknown, timeoutMs = TIMEOUT_MS): Promis
 		response = await fetch(path, {
 			method: 'POST',
 			credentials: 'same-origin',
-			headers: { 'content-type': 'application/json' },
+			headers: { 'content-type': 'application/json', ...accountHeaders(owner) },
 			body: JSON.stringify(body),
 			signal: controller.signal
 		});
@@ -62,7 +73,11 @@ async function post(path: string, body: unknown, timeoutMs = TIMEOUT_MS): Promis
 	}
 	unreachableUntil = 0;
 	const data = (await response.json().catch(() => ({}))) as { error?: string };
-	if (!response.ok) throw new ApiError(data.error ?? 'error', response.status);
+	if (!response.ok) {
+		const code = data.error ?? 'error';
+		if (wrongAccount(code, response.status)) throw new OtherAccount();
+		throw new ApiError(code, response.status);
+	}
 	return data;
 }
 
@@ -177,9 +192,14 @@ export async function submit<T>(
 	// still arrive, which is harmless because the queued retry carries the same client ID.
 	if (!waiting && !offline.authRequired && Date.now() >= unreachableUntil) {
 		try {
-			return { status: 'sent', data: (await post(path, body, DIRECT_TIMEOUT_MS)) as T };
+			return {
+				status: 'sent',
+				data: (await post(path, body, offline.ownerId, DIRECT_TIMEOUT_MS)) as T
+			};
 		} catch (e) {
-			if (!(e instanceof Unreachable)) throw e;
+			// Kept for this tab's person, who can send it when they sign in again.
+			if (e instanceof OtherAccount) offline.authRequired = true;
+			else if (!(e instanceof Unreachable)) throw e;
 		}
 	}
 	await queue.add({
@@ -212,14 +232,20 @@ async function sendWaiting(): Promise<number> {
 		const waiting = $state.snapshot(offline.items).filter((i) => i.status === 'pending');
 		for (const item of waiting) {
 			if (!queue || item.ownerId !== offline.ownerId) return sent;
+			// Discarded since this pass began (while an earlier one was being sent): never send it.
+			if (!(await queue.has(item.seq!))) continue;
 			item.attempts += 1;
 			try {
-				await post(item.path, item.body);
+				await post(item.path, item.body, item.ownerId);
 				await queue.remove(item.seq!);
 				sent += 1;
 			} catch (e) {
 				if (e instanceof Unreachable) {
-					await queue.put(item);
+					await queue.update(item);
+					return sent;
+				}
+				if (e instanceof OtherAccount) {
+					offline.authRequired = true;
 					return sent;
 				}
 				const err = e as ApiError;
@@ -234,7 +260,7 @@ async function sendWaiting(): Promise<number> {
 				}
 				// A note can't be reviewed the way an entry can, and a later one replaces it anyway.
 				if (item.preview.kind === 'note') await queue.remove(item.seq!);
-				else await queue.put({ ...item, status: 'review', error: err.code });
+				else await queue.update({ ...item, status: 'review', error: err.code });
 			}
 		}
 		offline.authRequired = false;

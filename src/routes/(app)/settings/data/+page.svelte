@@ -7,6 +7,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
 	import { clearDeviceData } from '#lib/client/offline/sync.svelte.ts';
+	import { accountHeaders, wrongAccount } from '#lib/client/account.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
@@ -229,7 +230,7 @@
 		const response = await fetch(`/api/v1/import?${params}`, {
 			method: 'POST',
 			credentials: 'same-origin',
-			headers: { 'content-type': 'application/zip' },
+			headers: { 'content-type': 'application/zip', ...accountHeaders() },
 			body: file
 		});
 		const body = (await response.json().catch(() => ({}))) as {
@@ -237,7 +238,10 @@
 			detail?: string;
 			summary?: Summary;
 		};
-		if (!response.ok) throw new ApiError(body.error ?? 'error', response.status, body.detail);
+		if (!response.ok) {
+			wrongAccount(body.error ?? 'error', response.status);
+			throw new ApiError(body.error ?? 'error', response.status, body.detail);
+		}
 		return body.summary!;
 	}
 

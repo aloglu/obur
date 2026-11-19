@@ -1,7 +1,7 @@
 // The bounded offline scope (docs/design.md): queued new entries with ordered, retry-safe sending, visible pending
 // state, cached viewing, and sign-out that never silently drops unsent entries.
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, createFood, signedInAs, openCaloriesOnly } from './fixtures.ts';
+import { apiAs, createFood, signedInAgain, signedInAs, openCaloriesOnly } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
@@ -101,6 +101,123 @@ test('entries made offline wait visibly, then arrive once and in order', async (
 		"New entries are sent when you're back."
 	);
 	await context.setOffline(false);
+});
+
+test('a tab left open never sends its waiting entries into the account of someone who signed in since', async ({
+	page,
+	context
+}) => {
+	const ayse = await signedInAs(page, 'Ayşe');
+	await primeCache(page);
+	await context.setOffline(true);
+	await page
+		.getByRole('region', { name: 'Water' })
+		.getByRole('button', { name: 'Add 250 ml of water' })
+		.click();
+	await quickAdd(page, '300', 'Simit');
+
+	// Someone else signs in on this browser (in another tab: the session cookie is the browser's, not the tab's).
+	await signedInAs(page, 'Mehmet');
+	await context.setOffline(false);
+	const reloaded = page.waitForEvent('load');
+	await page.evaluate(() => dispatchEvent(new Event('online')));
+	// The server refuses entries meant for Ayşe, and the tab reloads as the person now signed in.
+	await reloaded;
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	const day = () =>
+		apiAs<{ entries: { description: string }[] }>(page, 'GET', `/api/v1/diary/${date}`);
+	expect((await day()).entries).toEqual([]);
+	await expect(page.getByRole('region', { name: 'Water' })).not.toContainText('250 ml');
+	// Ayşe's entries wait on this device, in her own queue.
+	const waiting = await page.evaluate(
+		(id) =>
+			new Promise<number>((resolve) => {
+				const open = indexedDB.open(`obur-queue-${id}`);
+				open.onsuccess = () => {
+					const count = open.result.transaction('ops').objectStore('ops').count();
+					count.onsuccess = () => resolve(count.result);
+				};
+			}),
+		ayse
+	);
+	expect(waiting).toBe(2);
+
+	// When she signs in again, they arrive in her account.
+	await signedInAgain(page, ayse);
+	await page.reload();
+	const snacks = page.getByRole('region', { name: 'Snacks' });
+	await expect(snacks).toContainText('Simit');
+	await expect(snacks.getByText('Waiting to sync')).toHaveCount(0);
+	await expect(page.getByRole('region', { name: 'Water' })).toContainText('250 ml');
+	expect((await day()).entries.map((e) => e.description)).toEqual(['Simit']);
+});
+
+test('an entry discarded while it is being sent stays discarded when that send fails', async ({
+	page,
+	context,
+	browserName
+}) => {
+	test.skip(
+		browserName === 'webkit',
+		'request interception does not apply under a service worker in WebKit'
+	);
+	await signedInAs(page, 'Elif');
+	await primeCache(page);
+	await context.setOffline(true);
+	await quickAdd(page, '300', 'Simit');
+	await page.goto('/');
+
+	// Back online, the send hangs (a poor connection) until this test lets it fail.
+	let fail = () => {};
+	const failed = new Promise<void>((resolve) => (fail = resolve));
+	let sending = false;
+	let aborted = false;
+	await context.route('**/api/v1/diary/entries', async (route) => {
+		sending = true;
+		await failed;
+		await route.abort();
+		aborted = true;
+	});
+	await context.setOffline(false);
+	await page.evaluate(() => dispatchEvent(new Event('online')));
+	await expect.poll(() => sending).toBe(true);
+
+	const snacks = page.getByRole('region', { name: 'Snacks' });
+	await snacks.getByText('Waiting to sync').click();
+	await page
+		.getByRole('dialog', { name: 'Unsent entry' })
+		.getByRole('button', { name: 'Discard' })
+		.click();
+	await expect(snacks.getByText('Waiting to sync')).toHaveCount(0);
+
+	// The send fails; the discarded entry must not come back, and nothing is sent later.
+	fail();
+	await expect.poll(() => aborted).toBe(true);
+	await context.unroute('**/api/v1/diary/entries');
+	const queued = () =>
+		page.evaluate(async () => {
+			const name = (await indexedDB.databases()).find((d) =>
+				d.name?.startsWith('obur-queue-')
+			)?.name;
+			return new Promise<number>((resolve) => {
+				const open = indexedDB.open(name!);
+				open.onsuccess = () => {
+					const count = open.result.transaction('ops').objectStore('ops').count();
+					count.onsuccess = () => resolve(count.result);
+				};
+			});
+		});
+	await page.waitForTimeout(500);
+	expect(await queued()).toBe(0);
+	await page.evaluate(() => dispatchEvent(new Event('online')));
+	await page.reload();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect(snacks).not.toContainText('Simit');
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	const day = await apiAs<{ entries: unknown[] }>(page, 'GET', `/api/v1/diary/${date}`);
+	expect(day.entries).toEqual([]);
 });
 
 test('signing out asks before discarding entries that have not been sent', async ({
