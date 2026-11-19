@@ -2,6 +2,16 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
+
+rc.2's code (never published: its release stopped at the browser tests) plus the Journal's fixed order for
+same-day achievements, and the release workflow running the browser tests in the Playwright image with one worker.
+No migration. Checks before the tag (owner's go): lint, check, Vitest 1169, Journal e2e on both browsers; the full
+e2e on 2 CPUs with one worker (283 passed, the one failure being the Journal order, since fixed); image tests as
+for rc.2 (no server or image change since). `docs/install/for-ai-agents.md`: no new settings, commands or log lines.
+- Next: watch the release run; if it publishes, the owner updates (`OBUR_VERSION=1.0.0-rc.3`) and uses it for a
+  few days; `v1.0.0` when nothing turns up.
+
 ## Release candidate 2 (2026-11-19), as `v1.0.0-rc.2`
 
 rc.1 plus the fixes from the owner's outside audit (below): writes refused for another account, restore start-up
@@ -29,8 +39,7 @@ settings, commands or start-up log lines.
   runs under load; the archive wait (3) passed in the one-worker run; neither changed.
 - CI: the Browser tests job runs `npm run test:e2e -- --workers=1 --retries=1` (the Playwright image, as locally).
   Validation: lint, check, Vitest 1169, Journal e2e on both browsers.
-- Next: the fix changed code after the `v1.0.0-rc.2` tag, so publishing needs the owner's choice: tag rc.3 (the
-  tag stays as it was), or run the release by hand first to see the gate pass without publishing.
+- Owner's choice: tag rc.3 (above); the rc.2 tag stays as it was.
 
 ## Owner's outside audit of rc.1 (2026-11-19): verified, fixed
 
