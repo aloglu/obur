@@ -52,6 +52,8 @@ Then the local checks and image tests, and ask before tagging rc.2.
   first: about 12–13 years of heavy logging (the owner's LoseIt history: about 9 a day, so about 15+). Raising it
   costs import memory (the archive is read whole; one file must stay under V8's 512 MiB string limit): **owner's
   decision pending.**
+- Step 9, part (2026-11-19): the export groups nutrients and servings by food once (`collect`). Import/export DB
+  tests passed.
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 

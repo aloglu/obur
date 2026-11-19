@@ -140,6 +140,18 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 		? await tx.select().from(foodServings).where(inArray(foodServings.foodId, ids))
 		: [];
 	const exported = new Set(ids);
+	// Grouped once by food: matching every food against every row grew with foods × rows.
+	const groupBy = <T extends { foodId: string }>(rows: T[]) => {
+		const by = new Map<string, T[]>();
+		for (const r of rows) {
+			const list = by.get(r.foodId);
+			if (list) list.push(r);
+			else by.set(r.foodId, [r]);
+		}
+		return by;
+	};
+	const nutrientsOf = groupBy(nutrients);
+	const servingsOf = groupBy(servings);
 
 	const lifecycle = (r: {
 		revision: number;
@@ -209,6 +221,7 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 		},
 		foods: foodRows.map((f) => {
 			const mine = f.ownerId === userId;
+			const own = { nutrients: nutrientsOf.get(f.id) ?? [], servings: servingsOf.get(f.id) ?? [] };
 			return {
 				id: f.id,
 				mine,
@@ -228,18 +241,18 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 				deletedAt: iso(f.deletedAt),
 				createdAt: f.createdAt.toISOString(),
 				updatedAt: f.updatedAt.toISOString(),
-				nutrients: nutrients
-					.filter((n) => n.foodId === f.id)
-					.map((n) => ({ code: n.code as never, value: n.value, qualifier: n.qualifier })),
-				servings: servings
-					.filter((s) => s.foodId === f.id)
-					.map((s) => ({
-						id: s.id,
-						name: s.name,
-						amount: s.amount,
-						unit: s.unit,
-						source: s.source
-					}))
+				nutrients: own.nutrients.map((n) => ({
+					code: n.code as never,
+					value: n.value,
+					qualifier: n.qualifier
+				})),
+				servings: own.servings.map((s) => ({
+					id: s.id,
+					name: s.name,
+					amount: s.amount,
+					unit: s.unit,
+					source: s.source
+				}))
 			};
 		}),
 		diary: diary.map((e) => ({
