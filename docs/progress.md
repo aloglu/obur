@@ -30,6 +30,10 @@ Then the local checks and image tests, and ask before tagging rc.2.
   that had already reached the server before the discard still logs the entry (it can be deleted as usual).
   `offline.e2e.ts` new test (Chromium; fails with the old write-back). Offline and prepared suites 5 times on both
   browsers: 142 passed.
+- Step 3 (2026-11-19): `applyImport` and `applyLoseIt` take a per-account advisory lock for their transaction
+  (`lockImports`). Without it the race usually fails the second import on a row both add (profile, settings) and
+  doubles the records when those already exist. `portability.db.test.ts`: two overlapping exports at once (fails
+  without the lock). Import and body DB tests passed.
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 

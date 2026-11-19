@@ -1121,6 +1121,14 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 
 // Service ---------------------------------------------------------------------------------------------------------
 
+/**
+ * One import at a time per account, held until its transaction ends. Two overlapping files imported at once would each
+ * plan a record as new before either is committed, and both would add it; the second now plans after the first.
+ */
+async function lockImports(tx: Tx, userId: string): Promise<void> {
+	await tx.execute(sql`select pg_advisory_xact_lock(hashtext('obur:import'), hashtext(${userId}))`);
+}
+
 export function createPortability(db: Database) {
 	return {
 		/** The person's export archive (run only after a recent passkey check). */
@@ -1160,6 +1168,7 @@ export function createPortability(db: Database) {
 			const { manifest, data } = readArchive(bytes);
 			const sha = sha256(bytes);
 			return withUser(db, userId, async (tx) => {
+				await lockImports(tx, userId);
 				const p = await plan(
 					tx,
 					userId,
@@ -1196,6 +1205,7 @@ export function createPortability(db: Database) {
 			const data = readLoseItArchive(bytes);
 			const sha = sha256(bytes);
 			return withUser(db, userId, async (tx) => {
+				await lockImports(tx, userId);
 				const p = await planLoseIt(tx, userId, data, { sha }, options);
 				if (p.summary.alreadyImported) throw new PortabilityError('already_imported');
 				await writeLoseIt(tx, userId, data, p, options);

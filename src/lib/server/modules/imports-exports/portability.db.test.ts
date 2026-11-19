@@ -569,6 +569,29 @@ describe('import', () => {
 		expect(await count('weight_entries', ZEYNEP)).toBe(2);
 	});
 
+	it('imports two overlapping exports sent at the same moment, adding each record once', async () => {
+		await buildHistory();
+		const first = fromElsewhere(await portability.exportArchive(MEHMET), AYSE);
+		await diary.quickAdd(
+			MEHMET,
+			{ localDate: '2026-10-04', meal: 'lunch', ...ist },
+			120,
+			'Çay ve simit'
+		);
+		const second = fromElsewhere(
+			await portability.exportArchive(MEHMET, new Date('2026-10-05T00:00:00Z')),
+			AYSE
+		);
+		// Without one import at a time, both plan the same records as new: they would be added twice, or the second
+		// would fail on a row both add (her profile, her settings).
+		await Promise.all([
+			portability.applyImport(ZEYNEP, first),
+			portability.applyImport(ZEYNEP, second)
+		]);
+		expect(await count('diary_entries', ZEYNEP)).toBe(7);
+		expect(await count('weight_entries', ZEYNEP)).toBe(2);
+	});
+
 	it('keeps the current version of changed records, existing targets and an existing profile', async () => {
 		const { borek } = await buildHistory();
 		const archive = await portability.exportArchive(MEHMET);
