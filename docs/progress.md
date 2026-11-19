@@ -44,7 +44,8 @@ Then the calendar helper, local checks and image tests; ask before tagging.
 - Step 7 done: `foodFingerprint` (shared/diary-rules.ts, unit tests); Amount sheet and Speak/typed log send it as
   `expected`; `POST /api/v1/diary/entries` refuses a changed food (409 `food_changed`); the review sheet and the
   amount sheet say so. Two new offline e2e tests (both fail without the server check). Offline, diary, catalog,
-  curated, recipes and pinned-search suites: 89 passed, 4 skipped by design.
+  curated, recipes and pinned-search suites: 89 passed, 4 skipped by design. Turkish strings for the three new
+  messages (steps 2 and 7) added in a follow-up commit; all Vitest 1181 passed.
 
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
 
