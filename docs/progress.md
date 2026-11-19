@@ -2,7 +2,19 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Owner's outside audit of rc.1 (2026-11-19): verified, fixing (owner's go)
+## Release candidate 2 (2026-11-19), as `v1.0.0-rc.2`
+
+rc.1 plus the fixes from the owner's outside audit (below): writes refused for another account, restore start-up
+during replay, one import at a time, discarded drafts, Day Notes showing the kept note, archives missing a listed
+file refused, the export-size notice, Progress → All, reminder counts, export grouping, 54 unused messages removed,
+and the release workflow now gating on the browser tests and the upgrade test. No migration. Checks before the tag
+(owner's go): type-check, lint, Vitest 1168; full e2e 282 passed (2 phone WebKit flakes passing on rerun) and image,
+smoke, off-site and upgrade tests on the audit fixes; the export notice after it (data e2e, DB tests). The release
+workflow runs the full e2e and upgrade test itself for the first time. `docs/install/for-ai-agents.md`: no new
+settings, commands or start-up log lines.
+- Next: the owner updates (`OBUR_VERSION=1.0.0-rc.2`) and uses it for a few days; `v1.0.0` when nothing turns up.
+
+## Owner's outside audit of rc.1 (2026-11-19): verified, fixed
 
 Report (outside the repo) checked against `1756d52`: every finding real. Owner's go for this plan, one commit each:
 1. A tab's writes carry its account; the server refuses another session's (409 `wrong_account`). **Done.**
@@ -70,7 +82,6 @@ Then the local checks and image tests, and ask before tagging rc.2.
   whole, and Your data says so ("This export is too large to import back yet"; `fitsImport` reads only the zip's
   headers; `x-obur-importable`). Raise `LIMITS` in a later version as histories approach them (exports import with
   higher limits unchanged; much larger files need a streaming reader). DB test, data e2e passed.
-- Next: rc.2 only when the owner says so.
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 
