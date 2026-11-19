@@ -12,7 +12,16 @@ and the release workflow now gating on the browser tests and the upgrade test. N
 smoke, off-site and upgrade tests on the audit fixes; the export notice after it (data e2e, DB tests). The release
 workflow runs the full e2e and upgrade test itself for the first time. `docs/install/for-ai-agents.md`: no new
 settings, commands or start-up log lines.
-- Next: the owner updates (`OBUR_VERSION=1.0.0-rc.2`) and uses it for a few days; `v1.0.0` when nothing turns up.
+- Tagged and pushed 2026-11-19; **the release workflow failed at the new Browser tests gate, so nothing was
+  published** (run 44478894621, 16.6 min on 2 workers). Four tests failed on the slow runner; all pass locally.
+  (1) Accessibility in dark mode, phone WebKit: axe read text as black on both tries. Not reproduced on 2 CPUs in the
+  official Playwright image, so it comes from installing the browsers on Ubuntu: run CI through `npm run test:e2e`
+  (the same image). (2) `goals.e2e.ts` onboarding (phone WebKit): a tap on Settings focused the link and the page
+  never changed. Reproduced locally with 2 CPUs and four suites at once, **on rc.1 too** (not from the audit
+  fixes); passes alone. Could be a real lost tap on a slow phone; cause not found yet. (3) `archive.e2e.ts` and
+  (4) offline "never swaps in another page" timed out or were interrupted on the slow runner (not investigated).
+- Next: the owner's choice (reported): look for the lost tap first, switch the CI job to the Playwright image, then
+  publish rc.2 again.
 
 ## Owner's outside audit of rc.1 (2026-11-19): verified, fixed
 
