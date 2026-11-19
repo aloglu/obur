@@ -58,6 +58,11 @@ Then the local checks and image tests, and ask before tagging rc.2.
   a complete day each; temporary e2e test, not committed): all 14 requests together about 90 ms of server time,
   4–12 ms each. Left as it is. 54 messages with no caller removed from both catalogs; `shared/messages.test.ts`
   fails on a message whose name is nowhere in `src` (names built from a prefix, `help_${id}_q`, count).
+- Step 10 (2026-11-19): `release.yml` gains a Browser tests job (Ubuntu 24.04, Playwright's browsers, PostgreSQL
+  service, one retry reported as flaky, results uploaded on failure), run beside the checks; the image jobs wait for
+  both, and the `obur` image also runs the upgrade test from beta.19 before publishing. actionlint clean; not yet
+  run on GitHub. Pre-existing, not changed: the speech and labels images can publish even if the `obur` image's
+  tests fail (separate matrix jobs).
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 

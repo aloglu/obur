@@ -1,7 +1,8 @@
-# Builds, tests and publishes obur's three images to GitHub's registry when a version is tagged (v1.0.0), as
-# ghcr.io/aloglu/obur, obur-speech and obur-labels with the version and `latest`. A test release (v1.0.0-beta.1) is
-# published under its own version only, never as `latest`. Pushes to branches run nothing, to
-# keep Actions use small. Run it by hand (Actions → Release → Run workflow) to build and test without publishing.
+# Tests and publishes obur's three images to GitHub's registry when a version is tagged (v1.0.0), as
+# ghcr.io/aloglu/obur, obur-speech and obur-labels with the version and `latest`. Nothing is published unless the
+# checks, the browser tests and the image tests (smoke, off-site outage, upgrade and restore) pass. A test release
+# (v1.0.0-beta.1) is published under its own version only, never as `latest`. Pushes to branches run nothing. Run it
+# by hand (Actions → Release → Run workflow) to build and test without publishing.
 name: Release
 
 on:
@@ -55,9 +56,45 @@ jobs:
       - name: Unit, rule and database tests
         run: npx vitest run
 
+  e2e:
+    # The browser journeys on phone-size WebKit and desktop Chromium, as `npm run test:e2e` runs them locally.
+    name: Browser tests
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:18.6-trixie
+        env:
+          POSTGRES_USER: obur_admin
+          POSTGRES_PASSWORD: change-me-admin
+          POSTGRES_DB: obur
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U obur_admin -d obur" --health-interval 5s --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24.11.0
+          cache: npm
+      - run: npm install -g npm@11.19.0 --no-audit --no-fund && npm ci --no-audit --no-fund
+      - run: cp .env.example .env
+      # Ubuntu 24.04 with Playwright's own browser builds and their system libraries, as in its noble image.
+      - run: npx playwright install --with-deps chromium webkit
+      # One retry: a test that passes only on its second try is reported as flaky, never hidden.
+      - run: npx playwright test --retries=1
+        env:
+          CI: '1'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+
   images:
     name: Image ${{ matrix.image }}
-    needs: checks
+    needs: [checks, e2e]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -90,6 +127,11 @@ jobs:
       - name: Off-site outage test
         if: matrix.image == 'obur'
         run: deploy/obur/offsite-test.sh obur:test
+      # Real data from an older release updated by this image, then that release's backup restored (with its replay
+      # held paused) and a deletion list reapplied. beta.19 is the last version before foods became private.
+      - name: Upgrade and restore test
+        if: matrix.image == 'obur'
+        run: deploy/obur/upgrade-test.sh ghcr.io/${{ github.repository_owner }}/obur:1.0.0-beta.19 obur:test
       - name: Publish
         if: env.PUBLISH == 'true'
         env:
