@@ -17,7 +17,7 @@ async function primeCache(page: Page) {
 	await expect
 		.poll(() =>
 			page.evaluate(async () => {
-				const keys = await (await caches.open('obur-data-v1')).keys();
+				const keys = await (await caches.open('obur-data-v2')).keys();
 				const paths = keys.map((r) => new URL(r.url).pathname);
 				return ['/__data.json', '/log', '/progress/__data.json'].every((p) => paths.includes(p));
 			})
@@ -87,7 +87,7 @@ test('entries made offline wait visibly, then arrive once and in order', async (
 	await expect
 		.poll(() =>
 			page.evaluate(async () => {
-				const hit = await (await caches.open('obur-data-v1')).match(location.origin + '/');
+				const hit = await (await caches.open('obur-data-v2')).match(location.origin + '/');
 				return hit ? hit.text() : '';
 			})
 		)
@@ -152,6 +152,48 @@ test('a tab left open never sends its waiting entries into the account of someon
 	await expect(snacks.getByText('Waiting to sync')).toHaveCount(0);
 	await expect(page.getByRole('region', { name: 'Water' })).toContainText('250 ml');
 	expect((await day()).entries.map((e) => e.description)).toEqual(['Simit']);
+});
+
+test("someone signing in on this browser never sees the previous person's saved pages, even offline", async ({
+	page,
+	context
+}) => {
+	await signedInAs(page, 'Ayşe');
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	const zone = await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+	await apiAs(page, 'POST', '/api/v1/diary/entries', {
+		kind: 'quick',
+		id: crypto.randomUUID(),
+		date,
+		meal: 'snacks',
+		zone,
+		kcal: 300,
+		description: 'Simit'
+	});
+	await primeCache(page);
+	await expect
+		.poll(() =>
+			page.evaluate(async () => {
+				const hit = await (await caches.open('obur-data-v2')).match(location.origin + '/');
+				return hit ? hit.text() : '';
+			})
+		)
+		.toContain('Simit');
+
+	// Mehmet signs in on this browser (another tab), and the connection drops before any page here could clear
+	// Ayşe's copies. Signing in is a write, and its answer says who is signed in now; a refused write stands in.
+	await signedInAs(page, 'Mehmet');
+	await page.evaluate(() =>
+		fetch('/api/v1/diary/entries', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: '{}'
+		})
+	);
+	await context.setOffline(true);
+	await page.reload().catch(() => {});
+	await expect(page.locator('body')).not.toContainText('Simit');
+	await context.setOffline(false);
 });
 
 test('an entry discarded while it is being sent stays discarded when that send fails', async ({

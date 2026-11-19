@@ -5,16 +5,22 @@
 // Offline support within the bounded scope of docs/design.md ("Offline scope and synchronization"): the app shell
 // is cache-first so the installed app opens offline; signed-in pages and a few read-only API responses are
 // network-first with a cached fallback, so the last-seen day and recent foods stay viewable. Sign-in flows and
-// all writes always go to the network. The data cache is cleared on sign-out and when another person signs in.
+// all writes always go to the network. The data cache is cleared on sign-out and when another person signs in, and
+// a saved copy is only ever served to the account it was saved for.
 import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
+import { ACCOUNT_HEADER } from './lib/shared/account-data.ts';
 import { answerFromCopy, mergePageData, nothingNew } from './lib/shared/page-data-copy.ts';
 import { PREPARED_AGAIN_MS, askedLayers, mayAnswer, preparedKey } from './lib/shared/prepare.ts';
 import { TRIM_EVERY_MS, savedCopyExpired } from './lib/shared/saved-copies.ts';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 const SHELL = `obur-shell-${version}`;
-const DATA = 'obur-data-v1';
+// v2: copies carry the account they were saved for (v1's did not, and are removed).
+const DATA = 'obur-data-v2';
+/** Who the server last said was signed in, kept apart from the copies (pages clear those by their prefix). */
+const ACCOUNT_CACHE = 'obur-account';
+const ACCOUNT_KEY = '/__account';
 // Paths are relative to the base path; requests are compared by absolute pathname.
 // The other app icons are left out: only a Home Screen asks for them, and all of them together are megabytes.
 const SHELL_ASSETS = new Set(
@@ -54,11 +60,46 @@ sw.addEventListener('activate', (event) => {
 				// Versions are build times, so the newest sort last.
 				const shells = keys.filter((k) => k.startsWith('obur-shell-')).sort();
 				const keep = new Set([...shells.slice(-KEEP_SHELLS), SHELL]);
-				return Promise.all(shells.filter((k) => !keep.has(k)).map((k) => caches.delete(k)));
+				const stale = keys.filter((k) => k.startsWith('obur-data-') && k !== DATA);
+				return Promise.all(
+					[...shells.filter((k) => !keep.has(k)), ...stale].map((k) => caches.delete(k))
+				);
 			})
 			.then(() => sw.clients.claim())
 	);
 });
+
+/** The signed-in account as the server last said (null: nobody; undefined: not read yet since this worker started). */
+let account: string | null | undefined;
+
+async function signedIn(): Promise<string | null> {
+	if (account === undefined) {
+		const kept = await (await caches.open(ACCOUNT_CACHE)).match(ACCOUNT_KEY);
+		account = kept ? (await kept.text()) || null : null;
+	}
+	return account;
+}
+
+/**
+ * Every answer from the server says whose it is. When that changes (someone signed in or out), the earlier person's
+ * copies are removed, whatever the page does; until then copies saved for anyone else are never served (savedCopy).
+ */
+async function noteAccount(response: Response): Promise<void> {
+	if (!response.headers.has(ACCOUNT_HEADER)) return;
+	const now = response.headers.get(ACCOUNT_HEADER) || null;
+	if (now === (await signedIn())) return;
+	account = now;
+	forgetPrepared();
+	await caches.delete(DATA);
+	await (await caches.open(ACCOUNT_CACHE)).put(ACCOUNT_KEY, new Response(now ?? ''));
+}
+
+/** A saved copy belongs to the person signed in now. */
+async function ownCopy(saved: Response | undefined): Promise<Response | undefined> {
+	if (!saved) return undefined;
+	const owner = saved.headers.get(ACCOUNT_HEADER) || null;
+	return owner !== null && owner === (await signedIn()) ? saved : undefined;
+}
 
 /** SvelteKit varies x-sveltekit-invalidated between data requests; it does not change the data's meaning. */
 function cacheKey(request: Request): string {
@@ -135,6 +176,7 @@ async function prepareOne(url: string) {
 			throw e;
 		});
 		unreachableUntil = 0;
+		await noteAccount(response);
 		if (!response.ok || response.redirected || response.type !== 'basic') return;
 		const body = await response.clone().arrayBuffer();
 		if (generation !== startedAt || writes > 0) return;
@@ -183,7 +225,10 @@ async function write(request: Request): Promise<Response> {
 	writes++;
 	forgetPrepared();
 	try {
-		return await fetch(request);
+		const response = await fetch(request);
+		// Signing in or out is a write: its answer is the first to say who is signed in now.
+		await noteAccount(response).catch(() => {});
+		return response;
 	} finally {
 		writes--;
 		forgetPrepared();
@@ -257,6 +302,7 @@ async function fromNetwork(
 		throw e;
 	}
 	unreachableUntil = 0;
+	await noteAccount(response).catch(() => {});
 	// Only successful, non-redirected responses are kept (never a sign-in redirect). The page gets its answer at
 	// once; the copy is written behind it (writing first held every page change back, most on a phone).
 	if (response.ok && !response.redirected)
@@ -277,7 +323,7 @@ async function fromNetwork(
 const READS_OWN_QUERY = new Set(['/log']);
 
 async function savedCopy(request: Request, cache: Cache, key: string) {
-	const exact = await cache.match(key);
+	const exact = await ownCopy(await cache.match(key));
 	// Page data: only the parts this request asked for.
 	if (exact && isPageData(key))
 		return rewritten(answerFromCopy(await exact.text(), askedParts(request)), exact);
@@ -287,8 +333,10 @@ async function savedCopy(request: Request, cache: Cache, key: string) {
 	if (!isPage) return undefined;
 	const plain = new URL(request.url);
 	plain.search = '';
-	const samePage = READS_OWN_QUERY.has(plain.pathname) ? await cache.match(plain.href) : undefined;
-	return samePage ?? (await cache.match(new URL('/offline', location.origin).href));
+	const samePage = READS_OWN_QUERY.has(plain.pathname)
+		? await ownCopy(await cache.match(plain.href))
+		: undefined;
+	return samePage ?? (await ownCopy(await cache.match(new URL('/offline', location.origin).href)));
 }
 
 const pageData = (body: string) =>

@@ -150,7 +150,15 @@ const handleSession: Handle = async ({ event, resolve }) => {
 	) {
 		return json({ error: WRONG_ACCOUNT }, { status: 409 });
 	}
-	return resolve(event);
+	const response = await resolve(event);
+	// Whose answer this is (empty: nobody signed in), so the service worker serves saved copies only to the person
+	// they were saved for, even before a page could clear another's (2026-11-19 audit).
+	try {
+		response.headers.set(ACCOUNT_HEADER, session?.userId ?? '');
+	} catch {
+		// Fixed headers (a redirect from fetch): the service worker learns the account from the next answer.
+	}
+	return response;
 };
 
 /** Requests whose work is slow by nature (reading a recording or a photo, building or reading an archive). */

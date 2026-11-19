@@ -34,6 +34,10 @@ Then the calendar helper, local checks and image tests; ask before tagging.
 - Step 4 done: Export, Speak, Scan and both achievement calls send `x-obur-account` (and reload on
   `wrong_account`). New lint rule `obur/account-header` (eslint-rules/, with rule tests): any browser `fetch` with a
   method other than GET must spread `accountHeaders()`; it flagged exactly these five. Lint, check, rule tests.
+- Step 5 done: `hooks.server.ts` tags every answer with its account; the service worker notes it from writes,
+  network answers and preparations, serves a saved copy (the offline page too) only to that account, and clears the
+  copies when it changes (`obur-data-v2`). New `offline.e2e.ts` test (fails without the filter on both browsers);
+  offline, prepared, auth and app-shell suites: 48 passed, 5 skipped by design.
 
 ## Release candidate 3 (2026-11-19), as `v1.0.0-rc.3`
 
