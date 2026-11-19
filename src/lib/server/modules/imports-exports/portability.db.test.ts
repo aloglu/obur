@@ -375,6 +375,10 @@ describe('export', () => {
 		const files = unzipSync(await portability.exportArchive(MEHMET));
 		const tampered = { ...files, 'data/weight.json': strToU8('[]') };
 		expect(() => readArchive(zipSync(tampered))).toThrow(ArchiveError);
+		// A file the manifest lists, missing from the archive (a convenience CSV too).
+		const withoutCsv = { ...files };
+		delete withoutCsv['csv/diary.csv'];
+		expect(() => readArchive(zipSync(withoutCsv))).toThrow(/missing_file: csv\/diary.csv/);
 		const extra = { ...files, '../escape.txt': strToU8('x') };
 		expect(() => readArchive(zipSync(extra))).toThrow(/unexpected_file/);
 		expect(() => readArchive(strToU8('not a zip'))).toThrow(/not_an_archive/);

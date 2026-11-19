@@ -596,6 +596,9 @@ export function readArchive(bytes: Uint8Array): { manifest: Manifest; data: Port
 	if (!manifest.success) throw new ArchiveError('invalid_content', 'manifest.json');
 
 	const listed = new Map(manifest.output.files.map((f) => [f.path, f]));
+	// Everything the manifest lists must be there, the convenience CSVs included.
+	for (const path of listed.keys())
+		if (!unpacked[path]) throw new ArchiveError('missing_file', path);
 	for (const path of Object.keys(unpacked)) {
 		if (path === 'manifest.json') continue;
 		const entry = listed.get(path);

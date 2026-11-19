@@ -46,6 +46,12 @@ Then the local checks and image tests, and ask before tagging rc.2.
   shows the kept note with "A newer version from another device was kept" (new message, Turkish too); a refused note
   shows "The note couldn't be saved" and is saved again on the next edit. A direct save compares the answer too.
   `offline.e2e.ts` two-device test (fails with the old card), 5 times on both browsers.
+- Step 6, part (2026-11-19): an archive missing any file its manifest lists (a CSV too) is refused. Measured
+  (generated history, not committed): about 1.3 MiB zipped and 15 MiB unpacked per year at 15 entries a day with
+  repeated foods, 2.8 MiB zipped per year at 20 a day with every nutrient varied. The 200 MiB unpacked limit binds
+  first: about 12–13 years of heavy logging (the owner's LoseIt history: about 9 a day, so about 15+). Raising it
+  costs import memory (the archive is read whole; one file must stay under V8's 512 MiB string limit): **owner's
+  decision pending.**
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 
