@@ -13,7 +13,14 @@ import { createDiary, createSavedMeals } from '../diary/index.ts';
 import { createGoals } from '../goals/index.ts';
 import { createReminders } from '../reminders/index.ts';
 import { createRemoteModels } from '../remote-models/index.ts';
-import { ArchiveError, readArchive, sha256, type PortableData } from './archive.ts';
+import {
+	ArchiveError,
+	fitsImport,
+	LIMITS,
+	readArchive,
+	sha256,
+	type PortableData
+} from './archive.ts';
 import { createPortability, PortabilityError } from './service.ts';
 
 const urls = inject('db');
@@ -368,6 +375,14 @@ describe('export', () => {
 			qualifier: 'less_than'
 		});
 		expect(names['Eski yoğurt'].archivedAt).not.toBeNull();
+	});
+
+	it('says whether an export is small enough to import back', async () => {
+		await buildHistory();
+		expect(fitsImport(await portability.exportArchive(MEHMET))).toBe(true);
+		// Over the unpacked limit, however small the zip.
+		const huge = zipSync({ 'data/diary.json': new Uint8Array(LIMITS.unpackedBytes + 1) });
+		expect(fitsImport(huge)).toBe(false);
 	});
 
 	it('detects a damaged or altered archive before reading anything', async () => {

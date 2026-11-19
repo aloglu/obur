@@ -1,4 +1,5 @@
 import { auth } from '#lib/server/auth.ts';
+import { fitsImport } from '#lib/server/modules/imports-exports/index.ts';
 import { portability, respondPortability } from '#lib/server/portability.ts';
 import type { RequestHandler } from './$types';
 
@@ -13,7 +14,9 @@ export const POST: RequestHandler = ({ locals }) =>
 			headers: {
 				'content-type': 'application/zip',
 				'content-disposition': `attachment; filename="obur-export-${now.toISOString().slice(0, 10)}.zip"`,
-				'cache-control': 'no-store'
+				'cache-control': 'no-store',
+				// Too large for obur to import back yet: the page says so (shared with the file, never a refusal).
+				'x-obur-importable': fitsImport(bytes) ? 'yes' : 'no'
 			}
 		});
 	});

@@ -110,6 +110,8 @@
 			});
 		});
 	let problem = $state('');
+	// The last export is larger than obur can import back today.
+	let tooLarge = $state(false);
 	let file = $state<File | null>(null);
 	let summary = $state<Summary | null>(null);
 	// LoseIt imports: what the export cannot say for itself.
@@ -214,6 +216,7 @@
 				const link = Object.assign(document.createElement('a'), { href: url, download: name });
 				link.click();
 				setTimeout(() => URL.revokeObjectURL(url), 10_000);
+				tooLarge = response.headers.get('x-obur-importable') === 'no';
 				showToast({ message: m.data_export_done(), detail: name });
 			}).finally(() => (exporting = false))
 		);
@@ -312,6 +315,8 @@
 					aria-hidden="true"
 				/>{m.data_export_button()}{/if}
 		</Button>
+		{#if tooLarge}<Notice title={m.data_export_large_title()}>{m.data_export_large_body()}</Notice
+			>{/if}
 	</Card>
 
 	<Card title={m.data_import_title()}>

@@ -828,6 +828,8 @@
 	"data_export_title": "Export",
 	"data_export_body": "Everything you've logged and set up, in one file. It opens in obur again and includes spreadsheet copies.",
 	"data_export_button": "Download export",
+	"data_export_large_title": "This export is too large to import back yet",
+	"data_export_large_body": "It holds everything and is safe to keep. This version of obur can't read a file this size back in; a later version will.",
 	"data_export_done": "Export downloaded",
 	"data_import_title": "Import",
 	"data_import_body": "From obur or LoseIt. You'll see what changes before anything is saved.",

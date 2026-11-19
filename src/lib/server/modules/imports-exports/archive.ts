@@ -553,6 +553,23 @@ export class ArchiveError extends Error {
 
 const ALLOWED = new Set<string>(['manifest.json', ...Object.keys(DATA_FILES), ...CSV_FILES]);
 
+/**
+ * Whether obur could import this archive back under today's limits (read from the zip's headers only). An export is
+ * always given to the person whole; a larger one says so, until a later version raises the limits (measured
+ * 2026-11-19: about 12–13 years of heavy logging fit).
+ */
+export function fitsImport(bytes: Uint8Array): boolean {
+	if (bytes.length > LIMITS.archiveBytes) return false;
+	let total = 0;
+	unzipSync(bytes, {
+		filter: (file) => {
+			total += file.originalSize;
+			return false;
+		}
+	});
+	return total <= LIMITS.unpackedBytes;
+}
+
 /** Reads and validates an archive completely; throws ArchiveError without partial results. */
 export function readArchive(bytes: Uint8Array): { manifest: Manifest; data: PortableData } {
 	if (bytes.length > LIMITS.archiveBytes) throw new ArchiveError('too_large');

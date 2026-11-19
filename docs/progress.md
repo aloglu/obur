@@ -66,8 +66,11 @@ Then the local checks and image tests, and ask before tagging rc.2.
 - Validation (2026-11-19, final code): check, lint, Vitest 1167 passed; full e2e 282 passed, 19 skipped, 2 failed on
   phone WebKit (the known accessibility flake, and `typed-entry` "bare count" once under load), both passing on rerun
   (typed-entry 20 of 20); image built, smoke, off-site and upgrade tests passed.
-- Next: the owner's decision on export size (keep 20 MiB with a plain message on an export too big to import back,
-  or raise the limits at a memory cost); then rc.2 only when the owner says so.
+- Step 6, rest (owner's choice, 2026-11-19: keep the limits): an export too large to import back is still given
+  whole, and Your data says so ("This export is too large to import back yet"; `fitsImport` reads only the zip's
+  headers; `x-obur-importable`). Raise `LIMITS` in a later version as histories approach them (exports import with
+  higher limits unchanged; much larger files need a streaming reader). DB test, data e2e passed.
+- Next: rc.2 only when the owner says so.
 
 ## Release candidate (2026-11-18), as `v1.0.0-rc.1`
 

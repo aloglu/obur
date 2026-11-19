@@ -828,6 +828,8 @@
 	"data_export_title": "Dışa aktar",
 	"data_export_body": "Kaydettiğin ve ayarladığın her şey, tek bir dosyada. obur'da yeniden açılır; tablo programları için kopyalar da içerir.",
 	"data_export_button": "Dışa aktarımı indir",
+	"data_export_large_title": "Bu dışa aktarma henüz geri içe aktarılamayacak kadar büyük",
+	"data_export_large_body": "Her şeyi içerir ve saklamak güvenlidir. obur'un bu sürümü bu boyutta bir dosyayı geri okuyamıyor; sonraki bir sürüm okuyacak.",
 	"data_export_done": "Dışa aktarım indirildi",
 	"data_import_title": "İçe aktar",
 	"data_import_body": "obur'dan ya da LoseIt'ten. Hiçbir şey kaydedilmeden önce neyin değişeceğini görürsün.",
