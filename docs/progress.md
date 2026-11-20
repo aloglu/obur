@@ -48,7 +48,6 @@ Speed after (old, new, old in a row on the same machine, medians): phone WebKit 
 119-177 / 118-173 / 119-177 ms, search 790 / 790 / 788 ms, save 1030 / 1024 / 1033 ms; Chromium 4x CPU start
 329 / 325 / 319 ms, tabs 56-101 / 56-124 / 58-133 ms, save 947 / 951 / 948 ms. No difference beyond the noise
 between runs of the same version: the owner's speed condition holds.
-Open, owner to be reminded (2026-11-20): the dark Today contrast failure above.
 Step 4 done: the search rule (`shared/search-match.ts`, unit tests): word starts, per-word typo limits (0 up to 4
 letters, 1 for 5-8, 2 from 9; optimal string alignment against the start of each word). Log search: real matches
 from PostgreSQL (word-start `LIKE`, trigram index), typo matches compared in TypeScript only when the real ones
@@ -63,7 +62,18 @@ Found, owner to decide (2026-11-20): Type it keeps "1/3 of a container" as the t
 unrelated typo match carried the "150"). Fixed (owner's go): a card keeps the amount it understood until the
 field is changed (`EntrySheet.svelte`, `exact`); the server already compared a retried amount at the 4 stored
 decimals (`storedAmount`), now tested with a third too. Browser test checks the card and the saved 150 kcal.
-Next: the dark Today contrast check (owner's go), then ask before tagging rc.5.
+Dark Today contrast fixed (owner's go): with Reduce Motion, `layout.css` set every transition to 0.01 ms, which
+made a transition of every property on every element (the default transition-property is "all"); WebKit then
+sometimes kept the old inherited text colour when light and dark switched (a probe: wrong in most of 20 live
+switches; after the fix, 0 of 20 switches and 0 of 20 loads). Now transitions take 0 s with Reduce Motion
+(animations keep 0.01 ms; nothing waits for a transition's end). Real iPhones with Reduce Motion on could show it
+when the phone switches to dark at sunset. Test: `app-shell.e2e.ts` "with Reduce Motion, switching to dark…"
+(fails without the fix). Accessibility check 8 of 8 repeats passed.
+Found, owner to be told: `app-shell.e2e.ts` "every page title sits at the same height" fails about 1 in 10 runs on
+phone WebKit (the page reloads during the test: "navigation interrupted by another navigation to /"); it also
+fails on `47752e2` (2 of 10), so it is older. Not fixed.
+Browser suite: 289 passed, 19 skipped, 1 failed (that title test).
+Next: tell the owner; ask before tagging rc.5.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 

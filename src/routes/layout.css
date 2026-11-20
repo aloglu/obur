@@ -62,7 +62,11 @@
 		*::after {
 			animation-duration: 0.01ms !important;
 			animation-iteration-count: 1 !important;
-			transition-duration: 0.01ms !important;
+			/* No transitions at all. A tiny duration made one on every element for every property (the default
+			   transition-property is "all"), and WebKit then sometimes kept the old inherited text colour when the
+			   phone switched between light and dark: dark text on a dark card (2026-11-20). */
+			transition-duration: 0s !important;
+			transition-delay: 0s !important;
 		}
 	}
 }

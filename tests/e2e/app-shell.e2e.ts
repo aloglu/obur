@@ -169,3 +169,22 @@ test('Log keeps its recent foods between visits, and Today’s title stays still
 	await expect(page.getByRole('heading', { level: 1, name: 'Yesterday' })).toBeVisible();
 	expect(await titleMoved()).toBe(true);
 });
+
+test('with Reduce Motion, switching to dark while the app is open changes every text colour', async ({
+	page
+}, testInfo) => {
+	// WebKit kept old inherited text colours when every element had a tiny transition (2026-11-20).
+	test.skip(testInfo.project.name !== 'phone-webkit', 'a WebKit problem');
+	await signedInAs(page, 'Gece');
+	await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+	await page.goto('/');
+	await page.waitForLoadState('networkidle');
+	const colour = () =>
+		page.evaluate(() => getComputedStyle(document.getElementById('meal-breakfast')!).color);
+	for (let i = 0; i < 5; i++) {
+		await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+		await expect.poll(colour, { timeout: 1000 }).toBe('rgb(244, 238, 231)');
+		await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+		await expect.poll(colour, { timeout: 1000 }).toBe('rgb(30, 26, 22)');
+	}
+});
