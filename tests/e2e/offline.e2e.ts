@@ -790,6 +790,57 @@ test('offline, search finds the foods kept on this device, and one never opened 
 		.toEqual([`Barley tea ${tag}`]);
 });
 
+test('offline, a food opened from search shows the values search found, not an older saved copy of its details', async ({
+	page,
+	context
+}, testInfo) => {
+	// 2026-11-20 audit: search showed the edited food, the amount sheet its details as first opened.
+	await signedInAs(page, 'Ayşe');
+	const name = `Millet porridge ${testInfo.project.name}`;
+	const food = {
+		name,
+		brand: null,
+		basis: '100g',
+		servings: [],
+		nutrients: [{ code: 'energy_kcal', value: 100, qualifier: 'reported' }]
+	};
+	const foodId = await createFood(page, food);
+	await primeCache(page);
+	// Its details are opened online once (and saved), then it is edited in the app.
+	await page.evaluate((id) => fetch(`/api/v1/foods/${id}`), foodId);
+	await page.evaluate(
+		({ id, food }) =>
+			fetch(`/api/v1/foods/${id}`, {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					version: 1,
+					food: { ...food, nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }] }
+				})
+			}),
+		{ id: foodId, food }
+	);
+	const kcalInCopy = () =>
+		page.evaluate(async (id) => {
+			const hit = await (
+				await caches.open('obur-data-v2')
+			).match(location.origin + '/api/v1/foods/offline');
+			const copy = hit ? ((await hit.json()) as { foods: FoodDetail[] }) : { foods: [] };
+			return copy.foods.find((f) => f.id === id)?.nutrients.find((n) => n.code === 'energy_kcal')
+				?.value;
+		}, foodId);
+	await expect.poll(kcalInCopy, { timeout: 15_000 }).toBe(250);
+
+	await context.setOffline(true);
+	await page
+		.getByRole('region', { name: 'Lunch' })
+		.getByRole('button', { name: 'Add food to Lunch' })
+		.click();
+	await page.getByRole('searchbox').fill('millet');
+	await page.getByRole('button', { name: new RegExp(name) }).click();
+	await expect(page.getByRole('dialog').getByText('250 kcal per 100 g')).toBeVisible();
+});
+
 test('an Undo that cannot reach the server says so instead of looking done', async ({
 	page,
 	context

@@ -421,6 +421,14 @@ async function savedCopy(request: Request, cache: Cache, key: string) {
 	return samePage ?? (await ownCopy(await cache.match(new URL('/offline', location.origin).href)));
 }
 
+/**
+ * What answers a request offline. A food's details come from the same copy as offline search, before an older saved
+ * answer for that address, so the amount sheet shows the values search showed (2026-11-20 audit).
+ */
+async function offlineAnswer(request: Request, cache: Cache, key: string) {
+	return (await foodFromCopy(new URL(request.url))) ?? (await savedCopy(request, cache, key));
+}
+
 const pageData = (body: string) =>
 	new Response(body, {
 		headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store' }
@@ -434,7 +442,7 @@ async function networkFirst(event: FetchEvent): Promise<Response> {
 	// network in the background (which also refreshes the copy and ends the hold once it is back).
 	if (Date.now() < unreachableUntil) {
 		const cached =
-			(await savedCopy(request, cache, key)) ?? (await foodFromCopy(new URL(request.url)));
+			await offlineAnswer(request, cache, key);
 		if (cached) {
 			event.waitUntil(fromNetwork(event, request.clone(), cache, key, false).catch(() => {}));
 			void announce(request, 'cached');
@@ -449,7 +457,7 @@ async function networkFirst(event: FetchEvent): Promise<Response> {
 		return quiet ? pageData(quiet) : response;
 	} catch {
 		const cached =
-			(await savedCopy(request, cache, key)) ?? (await foodFromCopy(new URL(request.url)));
+			await offlineAnswer(request, cache, key);
 		if (cached) void announce(request, 'cached');
 		if (cached) return cached;
 		// A refresh of what pages share, with nothing saved to answer it: nothing changed, the page stays.
