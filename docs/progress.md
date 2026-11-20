@@ -65,6 +65,8 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
   - Fix 5.1 done: `handleError` (hooks.server.ts) logs unknown errors as method, path and `describeError` (kind and
     database code only; server/log.ts, unit test); the three layout log lines use it too. Checked with a temporary
     route throwing a failed query with a secret value: the log line had no value.
+  - Checks on `21352d3`: lint, check, Vitest 1196 passed; full e2e 304 passed, 19 skipped by design; image smoke,
+    off-site and upgrade (beta.19, includes migration 0060) tests passed. Next: ask the owner before tagging rc.5.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
