@@ -8,7 +8,12 @@
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
 	import { showToast } from '#lib/client/toast.svelte.ts';
-	import { clearOldQueue, oldQueue, sendOldQueue } from '#lib/client/old-queue.svelte.ts';
+	import {
+		clearOldQueue,
+		oldQueue,
+		sendOldQueue,
+		unsentOld
+	} from '#lib/client/old-queue.svelte.ts';
 	import Button from '../Button.svelte';
 	import NavRow from './NavRow.svelte';
 
@@ -40,7 +45,8 @@
 		// Entries an older version kept on this device: send them, and never discard one without asking.
 		const userId = page.data.user?.id as string | undefined;
 		if (userId) await sendOldQueue(userId);
-		const unsent = oldQueue.refused.length;
+		// Refused, and also still waiting: an entry the server could not take just now is never dropped unasked.
+		const unsent = userId ? await unsentOld(userId).catch(() => oldQueue.refused.length) : 0;
 		if (unsent > 0 && !confirm(m.signout_pending({ count: String(unsent) }))) return;
 		// This device stops getting this person's reminders with the sign-out itself, so one never happens without
 		// the other; whoever signs in next turns on their own.

@@ -85,6 +85,20 @@ async function settle(ownerId: string) {
 	await deleteQueue(ownerId);
 }
 
+/**
+ * How many of this account's old entries never reached the server: those still waiting (the server could not take
+ * them just now) and those it refused. Sign-out asks before it discards any of them.
+ */
+export async function unsentOld(ownerId: string): Promise<number> {
+	if (!(await hasQueue(ownerId))) return 0;
+	queue ??= await openQueue(ownerId, () => (queue = undefined));
+	return (await queue.all()).filter(
+		(i) =>
+			i.ownerId === ownerId &&
+			(i.status === 'pending' || (i.status === 'review' && i.preview.kind === 'diary'))
+	).length;
+}
+
 /** Drops a refused entry (Discard, or once its calories are kept). */
 export async function discardOld(ownerId: string, seq: number): Promise<void> {
 	await queue?.remove(seq);
