@@ -44,6 +44,15 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
   holds the lock and checks start and cancel are refused (and now retries the sign-in page check for a few seconds:
   the ready line comes just before the server listens). Smoke test passed.
 - Step 10 done: `shortMonth` and `longDate` removed with their tests.
+- Measured (temporary tests, not committed), desktop, dev database:
+  - Import reading (`readArchive`, synchronous): 160,000 diary rows (5.1 MiB zip, 184 MiB unpacked, near the limit)
+    4.8 s, preview 5.8 s; 30,000 rows (about five years of heavy logging, 35 MiB unpacked) 0.9 s, preview 1.1 s. The
+    web process answers nothing else meanwhile, and an import reads the file again. Owner to decide (worker thread
+    or leave).
+  - Start-up preparation, account with 1,000 days of weights and completed days: 16 answers in the background after
+    the page settled, 0.6 to 0.8 s of server time in all, 40 to 85 ms each (Progress, More and Profile the slowest).
+    Recommendation: leave it.
+- `docs/design.md` updated for steps 1 to 9.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
