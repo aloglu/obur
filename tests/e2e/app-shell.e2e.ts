@@ -88,6 +88,9 @@ test('every page title sits at the same height and stays there while a page open
 	]) {
 		await page.goto(path);
 		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+		// Done loading first: leaving a page while its code still loads made WebKit fail the import, and
+		// SvelteKit then loaded that page again over the next one (about 1 run in 10).
+		await page.waitForLoadState('networkidle').catch(() => {});
 		await settled();
 		tops[path] = await titleTop();
 	}

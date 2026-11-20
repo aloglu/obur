@@ -71,9 +71,12 @@ when the phone switches to dark at sunset. Test: `app-shell.e2e.ts` "with Reduce
 (fails without the fix). Accessibility check 8 of 8 repeats passed.
 Found, owner to be told: `app-shell.e2e.ts` "every page title sits at the same height" fails about 1 in 10 runs on
 phone WebKit (the page reloads during the test: "navigation interrupted by another navigation to /"); it also
-fails on `47752e2` (2 of 10), so it is older. Not fixed.
+fails on `47752e2` (2 of 10), so it is older. Fixed in the test (owner's go): it opened the next page about
+0.15 s after Today appeared, while Today still loaded code; WebKit failed that import and SvelteKit loaded Today
+again over the next page. A probe found no second load after a normal sign-in (15 of 15). The test now waits for
+the page to finish loading: 20 of 20 passed.
 Browser suite: 289 passed, 19 skipped, 1 failed (that title test).
-Next: tell the owner; ask before tagging rc.5.
+Next: image tests and the agents' install guide check, then ask before tagging rc.5.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 
