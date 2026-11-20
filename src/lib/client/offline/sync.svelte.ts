@@ -124,6 +124,23 @@ async function networkIsBack(): Promise<void> {
 	});
 }
 
+/**
+ * This account's queue, opened again for a new entry when another tab removed it (a sign-out there closes this
+ * connection): an entry made here later still waits on the device (2026-11-20 audit). Only a new entry opens it, so
+ * an idle tab never makes an empty queue again after a sign-out.
+ */
+async function openOwn(ownerId: string): Promise<Queue> {
+	const q: Queue = await openQueue(ownerId, () => {
+		if (queue === q) queue = undefined;
+	});
+	return q;
+}
+
+async function liveQueue(): Promise<Queue | undefined> {
+	if (!queue && ready && offline.ownerId) queue = await openOwn(offline.ownerId);
+	return queue;
+}
+
 async function refresh() {
 	offline.items = queue ? await queue.all() : [];
 }
@@ -136,7 +153,7 @@ export function startSync(ownerId: string, onSent: (sent: number) => void): Prom
 	offline.authRequired = false;
 	ready = (async () => {
 		await forgetOtherAccountsPages(ownerId);
-		queue = await openQueue(ownerId);
+		queue = await openOwn(ownerId);
 		await refresh();
 		// Refresh when something arrived or the page shows a saved copy; otherwise reloading would only fail.
 		sentHandler = onSent;
@@ -193,7 +210,8 @@ export async function submit<T>(
 	preview: Preview
 ): Promise<{ status: 'sent'; data: T } | { status: 'queued' }> {
 	await ready;
-	if (!queue || !offline.ownerId) throw new Error('Sync not started');
+	const own = await liveQueue();
+	if (!own || !offline.ownerId) throw new Error('Sync not started');
 	const waiting = offline.items.some((i) => i.status === 'pending');
 	// Try the server directly only when nothing is waiting and it was reachable recently; a timed-out attempt may
 	// still arrive, which is harmless because the queued retry carries the same client ID.
@@ -209,7 +227,7 @@ export async function submit<T>(
 			else if (!(e instanceof Unreachable)) throw e;
 		}
 	}
-	await queue.add({
+	await own.add({
 		id: body.id,
 		ownerId: offline.ownerId,
 		path,

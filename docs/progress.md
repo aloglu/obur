@@ -60,6 +60,8 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
   - Fix 7.1 done: `reminders_off_failed` in Turkish uses "Hatırlatmalar" (glossary).
   - Fix 1.1 done: migration 0060 puts `pg_temp` last in the search path of 10 privileged functions; isolation DB
     test checks every SECURITY DEFINER function, and that runtime roles cannot create temporary tables.
+  - Fix 4.1 done: a queue closed by a sign-out in another tab is opened again by the next new entry (`liveQueue`,
+    sync.svelte.ts; only a new entry, so an idle tab never recreates it). Offline e2e test (fails before).
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 

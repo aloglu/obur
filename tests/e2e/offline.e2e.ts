@@ -316,6 +316,31 @@ test('signing out removes the waiting-entries store even while another tab has i
 	await other.close();
 });
 
+test('after a sign-out and sign-in in another tab, an entry made offline in an older tab still waits on the device', async ({
+	page,
+	context
+}) => {
+	// 2026-11-20 audit: the older tab kept the queue connection the sign-out closed, so the entry failed.
+	const userId = await signedInAs(page, 'Mehmet');
+	await primeCache(page);
+	const other = await context.newPage();
+	await other.goto('/');
+	await expect(other.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+
+	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
+	await nav.getByRole('link', { name: 'More' }).click();
+	await page.getByRole('button', { name: 'Sign out' }).click();
+	await expect(page).toHaveURL(/\/login$/);
+	await signedInAgain(page, userId);
+	// Signed in again, the app saves its pages again; the older tab stays open as it was.
+	await primeCache(page);
+
+	await context.setOffline(true);
+	await quickAdd(other, '90', 'Pear');
+	await context.setOffline(false);
+	await other.close();
+});
+
 test('signing out asks before discarding entries that have not been sent', async ({
 	page,
 	context,

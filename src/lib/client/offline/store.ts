@@ -40,7 +40,8 @@ function request<T>(req: IDBRequest<T>): Promise<T> {
 	});
 }
 
-export async function openQueue(ownerId: string) {
+/** `onClosed`: another tab removed this queue (sign-out there); this connection no longer works. */
+export async function openQueue(ownerId: string, onClosed?: () => void) {
 	const db = await new Promise<IDBDatabase>((resolve, reject) => {
 		const req = indexedDB.open(dbName(ownerId), 1);
 		req.onupgradeneeded = () =>
@@ -49,7 +50,10 @@ export async function openQueue(ownerId: string) {
 		req.onerror = () => reject(req.error);
 	});
 	// Another tab is removing this queue (sign-out there): let it, rather than block it (2026-11-20 audit).
-	db.onversionchange = () => db.close();
+	db.onversionchange = () => {
+		db.close();
+		onClosed?.();
+	};
 	const store = (mode: IDBTransactionMode) => db.transaction('ops', mode).objectStore('ops');
 	return {
 		add: (op: QueuedOp) => request(store('readwrite').add(op)) as Promise<number>,
