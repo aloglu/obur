@@ -36,7 +36,8 @@ their deletions are applied again after every restore.
    new backups fail until the clock passes the old ones), and put the old backups where its backups go (`OBUR_BACKUP_DIR`,
    or `data/backups`) before the first start. With backups there and no database, obur waits for a restore instead
    of starting empty. To restore from the off-site copy instead, set the `OBUR_OFFSITE_*` values and leave the
-   backups folder empty.
+   backups folder empty: obur finds the off-site backups and waits for a restore ("the off-site copy has backups").
+   If the store can't be reached, obur also waits and tries again every minute; check the `OBUR_OFFSITE_*` values.
 
 2. **Restore.**
    ```

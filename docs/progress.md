@@ -15,6 +15,11 @@ and licence, R06, R13. Real-phone checks stay with the owner.
 
 - R02 done: `model-source.ts` `requestSource`: "Read this one on obur's server instead" uses the add-on or fails
   ("unavailable"), never the person's provider (unit test).
+- R01 done: a new server with an empty database folder and only the off-site copy waits for a restore ("the
+  off-site copy has backups"), and also while the store can't be reached (looks again each minute); the scheduler
+  takes no backup while a restore is pending; `finish` moves aside a local repository made for another database.
+  `deploy/obur/offsite-restore-test.sh` (fails on rc.5's image, passes now; in the release workflow). Smoke,
+  off-site outage and upgrade-from-beta.19 tests passed on the new image.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

@@ -83,9 +83,25 @@ needs_restore() {
 		echo "a restore is pending but the database folder is empty: run 'obur restore start' again"
 	elif [[ -f /data/backups/backup/obur/backup.info ]]; then
 		echo "the database folder is empty but backups exist: restore them with 'obur restore start' (docs/restore.md), or set OBUR_ALLOW_NEW_DATABASE=1 to start a new database"
+	elif [[ $offsite == yes ]]; then
+		echo "the database folder is empty and the off-site copy has backups: restore them with 'obur restore start --repo=2' (docs/restore.md), or set OBUR_ALLOW_NEW_DATABASE=1 to start a new database"
+	elif [[ $offsite == unreachable ]]; then
+		echo "the database folder is empty and the off-site store can't be reached to look for backups (tried again every minute): check the OBUR_OFFSITE_* settings, or set OBUR_ALLOW_NEW_DATABASE=1 to start a new database"
 	else
 		return 1
 	fi
+}
+
+# What the off-site copy holds, looked up only while there is no database (a new server, or a lost one) and again
+# each minute while the store can't be reached. A new server must never start an empty database beside backups
+# it could restore: its own new backups would then refuse the restored one (2026-11-20 audit).
+offsite='' offsite_at=0
+look_offsite() {
+	[[ -n ${OBUR_OFFSITE_TYPE:-}${PGBACKREST_REPO2_TYPE:-} && ! -s $PGDATA/PG_VERSION ]] || return 0
+	[[ ${OBUR_ALLOW_NEW_DATABASE:-} != 1 && ! -f /data/backups/backup/obur/backup.info ]] || return 0
+	[[ -z $offsite || ($offsite == unreachable && $(($(date +%s) - offsite_at)) -ge 60) ]] || return 0
+	offsite=$(gosu postgres obur-backup offsite-backups 2>/dev/null) || offsite=unreachable
+	offsite_at=$(date +%s)
 }
 
 start_pg() {
@@ -192,7 +208,7 @@ while :; do
 			migrated=0
 		fi
 		touch "$OBUR_RUN/held"
-	elif [[ -z $pg_pid ]] && reason=$(needs_restore); then
+	elif [[ -z $pg_pid ]] && look_offsite && reason=$(needs_restore); then
 		# Nothing runs; `obur restore start` can begin straight away.
 		[[ -f $OBUR_RUN/held ]] || log "waiting: $reason"
 		touch "$OBUR_RUN/held"

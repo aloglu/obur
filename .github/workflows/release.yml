@@ -127,6 +127,9 @@ jobs:
       - name: Off-site outage test
         if: matrix.image == 'obur'
         run: deploy/obur/offsite-test.sh obur:test
+      - name: Off-site restore on a new server test
+        if: matrix.image == 'obur'
+        run: deploy/obur/offsite-restore-test.sh obur:test
       # Real data from an older release updated by this image, then that release's backup restored (with its replay
       # held paused) and a deletion list reapplied. beta.19 is the last version before foods became private.
       - name: Upgrade and restore test

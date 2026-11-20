@@ -15,6 +15,7 @@
 #   obur-backup full-local     a full backup to the local repository only; the off-site one gets its full backup at
 #                              the next nightly backup (the end of a restore, which must not wait for the store)
 #   obur-backup info           list backups
+#   obur-backup offsite-backups  whether the off-site copy holds backups: yes, no or unreachable
 #   obur-backup restore-check  archive the current position, restore backup + WAL into a throwaway cluster, and
 #                              verify it reached that position and every table reads
 #   obur-backup scheduler      the nightly backup and weekly restore check (started by the container)
@@ -226,6 +227,41 @@ ensure_stanza_now() {
 	return 0
 }
 
+# Whether the off-site copy holds backups, for a new server with no database (obur-init): prints "yes", "no" or
+# "unreachable". Reads only the repository; PostgreSQL need not run.
+offsite_backups() {
+	[[ -n ${PGBACKREST_REPO2_TYPE:-} ]] || {
+		echo no
+		return 0
+	}
+	local out
+	if ! out=$(offsite_only info --output=json 2>/dev/null); then
+		echo unreachable
+		return 0
+	fi
+	# Status 1 and 2: no stanza, or a stanza with no usable backup. Anything else but 0 is an error reading it.
+	jq -r '.[0] | if (.backup | length) > 0 then "yes" elif (.status.code == 1 or .status.code == 2) then "no"
+		else "unreachable" end' <<<"$out" 2>/dev/null || echo unreachable
+}
+
+# A restored database is the same database as its backups, so the local repository must belong to it. One made for
+# another database (a server started empty before the restore) would refuse every backup; it is moved aside inside
+# the backups folder, never deleted, and a new one is made. Needs PostgreSQL running.
+claim_local_repository() {
+	local repo=${PGBACKREST_REPO1_PATH:-/data/backups} ours theirs aside
+	[[ -f $repo/backup/obur/backup.info ]] || return 0
+	ours=$("${PSQL[@]}" -c 'select system_identifier from pg_control_system()') || return 1
+	theirs=$(local_only info --output=json 2>/dev/null | jq -r '.[0].db | last | ."system-id" // empty') || theirs=''
+	[[ -z $theirs || $theirs == "$ours" ]] && return 0
+	aside=$repo/other-database-$(date +%Y%m%d-%H%M%S)
+	mkdir -p "$aside"
+	local d
+	for d in backup archive; do
+		[[ -e $repo/$d ]] && mv "$repo/$d" "$aside/"
+	done
+	log "the local backups belonged to another database (system $theirs, not $ours): moved to $aside; new local backups start now"
+}
+
 archive_status() {
 	local row
 	row=$("${PSQL[@]}" -c "select coalesce(to_char(last_archived_time at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'), ''),
@@ -398,6 +434,11 @@ scheduler() {
 	log "scheduler started (backups after ${BACKUP_HOUR}:00, restore check on weekday $CHECK_DAY)"
 	local retries=0
 	while true; do
+		# A restored database waits for `obur restore finish`, which backs it up itself once sessions are cleared.
+		if [[ -f $STATUS_DIR/restore-pending ]]; then
+			sleep "$TICK_SECONDS"
+			continue
+		fi
 		local today hour last_backup last_scheduled last_check
 		today=$(date +%F)
 		hour=$((10#$(date +%H)))
@@ -447,6 +488,7 @@ run) backup "$(scheduled_type)" ;;
 pre-upgrade) backup incr local ;;
 full) backup full ;;
 full-local)
+	claim_local_repository || exit 1
 	backup full only 1 || exit 1
 	if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then
 		if backup full only 2; then
@@ -458,10 +500,11 @@ full-local)
 	fi
 	;;
 info) pgbackrest info ;;
+offsite-backups) offsite_backups ;;
 restore-check) restore_check ;;
 scheduler) scheduler ;;
 *)
-	echo "usage: obur-backup run|pre-upgrade|full|info|restore-check|scheduler|archive-push <file>|pgbackrest <args>" >&2
+	echo "usage: obur-backup run|pre-upgrade|full|info|offsite-backups|restore-check|scheduler|archive-push <file>|pgbackrest <args>" >&2
 	exit 2
 	;;
 esac
