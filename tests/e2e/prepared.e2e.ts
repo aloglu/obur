@@ -39,6 +39,49 @@ test('a tab opens from its prepared data, without waiting for the server', async
 	await context.unroute('**/journal/__data.json*');
 });
 
+test('a prepared page is not shown once the device has no connection', async ({
+	page,
+	context
+}, testInfo) => {
+	// 2026-11-20 audit (R13). Chromium tells the service worker the device is offline.
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'needs Chromium offline emulation');
+	await signedInAs(page, 'Ready Offline');
+	await settledOnToday(page);
+	await context.setOffline(true);
+	await tabs(page).getByRole('link', { name: 'Journal' }).click();
+	await expect(
+		page.getByRole('heading', { level: 1, name: 'obur needs a connection' })
+	).toBeVisible();
+	await context.setOffline(false);
+});
+
+test('nothing prepared is used once the server answers without a session', async ({
+	page,
+	context
+}, testInfo) => {
+	// 2026-11-20 audit (R13): signed out on another device, this one kept showing pages prepared before it.
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'needs Chromium request routing');
+	await signedInAs(page, 'Ready Gone');
+	await settledOnToday(page);
+	// The session ends on the server, not through this page.
+	const out = await page.request.post('/api/v1/auth/logout', {
+		data: {},
+		headers: { origin: new URL(page.url()).origin }
+	});
+	expect(out.ok()).toBe(true);
+	// Any answer through the service worker now says there is no session (a page that was not prepared).
+	await page.evaluate(() => fetch('/help/__data.json?x-sveltekit-invalidated=001'));
+	await context.route('**/journal/__data.json*', async (route) => {
+		await new Promise((r) => setTimeout(r, 3000));
+		await route.continue().catch(() => {});
+	});
+	await tabs(page).getByRole('link', { name: 'Journal' }).click();
+	await page.waitForTimeout(1500);
+	await expect(page.getByRole('heading', { level: 1, name: 'Journal' })).toBeHidden();
+	await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
+	await context.unroute('**/journal/__data.json*');
+});
+
 test('a change made in the app shows on a page prepared before it', async ({ page }) => {
 	await signedInAs(page, 'Never Stale');
 	await settledOnToday(page);

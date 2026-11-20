@@ -2,6 +2,9 @@
 // worker fetches the data of the pages likely to be opened next, so a tap shows the page at once with data only
 // seconds old. Pure rules shared by the app and the service worker; no I/O.
 
+/** Set on every answer the server gave without a signed-in session: nothing prepared may be used after it. */
+export const NO_SESSION_HEADER = 'x-obur-no-session';
+
 /** How long a prepared answer may be used. Any write drops all of them at once, so only other devices age them. */
 export const PREPARED_FOR_MS = 60_000;
 /** A page asked for again within this time is not fetched again. */

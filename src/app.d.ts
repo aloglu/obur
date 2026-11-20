@@ -4,6 +4,8 @@ import type { SessionRecord } from '#lib/server/modules/auth/index.ts';
 declare global {
 	/** This build's version, from package.json (vite.config.ts). */
 	const __OBUR_VERSION__: string;
+	/** The app's pages as route IDs, the tabs first (shared/app-pages.ts, vite.config.ts). */
+	const __APP_PAGES__: string[];
 	namespace App {
 		interface Locals {
 			/** The signed-in session, resolved from the cookie on every request. */

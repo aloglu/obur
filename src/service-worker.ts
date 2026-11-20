@@ -12,7 +12,13 @@ import { m } from './lib/paraglide/messages.js';
 import { DEFAULT_LANGUAGE, LANGUAGES } from './lib/shared/languages.ts';
 import { noConnectionPage } from './lib/shared/no-connection-page.ts';
 import { nothingNew } from './lib/shared/page-data.ts';
-import { PREPARED_AGAIN_MS, askedLayers, mayAnswer, preparedKey } from './lib/shared/prepare.ts';
+import {
+	NO_SESSION_HEADER,
+	PREPARED_AGAIN_MS,
+	askedLayers,
+	mayAnswer,
+	preparedKey
+} from './lib/shared/prepare.ts';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 const SHELL = `obur-shell-${version}`;
@@ -71,7 +77,17 @@ sw.addEventListener('activate', (event) => {
 
 let unreachableUntil = 0;
 const unreachable = () => Date.now() < unreachableUntil;
-const failed = () => (unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS);
+/** A request failed: the connection may be gone, so nothing prepared is shown as if it were current (R13). */
+const failed = () => {
+	unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS;
+	forgetPrepared();
+};
+/** An answer without a signed-in session (it ended here or on another device): nothing prepared is used (R13). */
+function notSignedIn(response: Response): boolean {
+	if (!response.headers.has(NO_SESSION_HEADER)) return false;
+	forgetPrepared();
+	return true;
+}
 
 sw.addEventListener('message', (event) => {
 	const type = event.data?.type;
@@ -126,6 +142,7 @@ async function prepareOne(url: string) {
 			throw e;
 		});
 		unreachableUntil = 0;
+		if (notSignedIn(response)) return;
 		if (!response.ok || response.redirected || response.type !== 'basic') return;
 		const body = await response.arrayBuffer();
 		if (generation !== startedAt || writes > 0) return;
@@ -161,7 +178,8 @@ async function prepareAll(urls: string[]) {
 
 /** A prepared answer for this request, if one may answer it. */
 function preparedAnswer(request: Request): Response | undefined {
-	if (writes > 0) return undefined;
+	// The device says it has no connection: the page goes to the network, which shows the connection page.
+	if (writes > 0 || !sw.navigator.onLine) return undefined;
 	const entry = prepared.get(preparedKey(request.url));
 	if (!entry || !mayAnswer(entry, request.url, Date.now())) return undefined;
 	return new Response(entry.body.slice(0), { status: entry.status, headers: entry.headers });
@@ -177,6 +195,7 @@ async function write(request: Request): Promise<Response> {
 			throw e;
 		});
 		unreachableUntil = 0;
+		notSignedIn(response);
 		return response;
 	} finally {
 		writes--;
@@ -196,6 +215,7 @@ async function fromNetwork(request: Request): Promise<Response> {
 			new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), limit))
 		]);
 		unreachableUntil = 0;
+		notSignedIn(response);
 		return response;
 	} catch (e) {
 		failed();

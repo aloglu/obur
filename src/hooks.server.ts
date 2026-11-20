@@ -8,6 +8,7 @@ import { clearSessionCookie } from '#lib/server/http.ts';
 import { describeError } from '#lib/server/log.ts';
 import { restorePending } from '#lib/server/restore-guard.ts';
 import { m } from '#lib/paraglide/messages.js';
+import { NO_SESSION_HEADER } from '#lib/shared/prepare.ts';
 import { ACCOUNT_HEADER, WRONG_ACCOUNT } from '#lib/shared/account-data.ts';
 import { isValidZone } from '#lib/shared/diary-rules.ts';
 import { DEFAULT_PALETTE, isPalette, paletteOf } from '#lib/shared/themes.ts';
@@ -79,6 +80,7 @@ const handleRestore: Handle = ({ event, resolve }) => {
 };
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const NO_SESSION = { [NO_SESSION_HEADER]: '1' };
 
 /** Same-origin check for every state change (CSRF), plus response hardening headers. */
 const handleSecurity: Handle = async ({ event, resolve }) => {
@@ -92,6 +94,9 @@ const handleSecurity: Handle = async ({ event, resolve }) => {
 	// Code files and icons never reach this hook; the static file server gives them their own long-lived rules.
 	if (!response.headers.has('cache-control'))
 		response.headers.set('cache-control', 'private, no-store');
+	// No signed-in person behind this request (signed out here or elsewhere, or the session ended): the service
+	// worker then drops every page it prepared (service-worker.ts, R13).
+	if (!event.locals.session) response.headers.set(NO_SESSION_HEADER, '1');
 	response.headers.set('referrer-policy', 'no-referrer');
 	response.headers.set('x-content-type-options', 'nosniff');
 	response.headers.set('permissions-policy', 'camera=(self), microphone=(self), geolocation=()');
@@ -143,6 +148,11 @@ const handleSession: Handle = async ({ event, resolve }) => {
 	}
 	if (!session && !matches(path, PUBLIC_PATHS)) {
 		if (api) return json({ error: 'unauthenticated' }, { status: 401 });
+		// A page change's data asks the same: answered here, as SvelteKit answers a redirect for page data, because a
+		// redirect thrown here never passes the hook that marks answers without a session (R13; tested in
+		// prepared.e2e.ts, so a change in SvelteKit's format shows).
+		if (event.isDataRequest)
+			return json({ type: 'redirect', status: 303, location: '/login' }, { headers: NO_SESSION });
 		redirect(303, '/login');
 	}
 	// A write made for one account must not land in another: a tab opened before someone else signed in on this

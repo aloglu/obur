@@ -60,6 +60,12 @@ and licence, R06, R13. Real-phone checks stay with the owner.
 - R15 done: the old queue's unused `add` and `has` are gone, three comments no longer describe offline saves, and
   the image leaves out test files and drizzle-kit's snapshots (1087.8 MB to 1081.6 MB; migrations need only the SQL
   and journal). Smoke, off-site outage, off-site restore and upgrade from beta.19 passed on it.
+- R13 done (owner's choice A): the page code list is made by the build from src/routes/(app) (`shared/app-pages.ts`,
+  `__APP_PAGES__`; the hand list had missed seven pages; onboarding left out). The service worker uses no prepared
+  page when the device is offline or after a failed request, and drops them all after any answer without a session
+  (`x-obur-no-session`; signed-out page data is answered by the session hook itself, since a thrown redirect never
+  reached the header). Two browser tests (Chromium), both fail without the fix. The 45-second refresh stays (idle
+  load judged impractical).
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

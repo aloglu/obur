@@ -122,36 +122,13 @@
 			if (recentlyUnreachable()) return;
 			// One at a time, so the first visit to a page does not wait for it (the files are already on this device, in
 			// the service worker's copy; this reads them in before the tap).
-			const pages = [
-				'/(app)',
-				'/(app)/log',
-				'/(app)/journal',
-				'/(app)/progress',
-				'/(app)/more',
-				'/(app)/profile',
-				'/(app)/more/settings',
-				'/(app)/foods',
-				'/(app)/recipes',
-				'/(app)/saved-meals',
-				'/(app)/more/deleted',
-				'/(app)/members',
-				'/(app)/help',
-				'/(app)/achievements',
-				'/(app)/more/goal',
-				'/(app)/more/units',
-				'/(app)/more/appearance',
-				'/(app)/more/speak-and-scan',
-				'/(app)/settings/reminders',
-				'/(app)/settings/security',
-				'/(app)/settings/data',
-				'/(app)/foods/new',
-				'/(app)/foods/[id]',
-				'/(app)/scan'
-			] as const;
+			// Every page, found by the build (shared/app-pages.ts): a new one is never left out.
+			const pages = __APP_PAGES__;
 			let next = 0;
 			ahead = setInterval(() => {
 				if (next >= pages.length) return clearInterval(ahead);
-				preloadCode(pages[next++]).catch(() => {});
+				// Route IDs from the files, so they are real ones.
+				preloadCode(pages[next++] as Parameters<typeof preloadCode>[0]).catch(() => {});
 			}, 200);
 		}, 3000);
 		return () => {

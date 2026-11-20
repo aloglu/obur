@@ -4,11 +4,19 @@ import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { readdirSync } from 'node:fs';
 import pkg from './package.json' with { type: 'json' };
+import { appPages } from './src/lib/shared/app-pages.ts';
 
 export default defineConfig({
 	// The version an admin sees in Members, and the one compared with the published ones.
-	define: { __OBUR_VERSION__: JSON.stringify(pkg.version) },
+	define: {
+		__OBUR_VERSION__: JSON.stringify(pkg.version),
+		// Every page of the app, for reading their code in ahead of the first visit (shared/app-pages.ts).
+		__APP_PAGES__: JSON.stringify(
+			appPages(readdirSync('src/routes', { recursive: true, encoding: 'utf8' }))
+		)
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit({
