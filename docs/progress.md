@@ -40,6 +40,9 @@ and licence, R06, R13. Real-phone checks stay with the owner.
 - R09 done: restore guide and Docker guide say to keep `data/secrets/obur.env` off the server, where it goes on a
   new server, and what happens without it (AI keys entered again, reminders turned on again; both handled already).
   Install and agents guides list R01's two new waiting lines.
+- R10 done: the two translation plugins come from npm at exact versions (4.6.0, 2.4.3), not a CDN; `npm run i18n`
+  (`scripts/i18n.ts`, also run by `npm run build`) fails when a plugin doesn't load (checked by removing one).
+  Compiled with no network in a container: 0 warnings. Release workflow actions pinned to full commit SHAs.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 
