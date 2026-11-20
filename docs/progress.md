@@ -54,8 +54,8 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
     Recommendation: leave it.
 - `docs/design.md` updated for steps 1 to 9.
 - Checks on `c66a1c0`: lint, check, Vitest 1194 passed; full e2e 302 passed, 19 skipped by design; image smoke,
-  off-site and upgrade (beta.19) tests passed. Next: owner decides on the import thread and start-up preparation, and
-  whether to tag rc.5 (ask first).
+  off-site and upgrade (beta.19) tests passed. Owner's decision (2026-11-20): imports and start-up preparation stay as they are. Next: a full audit of
+  the app by us before rc.5 (scope agreed with the owner first); then ask before tagging.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
