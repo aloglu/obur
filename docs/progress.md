@@ -71,7 +71,9 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   outage, off-site restore, upgrade from beta.19 and both add-on tests passed. Not run: the release workflow on
   GitHub (its new Publish job needs a tag; ask the owner), real-phone checks (owner).
 - Release 1.0.0-rc.6 tagged on the owner's go (2026-11-21); agents guide checked (new waiting and older-version
-  lines, `OBUR_TRUSTED_PROXIES`). **Next step:** watch the release run; its Publish job runs for the first time.
+  lines, `OBUR_TRUSTED_PROXIES`). Release run 44823369550 passed every job; Publish pushed the three images (all
+  pullable), skipped `latest` (a test release) and made the GitHub pre-release. GitHub warns that three actions still
+  target Node 20 (run on Node 24 for now). **Next step:** the owner's hand checks (`~/Documents` checklist, rc.6).
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 
