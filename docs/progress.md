@@ -50,6 +50,13 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   upgrade from beta.19 and off-site restore passed.
 - R14 skipped after measuring: achievement sync with five years of records (1825 weigh-ins, 1825 complete days,
   9125 entries) takes 5.3 ms median, 7.2 ms max, and runs after the page shows. Not a practical cost.
+- R06 done (owner's choice A): reading an import (obur or LoseIt) and compressing an export run in a worker thread
+  (`archive-thread.ts`, `archive-worker.ts`), one at a time on the whole server; the database work stays on the main
+  thread in one transaction. Measured, 30,000 entries: reading took 753 ms of the main thread; with the thread the
+  longest main-thread pause during the whole preview was 48 ms. A zip that understates its sizes can't unpack more
+  than it declares (fflate stops at the declared size; probed), so the declared-size limit already bounds memory.
+  Not done, judged impractical: counting bytes while reading JSON and media bodies (the adapter already stops any
+  request over 21 MB, and only signed-in members can send them).
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

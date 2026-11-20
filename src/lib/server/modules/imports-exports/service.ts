@@ -34,8 +34,8 @@ import {
 import { goalVersions, profiles } from '../goals/index.ts';
 import { reminderSettings } from '../reminders/index.ts';
 import { modelChoices } from '../remote-models/index.ts';
-import { readArchive, sha256, writeArchive, type PortableData } from './archive.ts';
-import { readLoseItArchive } from './loseit.ts';
+import { sha256, type PortableData } from './archive.ts';
+import { archiveThread } from './archive-thread.ts';
 import {
 	LOSEIT_SOURCE,
 	planLoseIt,
@@ -1194,12 +1194,12 @@ export function createPortability(db: Database) {
 				}),
 				SNAPSHOT
 			);
-			return writeArchive(data, { exportedAt: now.toISOString(), sourceInstallation });
+			return archiveThread.write(data, { exportedAt: now.toISOString(), sourceInstallation });
 		},
 
 		/** Validates an archive and reports what an import would do, without writing anything. */
 		async previewImport(userId: string, bytes: Uint8Array): Promise<ImportSummary> {
-			const { manifest, data } = readArchive(bytes);
+			const { manifest, data } = await archiveThread.read(bytes);
 			return withUser(db, userId, async (tx) => {
 				const p = await plan(
 					tx,
@@ -1220,7 +1220,7 @@ export function createPortability(db: Database) {
 		 * The same file cannot be imported twice.
 		 */
 		async applyImport(userId: string, bytes: Uint8Array): Promise<ImportSummary> {
-			const { manifest, data } = readArchive(bytes);
+			const { manifest, data } = await archiveThread.read(bytes);
 			const sha = sha256(bytes);
 			return withUser(db, userId, async (tx) => {
 				await lockImports(tx, userId);
@@ -1244,7 +1244,7 @@ export function createPortability(db: Database) {
 			bytes: Uint8Array,
 			options: LoseItOptions
 		): Promise<LoseItSummary> {
-			const data = readLoseItArchive(bytes);
+			const data = await archiveThread.loseit(bytes);
 			return withUser(db, userId, async (tx) => {
 				const p = await planLoseIt(tx, userId, data, { sha: sha256(bytes) }, options);
 				return p.summary;
@@ -1257,7 +1257,7 @@ export function createPortability(db: Database) {
 			bytes: Uint8Array,
 			options: LoseItOptions
 		): Promise<LoseItSummary> {
-			const data = readLoseItArchive(bytes);
+			const data = await archiveThread.loseit(bytes);
 			const sha = sha256(bytes);
 			return withUser(db, userId, async (tx) => {
 				await lockImports(tx, userId);
