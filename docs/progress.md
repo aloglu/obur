@@ -8,13 +8,24 @@ Owner's go, with two conditions: real technical debt goes away, and no speed los
 of about a second stops it). Plan, one commit each:
 1. Design written: `docs/design.md` "Connection required" and "Search rule", `docs/ui.md` (connection screen,
    one-release card for refused old entries), CLAUDE.md. **Done; waiting for the owner to read it.**
-2. Measure first (phone WebKit, simulated phone network): app start, a tap on each main tab, a food save.
+2. Measure first. **Done** with `tests/e2e/speed.e2e.ts` (only with `OBUR_SPEED=1`; run with `--workers=1`):
+   a second built server behind a delay proxy (150 ms round trip, about 10 Mbit/s), every request included;
+   Chromium also at a 4x slower processor. Medians of 5 rounds, before the change (2026-11-20, `72f4c0d`):
+
+   | Measure | Phone WebKit | Chromium 4x CPU |
+   | --- | --- | --- |
+   | Start: Today shown | 392 ms | 317 ms |
+   | Tab 3.5 s after start (Journal) | 225 ms | 118 ms |
+   | Tabs Today / Log / Progress / More / Journal | 161 / 117 / 135 / 136 / 149 ms | 108 / 69 / 63 / 57 / 73 ms |
+   | Search "banana": first result | 786 ms | 815 ms |
+   | Food save: confirmation | 1026 ms | 935 ms |
 3. Remove offline support: queue, food copy, saved pages, offline warm-up, offline e2e; keep the service worker
    for push, code files and pages prepared ahead; connection screen; first start sends old queued entries, then
    deletes the queue. Measure again; stop if slower.
 4. New search rule in shared TypeScript (word starts, per-word typo limits), server only, with tests; measure.
 
-Next: the owner reads the design text (step 1).
+Next: step 3 (owner read and agreed to the design, 2026-11-20). Owner to confirm: entries left in an old
+queue by someone who never signs in on that device again are lost when the later release removes the step.
 
 ## Owner's audit of rc.4 (2026-11-20): verified, fixing for rc.5
 
