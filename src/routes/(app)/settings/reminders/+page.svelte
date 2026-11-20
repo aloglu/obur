@@ -89,8 +89,9 @@
 	async function turnOff() {
 		busy = true;
 		try {
-			await stopReminders();
-			device = 'off';
+			// Off only once the server stopped them; otherwise they would keep coming.
+			if (await stopReminders()) device = 'off';
+			else showToast({ message: m.reminders_off_failed() });
 		} finally {
 			busy = false;
 		}

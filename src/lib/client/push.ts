@@ -55,13 +55,27 @@ export async function startReminders(publicKey: string): Promise<PushState> {
 	return 'on';
 }
 
-/** This device stops receiving the signed-in person's reminders (the browser subscription may serve others). */
-export async function stopReminders(): Promise<void> {
+/**
+ * This device stops receiving the signed-in person's reminders (the browser subscription may serve others). False
+ * when the server could not be told: the browser's subscription stays valid, so nothing else would stop them
+ * (2026-11-20 audit).
+ */
+export async function stopReminders(): Promise<boolean> {
 	try {
-		if (!supported()) return;
+		if (!supported()) return true;
 		const sub = await current();
 		if (sub) await api('DELETE', '/api/v1/reminders/subscription', { endpoint: sub.endpoint });
+		return true;
 	} catch {
-		// Offline or already gone: the server drops it when the push service reports it gone.
+		return false;
+	}
+}
+
+/** This device's push endpoint, sent with sign-out so the server stops its reminders in the same step. */
+export async function pushEndpoint(): Promise<string | null> {
+	try {
+		return supported() ? ((await current())?.endpoint ?? null) : null;
+	} catch {
+		return null;
 	}
 }

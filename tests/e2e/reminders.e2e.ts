@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { signedInAs } from './fixtures.ts';
+import { apiAs, signedInAgain, signedInAs } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 
@@ -58,4 +58,25 @@ test('reminders: a switch and the system time picker per reminder, quiet hours, 
 		'false'
 	);
 	await expect(page.locator('[inert]').getByLabel('Dinner time')).toHaveCount(1);
+});
+
+test('signing out stops this device’s reminders in the same step', async ({ page }) => {
+	// 2026-11-20 audit: a failed unsubscribe was ignored and the sign-out went ahead, leaving reminders coming.
+	const userId = await signedInAs(page, 'Mehmet');
+	await page.goto('/');
+	const endpoint = `https://fcm.googleapis.com/fcm/send/e2e-${userId}`;
+	const subscribed = () =>
+		apiAs<{ subscribed: boolean }>(
+			page,
+			'GET',
+			`/api/v1/reminders/subscription?endpoint=${encodeURIComponent(endpoint)}`
+		).then((r) => r.subscribed);
+	await apiAs(page, 'POST', '/api/v1/reminders/subscription', {
+		endpoint,
+		keys: { p256dh: 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA', auth: 'tBHItJI5svbpez7KI4CCXg' }
+	});
+	expect(await subscribed()).toBe(true);
+	await apiAs(page, 'POST', '/api/v1/auth/logout', { pushEndpoint: endpoint });
+	await signedInAgain(page, userId);
+	expect(await subscribed()).toBe(false);
 });

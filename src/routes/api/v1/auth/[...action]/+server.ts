@@ -6,6 +6,8 @@ import { config } from '#lib/server/config.ts';
 import { clientIp } from '#lib/server/client-ip.ts';
 import { clearSessionCookie, readJson, respond, setSessionCookie } from '#lib/server/http.ts';
 import type { SessionRecord } from '#lib/server/modules/auth/index.ts';
+import { reminders } from '#lib/server/reminders.ts';
+import { isPushService } from '#lib/shared/push-services.ts';
 
 // SimpleWebAuthn verifies the contents; here we only bound the shape and size.
 const short = v.pipe(v.string(), v.maxLength(512));
@@ -97,7 +99,15 @@ const routes: Record<string, Handler> = {
 		event.locals.session = await auth.resolveSession(sessionToken);
 		return json({ ok: true });
 	},
-	'POST logout': async ({ cookies, locals }, session) => {
+	'POST logout': async ({ cookies, locals, request }, session) => {
+		// The device's reminders stop with the sign-out: if that fails, so does the sign-out, and it is tried again.
+		const body = v.safeParse(
+			v.object({ pushEndpoint: v.optional(v.pipe(v.string(), v.maxLength(2048))) }),
+			await request.json().catch(() => ({}))
+		);
+		const endpoint = body.success ? body.output.pushEndpoint : undefined;
+		if (session && endpoint && isPushService(endpoint))
+			await reminders.unsubscribe(session.userId, endpoint);
 		if (session) await auth.signOut(session);
 		clearSessionCookie(cookies);
 		locals.session = undefined;

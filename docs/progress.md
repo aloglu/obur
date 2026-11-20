@@ -36,6 +36,10 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
   connections close on `versionchange`; `deleteQueue` reports false if still blocked after 5 s (toast
   `device_clear_blocked`). Two offline e2e tests (both fail before). The "stays on the page" test searched
   `mercimek`, which now finds Lentils by alias offline (step 6): changed to a word that matches nothing.
+- Step 8 done: `stopReminders` returns whether the server was told; Reminders shows Off only then (else toast
+  `reminders_off_failed`). Sign-out sends the device's `pushEndpoint` with the logout, which removes it before
+  ending the session (a failure fails the sign-out). Reminders e2e test (fails before). The Off switch itself needs a
+  real push service: not browser-tested; check on the iPhone.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 

@@ -2,7 +2,7 @@
 	// docs/ui.md "More and settings": your foods, recipes and meals, then Settings, Members and Help, then
 	// signing out. Compact rows with their counts.
 	import { accountHeaders, setAccount } from '#lib/client/account.ts';
-	import { stopReminders } from '#lib/client/push.ts';
+	import { pushEndpoint } from '#lib/client/push.ts';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
@@ -40,8 +40,9 @@
 		await flush();
 		const unsent = offline.items.length;
 		if (unsent > 0 && !confirm(m.signout_pending({ count: String(unsent) }))) return;
-		// This device stops getting this person's reminders; whoever signs in next turns on their own.
-		if (reminders) await stopReminders();
+		// This device stops getting this person's reminders with the sign-out itself, so one never happens without
+		// the other; whoever signs in next turns on their own.
+		const endpoint = reminders ? await pushEndpoint() : null;
 		// Signed out on the server first: offline, nothing on this device is cleared and the person stays signed in.
 		try {
 			// A time limit: an iPhone can leave an offline request hanging instead of failing it.
@@ -49,7 +50,7 @@
 				method: 'POST',
 				credentials: 'same-origin',
 				headers: { 'content-type': 'application/json', ...accountHeaders() },
-				body: '{}',
+				body: JSON.stringify(endpoint ? { pushEndpoint: endpoint } : {}),
 				signal: AbortSignal.timeout(5000)
 			});
 			// Someone else signed in on this browser since this tab opened: never sign them out from here.
