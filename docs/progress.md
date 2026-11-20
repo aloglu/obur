@@ -83,7 +83,9 @@ rc.4 (nothing was built or published); the tag was moved to the version commit. 
 browser tests (nothing published): `turkish.e2e.ts` "no main screen scrolls sideways" hit the same early-leave
 reload as the title test (also fails with the retry). It and the diary back-link loop now wait for each page to
 finish loading (Turkish test 20 of 20); the tag was moved again.
-Next: the release run; then the owner updates and goes through the checklist in `~/Documents`.
+Published 2026-11-20 (run 44796699205, 21 min): checks, browser tests (290 passed, none flaky), the three images,
+smoke, off-site outage and upgrade tests.
+Next: the owner updates (`OBUR_VERSION=1.0.0-rc.5`) and goes through the checklist in `~/Documents`.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 
@@ -156,7 +158,9 @@ rc.4 (nothing was built or published); the tag was moved to the version commit. 
 browser tests (nothing published): `turkish.e2e.ts` "no main screen scrolls sideways" hit the same early-leave
 reload as the title test (also fails with the retry). It and the diary back-link loop now wait for each page to
 finish loading (Turkish test 20 of 20); the tag was moved again.
-Next: the release run; then the owner updates and goes through the checklist in `~/Documents`.
+Published 2026-11-20 (run 44796699205, 21 min): checks, browser tests (290 passed, none flaky), the three images,
+smoke, off-site outage and upgrade tests.
+Next: the owner updates (`OBUR_VERSION=1.0.0-rc.5`) and goes through the checklist in `~/Documents`.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
