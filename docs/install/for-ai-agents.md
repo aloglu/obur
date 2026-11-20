@@ -112,7 +112,7 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
 - **"obur: error: POST /path: DrizzleQueryError (PostgresError 22001)"** (log): a request failed unexpectedly. The
   line names only the error's type and code, never the query or what was saved. If it repeats, report the line.
 - **New versions:** obur does not look for them unless an admin turns on Members → Updates → "Check for new
-  versions" (it then reads GitHub's public tag list once a day; `updates: the published versions could not be read`
+  versions" (it then reads GitHub's public release list once a day; `updates: the published versions could not be read`
   in the log means GitHub was unreachable, which is harmless). It never updates itself.
 - **"the off-site store cannot be reached; WAL is waiting for it"** (log) or **"The off-site store can't be
   reached"** (Members → Backups): the off-site storage is not answering. Local backups continue; changes wait in

@@ -1,6 +1,7 @@
 # Tests and publishes obur's three images to GitHub's registry when a version is tagged (v1.0.0), as
-# ghcr.io/aloglu/obur, obur-speech and obur-labels with the version and `latest`. Nothing is published unless the
-# checks, the browser tests and the image tests (smoke, off-site outage, upgrade and restore) pass. A test release
+# ghcr.io/aloglu/obur, obur-speech and obur-labels with the version and `latest`, then a GitHub release for it.
+# Nothing is published unless the checks, the browser tests and every image's tests pass (obur: smoke, off-site
+# outage and restore, upgrade and restore; add-ons: one input each), and then all three together. A test release
 # (v1.0.0-beta.1) is published under its own version only, never as `latest`. Pushes to branches run nothing. Run it
 # by hand (Actions → Release → Run workflow) to build and test without publishing.
 name: Release
@@ -93,22 +94,25 @@ jobs:
           retention-days: 7
 
   images:
+    # Build and test only: no job but Publish can write to the registry (2026-11-20 audit, R03).
     name: Image ${{ matrix.image }}
     needs: [checks, e2e]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      packages: write
     strategy:
-      fail-fast: false
+      # One failed image stops the others: nothing is published unless all three pass.
+      fail-fast: true
       matrix:
         include:
           - image: obur
             context: .
           - image: obur-speech
             context: speech
+            addon: speech
           - image: obur-labels
             context: labels
+            addon: labels
     steps:
       - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v3
@@ -135,17 +139,68 @@ jobs:
       - name: Upgrade and restore test
         if: matrix.image == 'obur'
         run: deploy/obur/upgrade-test.sh ghcr.io/${{ github.repository_owner }}/obur:1.0.0-beta.19 obur:test
-      - name: Publish
+      - name: Add-on test
+        if: matrix.addon
+        run: deploy/addon-test.sh ${{ matrix.image }}:test ${{ matrix.addon }}
+      # The tested image itself goes to Publish, so the registry gets exactly what passed.
+      - name: Keep the tested image
         if: env.PUBLISH == 'true'
-        env:
-          VERSION: ${{ needs.checks.outputs.version }}
+        run: docker save ${{ matrix.image }}:test | gzip -1 > image.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: env.PUBLISH == 'true'
+        with:
+          name: image-${{ matrix.image }}
+          path: image.tar.gz
+          compression-level: 0
+          retention-days: 1
+
+  publish:
+    # Runs only once all three images passed. The version goes first; `latest` moves only after all three versioned
+    # images can be pulled; the GitHub release, which installations read for "a new version is available", comes
+    # last (R11).
+    name: Publish
+    needs: [checks, images]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    env:
+      VERSION: ${{ needs.checks.outputs.version }}
+      IMAGES: obur obur-speech obur-labels
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: image-*
+          path: images
+      - name: Load the tested images
+        run: for f in images/*/image.tar.gz; do gunzip -c "$f" | docker load; done
+      - name: Push the version
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          target="$REGISTRY/${{ matrix.image }}"
-          tags="$VERSION"
-          # Test releases (a version with a hyphen) never become `latest`.
-          [[ $VERSION == *-* ]] || tags="$tags latest"
-          for tag in $tags; do
-            docker tag "${{ matrix.image }}:test" "$target:$tag"
-            docker push "$target:$tag"
+          for image in $IMAGES; do
+            docker tag "$image:test" "$REGISTRY/$image:$VERSION"
+            docker push "$REGISTRY/$image:$VERSION"
           done
+      - name: Check the version can be pulled
+        run: |
+          docker logout ghcr.io
+          for image in $IMAGES; do docker manifest inspect "$REGISTRY/$image:$VERSION" >/dev/null; done
+      - name: Move latest
+        # Test releases (a version with a hyphen) never become `latest`.
+        if: ${{ !contains(needs.checks.outputs.version, '-') }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for image in $IMAGES; do
+            docker tag "$image:test" "$REGISTRY/$image:latest"
+            docker push "$REGISTRY/$image:latest"
+          done
+      - name: Release record
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pre=()
+          [[ $VERSION == *-* ]] && pre=(--prerelease)
+          gh release create "v$VERSION" --repo "${{ github.repository }}" --verify-tag "${pre[@]}" \
+            --title "obur $VERSION" \
+            --notes "Images: $REGISTRY/obur:$VERSION, obur-speech:$VERSION, obur-labels:$VERSION. Updating: docs/install/updating.md."

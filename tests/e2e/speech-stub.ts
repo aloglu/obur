@@ -81,12 +81,12 @@ createServer(async (req, res) => {
 		const key = new URL(req.url, 'http://stub').searchParams.get('key') ?? '';
 		return reply(200, lastProvider.get(key) ?? {});
 	}
-	// The published versions (GitHub's tag list): whatever the test set, or unreachable.
+	// The published versions (GitHub's release list): whatever the test set, or unreachable.
 	if (req.method === 'POST' && req.url === '/next-tags') {
 		nextTags = JSON.parse(await read(req));
 		return reply(200, { ok: true });
 	}
-	if (req.method === 'GET' && req.url === '/updates/tags') {
+	if (req.method === 'GET' && req.url === '/updates/releases') {
 		tagRequests += 1;
 		return reply(nextTags.status, nextTags.body);
 	}

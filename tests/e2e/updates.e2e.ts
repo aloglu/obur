@@ -10,7 +10,7 @@ const current: string = JSON.parse(readFileSync('package.json', 'utf8')).version
 const publish = (status: number, names: string[]) =>
 	fetch(`${SPEECH_STUB}/next-tags`, {
 		method: 'POST',
-		body: JSON.stringify({ status, body: names.map((name) => ({ name })) })
+		body: JSON.stringify({ status, body: names.map((name) => ({ tag_name: name, draft: false })) })
 	});
 const requests = async (): Promise<number> =>
 	(await (await fetch(`${SPEECH_STUB}/tag-requests`)).json()).count;

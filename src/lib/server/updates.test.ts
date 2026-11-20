@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { nextPage } from './updates.ts';
 
-const first = 'https://api.github.com/repos/aloglu/obur/tags?per_page=100';
+const first = 'https://api.github.com/repos/aloglu/obur/releases?per_page=100';
 
 describe('nextPage', () => {
 	it('follows GitHub’s next link on the same host', () => {
 		const link =
-			'<https://api.github.com/repositories/1/tags?per_page=100&page=2>; rel="next", <https://api.github.com/repositories/1/tags?per_page=100&page=3>; rel="last"';
+			'<https://api.github.com/repositories/1/releases?per_page=100&page=2>; rel="next", <https://api.github.com/repositories/1/releases?per_page=100&page=3>; rel="last"';
 		expect(nextPage(link, first)).toBe(
-			'https://api.github.com/repositories/1/tags?per_page=100&page=2'
+			'https://api.github.com/repositories/1/releases?per_page=100&page=2'
 		);
 	});
 

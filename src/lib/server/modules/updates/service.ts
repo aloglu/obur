@@ -1,6 +1,6 @@
 // Telling admins that a newer obur is published (docs/design.md, "Deployment, network and maintenance"). Off until
 // an admin turns it on, because asking is the one thing obur does toward an outside service by itself: it fetches the
-// public list of version tags (nothing about this installation is sent) at most once a day, and only while an admin
+// public list of releases (nothing about this installation is sent) at most once a day, and only while an admin
 // is looking at a page that shows the answer. The answer lives in household_settings, which only admins may change.
 import type { Database } from '../../db/index.ts';
 import { withUser } from '../../db/identity.ts';
@@ -23,7 +23,7 @@ const RETRY_MS = 3600_000;
 
 export interface UpdatesOptions {
 	current: string;
-	/** The published version tags, from outside. Throws when it cannot be reached. */
+	/** The published versions (release tags), from outside. Throws when it cannot be reached. */
 	published: () => Promise<string[]>;
 	now?: () => Date;
 }

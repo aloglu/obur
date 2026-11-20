@@ -32,6 +32,11 @@ and licence, R06, R13. Real-phone checks stay with the owner.
 - R07 done: forwarded addresses are believed only from loopback, Docker's 172.16.0.0/12 and the machine's own
   networks, or only from `OBUR_TRUSTED_PROXIES` when it is set (validated at start; `config.trustedProxies`). Unit
   tests found `10.0.0.0/` read as "everything"; fixed. Install guide and `deploy/.env.example` explain the setting.
+- R03 + R11 done: image jobs only build and test (no registry write); add-ons get `deploy/addon-test.sh` (healthy,
+  "250 kcal" read from a drawn label, one second of silence transcribed; both passed locally). A Publish job runs
+  only after all three: it loads the tested images, pushes the version, checks all three can be pulled, then moves
+  `latest` (full releases only), then makes the GitHub release. The update notice reads GitHub's releases, not tags
+  (unit and browser tests). actionlint clean. Not run on GitHub yet (needs a tag; ask the owner first).
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 
