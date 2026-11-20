@@ -24,8 +24,8 @@ of about a second stops it). Plan, one commit each:
    deletes the queue. Measure again; stop if slower.
 4. New search rule in shared TypeScript (word starts, per-word typo limits), server only, with tests; measure.
 
-Next: step 3 (owner read and agreed to the design, 2026-11-20). Owner to confirm: entries left in an old
-queue by someone who never signs in on that device again are lost when the later release removes the step.
+Next: step 3 (owner read and agreed to the design, 2026-11-20). Owner accepted that entries left in an old queue
+by someone who never signs in on that device again are lost when the later release removes the step.
 
 ## Owner's audit of rc.4 (2026-11-20): verified, fixing for rc.5
 
