@@ -6,7 +6,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { api, NoConnection, save } from '#lib/client/api.ts';
 	import { closeInlineOnOutsideTap } from '#lib/client/inline-field.svelte.ts';
 	import { dayHref, logHref, logSearchHref } from '#lib/client/links.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
@@ -19,7 +19,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import X from '@lucide/svelte/icons/x';
 	import Swap from '#lib/ui/Swap.svelte';
-	import { discard, offline, restore, submit } from '#lib/client/offline/sync.svelte.ts';
+	import { discardOld, oldQueue, restoreOld } from '#lib/client/old-queue.svelte.ts';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import type { QueuedOp } from '#lib/client/offline/store.ts';
@@ -58,11 +58,10 @@
 
 	let addingActivity = $state(false);
 	let pendingOpen = $state<QueuedOp | null>(null);
-	// Entries the server refused after they waited offline: kept on this phone until the person decides (docs/ui.md,
-	// "Offline refused entry"), whatever day they were for.
-	const refused = $derived(
-		offline.items.filter((i) => i.status === 'review' && i.preview.kind === 'diary')
-	);
+	// Entries left by the offline support of older versions that the server refused: kept on this phone until the
+	// person decides, whatever day they were for (docs/design.md, "Connection required"; one release only).
+	const refused = $derived(oldQueue.refused);
+	const owner = $derived(data.user?.id ?? '');
 
 	/** Keeps a refused entry's calories as a calories-only entry for the same day and meal. */
 	async function keepCalories(op: QueuedOp) {
@@ -71,52 +70,44 @@
 		pendingOpen = null;
 		const id = crypto.randomUUID();
 		const zone = typeof op.body.zone === 'string' ? op.body.zone : deviceZone();
-		// The replacement first: the refused entry is discarded only once its calories are kept (sent or queued).
-		let result: Awaited<ReturnType<typeof submit<DiaryEntry>>>;
+		// The replacement first: the refused entry is discarded only once its calories are kept.
 		try {
-			result = await submit<DiaryEntry>(
-				'/api/v1/diary/entries',
-				{
-					id,
-					kind: 'quick',
-					date: p.localDate,
-					meal: p.meal,
-					zone,
-					kcal: p.kcal,
-					description: p.name
-				},
-				{ ...p, quantity: m.entry_kind_quick() }
-			);
-		} catch {
-			showToast({ message: m.error_generic() });
+			await save<DiaryEntry>('/api/v1/diary/entries', {
+				id,
+				kind: 'quick',
+				date: p.localDate,
+				meal: p.meal,
+				zone,
+				kcal: p.kcal,
+				description: p.name
+			});
+		} catch (e) {
+			showToast({
+				message: e instanceof NoConnection ? m.save_no_connection() : m.error_generic()
+			});
 			return;
 		}
-		await discard(op.seq!);
+		await discardOld(owner, op.seq!);
 		await invalidateAll();
 		showToast({
 			message: m.offline_refused_kept(),
 			detail: `${p.name} · ${kcal(p.kcal)} kcal · ${mealName(p.meal)}`,
 			undo: async () => {
-				if (result.status === 'sent')
-					await api('POST', `/api/v1/diary/entries/${id}?action=delete`, {});
-				else {
-					const queued = offline.items.find((i) => i.body.id === id);
-					if (queued) await discard(queued.seq!);
-				}
-				await restore(op);
+				await api('POST', `/api/v1/diary/entries/${id}?action=delete`, {});
+				await restoreOld(owner, op);
 				await invalidateAll();
 			}
 		});
 	}
-	/** Discards a waiting or refused entry, with Undo. */
+	/** Discards a refused entry, with Undo. */
 	async function discardOp(op: QueuedOp) {
 		pendingOpen = null;
-		await discard(op.seq!);
-		if (op.status !== 'review' || op.preview.kind !== 'diary') return;
+		await discardOld(owner, op.seq!);
+		if (op.preview.kind !== 'diary') return;
 		showToast({
 			message: m.offline_refused_discarded(),
 			detail: op.preview.name,
-			undo: () => restore(op)
+			undo: () => restoreOld(owner, op)
 		});
 	}
 	/** Drops the refused entry and looks for the food again on Log, for the same day and meal. */
@@ -127,11 +118,6 @@
 		await goto(logSearchHref(p.meal, p.localDate, p.name));
 	}
 	let savingMeal = $state<Meal | null>(null);
-	const pendingFor = (meal: Meal) =>
-		offline.items.filter(
-			(i) =>
-				i.preview.kind === 'diary' && i.preview.localDate === data.date && i.preview.meal === meal
-		);
 	let editing = $state<DiaryEntry | null>(null);
 	// Rows just saved: all of them when several were logged at once (a saved meal, Type it, Speak).
 	let highlight = $state<string[]>(page.url.searchParams.get('highlight')?.split(',') ?? []);
@@ -346,7 +332,7 @@
 	let hintSeen = $state(untrack(() => data.preferences?.holdHintSeen ?? false));
 	function closeHint() {
 		hintSeen = true;
-		// Not saved (offline): it shows again next time.
+		// Not saved (no connection): it shows again next time.
 		savePreferences({ holdHintSeen: true }).catch(() => {});
 	}
 
@@ -355,7 +341,7 @@
 			await api('PUT', `/api/v1/diary/days/${data.date}`, { complete: !data.complete });
 			await invalidateAll();
 		} catch {
-			// Offline or refused: the day stays as it was, and says so.
+			// No connection or refused: the day stays as it was, and says so.
 			showToast({ message: m.error_generic() });
 		}
 	}
@@ -439,8 +425,6 @@
 							onadd={() => goto(logHref(meal, data.date))}
 							onsave={() => (savingMeal = meal)}
 							onopen={(e) => (editing = e)}
-							pending={pendingFor(meal)}
-							onpending={(op) => (pendingOpen = op)}
 							bulk={{
 								selecting,
 								selected,

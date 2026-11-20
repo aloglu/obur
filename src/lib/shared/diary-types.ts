@@ -46,8 +46,6 @@ export interface DiaryEntry {
 	nutrients: EntryNutrients;
 	revision: number;
 	createdAt: string;
-	/** Not yet confirmed by the server (offline queue). */
-	pending?: boolean;
 }
 
 export interface NutrientTotal {

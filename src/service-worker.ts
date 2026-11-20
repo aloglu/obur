@@ -30,8 +30,12 @@ const SHELL_ASSETS = new Set(
 const NETWORK_TIMEOUT_MS = 10_000;
 /** Preparing ahead gives up sooner: nothing waits for it. */
 const PREPARE_TIMEOUT_MS = 3000;
-/** After a failed request, pages show the connection page at once for this long, instead of waiting each time. */
+/**
+ * For this long after a failed request, a page waits only this much for the server: a hanging connection costs a
+ * moment per tap, not 10 seconds, and a connection that came back works at once.
+ */
 const UNREACHABLE_HOLD_MS = 60_000;
+const HELD_TIMEOUT_MS = 3000;
 /** Sent by a page (or the connection page) that has just reached the server: the hold ends. */
 const REACHABLE = 'obur:reachable';
 
@@ -168,10 +172,12 @@ async function write(request: Request): Promise<Response> {
 	writes++;
 	forgetPrepared();
 	try {
-		return await fetch(request).catch((e: unknown) => {
+		const response = await fetch(request).catch((e: unknown) => {
 			failed();
 			throw e;
 		});
+		unreachableUntil = 0;
+		return response;
 	} finally {
 		writes--;
 		forgetPrepared();
@@ -181,14 +187,13 @@ async function write(request: Request): Promise<Response> {
 	}
 }
 
-/** The network's answer, or a rejection after the timeout (which also starts the hold). */
+/** The network's answer, or a rejection after the time limit (which also starts the hold). */
 async function fromNetwork(request: Request): Promise<Response> {
+	const limit = unreachable() ? HELD_TIMEOUT_MS : NETWORK_TIMEOUT_MS;
 	try {
 		const response = await Promise.race([
 			fetch(request),
-			new Promise<never>((_, reject) =>
-				setTimeout(() => reject(new Error('timeout')), NETWORK_TIMEOUT_MS)
-			)
+			new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), limit))
 		]);
 		unreachableUntil = 0;
 		return response;
@@ -225,7 +230,6 @@ function noConnection(): Response {
 
 /** A page opened in full (the app's start, a reload, a link): the server's, or the connection page. */
 async function page(request: Request): Promise<Response> {
-	if (unreachable()) return noConnection();
 	return fromNetwork(request).catch(noConnection);
 }
 
@@ -241,7 +245,8 @@ const nothingChanged = (body: string) =>
  */
 async function pageData(request: Request): Promise<Response> {
 	const quiet = nothingNew(new URL(request.url).searchParams.get('x-sveltekit-invalidated'));
-	if (unreachable()) return quiet ? nothingChanged(quiet) : Response.error();
+	// A background refresh doesn't wait on a connection that just failed.
+	if (quiet && unreachable()) return nothingChanged(quiet);
 	try {
 		const response = await fromNetwork(request);
 		return quiet && response.status >= 500 ? nothingChanged(quiet) : response;

@@ -69,7 +69,8 @@ their deletions are applied again after every restore.
    docker exec obur obur backup restore-check
    ```
    Then look at Members → Backups. Everyone signs in again with their passkey: passkeys and recovery codes are
-   unchanged. Entries a phone queued while the server was down are sent after its owner signs in.
+   unchanged. obur needs a connection, so nothing waits on the phones: entries made while the server was down were
+   never saved and must be logged again.
 
 5. **Clean up.** Once you are satisfied, delete the folder moved aside in step 2.
 

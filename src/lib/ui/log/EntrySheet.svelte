@@ -49,8 +49,6 @@
 		today: string;
 		/** The meal to use when the sentence names none. */
 		meal: Meal;
-		/** Calories alone work without the server. */
-		oncalories?: () => void;
 		/** The text came from speech: label it "I heard". */
 		heard?: boolean;
 		onlogged: (logged: LoggedEntry) => void;
@@ -61,7 +59,6 @@
 		date,
 		today,
 		meal: presetMeal,
-		oncalories,
 		heard = false,
 		onlogged,
 		onclose
@@ -474,14 +471,7 @@
 		></textarea>
 	</label>
 	{#if unreachable}
-		<Notice title={m.entry_unreachable_title()}>
-			{m.entry_unreachable()}
-			{#snippet actions()}
-				{#if oncalories}
-					<Button variant="ghost" wide onclick={oncalories}>{m.log_quick_add()}</Button>
-				{/if}
-			{/snippet}
-		</Notice>
+		<Notice title={m.entry_unreachable_title()}>{m.entry_unreachable()}</Notice>
 	{/if}
 
 	<form class="flex flex-col gap-4" onsubmit={logAll}>

@@ -132,7 +132,7 @@ test('the meal follows the sentence, and goes back when the meal word goes', asy
 	await expect(page.getByRole('region', { name: 'Snacks' })).toContainText('300');
 });
 
-test('without a connection Type it offers calories alone, which can wait on the device', async ({
+test('without a connection Type it says it needs one, and reads the sentence once it is back', async ({
 	page,
 	context
 }, testInfo) => {
@@ -143,19 +143,13 @@ test('without a connection Type it offers calories alone, which can wait on the 
 	await context.setOffline(true);
 	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
 	await sheet.getByLabel('You typed').fill('iki yumurta');
-	const calories = sheet.getByRole('button', { name: 'Log calories only' });
-	await expect(calories).toBeVisible();
+	const notice = sheet.getByText('Reading a sentence needs a connection.');
+	await expect(notice).toBeVisible();
 
 	// Back online, the sentence is read after all.
 	await context.setOffline(false);
 	await page.evaluate(() => dispatchEvent(new Event('online')));
-	await expect(calories).toBeHidden();
-
-	await context.setOffline(true);
-	await sheet.getByLabel('You typed').fill('üç yumurta');
-	await calories.click();
-	await expect(page.getByRole('dialog', { name: 'Log calories only' })).toBeVisible();
-	await context.setOffline(false);
+	await expect(notice).toBeHidden();
 });
 
 test('Recent is always on the Log screen and fits above the tab bar', async ({

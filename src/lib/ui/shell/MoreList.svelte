@@ -5,9 +5,10 @@
 	import { pushEndpoint } from '#lib/client/push.ts';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
 	import { showToast } from '#lib/client/toast.svelte.ts';
-	import { clearDeviceData, flush, offline } from '#lib/client/offline/sync.svelte.ts';
+	import { clearOldQueue, oldQueue, sendOldQueue } from '#lib/client/old-queue.svelte.ts';
 	import Button from '../Button.svelte';
 	import NavRow from './NavRow.svelte';
 
@@ -36,9 +37,10 @@
 	}: Props = $props();
 
 	async function signOut() {
-		// Try to send anything waiting; never discard unsent entries without asking (docs/design.md, offline scope).
-		await flush();
-		const unsent = offline.items.length;
+		// Entries an older version kept on this device: send them, and never discard one without asking.
+		const userId = page.data.user?.id as string | undefined;
+		if (userId) await sendOldQueue(userId);
+		const unsent = oldQueue.refused.length;
 		if (unsent > 0 && !confirm(m.signout_pending({ count: String(unsent) }))) return;
 		// This device stops getting this person's reminders with the sign-out itself, so one never happens without
 		// the other; whoever signs in next turns on their own.
@@ -61,8 +63,9 @@
 			return;
 		}
 		setAccount(null);
-		if (offline.ownerId && !(await clearDeviceData(offline.ownerId)))
-			showToast({ message: m.device_clear_blocked() });
+		// Nothing prepared for this person stays in the service worker, and no old entries stay on the device.
+		navigator.serviceWorker?.controller?.postMessage({ type: 'obur:signed-out' });
+		if (userId && !(await clearOldQueue(userId))) showToast({ message: m.device_clear_blocked() });
 		await invalidateAll();
 		await goto(resolve('/login'));
 	}

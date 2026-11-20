@@ -5,8 +5,7 @@
 	import DayMealFields from '../DayMealFields.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api, ApiError } from '#lib/client/api.ts';
-	import { submit } from '#lib/client/offline/sync.svelte.ts';
+	import { api, ApiError, NoConnection, recordIds, save as send } from '#lib/client/api.ts';
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { addDays, foodFingerprint, isLateNight } from '#lib/shared/diary-rules.ts';
@@ -33,8 +32,7 @@
 		date: string;
 		today: string;
 		meal: Meal;
-		/** The saved entry, or null when it was kept on this device to send later. */
-		onsaved: (entry: DiaryEntry | null) => void;
+		onsaved: (entry: DiaryEntry) => void;
 		onclose: () => void;
 	}
 	let { foodId, date, today, meal: presetMeal, onsaved, onclose }: Props = $props();
@@ -46,6 +44,7 @@
 	let day = $state(untrack(() => date));
 	let meal = $state<Meal>(untrack(() => presetMeal));
 	let busy = $state(false);
+	const idFor = recordIds();
 	let problem = $state('');
 
 	const options = $derived<UnitOption[]>(food ? unitOptions(food, measures) : []);
@@ -96,37 +95,20 @@
 		busy = true;
 		problem = '';
 		try {
-			const scaled = basisFactor(food, amount, toUnit(option));
-			const kcalValue = food.nutrients.find((n) => n.code === 'energy_kcal')?.value;
-			const quantity =
-				option.input.kind === 'mass' || option.input.kind === 'volume'
-					? `${formatDecimal(amount, 2)} ${option.label}`
-					: `${formatDecimal(amount, 2)} × ${option.label}`;
-			const result = await submit<DiaryEntry>(
-				'/api/v1/diary/entries',
-				{
-					kind: 'food',
-					id: crypto.randomUUID(),
-					date: day,
-					meal,
-					zone: deviceZone(),
-					foodId: food.id,
-					amount,
-					unit: option.input,
-					expected: foodFingerprint(food)
-				},
-				{
-					kind: 'diary',
-					localDate: day,
-					meal,
-					name: fullFoodName(food),
-					quantity,
-					kcal: kcalValue !== undefined && scaled !== undefined ? kcalValue * scaled : null
-				}
-			);
-			onsaved(result.status === 'sent' ? result.data : null);
+			const entry = {
+				kind: 'food',
+				date: day,
+				meal,
+				zone: deviceZone(),
+				foodId: food.id,
+				amount,
+				unit: option.input,
+				expected: foodFingerprint(food)
+			};
+			onsaved(await send<DiaryEntry>('/api/v1/diary/entries', { id: idFor(entry), ...entry }));
 		} catch (e) {
-			if (e instanceof ApiError && e.code === 'food_changed') {
+			if (e instanceof NoConnection) problem = m.save_no_connection();
+			else if (e instanceof ApiError && e.code === 'food_changed') {
 				// Changed on another device since this sheet opened: show the food as it is now.
 				food = await api<FoodDetail>('GET', `/api/v1/foods/${foodId}`).catch(() => food);
 				problem = m.amount_food_changed();

@@ -41,7 +41,7 @@
 	onMount(() => {
 		void api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')
 			.then((data) => (recent = data.results))
-			.catch(() => {}); // Offline without a saved copy: the search is still there.
+			.catch(() => {}); // No connection: the search is still there.
 	});
 
 	const computed = $derived(items.map((d) => nutrientsOf(d, measures)));

@@ -1,11 +1,12 @@
 <script lang="ts">
-	// docs/ui.md "Day notes": a card that opens in place. A note saves itself; offline it waits on this device, and the last
-	// version typed wins (docs/design.md). Tapping the text edits it; links and to-dos act on their own.
+	// docs/ui.md "Day notes": a card that opens in place. A note saves itself; one that couldn't be saved says so and is
+	// sent again with the next change, and the last version typed wins (docs/design.md). Tapping the text edits it;
+	// links and to-dos act on their own.
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
-	import { noteResults, offline, submit } from '#lib/client/offline/sync.svelte.ts';
+	import { save as send } from '#lib/client/api.ts';
 	import { clockTime } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { notePreview, setTask } from '#lib/shared/markdown.ts';
@@ -16,17 +17,12 @@
 
 	let { date, saved }: { date: string; saved: string } = $props();
 
-	// An edit still waiting on this device is newer than what the server sent.
-	const waiting = $derived(
-		offline.items.findLast((i) => i.preview.kind === 'note' && i.preview.localDate === date)
-	);
-	let text = $state(
-		untrack(() => (waiting?.preview.kind === 'note' ? waiting.preview.text : saved))
-	);
+	let text = $state(untrack(() => saved));
 	let open = $state(false);
 	let editing = $state(false);
-	// kept: the server kept a newer note typed on another device, and the card now shows that one.
-	let status = $state<'idle' | 'saving' | 'saved' | 'device' | 'kept'>('idle');
+	// kept: the server kept a newer note typed on another device, and the card now shows that one. unsaved: the last
+	// save failed; the text stays here and goes with the next change.
+	let status = $state<'idle' | 'saving' | 'saved' | 'unsaved' | 'kept'>('idle');
 	let savedAt = $state('');
 	let field = $state<HTMLTextAreaElement>();
 	// Opening straight into typing skips the height animation, so the field is already in place when it gets focus and
@@ -46,27 +42,14 @@
 		status = 'saved';
 	}
 
-	// What waited on this device was sent (or refused) while the card was open.
-	$effect(() => {
-		if (status !== 'device' || waiting) return;
-		const result = noteResults[date];
-		untrack(() => {
-			if (result && 'refused' in result) {
-				dirty = true;
-				status = 'idle';
-				showToast({ message: m.note_not_saved() });
-			} else settled(result?.kept ?? text, text);
-		});
-	});
-
 	const hasText = $derived(text.trim() !== '');
 	const foot = $derived(
 		status === 'saving'
 			? m.note_saving()
 			: status === 'saved'
 				? m.note_saved({ time: savedAt })
-				: status === 'device'
-					? m.note_saved_device()
+				: status === 'unsaved'
+					? m.note_unsaved()
 					: status === 'kept'
 						? m.note_kept_newer()
 						: m.note_private()
@@ -79,17 +62,16 @@
 		const typed = text;
 		status = 'saving';
 		try {
-			const result = await submit(
-				`/api/v1/diary/days/${date}/note`,
-				{ id: crypto.randomUUID(), text: typed, typedAt: new Date().toISOString() },
-				{ kind: 'note', localDate: date, text: typed }
-			);
-			if (result.status === 'queued') status = 'device';
+			const result = await send<{ text: string }>(`/api/v1/diary/days/${date}/note`, {
+				id: crypto.randomUUID(),
+				text: typed,
+				typedAt: new Date().toISOString()
+			});
 			// Typed again meanwhile: the next save answers for it.
-			else if (!dirty) settled((result.data as { text: string }).text, typed);
+			if (!dirty) settled(result.text, typed);
 		} catch {
 			dirty = true;
-			status = 'idle';
+			status = 'unsaved';
 			showToast({ message: m.note_not_saved() });
 		}
 	}
@@ -155,7 +137,7 @@
 			{/if}
 		</span>
 		<span class="text-[0.78125rem] whitespace-nowrap text-muted">
-			{#if status === 'saved' || status === 'device'}{m.note_saved_short()}{/if}
+			{#if status === 'saved'}{m.note_saved_short()}{:else if status === 'unsaved'}{m.note_unsaved_short()}{/if}
 		</span>
 		<ChevronDown
 			size={22}

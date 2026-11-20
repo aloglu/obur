@@ -9,14 +9,13 @@ export function setAccount(id: string | null) {
 	account = id;
 }
 
-/** The header a write carries; `owner` overrides it for an entry queued for a particular account. */
+/** The header a write carries; `owner` overrides it for an entry an older version queued for a particular account. */
 export function accountHeaders(owner: string | null = account): Record<string, string> {
 	return owner ? { [ACCOUNT_HEADER]: owner } : {};
 }
 
 /**
- * This tab shows another account than the one now signed in. Reloading shows the right person's pages; anything
- * waiting stays in its own account's queue on this device until that person signs in again.
+ * This tab shows another account than the one now signed in. Reloading shows the right person's pages.
  */
 export function wrongAccount(code: string, status: number): boolean {
 	if (status !== 409 || code !== WRONG_ACCOUNT) return false;

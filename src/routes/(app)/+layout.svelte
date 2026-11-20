@@ -1,6 +1,4 @@
 <script lang="ts">
-	import Cloud from '@lucide/svelte/icons/cloud';
-	import CloudOff from '@lucide/svelte/icons/cloud-off';
 	import { onMount } from 'svelte';
 	import {
 		afterNavigate,
@@ -10,22 +8,15 @@
 		preloadCode
 	} from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
 	import { offer } from '#lib/client/celebration.svelte.ts';
-	import {
-		offline,
-		recentlyUnreachable,
-		serverReachable,
-		startSync
-	} from '#lib/client/offline/sync.svelte.ts';
-	import { noteWaiting } from '#lib/client/offline/waiting.ts';
+	import { recentlyUnreachable, serverReachable } from '#lib/client/api.ts';
+	import { sendOldQueue } from '#lib/client/old-queue.svelte.ts';
 	import { setAccount } from '#lib/client/account.ts';
 	import { syncZoneCookie } from '#lib/client/prefs.ts';
 	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import { forgetPrepared, startPreparing } from '#lib/client/prepare.ts';
 	import { pageDirection } from '#lib/shared/page-tree.ts';
 	import AppShell from '#lib/ui/shell/AppShell.svelte';
-	import Notice from '#lib/ui/Notice.svelte';
 
 	let { children, data } = $props();
 
@@ -116,17 +107,15 @@
 			resolve('/(app)/more')
 		]);
 		// Send anything this account queued while offline; refresh the page when something arrives.
-		if (data.user)
-			startSync(data.user.id, (sent) => {
-				// Back after being offline: say so, and how many waiting entries went (docs/ui.md, one warning style).
-				if (sent > 0 || wasOffline) {
-					backOnline = sent;
-					clearTimeout(backTimer);
-					backTimer = setTimeout(() => (backOnline = null), 6000);
-				}
-				wasOffline = false;
-				void invalidateAll();
-			});
+		// Entries an older version kept on this device for this person are sent now (one release only).
+		const sendOld = () => {
+			if (data.user && document.visibilityState === 'visible')
+				void sendOldQueue(data.user.id).then((sent) => {
+					if (sent > 0) void invalidateAll();
+				});
+		};
+		sendOld();
+		document.addEventListener('visibilitychange', sendOld);
 		// Every page's code is read in ahead of the first visit, once per app start, after the current page has settled.
 		let ahead: ReturnType<typeof setInterval> | undefined;
 		const warm = setTimeout(() => {
@@ -170,45 +159,11 @@
 			clearTimeout(warm);
 			clearInterval(ahead);
 			clearTimeout(accountTimer);
+			document.removeEventListener('visibilitychange', sendOld);
 		};
-	});
-	const waiting = $derived(offline.items.filter((i) => i.status === 'pending').length);
-	// Offline means the page is the saved copy (the queue's own test of reachability, never navigator.onLine).
-	let wasOffline = false;
-	$effect(() => {
-		if (offline.cachedCopy) wasOffline = true;
-	});
-	/** How many waiting entries arrived when the connection came back; null when there is nothing to say. */
-	let backOnline = $state<number | null>(null);
-	let backTimer: ReturnType<typeof setTimeout> | undefined;
-	// So the sign-in page can say whose entries are waiting if the session ends.
-	$effect(() => {
-		if (data.user && offline.ownerId === data.user.id)
-			noteWaiting(data.user.id, data.user.displayName, waiting);
 	});
 </script>
 
 <AppShell>
-	{#if offline.authRequired && waiting > 0}
-		<div class="mx-auto max-w-[1064px] px-3.5 pt-3 desk:px-7">
-			<Notice>
-				{m.offline_signin({ count: String(waiting) })}
-				<a href={resolve('/login')} class="font-bold underline">{m.offline_signin_link()}</a>
-			</Notice>
-		</div>
-	{/if}
-	{#if offline.cachedCopy}
-		<div class="mx-auto max-w-[1064px] px-3.5 pt-3 desk:px-7">
-			<Notice tone="info" icon={CloudOff} title={m.offline_now()}>{m.offline_now_line()}</Notice>
-		</div>
-	{:else if backOnline !== null}
-		<div class="mx-auto max-w-[1064px] px-3.5 pt-3 desk:px-7">
-			<Notice tone="good" icon={Cloud} title={m.offline_back()}>
-				{#if backOnline > 0}{backOnline === 1
-						? m.offline_back_sent_one()
-						: m.offline_back_sent_many({ count: String(backOnline) })}{/if}
-			</Notice>
-		</div>
-	{/if}
 	{@render children()}
 </AppShell>

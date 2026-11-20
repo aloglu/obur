@@ -27,8 +27,8 @@ export function snapshotOf(food: FoodDetail): FoodSnapshot {
 
 /**
  * A short fingerprint of what a food's diary values come from (basis, portions, nutrients). The app sends the one of
- * the food it showed with a new entry; the server refuses the entry when the food has changed since, so an entry
- * that waited offline never takes values the person didn't see (docs/design.md, "Offline scope"). Name, icon and
+ * the food it showed with a new entry; the server refuses the entry when the food has changed since (on another
+ * device, while the sheet was open), so an entry never takes values the person didn't see. Name, icon and
  * archiving don't change it.
  */
 export function foodFingerprint(food: FoodDetail): string {

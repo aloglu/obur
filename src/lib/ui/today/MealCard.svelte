@@ -9,7 +9,6 @@
 	import { holdDrag } from '#lib/client/hold-drag.ts';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { DiaryEntry, Meal } from '#lib/shared/diary-types.ts';
-	import type { QueuedOp } from '#lib/client/offline/store.ts';
 	import FoodIcon from '../FoodIcon.svelte';
 	import Roll from '../Roll.svelte';
 	import MealMenu from './MealMenu.svelte';
@@ -23,9 +22,6 @@
 		/** Offered once the meal has entries on the server. */
 		onsave?: () => void;
 		onopen: (entry: DiaryEntry) => void;
-		/** Entries kept on this device and not yet on the server. */
-		pending?: QueuedOp[];
-		onpending?: (op: QueuedOp) => void;
 		/** Bulk actions; without them the card behaves as before. */
 		bulk?: {
 			selecting: boolean;
@@ -38,17 +34,7 @@
 			onmeal: (action: 'select' | 'move' | 'copy' | 'delete') => void;
 		};
 	}
-	let {
-		meal,
-		entries,
-		highlight,
-		onadd,
-		onsave,
-		onopen,
-		pending = [],
-		onpending,
-		bulk
-	}: Props = $props();
+	let { meal, entries, highlight, onadd, onsave, onopen, bulk }: Props = $props();
 	const selecting = $derived(bulk?.selecting ?? false);
 
 	const total = $derived(
@@ -72,7 +58,7 @@
 			>
 		{/if}
 	</div>
-	{#if entries.length > 0 || pending.length > 0}
+	{#if entries.length > 0}
 		<ul class="flex flex-col gap-0.5">
 			{#each entries as e (e.id)}
 				{@const on = bulk?.selected.has(e.id) ?? false}
@@ -121,10 +107,6 @@
 										class="rounded-menu bg-surface2 px-2 py-0.5 text-[0.75rem] font-semibold"
 										>{m.entry_macros_unknown()}</span
 									>{/if}
-								{#if e.pending}<span
-										class="rounded-menu bg-warn-soft px-2 py-0.5 text-[0.75rem] font-semibold text-warn"
-										>{m.entry_pending()}</span
-									>{/if}
 							</span>
 						</span>
 						<span class="ml-3 min-w-11 text-right text-[0.9375rem] font-[650] tabular-nums"
@@ -132,34 +114,6 @@
 						>
 					</button>
 				</li>
-			{/each}
-			{#each pending as op (op.seq)}
-				{#if op.preview.kind === 'diary'}
-					<li class="entry-in">
-						<button
-							type="button"
-							onclick={() => onpending?.(op)}
-							class="grid min-h-14 w-full grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-input px-2.5 py-1.5 text-left hover:bg-surface2"
-						>
-							<FoodIcon name={op.preview.name} />
-							<span class="min-w-0">
-								<span class="line-clamp-2 text-[0.9375rem] leading-[1.3] font-semibold break-words"
-									>{op.preview.name}</span
-								>
-								<span class="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-muted">
-									{op.preview.quantity}
-									<span
-										class="rounded-menu bg-warn-soft px-2 py-0.5 text-[0.75rem] font-semibold text-warn"
-										>{op.status === 'review' ? m.offline_review_row() : m.entry_pending()}</span
-									>
-								</span>
-							</span>
-							<span class="min-w-11 text-right text-[0.9375rem] font-[650] text-muted tabular-nums"
-								>{op.preview.kcal === null ? '?' : kcal(op.preview.kcal)}</span
-							>
-						</button>
-					</li>
-				{/if}
 			{/each}
 		</ul>
 	{/if}

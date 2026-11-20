@@ -1,5 +1,5 @@
-// The offline queue's storage: one IndexedDB database per account, so one person's unsent entries can never be
-// sent as another's (docs/design.md, "Offline scope and synchronization"). Items keep creation order.
+// The storage of the offline queue that versions before 2026-11-20 kept: one IndexedDB database per account. Read
+// only by client/old-queue.svelte.ts, for one release, to send what is left (docs/design.md, "Connection required").
 
 export type Preview =
 	| {

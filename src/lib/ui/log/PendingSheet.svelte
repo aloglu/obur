@@ -1,6 +1,6 @@
 <script lang="ts">
-	// An entry kept on this device (docs/ui.md, "Offline refused entry"). Still waiting: it is only here, and can be
-	// discarded. Refused by the server: say why, then keep it as calories only, choose another food, or discard it.
+	// An entry left by the offline support of older versions that the server refused (docs/design.md, "Connection
+	// required"; one release only): say why, then keep it as calories only, choose another food, or discard it.
 	import { m } from '#lib/paraglide/messages.js';
 	import type { QueuedOp } from '#lib/client/offline/store.ts';
 	import { kcal } from '#lib/shared/format.ts';

@@ -3,7 +3,6 @@
 	// weigh-ins, and New weigh-in, which opens in place as a field.
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
-	import { offline } from '#lib/client/offline/sync.svelte.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { BodyReading } from '#lib/shared/body-types.ts';
 	import { weekdayShort } from '#lib/shared/format.ts';
@@ -50,11 +49,6 @@
 			busy = false;
 		}
 	}
-	const pendingKg = $derived(
-		offline.items.findLast(
-			(i) => i.status === 'pending' && i.preview.kind === 'weight' && i.preview.localDate === date
-		)
-	);
 </script>
 
 <section
@@ -91,11 +85,7 @@
 			</p>
 		{/if}
 		<p class="text-[0.8125rem] leading-[1.3] text-muted">
-			{#if pendingKg?.preview.kind === 'weight'}
-				<span class="font-semibold text-warn"
-					>{m.offline_weight_pending({ kg: show(pendingKg.preview.kg) })}</span
-				>
-			{:else if !latest}
+			{#if !latest}
 				{m.weight_none()}
 			{:else if !previous}
 				{m.weight_first()}

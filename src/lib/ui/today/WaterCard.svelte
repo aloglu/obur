@@ -4,9 +4,8 @@
 	import Check from '@lucide/svelte/icons/check';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { api, NoConnection, save } from '#lib/client/api.ts';
 	import { inlineField } from '#lib/client/inline-field.svelte.ts';
-	import { offline, submit } from '#lib/client/offline/sync.svelte.ts';
 	import { clockTime, deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { parseWaterMl, type BodyReading } from '#lib/shared/body-types.ts';
@@ -37,15 +36,6 @@
 		unit = 'ml';
 	});
 
-	const pendingMl = $derived(
-		offline.items.reduce(
-			(sum, i) =>
-				i.status === 'pending' && i.preview.kind === 'water' && i.preview.localDate === date
-					? sum + i.preview.ml
-					: sum,
-			0
-		)
-	);
 	const lastAdded = $derived(entries.at(-1)?.createdAt);
 
 	async function addOther(event: SubmitEvent) {
@@ -64,20 +54,16 @@
 		if (await add(ml)) inlineField.open = null;
 	}
 
-	/** True once saved or queued. */
+	/** True once saved. */
 	async function add(ml: number): Promise<boolean> {
 		busy = true;
 		try {
-			const result = await submit<{ id: string }>(
-				'/api/v1/body/water',
-				{ id: crypto.randomUUID(), date, zone: deviceZone(), value: ml },
-				{ kind: 'water', localDate: date, ml }
-			);
-			if (result.status === 'queued') {
-				showToast({ message: m.offline_saved(), detail: m.offline_saved_detail() });
-				return true;
-			}
-			const r = result.data;
+			const r = await save<{ id: string }>('/api/v1/body/water', {
+				id: crypto.randomUUID(),
+				date,
+				zone: deviceZone(),
+				value: ml
+			});
 			await onchange();
 			showToast({
 				message: m.toast_water({ ml: String(ml) }),
@@ -87,6 +73,11 @@
 				}
 			});
 			return true;
+		} catch (e) {
+			showToast({
+				message: e instanceof NoConnection ? m.save_no_connection() : m.error_generic()
+			});
+			return false;
 		} finally {
 			busy = false;
 		}
@@ -117,11 +108,7 @@
 			<small class="font-sans text-[0.8125rem] font-semibold tracking-normal text-muted">ml</small>
 		</p>
 		<p class="text-[0.8125rem] leading-[1.3] text-muted">
-			{#if pendingMl}
-				<span class="font-semibold text-warn"
-					>{m.offline_water_pending({ ml: String(pendingMl) })}</span
-				>
-			{:else if lastAdded}
+			{#if lastAdded}
 				{m.water_last_added({ time: clockTime(lastAdded, page.data.timeFormat ?? 'device') })}
 			{:else}
 				{m.water_nothing()}

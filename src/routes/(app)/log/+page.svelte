@@ -59,16 +59,10 @@
 		void goto(resolve('/(app)/scan'));
 	}
 
-	async function logged(entry: DiaryEntry | null) {
+	async function logged(entry: DiaryEntry) {
 		// Close the sheet first: a toast cannot be seen over an open dialog.
 		quick = false;
 		picking = null;
-		if (!entry) {
-			// Offline: confirm first, then return to Today's cached page.
-			showToast({ message: m.offline_saved(), detail: m.offline_saved_detail() });
-			void goto(date === data.today ? resolve('/(app)') : dayHref(date));
-			return;
-		}
 		await goto(dayHref(entry.localDate, entry.id));
 		showToast({
 			message: m.toast_logged(),
@@ -166,7 +160,6 @@
 		{date}
 		today={data.today}
 		meal={sheetMeal}
-		oncalories={() => ((typing = false), (quick = true))}
 		onlogged={async (logged) => {
 			typing = false;
 			await goto(dayHref(logged.date, logged.entryIds));

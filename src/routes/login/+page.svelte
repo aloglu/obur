@@ -1,24 +1,17 @@
 <script lang="ts">
 	// docs/ui.md "Signing in and first day": the icon and name centred on the screen, one button low, no subtitle or invite
-	// line. Anything above the button (a warning, entries waiting) pushes the name up rather than covering it.
-	import CloudOff from '@lucide/svelte/icons/cloud-off';
+	// line. Anything above the button (a warning) pushes the name up rather than covering it.
 	import KeyRound from '@lucide/svelte/icons/key-round';
-	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { appIconFile, DEFAULT_APP_ICON } from '#lib/shared/app-icons.ts';
 	import { m } from '#lib/paraglide/messages.js';
-	import { waitingAccounts, type Waiting } from '#lib/client/offline/waiting.ts';
 	import { describeError, passkeysSupported, signIn } from '#lib/client/passkeys.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 
 	let busy = $state(false);
 	let problem = $state('');
-	let waiting = $state<Waiting[]>([]);
-	onMount(() => {
-		waiting = waitingAccounts();
-	});
 
 	async function start() {
 		busy = true;
@@ -59,17 +52,6 @@
 	<div class="act relative flex flex-col justify-end gap-2.5">
 		{#if !passkeysSupported()}<Notice>{m.error_unsupported()}</Notice>{/if}
 		{#if problem}<Notice>{problem}</Notice>{/if}
-		{#each waiting as w, i (i)}
-			<Notice
-				icon={CloudOff}
-				title={w.count === 1
-					? m.login_waiting_one()
-					: m.login_waiting_many({ count: String(w.count) })}
-				>{w.count === 1
-					? m.login_waiting_one_body({ name: w.name })
-					: m.login_waiting_many_body({ name: w.name })}</Notice
-			>
-		{/each}
 		<Button wide disabled={busy} onclick={start}>
 			<KeyRound size={20} aria-hidden="true" />
 			{busy ? m.common_working() : m.login_button()}

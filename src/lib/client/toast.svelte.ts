@@ -18,7 +18,7 @@ export function showToast(message: Omit<ToastMessage, 'id'>): void {
 	clearTimeout(timer);
 	toast.current = { ...message, id: nextId++ };
 	timer = setTimeout(dismissToast, LIFETIME_MS);
-	// Carried over a full page load (an offline move can fall back to one), without its Undo action.
+	// Carried over a full page load (a failed page change falls back to one), without its Undo action.
 	try {
 		sessionStorage.setItem(
 			CARRY_KEY,

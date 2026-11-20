@@ -1,12 +1,11 @@
 <script lang="ts">
 	// New weigh-in, opening in place like Other amount (docs/ui.md, "Inline fields"): a button that turns into a kg
-	// field with a round check. Saved through the offline queue; the toast offers Undo and says when a calculated
+	// field with a round check. Saved at once (it says so when it can't be); the toast offers Undo and says when a calculated
 	// budget moved. Used on Today's Weight card and on an empty Progress.
 	import Check from '@lucide/svelte/icons/check';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { api, NoConnection, save as send } from '#lib/client/api.ts';
 	import { inlineField } from '#lib/client/inline-field.svelte.ts';
-	import { submit } from '#lib/client/offline/sync.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { kcal } from '#lib/shared/format.ts';
@@ -46,17 +45,13 @@
 	async function save(value: number) {
 		busy = true;
 		try {
-			const result = await submit<{ id: string; budget?: BudgetChange }>(
-				'/api/v1/body/weight',
-				{ id: crypto.randomUUID(), date, zone: deviceZone(), value },
-				{ kind: 'weight', localDate: date, kg: value }
-			);
+			const r = await send<{ id: string; budget?: BudgetChange }>('/api/v1/body/weight', {
+				id: crypto.randomUUID(),
+				date,
+				zone: deviceZone(),
+				value
+			});
 			inlineField.open = null;
-			if (result.status === 'queued') {
-				showToast({ message: m.offline_saved(), detail: m.offline_saved_detail() });
-				return;
-			}
-			const r = result.data;
 			await onchange();
 			showToast({
 				message: m.toast_weight({ kg: show(value) }),
@@ -65,6 +60,10 @@
 					await api('POST', `/api/v1/body/weight/${r.id}?action=delete`, {});
 					await onchange();
 				}
+			});
+		} catch (e) {
+			showToast({
+				message: e instanceof NoConnection ? m.save_no_connection() : m.error_generic()
 			});
 		} finally {
 			busy = false;

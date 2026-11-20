@@ -76,8 +76,8 @@ export async function savePreferences(change: Partial<Preferences>): Promise<voi
 }
 
 /**
- * Shows the app in another language: the cookie the server draws pages in, then a reload. Saved copies of pages hold
- * their text, so the prepared ones and the cached ones go first (docs/design.md, "Interface language").
+ * Shows the app in another language: the cookie the server draws pages in, then a reload. Prepared pages hold their
+ * text, so they go first (docs/design.md, "Interface language").
  */
 export async function showLanguage(language: Language, chosen = false): Promise<void> {
 	// Unasked, once per language and tab: a browser that refuses the cookie would otherwise reload forever.
@@ -89,9 +89,6 @@ export async function showLanguage(language: Language, chosen = false): Promise<
 	}
 	document.cookie = `${LANGUAGE_COOKIE}=${language}; path=/; max-age=${YEAR}; samesite=lax${secure()}`;
 	forgetPrepared();
-	if ('caches' in globalThis)
-		for (const key of await caches.keys())
-			if (key.startsWith('obur-data')) await caches.delete(key);
 	location.reload();
 }
 

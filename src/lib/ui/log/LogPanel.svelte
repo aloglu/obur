@@ -27,7 +27,6 @@
 	import X from '@lucide/svelte/icons/x';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
-	import { recentlyUnreachable } from '#lib/client/offline/sync.svelte.ts';
 	import type { Meal, SavedMealSummary } from '#lib/shared/diary-types.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { dayTitle, kcal, mealNameTo } from '#lib/shared/format.ts';
@@ -95,7 +94,7 @@
 			recent = (await api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')).results;
 			keep({ recent });
 		} catch {
-			// Keep what was shown; offline, the saved copy normally answers.
+			// No connection: keep what was shown.
 		}
 		void fitRecent();
 	}
@@ -160,15 +159,13 @@
 		timer = setTimeout(async () => {
 			let found: FoodSearchResult[] | undefined;
 			try {
-				// Unreachable a moment ago: straight to this device's copy (iOS can leave requests hanging).
-				if (recentlyUnreachable()) throw new Error('unreachable');
 				found = (
-					await Promise.race([
-						api<{ results: FoodSearchResult[] }>('GET', `/api/v1/foods?q=${encodeURIComponent(q)}`),
-						new Promise<never>((_, reject) =>
-							setTimeout(() => reject(new Error('timeout')), SEARCH_TIMEOUT_MS)
-						)
-					])
+					await api<{ results: FoodSearchResult[] }>(
+						'GET',
+						`/api/v1/foods?q=${encodeURIComponent(q)}`,
+						undefined,
+						SEARCH_TIMEOUT_MS
+					)
 				).results;
 			} catch {
 				// Unreachable or refused: say it needs a connection instead of showing nothing.

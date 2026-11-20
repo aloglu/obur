@@ -3,7 +3,7 @@
 	import DayMealFields from '../DayMealFields.svelte';
 	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { submit } from '#lib/client/offline/sync.svelte.ts';
+	import { NoConnection, recordIds, save as send } from '#lib/client/api.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { addDays } from '#lib/shared/diary-rules.ts';
 	import { MEALS, type DiaryEntry, type Meal } from '#lib/shared/diary-types.ts';
@@ -18,8 +18,7 @@
 		date: string;
 		today: string;
 		meal: Meal;
-		/** The saved entry, or null when it was kept on this device to send later. */
-		onsaved: (entry: DiaryEntry | null) => void;
+		onsaved: (entry: DiaryEntry) => void;
 		onclose: () => void;
 	}
 	let { date, today, meal: presetMeal, onsaved, onclose }: Props = $props();
@@ -29,6 +28,7 @@
 	let day = $state(untrack(() => date));
 	let meal = $state<Meal>(untrack(() => presetMeal));
 	let busy = $state(false);
+	const idFor = recordIds();
 	let problem = $state('');
 	const value = $derived(parseDecimal(kcalText));
 	const dayOptions = $derived(date === today ? [today, addDays(today, -1)] : [date, today]);
@@ -39,29 +39,17 @@
 		busy = true;
 		problem = '';
 		try {
-			const result = await submit<DiaryEntry>(
-				'/api/v1/diary/entries',
-				{
-					kind: 'quick',
-					id: crypto.randomUUID(),
-					date: day,
-					meal,
-					zone: deviceZone(),
-					kcal: value,
-					description: description || null
-				},
-				{
-					kind: 'diary',
-					localDate: day,
-					meal,
-					name: description || m.entry_quick(),
-					quantity: m.entry_quick(),
-					kcal: value
-				}
-			);
-			onsaved(result.status === 'sent' ? result.data : null);
-		} catch {
-			problem = m.error_generic();
+			const entry = {
+				kind: 'quick',
+				date: day,
+				meal,
+				zone: deviceZone(),
+				kcal: value,
+				description: description || null
+			};
+			onsaved(await send<DiaryEntry>('/api/v1/diary/entries', { id: idFor(entry), ...entry }));
+		} catch (e) {
+			problem = e instanceof NoConnection ? m.save_no_connection() : m.error_generic();
 		} finally {
 			busy = false;
 		}

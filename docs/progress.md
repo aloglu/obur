@@ -32,7 +32,15 @@ built in the worker from the catalog in every language, picked by the language c
 in 10 s or within a minute of a failure; failed page data makes SvelteKit load the page in full, which shows it.
 Old caches (`obur-data-*`, `obur-account`) are deleted on activation. The start no longer downloads 7 pages and
 their data (the code preloading stays). Browser tests not yet run (offline.e2e.ts still expects saved pages).
-Next: 3c, saves without the queue.
+3c done: saves go to the server once (`client/api.ts`: `save`, 10 s, `NoConnection`, `recordIds` keeps one ID
+while the entry is unchanged, so Save tapped again after a lost answer counts once); a failed save keeps its sheet
+open with "Couldn't save. Check your connection and try again."; a day note says "Not saved" and goes with the
+next change. The queue, its review rows, the back-online notices and the sign-in warning are gone; an older
+version's queue is sent once at the start (`client/old-queue.svelte.ts`, one release), refused entries use the
+existing Today card and sheet, sign-out clears it. The worker now tries the server for 3 s, not 10, in the minute
+after a failure (the browser tests caught a first version that showed the connection page for the whole minute).
+`tests/e2e/connection.e2e.ts` replaces `offline.e2e.ts` (34 passed, 1 Chromium-only skipped on WebKit).
+Next: full checks, then step 3's speed measurement against the baseline.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 

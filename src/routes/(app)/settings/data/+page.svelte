@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
-	import { clearDeviceData } from '#lib/client/offline/sync.svelte.ts';
+	import { clearOldQueue } from '#lib/client/old-queue.svelte.ts';
 	import { accountHeaders, wrongAccount } from '#lib/client/account.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -287,7 +287,8 @@
 			() =>
 				withRecentAuth(async () => {
 					await api('DELETE', '/api/v1/account', {});
-					if (data.user && !(await clearDeviceData(data.user.id)))
+					navigator.serviceWorker?.controller?.postMessage({ type: 'obur:signed-out' });
+					if (data.user && !(await clearOldQueue(data.user.id)))
 						showToast({ message: m.device_clear_blocked() });
 					confirming = false;
 					await invalidateAll();
