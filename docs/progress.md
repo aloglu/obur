@@ -76,7 +76,9 @@ fails on `47752e2` (2 of 10), so it is older. Fixed in the test (owner's go): it
 again over the next page. A probe found no second load after a normal sign-in (15 of 15). The test now waits for
 the page to finish loading: 20 of 20 passed.
 Browser suite: 289 passed, 19 skipped, 1 failed (that title test).
-Next: image tests and the agents' install guide check, then ask before tagging rc.5.
+Image `obur:test` built from `0ff86de`: smoke, off-site outage and upgrade from beta.19 passed. Agents' install
+guide checked; it now explains the `obur: error:` log line. Hand checks for the owner: `~/Documents` checklist.
+Next: ask the owner before tagging rc.5.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 
