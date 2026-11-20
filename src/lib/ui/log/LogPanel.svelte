@@ -11,7 +11,7 @@
 
 <script lang="ts">
 	// docs/ui.md "Logging": search on top; Speak, Scan and Type it tiles; Recent always there, filling the room it has;
-	// typing shows results; the meal preset pill. Calories alone stay one tap from search, also offline.
+	// typing shows results; the meal preset pill. Calories alone stay one tap from search.
 	import { page } from '$app/state';
 	import { savePreferences } from '#lib/client/prefs.ts';
 	import { onMount, tick, untrack } from 'svelte';
@@ -26,9 +26,8 @@
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api, ApiError } from '#lib/client/api.ts';
+	import { api } from '#lib/client/api.ts';
 	import { recentlyUnreachable } from '#lib/client/offline/sync.svelte.ts';
-	import { LOCAL_SEARCH_PATH } from '#lib/shared/local-food-search.ts';
 	import type { Meal, SavedMealSummary } from '#lib/shared/diary-types.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { dayTitle, kcal, mealNameTo } from '#lib/shared/format.ts';
@@ -151,21 +150,8 @@
 			: m.saved_many_items({ count: String(s.itemCount), kcal: total });
 	};
 
-	/** A server this slow counts as unreachable; the device's copy answers instead. */
-	const SEARCH_TIMEOUT_MS = 3000;
-	/** Food search from the service worker's copy of the person's foods, or undefined without one. */
-	async function searchOnDevice(q: string): Promise<FoodSearchResult[] | undefined> {
-		try {
-			const boost = (recent ?? []).map((r) => r.id).join(',');
-			const response = await fetch(
-				`${LOCAL_SEARCH_PATH}?q=${encodeURIComponent(q)}&boost=${encodeURIComponent(boost)}`
-			);
-			if (!response.ok) return undefined;
-			return ((await response.json()) as { results: FoodSearchResult[] }).results;
-		} catch {
-			return undefined;
-		}
-	}
+	/** A server this slow counts as unreachable: search says it needs a connection. */
+	const SEARCH_TIMEOUT_MS = 10_000;
 
 	$effect(() => {
 		const q = query.trim();
@@ -184,16 +170,14 @@
 						)
 					])
 				).results;
-			} catch (e) {
-				// The server answered and refused (signed out, say): not a case for the copy.
-				if (!(e instanceof ApiError && e.status < 500)) found = await searchOnDevice(q);
+			} catch {
+				// Unreachable or refused: say it needs a connection instead of showing nothing.
 			}
 			if (q !== query.trim()) return;
 			if (found) {
 				results = found;
 				searchedFor = q;
 			}
-			// Nothing on this device either: say it needs a connection instead of showing nothing.
 			searchFailed = !found;
 		}, 180);
 	});
@@ -332,12 +316,7 @@
 			aria-label={m.log_results()}
 		>
 			{#if searchFailed}
-				<div class="flex flex-col items-start gap-2 py-2">
-					<p class="text-[0.9375rem] text-muted">{m.log_search_offline()}</p>
-					<button type="button" onclick={onquick} class="font-semibold text-accent underline"
-						>{m.log_quick_add()}</button
-					>
-				</div>
+				<p class="py-2 text-[0.9375rem] text-muted">{m.foods_search_offline()}</p>
 			{:else if searchedFor && results.length === 0}
 				<div class="flex flex-col items-start gap-2 py-2">
 					<p class="text-[0.9375rem] text-muted">{m.log_no_results({ query: searchedFor })}</p>

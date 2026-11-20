@@ -7,7 +7,6 @@ import type { FoodInput } from '../../../shared/food-input.ts';
 import { deriveNutrients, type NutrientValue } from '../../../shared/nutrients.ts';
 import { matchKey, sameFood, type MatchableFood } from '../../../shared/food-match.ts';
 import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';
-import type { OfflineFood } from '../../../shared/local-food-search.ts';
 import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
 import { MAX_BULK_FOODS, type FoodAction } from '../../../shared/food-bulk.ts';
 import type { ScanEdits } from '../../../shared/scan-edits.ts';
@@ -730,88 +729,6 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		/** Shared reference data; no personal rows, so no identity is needed. */
 		async householdMeasures() {
 			return db.select().from(householdMeasures).orderBy(asc(householdMeasures.position));
-		},
-
-		/**
-		 * What the person's foods look like now, cheaply: changes whenever a food they can log is added, edited,
-		 * archived, restored or deleted. The app's copy for offline search is fetched again only when it changes.
-		 */
-		async offlineFoodsStamp(userId: string): Promise<string> {
-			return withUser(db, userId, async (tx) => {
-				const [row] = await tx
-					.select({
-						changed: sql<string>`coalesce(max(${foods.updatedAt}), 'epoch')::text`,
-						live: sql<number>`count(*) filter (where ${foods.archivedAt} is null and ${foods.deletedAt} is null)::int`
-					})
-					.from(foods);
-				return `${row.changed}|${row.live}`;
-			});
-		},
-
-		/**
-		 * Every food the person can log (their own and the built-in ones; not archived or deleted), in full, for the
-		 * app's offline search and amount sheet (docs/design.md, "Offline scope").
-		 */
-		async offlineFoods(userId: string): Promise<OfflineFood[]> {
-			return withUser(db, userId, async (tx) => {
-				const rows = await tx
-					.select({ food: foods, mine: sql<boolean>`${foods.ownerId} = app_current_user_id()` })
-					.from(foods)
-					.where(and(isNull(foods.archivedAt), isNull(foods.deletedAt)));
-				const live = sql`(select id from foods where archived_at is null and deleted_at is null)`;
-				const values = await tx
-					.select({
-						foodId: foodNutrients.foodId,
-						code: foodNutrients.code,
-						value: foodNutrients.value,
-						qualifier: foodNutrients.qualifier
-					})
-					.from(foodNutrients)
-					.where(sql`${foodNutrients.foodId} in ${live}`);
-				const portions = await tx
-					.select({
-						foodId: foodServings.foodId,
-						id: foodServings.id,
-						name: foodServings.name,
-						amount: foodServings.amount,
-						unit: foodServings.unit,
-						source: foodServings.source
-					})
-					.from(foodServings)
-					.where(sql`${foodServings.foodId} in ${live}`)
-					.orderBy(asc(foodServings.amount));
-				// Grouped once: thousands of foods must not mean thousands of passes over every value.
-				const byFood = <T extends { foodId: string }>(list: T[]) => {
-					const map = new Map<string, T[]>();
-					for (const item of list) {
-						const group = map.get(item.foodId);
-						if (group) group.push(item);
-						else map.set(item.foodId, [item]);
-					}
-					return map;
-				};
-				const nutrientsOf = byFood(values);
-				const servingsOf = byFood(portions);
-				// With the stored search text, which holds a built-in food's reviewed aliases too (2026-11-20 audit).
-				return rows.map((row) => ({
-					...toDetail(
-						row,
-						(nutrientsOf.get(row.food.id) ?? []).map(({ code, value, qualifier }) => ({
-							code,
-							value,
-							qualifier
-						})) as NutrientValue[],
-						(servingsOf.get(row.food.id) ?? []).map(({ id, name, amount, unit, source }) => ({
-							id,
-							name,
-							amount,
-							unit,
-							source
-						}))
-					),
-					searchKey: row.food.searchKey
-				}));
-			});
 		},
 
 		async foodsById(userId: string, ids: string[]): Promise<FoodDetail[]> {

@@ -24,7 +24,10 @@ of about a second stops it). Plan, one commit each:
    deletes the queue. Measure again; stop if slower.
 4. New search rule in shared TypeScript (word starts, per-word typo limits), server only, with tests; measure.
 
-Next: step 3 (owner read and agreed to the design, 2026-11-20). Owner accepted that entries left in an old queue
+Step 3 in parts. 3a done: offline search and the food copy removed (`local-food-search.ts`,
+`GET /api/v1/foods/offline`, `catalog.offlineFoods`/`offlineFoodsStamp`, the worker's copy, the start's request);
+Log search says "Search needs a connection." when the server can't answer in 10 s. Next: 3b, saved copies.
+Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 
 ## Owner's audit of rc.4 (2026-11-20): verified, fixing for rc.5
