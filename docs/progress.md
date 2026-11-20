@@ -2,6 +2,20 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
+
+Owner's go, with two conditions: real technical debt goes away, and no speed loss a person can feel (a slowdown
+of about a second stops it). Plan, one commit each:
+1. Design written: `docs/design.md` "Connection required" and "Search rule", `docs/ui.md` (connection screen,
+   one-release card for refused old entries), CLAUDE.md. **Done; waiting for the owner to read it.**
+2. Measure first (phone WebKit, simulated phone network): app start, a tap on each main tab, a food save.
+3. Remove offline support: queue, food copy, saved pages, offline warm-up, offline e2e; keep the service worker
+   for push, code files and pages prepared ahead; connection screen; first start sends old queued entries, then
+   deletes the queue. Measure again; stop if slower.
+4. New search rule in shared TypeScript (word starts, per-word typo limits), server only, with tests; measure.
+
+Next: the owner reads the design text (step 1).
+
 ## Owner's audit of rc.4 (2026-11-20): verified, fixing for rc.5
 
 Report outside the repo, checked against `517f4db`; every finding real. Owner's go, one commit each:

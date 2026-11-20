@@ -56,7 +56,7 @@
 - Diary entries keep their own nutrient snapshots and the user's chosen diary day/time-zone context. Only an explicit diary correction may change an entry's nutrition; catalog edits must not silently rewrite history.
 - Parsers propose actions; they never invent nutrients. Confirm inferred food, amount, unit and date before saving. Explicit calories-only input is handled as such, not fabricated catalog nutrition.
 - Daily budget = base burn (BMR × about 1.2 from onboarding, or a fixed number the person sets) + manually entered activity calories (extra above an inactive day) − goal deficit. Imported or unclear activity is recorded but not added until its meaning is mapped. Targets are versioned; past days keep their budgets. No workout types or exercise library. No algorithmic targets for minors, pregnancy or breastfeeding.
-- Offline support follows the bounded scope in the design: cached viewing and queued new records with account isolation, retry deduplication and server validation. Do not implement unspecified last-write-wins editing.
+- obur needs a connection (owner, 2026-11-20): no offline queue and no saved copies of private data on the device. Keep retry-safe creates (client-made IDs, a repeated save answered as saved). Do not add offline features or last-write-wins editing without the owner's decision.
 - Put invariants in database constraints as well as validation. Make each logical multi-row database operation atomic and preserve legitimate repeated entries.
 - Imports require a dry run and both file-level retry protection and a defined overlapping-history policy. A file hash alone is not row-level deduplication.
 - Exports must include the portable data and dependency closure defined in the design. Verify manifests and keep complex export/import round trips passing.
@@ -74,7 +74,7 @@
 ## Verification and handoff
 
 - Write meaningful tests alongside behavior changes, with a regression test for a reproducible bug when practical. Avoid tests that merely repeat implementation or test trivial rendering.
-- Test database behavior against real PostgreSQL. Test isolation, unit conversion, imports, snapshots, offline retries and recovery thoroughly, including failure cases: these are where real data gets lost or leaked.
+- Test database behavior against real PostgreSQL. Test isolation, unit conversion, imports, snapshots, save retries and recovery thoroughly, including failure cases: these are where real data gets lost or leaked.
 - Use parser development and held-out fixtures separately. Report complete-result accuracy, serious errors, correction time and end-to-end latency, not only aggregate field scores. Audio fixtures are needed to evaluate speech changes.
 - Test key UI flows with Playwright on phone-size WebKit and desktop Chromium, with accessible controls and selected visual comparisons. Use supported virtual WebAuthn tooling; never ship a test login bypass.
 - Supplement browser emulation with real-phone checks for passkeys, installed PWA behavior, camera/microphone permissions and interrupted connectivity.
