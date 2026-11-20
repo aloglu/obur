@@ -16,6 +16,7 @@ import {
 	FOOD_COPY_PATH,
 	LOCAL_SEARCH_PATH,
 	searchable,
+	type OfflineFood,
 	searchLocal,
 	type SearchableFood
 } from './lib/shared/local-food-search.ts';
@@ -128,8 +129,13 @@ async function localFoods() {
 	if (foodsCopy?.owner === owner) return foodsCopy;
 	const saved = await ownCopy(await (await caches.open(DATA)).match(foodCopyKey()));
 	if (!saved) return undefined;
-	const { foods } = (await saved.json()) as { foods: FoodDetail[] };
-	foodsCopy = { owner, foods: searchable(foods), byId: new Map(foods.map((f) => [f.id, f])) };
+	const { foods } = (await saved.json()) as { foods: OfflineFood[] };
+	const prepared = searchable(foods);
+	foodsCopy = {
+		owner,
+		foods: prepared,
+		byId: new Map(prepared.map(({ food }) => [food.id, food]))
+	};
 	return foodsCopy;
 }
 
@@ -441,8 +447,7 @@ async function networkFirst(event: FetchEvent): Promise<Response> {
 	// Known to be unreachable a moment ago: answer from the saved copy without waiting, and keep checking the
 	// network in the background (which also refreshes the copy and ends the hold once it is back).
 	if (Date.now() < unreachableUntil) {
-		const cached =
-			await offlineAnswer(request, cache, key);
+		const cached = await offlineAnswer(request, cache, key);
 		if (cached) {
 			event.waitUntil(fromNetwork(event, request.clone(), cache, key, false).catch(() => {}));
 			void announce(request, 'cached');
@@ -456,8 +461,7 @@ async function networkFirst(event: FetchEvent): Promise<Response> {
 		const quiet = response.status >= 500 && isPageData(key) && nothingNew(askedParts(request));
 		return quiet ? pageData(quiet) : response;
 	} catch {
-		const cached =
-			await offlineAnswer(request, cache, key);
+		const cached = await offlineAnswer(request, cache, key);
 		if (cached) void announce(request, 'cached');
 		if (cached) return cached;
 		// A refresh of what pages share, with nothing saved to answer it: nothing changed, the page stays.

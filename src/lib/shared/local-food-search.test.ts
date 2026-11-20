@@ -40,6 +40,11 @@ describe('searchLocal', () => {
 	it('orders own foods first, then exact, starts, word starts and anywhere, then by name', () => {
 		expect(ids('yogurt')).toEqual(['2', '1', '3', '4']);
 	});
+	it('uses the stored search text when the copy has it (a built-in food’s aliases)', () => {
+		const withAlias = searchable([{ ...food('7', 'Banana'), searchKey: 'banana plantain' }]);
+		expect(searchLocal(withAlias, 'plantain').map((r) => r.id)).toEqual(['7']);
+		expect(withAlias[0].food).not.toHaveProperty('searchKey');
+	});
 	it('puts boosted (recent) foods first among real matches', () => {
 		expect(ids('yogurt', ['1'])[0]).toBe('1');
 	});

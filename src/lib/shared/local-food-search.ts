@@ -9,9 +9,15 @@ export interface SearchableFood {
 	key: string;
 }
 
+/** A food in the copy, with the server's search text (a built-in food's aliases are only there). */
+export type OfflineFood = FoodDetail & { searchKey?: string };
+
 /** Prepares a copy once, so each search only compares strings. */
-export function searchable(foods: FoodDetail[]): SearchableFood[] {
-	return foods.map((food) => ({ food, key: foodSearchKey(food.name, food.brand) }));
+export function searchable(foods: OfflineFood[]): SearchableFood[] {
+	return foods.map(({ searchKey, ...food }) => ({
+		food,
+		key: searchKey ?? foodSearchKey(food.name, food.brand)
+	}));
 }
 
 export function searchLocal(

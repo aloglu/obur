@@ -7,6 +7,7 @@ import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
 import { foodFingerprint } from '../../../shared/diary-rules.ts';
 import { bulkParts, MAX_BULK_FOODS } from '../../../shared/food-bulk.ts';
 import { FoodInput } from '../../../shared/food-input.ts';
+import { searchable, searchLocal } from '../../../shared/local-food-search.ts';
 import { foodSearchKey } from '../../../shared/search-text.ts';
 import { CatalogError, createCatalog } from './service.ts';
 
@@ -792,12 +793,18 @@ describe('the copy for offline search', () => {
 		await catalog.createFood(ZEYNEP, food({ name: 'Zeynep’s soup' }));
 		const yogurt = await builtIn('Yogurt, plain');
 
+		// A built-in food's reviewed aliases live in its stored search text (curated.ts).
+		await admin`update foods set search_key = 'yogurt plain yoghurt' where id = ${yogurt}`;
+
 		const copy = await catalog.offlineFoods(MEHMET);
 		expect(copy.map((f) => f.id).sort()).toEqual([ayran, yogurt].sort());
 		// The same details the food's own page gets, so an amount sheet works from the copy.
-		expect(copy.find((f) => f.id === ayran)).toEqual(await catalog.getFood(MEHMET, ayran));
-		expect(copy.find((f) => f.id === yogurt)).toEqual(await catalog.getFood(MEHMET, yogurt));
+		const detail = (id: string) => searchable(copy).find((f) => f.food.id === id)!.food;
+		expect(detail(ayran)).toEqual(await catalog.getFood(MEHMET, ayran));
+		expect(detail(yogurt)).toEqual(await catalog.getFood(MEHMET, yogurt));
 		expect(await catalog.offlineFoods(randomUUID())).toEqual(copy.filter((f) => f.id === yogurt));
+		// Offline search finds it by its alias, as the server does (2026-11-20 audit).
+		expect(searchLocal(searchable(copy), 'yoghurt').map((r) => r.id)).toEqual([yogurt]);
 	});
 
 	it('says it changed when a food is added, edited, archived, restored or deleted, and only then', async () => {

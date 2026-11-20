@@ -7,6 +7,7 @@ import type { FoodInput } from '../../../shared/food-input.ts';
 import { deriveNutrients, type NutrientValue } from '../../../shared/nutrients.ts';
 import { matchKey, sameFood, type MatchableFood } from '../../../shared/food-match.ts';
 import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';
+import type { OfflineFood } from '../../../shared/local-food-search.ts';
 import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
 import { MAX_BULK_FOODS, type FoodAction } from '../../../shared/food-bulk.ts';
 import type { ScanEdits } from '../../../shared/scan-edits.ts';
@@ -751,7 +752,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		 * Every food the person can log (their own and the built-in ones; not archived or deleted), in full, for the
 		 * app's offline search and amount sheet (docs/design.md, "Offline scope").
 		 */
-		async offlineFoods(userId: string): Promise<FoodDetail[]> {
+		async offlineFoods(userId: string): Promise<OfflineFood[]> {
 			return withUser(db, userId, async (tx) => {
 				const rows = await tx
 					.select({ food: foods, mine: sql<boolean>`${foods.ownerId} = app_current_user_id()` })
@@ -791,8 +792,9 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 				};
 				const nutrientsOf = byFood(values);
 				const servingsOf = byFood(portions);
-				return rows.map((row) =>
-					toDetail(
+				// With the stored search text, which holds a built-in food's reviewed aliases too (2026-11-20 audit).
+				return rows.map((row) => ({
+					...toDetail(
 						row,
 						(nutrientsOf.get(row.food.id) ?? []).map(({ code, value, qualifier }) => ({
 							code,
@@ -806,8 +808,9 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 							unit,
 							source
 						}))
-					)
-				);
+					),
+					searchKey: row.food.searchKey
+				}));
 			});
 		},
 

@@ -28,6 +28,8 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
   deletes removed ones, inserts new ones. Rename keeps the fingerprint. DB tests (catalog; diary retry by portion).
 - Step 5 done: recipe and saved-meal `refresh` claim the version with a conditional update before reading the
   contents. DB tests run two refreshes against a held row lock (both fail before: both succeeded).
+- Step 6 done: the offline copy carries each food's stored `searchKey` (aliases); `searchable` uses it and keeps
+  it out of the details. Unit and DB tests.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
