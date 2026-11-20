@@ -53,6 +53,9 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
     the page settled, 0.6 to 0.8 s of server time in all, 40 to 85 ms each (Progress, More and Profile the slowest).
     Recommendation: leave it.
 - `docs/design.md` updated for steps 1 to 9.
+- Checks on `c66a1c0`: lint, check, Vitest 1194 passed; full e2e 302 passed, 19 skipped by design; image smoke,
+  off-site and upgrade (beta.19) tests passed. Next: owner decides on the import thread and start-up preparation, and
+  whether to tag rc.5 (ask first).
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
