@@ -12,7 +12,8 @@ You need a domain managed by Cloudflare.
    (`cloudflared`) on the machine running obur, as the dashboard shows (Unraid and TrueNAS have it as an app).
 2. Add a **public hostname**, e.g. `obur.example.com`, with service `http://localhost:8040` (or the server's address
    and obur's port, if `cloudflared` runs in another container or machine; obur must then listen beyond loopback:
-   `OBUR_BIND_ADDRESS=0.0.0.0`).
+   `OBUR_BIND_ADDRESS=0.0.0.0`). If `cloudflared` runs on another machine, also set
+   `OBUR_TRUSTED_PROXIES` to that machine's address (for example `OBUR_TRUSTED_PROXIES=192.168.1.20`).
 3. Open `https://obur.example.com`.
 
 ## Tailscale (only your own devices)
@@ -36,6 +37,13 @@ obur.example.com {
 
 Then `sudo systemctl reload caddy` and open `https://obur.example.com`. Open ports 80 and 443 in the VPS firewall,
 and nothing else for obur.
+
+## Which addresses obur believes
+
+Sign-in attempts are limited for each person's address. A proxy tells obur that address, and obur believes it only
+from a proxy on the same machine or in a Docker container. For a proxy on another machine, set
+`OBUR_TRUSTED_PROXIES` to its address or network (comma-separated, for example `192.168.1.20` or `10.8.0.0/24`).
+Without it, everyone who comes through that proxy shares one address, and so one limit.
 
 ## Caches in front of obur
 

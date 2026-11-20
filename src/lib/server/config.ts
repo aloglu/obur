@@ -2,13 +2,16 @@
 import {
 	LABELS_URL,
 	OBUR_PREVIEW_LANGUAGES,
+	OBUR_TRUSTED_PROXIES,
 	PUBLIC_ORIGIN,
 	SPEECH_URL,
 	VAPID_PUBLIC_KEY,
 	WEBAUTHN_RP_ID,
 	WEBAUTHN_RP_NAME
 } from '$app/env/private';
+import type { BlockList } from 'node:net';
 import { enabledLanguages, type Language } from '#lib/shared/languages.ts';
+import { clientAddress, trustedProxies } from './client-ip.ts';
 
 export interface ServerConfig {
 	origin: string;
@@ -23,6 +26,8 @@ export interface ServerConfig {
 	pushKey: string | null;
 	/** The interface languages people can use here (released ones and any in preview; shared/languages.ts). */
 	languages: readonly Language[];
+	/** Where a forwarded client address is believed from (client-ip.ts). */
+	trustedProxies: BlockList;
 }
 
 /** The passkey domain must be the origin's host or a parent domain of it. */
@@ -44,8 +49,17 @@ function load(): ServerConfig {
 		speechUrl: SPEECH_URL ?? null,
 		ocrUrl: LABELS_URL ?? null,
 		pushKey: VAPID_PUBLIC_KEY ?? null,
-		languages: enabledLanguages(OBUR_PREVIEW_LANGUAGES)
+		languages: enabledLanguages(OBUR_PREVIEW_LANGUAGES),
+		trustedProxies: trustedProxies(OBUR_TRUSTED_PROXIES ?? null)
 	};
 }
 
 export const config = load();
+
+/** The client's address for a request, for the sign-in limits (client-ip.ts). */
+export const clientIp = (event: { getClientAddress(): string; request: Request }): string =>
+	clientAddress(
+		event.getClientAddress(),
+		event.request.headers.get('x-forwarded-for'),
+		config.trustedProxies
+	);

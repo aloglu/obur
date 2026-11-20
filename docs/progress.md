@@ -29,6 +29,9 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   discards them. Browser test (Chromium) fails without the fix.
 - R05 done: every page and API answer without its own rule gets `Cache-Control: private, no-store`
   (`hooks.server.ts`); code files keep `immutable`. Browser test; install guide says not to cache every response.
+- R07 done: forwarded addresses are believed only from loopback, Docker's 172.16.0.0/12 and the machine's own
+  networks, or only from `OBUR_TRUSTED_PROXIES` when it is set (validated at start; `config.trustedProxies`). Unit
+  tests found `10.0.0.0/` read as "everything"; fixed. Install guide and `deploy/.env.example` explain the setting.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

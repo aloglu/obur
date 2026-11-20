@@ -1,5 +1,6 @@
 import { defineEnvVars } from '@sveltejs/kit/env';
 import * as v from 'valibot';
+import { parseProxy } from '#lib/server/client-ip.ts';
 
 // Validated when the app starts. Real hostnames live only in each installation's .env (CLAUDE.md).
 export const variables = defineEnvVars({
@@ -58,6 +59,17 @@ export const variables = defineEnvVars({
 			if (url.protocol !== 'http:' && url.protocol !== 'https:')
 				throw new Error('LABELS_URL must be http(s)');
 			return url.origin;
+		}
+	},
+	OBUR_TRUSTED_PROXIES: {
+		description:
+			"Proxies whose X-Forwarded-For is believed, comma-separated addresses or networks (10.0.0.5, 172.18.0.0/16). Unset: loopback, Docker's 172.16.0.0/12 and this machine's own networks.",
+		schema: (value) => {
+			if (!value) return null;
+			for (const entry of value.split(',').filter((e) => e.trim()))
+				if (!parseProxy(entry))
+					throw new Error(`OBUR_TRUSTED_PROXIES: not an address or network: ${entry.trim()}`);
+			return value;
 		}
 	},
 	OBUR_PREVIEW_LANGUAGES: {

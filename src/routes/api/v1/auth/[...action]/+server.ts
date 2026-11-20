@@ -2,8 +2,7 @@
 import { error, json, type RequestEvent, type RequestHandler } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { auth, SESSION_COOKIE } from '#lib/server/auth.ts';
-import { config } from '#lib/server/config.ts';
-import { clientIp } from '#lib/server/client-ip.ts';
+import { clientIp, config } from '#lib/server/config.ts';
 import { clearSessionCookie, readJson, respond, setSessionCookie } from '#lib/server/http.ts';
 import type { SessionRecord } from '#lib/server/modules/auth/index.ts';
 import { reminders } from '#lib/server/reminders.ts';
