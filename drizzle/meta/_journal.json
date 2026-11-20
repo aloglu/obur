@@ -428,6 +428,13 @@
       "when": 1795181621697,
       "tag": "0060_search_path_pg_temp",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1795208624921,
+      "tag": "0061_reindex_food_search_pg_18_7",
+      "breakpoints": true
     }
   ]
 }

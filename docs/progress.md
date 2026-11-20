@@ -20,6 +20,11 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   takes no backup while a restore is pending; `finish` moves aside a local repository made for another database.
   `deploy/obur/offsite-restore-test.sh` (fails on rc.5's image, passes now; in the release workflow). Smoke,
   off-site outage and upgrade-from-beta.19 tests passed on the new image.
+- R04 done: Node 24.22.3 and PostgreSQL 18.7 (image, release workflow, development database); Node's own npm
+  (11.19.1) reads the lockfile, so the separate npm install is gone. Migration 0061 rebuilds the food search GIN
+  index once (18.7 notes: GIN bugs could point entries at wrong rows). The notes' warning about incremental backups
+  is about PostgreSQL's own (`pg_basebackup --incremental`), not pgBackRest's, which obur uses. Checks: Vitest 1196
+  passed on 18.7; image smoke, off-site outage, off-site restore and upgrade from beta.19 passed.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

@@ -1,11 +1,10 @@
 # The obur image: the web app, the background worker, PostgreSQL and its encrypted backups in one container
 # (docs/design.md, "Distribution"). Each runs as its own user; the database listens only inside the container.
 # Speak and Scan use the optional obur-speech and obur-labels images.
-FROM node:24.11.0-trixie-slim AS build
+FROM node:24.22.3-trixie-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-# The lockfile is written by npm 11.19; the npm bundled with this Node (11.6) misreads its optional peer entries.
-RUN npm install -g npm@11.19.0 --no-audit --no-fund && npm ci --no-audit --no-fund
+RUN npm ci --no-audit --no-fund
 COPY . .
 # SvelteKit validates the settings while analysing the build. These placeholders exist only for this step; the
 # real values are read when the app starts and are never part of the image.
@@ -13,9 +12,9 @@ RUN DATABASE_URL=postgres://build:build@localhost/build PUBLIC_ORIGIN=https://bu
 	WEBAUTHN_RP_ID=build.invalid npm run build \
 	&& npm prune --omit=dev --no-audit --no-fund
 
-FROM node:24.11.0-trixie-slim AS node
+FROM node:24.22.3-trixie-slim AS node
 
-FROM postgres:18.6-trixie
+FROM postgres:18.7-trixie
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends pgbackrest jq ca-certificates tini \
 	&& rm -rf /var/lib/apt/lists/* \
