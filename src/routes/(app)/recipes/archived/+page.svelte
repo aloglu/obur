@@ -7,6 +7,7 @@
 	import { kcal } from '#lib/shared/format.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
 	import type { RecipeSummary } from '#lib/shared/recipe.ts';
+	import { matchFood } from '#lib/shared/search-match.ts';
 	import { foldForSearch } from '#lib/shared/search-text.ts';
 	import PageHead from '#lib/ui/PageHead.svelte';
 	import ArchiveList, { type ArchivePage } from '#lib/ui/items/ArchiveList.svelte';
@@ -14,8 +15,9 @@
 	let { data } = $props();
 
 	const page = (list: RecipeSummary[], q: string): ArchivePage => {
-		const words = foldForSearch(q).split(' ').filter(Boolean);
-		const found = list.filter((r) => words.every((w) => foldForSearch(r.name).includes(w)));
+		// The food search rule (shared/search-match.ts); no search lists them all.
+		const folded = foldForSearch(q);
+		const found = folded ? list.filter((r) => matchFood(folded, foldForSearch(r.name))) : list;
 		return {
 			items: found.map((r) => ({
 				id: r.id,

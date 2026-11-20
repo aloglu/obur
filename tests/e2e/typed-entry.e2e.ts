@@ -80,11 +80,32 @@ test('a fraction of a container and a portion named by its own word (owner repor
 		.getByLabel('You typed')
 		.fill(`I ate 1/3s of a container of ricotta peyniri ${tag} and 2 cups of oat drink ${tag}`);
 	const ricotta = sheet.getByRole('region', { name: `Ricotta Peyniri ${tag}` });
-	await expect(ricotta).toContainText('150'); // a third of 300 g at 150 kcal per 100 g
 	await expect(ricotta).toContainText('0.33 Container (300 g)');
 	const oat = sheet.getByRole('region', { name: `Oat Drink ${tag}` });
 	await expect(oat).toContainText('240'); // 2 × 240 ml at 50 kcal per 100 ml
 	await expect(oat).toContainText('2 Cup (240 ml)');
+});
+
+test('a third of a container counts as a third, not 0.33', async ({ page }, testInfo) => {
+	// Known bug (found 2026-11-20, owner to decide): the card keeps the amount as the text "0.33", so it shows and
+	// logs 148.5 kcal (149) for a third of 300 g at 150 kcal per 100 g. The old search hid it: an unrelated typo
+	// match in the same card carried the "150" this test looked for.
+	test.fail();
+	const tag = testInfo.project.name.replace(/[^a-z]/gi, '');
+	await signedInAs(page, `Üçte ${tag}`);
+	await createFood(page, {
+		name: `Ricotta Peyniri ${tag}`,
+		brand: null,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 150, qualifier: 'reported' }],
+		servings: [{ name: 'Container', amount: 300, unit: 'g' }]
+	});
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Type it' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
+	await sheet.getByLabel('You typed').fill(`1/3 of a container of ricotta peyniri ${tag}`);
+	const ricotta = sheet.getByRole('region', { name: `Ricotta Peyniri ${tag}` });
+	await expect(ricotta).toContainText('150 kcal', { timeout: 5000 });
 });
 
 test('weight, calories-only and a curated food with a bare count', async ({ page }, testInfo) => {
@@ -293,6 +314,8 @@ test('Create it as food hands back a food the person already has when the name i
 	page
 }, testInfo) => {
 	const word = testInfo.project.name === 'phone-webkit' ? 'zzqqvvmm' : 'zzqqvvdd';
+	// Not a typo of the food's name either: two letters more would be (docs/design.md, "Search rule").
+	const unknown = testInfo.project.name === 'phone-webkit' ? 'kpwfjtnb' : 'kpwfjtnc';
 	await signedInAs(page, `Düzelten ${testInfo.project.name}`);
 	await createFood(page, {
 		name: `Ayran ${word}`,
@@ -303,7 +326,7 @@ test('Create it as food hands back a food the person already has when the name i
 	await page.goto('/log');
 	await page.getByRole('button', { name: 'Type it' }).click();
 	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
-	await sheet.getByLabel('You typed').fill(`200 ml qq${word}`);
+	await sheet.getByLabel('You typed').fill(`200 ml ${unknown}`);
 	await sheet.getByRole('button', { name: 'Create it as food' }).click();
 	const form = page.getByRole('dialog', { name: 'New food' });
 	await form.getByLabel('Name', { exact: true }).fill(`ayran ${word}`);

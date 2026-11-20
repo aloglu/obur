@@ -30,6 +30,7 @@
 	import type { Meal, SavedMealSummary } from '#lib/shared/diary-types.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { dayTitle, kcal, mealNameTo } from '#lib/shared/format.ts';
+	import { matchFood } from '#lib/shared/search-match.ts';
 	import { foldForSearch } from '#lib/shared/search-text.ts';
 
 	interface Props {
@@ -137,10 +138,10 @@
 		addEventListener('resize', refit);
 		return () => removeEventListener('resize', refit);
 	});
-	// Few enough to match here, with the same Turkish-aware folding as food search.
+	// Few enough to match here, with the same rule as food search (shared/search-match.ts).
 	const matchingMeals = $derived.by(() => {
 		const q = foldForSearch(query.trim());
-		return q ? savedMeals.filter((s) => foldForSearch(s.name).includes(q)) : [];
+		return q ? savedMeals.filter((s) => matchFood(q, foldForSearch(s.name))) : [];
 	});
 	const mealSummary = (s: SavedMealSummary) => {
 		const total = kcal(s.kcal) + (s.partial ? '+' : '');

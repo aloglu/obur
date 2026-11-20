@@ -453,6 +453,58 @@ describe('search', () => {
 		);
 	});
 
+	it('matches the start of words, never a word inside another (the search rule, 2026-11-20)', async () => {
+		await catalog.createFood(ZEYNEP, food({ name: 'Licorice', brand: null, basis: '100g' }));
+		await catalog.createFood(
+			ZEYNEP,
+			food({ name: 'Brown rice cooked', brand: null, basis: '100g' })
+		);
+		const names = async (q: string) => (await catalog.searchFoods(ZEYNEP, q)).map((r) => r.name);
+		expect(await names('rice')).toEqual(['Brown rice cooked']);
+		expect(await names('cook bro')).toEqual(['Brown rice cooked']);
+	});
+
+	it('finds a typo in a long name, after every real match, with fewer changes first', async () => {
+		await catalog.createFood(
+			ZEYNEP,
+			food({ name: 'Chicken breast meat only roasted', brand: null, basis: '100g' })
+		);
+		await catalog.createFood(ZEYNEP, food({ name: 'Bread white', brand: null, basis: '100g' }));
+		await catalog.createFood(ZEYNEP, food({ name: 'Broad beans', brand: null, basis: '100g' }));
+		const found = async (q: string) =>
+			(await catalog.searchFoods(ZEYNEP, q)).map((r) => [r.name, r.whole]);
+		expect(await found('chiken')).toEqual([['Chicken breast meat only roasted', false]]);
+		// "bread" is one letter from "broad" and from the start of "breast": typo matches, after the real one.
+		expect(await found('bread')).toEqual([
+			['Bread white', true],
+			['Broad beans', false],
+			['Chicken breast meat only roasted', false]
+		]);
+		// A built-in food's aliases are part of its search text, typos included.
+		const [{ id: yogurt }] =
+			await admin`insert into foods (name, search_key, basis, origin, source_meta)
+			values ('Greek yoghurt plain nonfat', 'greek yoghurt plain nonfat suzme yogurt yagsiz yogurt', '100g',
+				'curated', '{}') returning id`;
+		expect((await catalog.searchFoods(ZEYNEP, 'yougrt')).map((r) => r.id)).toEqual([yogurt]);
+	});
+
+	it('never shows another person’s food as a typo match', async () => {
+		await catalog.createFood(MEHMET, food({ name: 'Chicken soup', brand: null, basis: '100g' }));
+		expect(await catalog.searchFoods(ZEYNEP, 'chiken')).toEqual([]);
+		expect((await catalog.searchFoods(MEHMET, 'chiken')).map((r) => r.name)).toEqual([
+			'Chicken soup'
+		]);
+	});
+
+	it('Foods and its archive show the closest by typo when nothing matches as typed', async () => {
+		const list = async (query: string, archived = false) =>
+			(await catalog.ownFoods(ZEYNEP, 0, 50, { query, archived })).foods.map((f) => f.name);
+		expect(await list('ispanakk')).toEqual(['Körpe Ispanak']);
+		expect(await list('ispanak')).toEqual(['Körpe Ispanak']);
+		expect(await list('ispanakk', true)).toEqual([]);
+		expect(await list('qwzxv')).toEqual([]);
+	});
+
 	it('returns nothing for an empty or punctuation-only query', async () => {
 		expect(await catalog.searchFoods(ZEYNEP, '  ')).toEqual([]);
 		expect(await catalog.searchFoods(ZEYNEP, '%_')).toEqual([]);

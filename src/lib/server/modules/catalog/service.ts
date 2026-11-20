@@ -1,6 +1,6 @@
 // Food catalog operations, all under the signed-in person's identity (RLS decides who sees and edits what):
 // every food is its owner's alone, and built-in foods are read-only for everyone (docs/design.md, "Foods are private").
-import { and, asc, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, ne, sql, type SQL } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import { foodWarnings } from '../../../shared/food-checks.ts';
 import type { FoodInput } from '../../../shared/food-input.ts';
@@ -8,6 +8,7 @@ import { deriveNutrients, type NutrientValue } from '../../../shared/nutrients.t
 import { matchKey, sameFood, type MatchableFood } from '../../../shared/food-match.ts';
 import type { FoodDetail, FoodSearchResult } from '../../../shared/food-types.ts';
 import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
+import { matchFood, queryWords, typosAllowed } from '../../../shared/search-match.ts';
 import { MAX_BULK_FOODS, type FoodAction } from '../../../shared/food-bulk.ts';
 import type { ScanEdits } from '../../../shared/scan-edits.ts';
 import {
@@ -19,8 +20,17 @@ import {
 	recipeIngredients
 } from './schema.ts';
 
+/** Every query word at the start of a word of the search text (docs/design.md, "Search rule"). */
+const wordStarts = (q: string) =>
+	and(
+		...queryWords(q).map(
+			(w) => sql`(${foods.searchKey} like ${`${w}%`} or ${foods.searchKey} like ${`% ${w}%`})`
+		)
+	)!;
+
 // What a bulk action does (docs/design.md, "Archived and deleted foods"): archive a food in use, restore an archived
 // one, delete an archived one to Recently deleted, or bring a deleted one back to the archive.
+
 export { MAX_BULK_FOODS, type FoodAction } from '../../../shared/food-bulk.ts';
 
 /** A food, or recipe, in Recently deleted. */
@@ -566,36 +576,63 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					mine,
 					archived ? sql`${foods.archivedAt} is not null` : isNull(foods.archivedAt),
 					// foldForSearch leaves only letters, digits and spaces, so LIKE wildcards cannot appear.
-					...words.map((w) => sql`${foods.searchKey} like ${`%${w}%`}`)
+					...(words.length ? [wordStarts(words.join(' '))] : [])
 				);
 				const size = Math.min(Math.max(limit, 1), 100);
-				const rows = await tx
-					.select({
-						id: foods.id,
-						name: foods.name,
-						brand: foods.brand,
-						basis: foods.basis,
-						servingLabel: foods.servingLabel,
-						icon: foods.icon,
-						kcal: foodNutrients.value,
-						archivedAt: foods.archivedAt
-					})
-					.from(foods)
-					.leftJoin(
-						foodNutrients,
-						and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
-					)
-					.where(own)
-					.orderBy(asc(foods.searchKey), asc(foods.id))
+				const listed = (where: SQL) =>
+					tx
+						.select({
+							id: foods.id,
+							name: foods.name,
+							brand: foods.brand,
+							basis: foods.basis,
+							servingLabel: foods.servingLabel,
+							icon: foods.icon,
+							kcal: foodNutrients.value,
+							archivedAt: foods.archivedAt
+						})
+						.from(foods)
+						.leftJoin(
+							foodNutrients,
+							and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
+						)
+						.where(where)
+						.orderBy(asc(foods.searchKey), asc(foods.id));
+				let rows = await listed(own!)
 					.offset(Math.max(offset, 0))
 					.limit(size + 1);
-				const [{ total, archivedTotal }] = await tx
+				const [counts] = await tx
 					.select({
 						total: sql<number>`count(*) filter (where ${own})::int`,
 						archivedTotal: sql<number>`count(*) filter (where ${foods.archivedAt} is not null)::int`
 					})
 					.from(foods)
 					.where(mine);
+				const { archivedTotal } = counts;
+				let { total } = counts;
+				// Nothing found as typed: the closest by the typo rule, one page of them (docs/design.md, "Search rule").
+				const q = words.join(' ');
+				if (total === 0 && offset <= 0 && words.some((w) => typosAllowed(w) > 0)) {
+					const list = and(
+						mine,
+						archived ? sql`${foods.archivedAt} is not null` : isNull(foods.archivedAt)
+					)!;
+					const close = (
+						await tx.select({ id: foods.id, key: foods.searchKey }).from(foods).where(list)
+					)
+						.flatMap((f) => {
+							const m = matchFood(q, f.key);
+							return m ? [{ id: f.id, key: f.key, typos: m.typos }] : [];
+						})
+						.sort((a, b) => a.typos - b.typos || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+						.slice(0, size)
+						.map((f) => f.id);
+					if (close.length) {
+						const byId = new Map((await listed(inArray(foods.id, close))).map((r) => [r.id, r]));
+						rows = close.flatMap((id) => byId.get(id) ?? []);
+						total = rows.length;
+					}
+				}
 				return {
 					foods: rows.slice(0, size).map(({ archivedAt, ...r }) => ({
 						...r,
@@ -617,69 +654,99 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			boostIds: string[] = []
 		): Promise<
 			(FoodSearchResult & {
-				/** Every word matched (not only a typo-tolerant match). */ whole: boolean;
+				/** Every word matched without a typo. */ whole: boolean;
 			})[]
 		> {
-			const q = foldForSearch(query).slice(0, 100);
+			// The search rule (docs/design.md, "Search rule"; shared/search-match.ts). The real matches come from
+			// PostgreSQL, with the trigram index; only when they don't fill the list are the other foods compared
+			// for typos, which the rule decides and sorts.
+			const q = queryWords(foldForSearch(query).slice(0, 100)).join(' ');
 			if (!q) return [];
-			const words = q.split(' ').filter(Boolean).slice(0, 8);
+			const size = Math.min(Math.max(limit, 1), 50);
+			const boost = boostIds.slice(0, 50);
+			const real = wordStarts(q);
 			// foldForSearch leaves only letters, digits and spaces, so LIKE wildcards cannot appear in q.
 			const rank = sql`case
 				when ${foods.searchKey} = ${q} then 0
 				when ${foods.searchKey} like ${`${q}%`} then 1
 				when ${foods.searchKey} like ${`% ${q}%`} then 2
-				when ${foods.searchKey} like ${`%${q}%`} then 3
-				else 4 end`;
-			const allWords = sql.join(
-				words.map((w) => sql`${foods.searchKey} like ${`%${w}%`}`),
-				sql` and `
-			);
-			const rows = await withUser(db, userId, (tx) =>
-				tx
-					.select({
-						id: foods.id,
-						name: foods.name,
-						brand: foods.brand,
-						basis: foods.basis,
-						servingLabel: foods.servingLabel,
-						icon: foods.icon,
-						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
-						curated: sql<boolean>`${foods.origin} = 'curated'`,
-						kcal: foodNutrients.value,
-						whole: sql<boolean>`(${allWords})`
-					})
-					.from(foods)
-					.leftJoin(
-						foodNutrients,
-						and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
-					)
-					.where(
-						and(sql`${foods.archivedAt} is null`, sql`((${allWords}) or ${foods.searchKey} % ${q})`)
-					)
-					.orderBy(
-						// Real matches before typo-tolerant ones; then boosted (recent), own, and built-in foods.
-						sql`(${rank} < 4) desc`,
-						...(boostIds.length
+				else 3 end`;
+			return withUser(db, userId, async (tx) => {
+				const found = (where: SQL, order: SQL[]) =>
+					tx
+						.select({
+							id: foods.id,
+							name: foods.name,
+							brand: foods.brand,
+							basis: foods.basis,
+							servingLabel: foods.servingLabel,
+							icon: foods.icon,
+							mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`,
+							curated: sql<boolean>`${foods.origin} = 'curated'`,
+							kcal: foodNutrients.value
+						})
+						.from(foods)
+						.leftJoin(
+							foodNutrients,
+							and(eq(foodNutrients.foodId, foods.id), eq(foodNutrients.code, 'energy_kcal'))
+						)
+						.where(where)
+						.orderBy(...order)
+						.limit(size);
+				const tidy = (r: Awaited<ReturnType<typeof found>>[number], whole: boolean) => ({
+					...r,
+					mine: Boolean(r.mine),
+					curated: Boolean(r.curated),
+					whole
+				});
+				const rows = (
+					await found(and(isNull(foods.archivedAt), real)!, [
+						...(boost.length
 							? [
 									sql`(${foods.id} in (${sql.join(
-										boostIds.slice(0, 50).map((id) => sql`${id}::uuid`),
+										boost.map((id) => sql`${id}::uuid`),
 										sql`, `
 									)})) desc`
 								]
 							: []),
 						sql`(${foods.ownerId} = app_current_user_id()) desc nulls last`,
 						rank,
-						sql`similarity(${foods.searchKey}, ${q}) desc`,
-						asc(foods.name)
+						asc(foods.name),
+						asc(foods.id)
+					])
+				).map((r) => tidy(r, true));
+				if (rows.length >= size || !queryWords(q).some((w) => typosAllowed(w) > 0)) return rows;
+				// Typos: the other foods' search text, compared here.
+				const others = await tx
+					.select({
+						id: foods.id,
+						key: foods.searchKey,
+						name: foods.name,
+						mine: sql<boolean>`${foods.ownerId} = app_current_user_id()`
+					})
+					.from(foods)
+					.where(and(isNull(foods.archivedAt), sql`not (${real})`));
+				const boosted = new Set(boost);
+				const close = others
+					.flatMap((f) => {
+						const m = matchFood(q, f.key);
+						return m ? [{ ...f, ...m }] : [];
+					})
+					.sort(
+						(a, b) =>
+							a.typos - b.typos ||
+							Number(boosted.has(b.id)) - Number(boosted.has(a.id)) ||
+							Number(Boolean(b.mine)) - Number(Boolean(a.mine)) ||
+							a.quality - b.quality ||
+							(a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
 					)
-					.limit(Math.min(Math.max(limit, 1), 50))
-			);
-			return rows.map((r) => ({
-				...r,
-				mine: Boolean(r.mine),
-				curated: Boolean(r.curated),
-				whole: Boolean(r.whole)
-			}));
+					.slice(0, size - rows.length)
+					.map((f) => f.id);
+				if (!close.length) return rows;
+				const typed = await found(inArray(foods.id, close), [asc(foods.id)]);
+				const byId = new Map(typed.map((r) => [r.id, tidy(r, false)]));
+				return [...rows, ...close.flatMap((id) => byId.get(id) ?? [])];
+			});
 		},
 
 		/**
