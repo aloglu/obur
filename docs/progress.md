@@ -66,6 +66,11 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   (`x-obur-no-session`; signed-out page data is answered by the session hook itself, since a thrown redirect never
   reached the header). Two browser tests (Chromium), both fail without the fix. The 45-second refresh stays (idle
   load judged impractical).
+- Final checks on `896a385` (2026-11-21): lint, type check, build; Vitest 1199 passed; full browser suite (phone
+  WebKit and desktop Chromium, Playwright image) 295 passed, 22 skipped by design; image built, smoke, off-site
+  outage, off-site restore, upgrade from beta.19 and both add-on tests passed. Not run: the release workflow on
+  GitHub (its new Publish job needs a tag; ask the owner), real-phone checks (owner).
+- **Next step:** the owner decides whether to tag 1.0.0-rc.6 (the first run of the new Publish job).
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 
