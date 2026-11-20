@@ -18,6 +18,9 @@ export const POST: RequestHandler = ({ request, locals }) =>
 					status: 201
 				});
 			}
+			// A retry of a save that already landed (its answer lost) is answered first, whatever changed since.
+			const prior = await diary.retriedFood(userId, ctx, body.foodId, body.amount, body.unit);
+			if (prior) return json(prior, { status: 201 });
 			// The food must be visible to this person (RLS); its snapshot is taken here, on the server.
 			const food = await catalog.getFood(userId, body.foodId);
 			// Changed since the person saw it (often while the entry waited offline): they choose, not the server.

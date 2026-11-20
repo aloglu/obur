@@ -114,12 +114,24 @@ const sortedJson = (value: unknown): string =>
 			: v
 	);
 
+/**
+ * What a unit names, to recognise a retry: a portion or household measure by its ID, not by the size it had when
+ * the entry was saved, which may have been edited since the first attempt (2026-11-20 audit).
+ */
+const unitIdentity = (u: SnapshotUnit | UnitInput | null | undefined) =>
+	!u
+		? null
+		: u.kind === 'serving'
+			? { kind: u.kind, servingId: u.servingId }
+			: u.kind === 'measure'
+				? { kind: u.kind, code: u.code }
+				: u;
+
+type Request = Partial<Omit<Row, 'unit'>> & { unit?: SnapshotUnit | UnitInput | null };
+
 /** What a create request contained, to recognise a retry of the same request. */
-function sameRequest(
-	existing: Row,
-	candidate: Omit<Row, 'createdAt' | 'updatedAt' | 'energyKcal'>
-): boolean {
-	const pick = (r: Partial<Row>) =>
+function sameRequest(existing: Row, candidate: Request): boolean {
+	const pick = (r: Request) =>
 		sortedJson([
 			r.localDate,
 			r.meal,
@@ -127,8 +139,8 @@ function sameRequest(
 			r.kind,
 			r.foodId,
 			r.amount,
-			r.unit,
-			r.description,
+			unitIdentity(r.unit),
+			r.description ?? null,
 			r.eatenAt?.toISOString?.() ?? null,
 			// A quick add's calories are its content. A food entry's nutrition follows from food, amount and
 			// unit, so it is not compared: a retry after the food was edited is still the same request.
@@ -137,14 +149,8 @@ function sameRequest(
 	return pick(existing) === pick(candidate);
 }
 
-/**
- * Inserts an entry inside the caller's transaction, or returns the existing one for a retry of the same request.
- * A reused ID with different content is a conflict; a purged ID is gone.
- */
-export async function insertEntry(
-	tx: Tx,
-	values: Omit<Row, 'createdAt' | 'updatedAt' | 'energyKcal'>
-): Promise<DiaryEntry> {
+/** The entry saved under this ID if this is a retry of it; a conflict for other content, gone if purged. */
+async function earlier(tx: Tx, values: Request & { id: string }): Promise<DiaryEntry | undefined> {
 	const [existing] = await tx.select().from(diaryEntries).where(eq(diaryEntries.id, values.id));
 	if (existing) {
 		if (!sameRequest(existing, values)) throw new DiaryError('conflict');
@@ -155,6 +161,19 @@ export async function insertEntry(
 		.from(purgedRecords)
 		.where(eq(purgedRecords.id, values.id));
 	if (purged) throw new DiaryError('gone');
+	return undefined;
+}
+
+/**
+ * Inserts an entry inside the caller's transaction, or returns the existing one for a retry of the same request.
+ * A reused ID with different content is a conflict; a purged ID is gone.
+ */
+export async function insertEntry(
+	tx: Tx,
+	values: Omit<Row, 'createdAt' | 'updatedAt' | 'energyKcal'>
+): Promise<DiaryEntry> {
+	const prior = await earlier(tx, values);
+	if (prior) return prior;
 	try {
 		const [row] = await tx.insert(diaryEntries).values(values).returning();
 		return toEntry(row);
@@ -222,6 +241,35 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 					.where(and(isNotNull(diaryEntries.deletedAt), gte(diaryEntries.deletedAt, since)))
 			);
 			return row.n;
+		},
+
+		/**
+		 * The entry an earlier attempt of this food create already saved, if any. Asked before the food's current
+		 * values are checked: a save whose answer was lost must be acknowledged even after the food changed, or the
+		 * phone would offer to log it again (2026-11-20 audit).
+		 */
+		async retriedFood(
+			userId: string,
+			ctx: EntryContext,
+			foodId: string,
+			amount: number,
+			unit: UnitInput
+		): Promise<DiaryEntry | undefined> {
+			const id = ctx.id;
+			if (!id) return undefined;
+			return withUser(db, userId, (tx) =>
+				earlier(tx, {
+					id,
+					localDate: ctx.localDate,
+					meal: ctx.meal,
+					zone: ctx.zone,
+					eatenAt: ctx.eatenAt ?? null,
+					kind: 'food',
+					foodId,
+					amount: storedAmount(amount),
+					unit
+				})
+			);
 		},
 
 		async logFood(

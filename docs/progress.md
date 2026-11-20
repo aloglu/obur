@@ -2,6 +2,25 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Owner's audit of rc.4 (2026-11-20): verified, fixing for rc.5
+
+Report outside the repo, checked against `517f4db`; every finding real. Owner's go, one commit each:
+1. A retried diary save is acknowledged before the food's current values are checked.
+2. Export reads everything from one snapshot (repeatable read).
+3. Offline, a food's details come from the same on-device copy as search.
+4. Food edits keep the IDs of unchanged portions.
+5. Recipe and saved-meal refreshes claim their version before writing.
+6. Offline search keeps the stored search text (aliases).
+7. Sign-out: the service worker forgets the account at once; queue deletion waits for other tabs to close it.
+8. Reminders show Off only once the server confirms; sign-out sends the device's subscription with the logout.
+9. `obur restore start/finish/cancel` serialised with one lock; a running restore is never removed.
+10. Unused `shortMonth`/`longDate` removed. Then measure startup preparation and a near-limit import before
+    deciding on them (owner's go: measure first). Then local checks and image tests; ask before tagging rc.5.
+
+- Step 1 done: `diary.retriedFood` (service.ts) answers a create whose ID is already saved with the same request,
+  checked in `POST /api/v1/diary/entries` before the fingerprint; a portion or measure is compared by its ID, not
+  its saved size. DB test and an offline e2e test (fails on the old route).
+
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
 rc.3 plus the fixes from the owner's rc.3 audit (below): day-note imports, purged records never imported again,

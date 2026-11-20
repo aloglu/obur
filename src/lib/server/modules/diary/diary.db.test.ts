@@ -273,6 +273,43 @@ describe('retries', () => {
 		}
 	});
 
+	it('recognises a retry after the food and its portion were edited (2026-11-20 audit)', async () => {
+		// A save that landed but whose answer was lost: the phone sends it again after the food changed, and must
+		// be told it is saved, not offered to log the calories a second time.
+		const food = (await catalog.getFood(MEHMET, breadId))!;
+		const slice = { kind: 'serving', servingId: food.servings[0].id } as const;
+		const id = randomUUID();
+		const first = await diary.logFood(
+			MEHMET,
+			ctx({ id }),
+			food,
+			2,
+			resolveUnit(slice, food.servings, [])!
+		);
+		const edited = bread();
+		edited.nutrients[0].value = 250;
+		edited.servings[0].amount = 30;
+		await catalog.updateFood(MEHMET, breadId, food.version, edited);
+		const now = (await catalog.getFood(MEHMET, breadId))!;
+
+		expect(await diary.retriedFood(MEHMET, ctx({ id }), breadId, 2, slice)).toEqual(first);
+		// The same request through the create path is recognised too, even with the portion's new size.
+		const sameSlice = resolveUnit(slice, now.servings, []);
+		if (sameSlice)
+			expect(await diary.logFood(MEHMET, ctx({ id }), now, 2, sameSlice)).toEqual(first);
+		// Different content under the same ID is still a conflict; a new ID is not a retry.
+		expect(await errorCode(diary.retriedFood(MEHMET, ctx({ id }), breadId, 3, slice))).toBe(
+			'conflict'
+		);
+		expect(await errorCode(diary.retriedFood(MEHMET, ctx({ id }), breadId, 2, grams))).toBe(
+			'conflict'
+		);
+		expect(await diary.retriedFood(MEHMET, ctx({ id: randomUUID() }), breadId, 2, slice)).toBe(
+			undefined
+		);
+		expect(await diary.day(MEHMET, '2026-10-25')).toHaveLength(1);
+	});
+
 	it('recognises a retry of an amount with more decimals than are stored', async () => {
 		const food = (await catalog.getFood(MEHMET, breadId))!;
 		const id = randomUUID();

@@ -1,6 +1,9 @@
 // The bounded offline scope (docs/design.md): queued new entries with ordered, retry-safe sending, visible pending
 // state, cached viewing, and sign-out that never silently drops unsent entries.
 import { expect, test, type Page } from '@playwright/test';
+import { e2eEnv } from '../../playwright.config.ts';
+import { foodFingerprint } from '../../src/lib/shared/diary-rules.ts';
+import type { FoodDetail } from '../../src/lib/shared/food-types.ts';
 import { apiAs, createFood, signedInAgain, signedInAs, openCaloriesOnly } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
@@ -633,6 +636,51 @@ test('an entry that waited offline never takes values the person did not see: a 
 	await expect(
 		review.getByRole('button', { name: 'Keep it as 100 kcal, calories only' })
 	).toBeVisible();
+});
+
+test('a save that landed but whose answer was lost is acknowledged when sent again, even after the food changed', async ({
+	page
+}, testInfo) => {
+	// 2026-11-20 audit: the retry was refused as "food changed", and the review then offered to log it again.
+	await signedInAs(page, 'Ayşe');
+	const food = {
+		name: `Barley soup ${testInfo.project.name}`,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 100, qualifier: 'reported' }]
+	};
+	const foodId = await createFood(page, food);
+	const detail = await apiAs<FoodDetail>(page, 'GET', `/api/v1/foods/${foodId}`);
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	const entry = {
+		id: crypto.randomUUID(),
+		kind: 'food',
+		foodId,
+		amount: 100,
+		unit: { kind: 'mass', unit: 'g' },
+		date,
+		meal: 'lunch',
+		zone: 'UTC',
+		expected: foodFingerprint(detail)
+	};
+	const first = await apiAs<{ id: string }>(page, 'POST', '/api/v1/diary/entries', entry);
+	await apiAs(page, 'PUT', `/api/v1/foods/${foodId}`, {
+		version: detail.version,
+		food: {
+			...food,
+			brand: null,
+			servings: [],
+			nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }]
+		}
+	});
+	expect(await apiAs(page, 'POST', '/api/v1/diary/entries', entry)).toEqual(first);
+	// A new entry with the old values is still refused.
+	const fresh = await page.request.post('/api/v1/diary/entries', {
+		data: { ...entry, id: crypto.randomUUID() },
+		headers: { origin: e2eEnv.PUBLIC_ORIGIN }
+	});
+	expect(fresh.status()).toBe(409);
+	const day = await apiAs<{ entries: unknown[] }>(page, 'GET', `/api/v1/diary/${date}`);
+	expect(day.entries).toHaveLength(1);
 });
 
 test('a food changed on another device while its amount sheet is open is shown again, not logged', async ({
