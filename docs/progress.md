@@ -78,7 +78,9 @@ the page to finish loading: 20 of 20 passed.
 Browser suite: 289 passed, 19 skipped, 1 failed (that title test).
 Image `obur:test` built from `0ff86de`: smoke, off-site outage and upgrade from beta.19 passed. Agents' install
 guide checked; it now explains the `obur: error:` log line. Hand checks for the owner: `~/Documents` checklist.
-Next: ask the owner before tagging rc.5.
+Release 1.0.0-rc.5 (owner's go, 2026-11-20). The first tag run failed at its first step: package.json still said
+rc.4 (nothing was built or published); the tag was moved to the version commit.
+Next: the release run; then the owner updates and goes through the checklist in `~/Documents`.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 
@@ -146,7 +148,9 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
     database code only; server/log.ts, unit test); the three layout log lines use it too. Checked with a temporary
     route throwing a failed query with a secret value: the log line had no value.
   - Checks on `21352d3`: lint, check, Vitest 1196 passed; full e2e 304 passed, 19 skipped by design; image smoke,
-    off-site and upgrade (beta.19, includes migration 0060) tests passed. Next: ask the owner before tagging rc.5.
+    off-site and upgrade (beta.19, includes migration 0060) tests passed. Release 1.0.0-rc.5 (owner's go, 2026-11-20). The first tag run failed at its first step: package.json still said
+rc.4 (nothing was built or published); the tag was moved to the version commit.
+Next: the release run; then the owner updates and goes through the checklist in `~/Documents`.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
