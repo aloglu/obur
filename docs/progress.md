@@ -43,6 +43,13 @@ and licence, R06, R13. Real-phone checks stay with the owner.
 - R10 done: the two translation plugins come from npm at exact versions (4.6.0, 2.4.3), not a CDN; `npm run i18n`
   (`scripts/i18n.ts`, also run by `npm run build`) fails when a plugin doesn't load (checked by removing one).
   Compiled with no network in a container: 0 warnings. Release workflow actions pinned to full commit SHAs.
+- R12 done: Docker's health check asks `/api/v1/health` (a query as the app's role; 503 when it can't). An obur
+  older than its database logs "this obur is older than its database … it does not open" and waits, changing
+  nothing (owner's choice A); updating guide says: start the newer version, or restore the backup from before the
+  update. Smoke test checks both (role refused → 503; a fake newer migration → waits; removed → ready). Smoke,
+  upgrade from beta.19 and off-site restore passed.
+- R14 skipped after measuring: achievement sync with five years of records (1825 weigh-ins, 1825 complete days,
+  9125 entries) takes 5.3 ms median, 7.2 ms max, and runs after the page shows. Not a practical cost.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

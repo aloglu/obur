@@ -131,8 +131,9 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
 - **"waiting: the database folder is empty and the off-site store can't be reached to look for backups":** check the
   `OBUR_OFFSITE_*` values and the server's connection; obur looks again every minute. For a truly new installation
   whose off-site store is still empty or not ready, ask the person before setting `OBUR_ALLOW_NEW_DATABASE=1` once.
-- **"this obur is older than its database":** someone went back to an older version. It runs without changing the
-  database; move forward to the newer version again when possible.
+- **"this obur is older than its database … it does not open":** someone went back to an older version after an
+  update changed the database. Nothing was changed. Start the newer version again; restoring the backup from before
+  the update loses later changes and is the person's decision (`updating.md`).
 - **An upgrade or backup failed:** report the log lines to the person. More in `troubleshooting.md`.
 
 ## Moving to another server

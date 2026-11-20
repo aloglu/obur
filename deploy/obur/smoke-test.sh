@@ -1,7 +1,7 @@
 #!/bin/bash
 # Starts an obur image with an empty data folder and checks the basics: it becomes healthy, serves the sign-in page,
 # prints a first-account link, survives badly encoded addresses, has taken its first backup, refuses the administrator
-# to the app's user, recovers from a failed restore (retry and cancel, with and without a database before it), and
+# to the app's user, is not ready without the app's database role, does not open on a newer database, recovers from a failed restore (retry and cancel, with and without a database before it), and
 # stops cleanly. Usage: deploy/obur/smoke-test.sh <image>
 set -euo pipefail
 image=${1:?usage: smoke-test.sh <image>}
@@ -52,6 +52,20 @@ done
 if docker exec -u node "$name" psql -h 127.0.0.1 -U obur_admin -d obur -c 'select 1' </dev/null >/dev/null 2>&1; then
 	fail "the app's user reached the database as administrator"
 fi
+sql() { docker exec "$name" gosu postgres psql -X -q -t -A -v ON_ERROR_STOP=1 -h /var/run/postgresql -U obur_admin -d obur -c "$1"; }
+health() {
+	docker exec "$name" node -e "fetch('http://127.0.0.1:3000/api/v1/health').then((r) => console.log(r.status), () => console.log('none'))"
+}
+# Readiness needs the app's own database role (2026-11-20 audit, R12): the sign-in page alone never asked it.
+[[ $(health) == 200 ]] || fail "not ready: $(health)"
+sql "alter role obur_app nologin; select pg_terminate_backend(pid) from pg_stat_activity where usename = 'obur_app'" >/dev/null
+[[ $(health) == 503 ]] || fail "ready while the app's database role cannot connect: $(health)"
+sql 'alter role obur_app login' >/dev/null
+for _ in $(seq 10); do
+	[[ $(health) == 200 ]] && break
+	sleep 1
+done
+[[ $(health) == 200 ]] || fail "not ready again once the app's database role can connect"
 ready_again() {
 	local want=$1
 	for _ in $(seq 90); do
@@ -85,6 +99,20 @@ signin_page() {
 	return 1
 }
 signin_page || fail "no sign-in page after cancel"
+# An obur older than its database does not open (R12): one database step this version doesn't know.
+sql "insert into schema_migrations (name, checksum) values ('9999_from_a_newer_version', 'x')" >/dev/null
+docker restart -t 60 "$name" >/dev/null
+for _ in $(seq 60); do
+	[[ $(logs) == *'is older than its database'* ]] && break
+	sleep 2
+done
+[[ $(logs) == *'is older than its database'* ]] || fail "an older obur did not say it is older than its database"
+sleep 5
+[[ $(docker inspect -f '{{.State.Running}}' "$name") == true ]] || fail "an older obur stopped instead of waiting"
+[[ $(health) == none ]] || fail "an older obur opened: $(health)"
+sql "delete from schema_migrations where name = '9999_from_a_newer_version'" >/dev/null
+docker restart -t 60 "$name" >/dev/null
+ready_again 3 "not ready again with a database it knows"
 docker stop -t 60 "$name" >/dev/null
 [[ $(logs) == *'database system is shut down'* ]] || fail "the database did not shut down cleanly"
 

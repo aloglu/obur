@@ -134,6 +134,19 @@ start_scheduler() {
 	sched_pid=$!
 }
 
+# Whether this obur is older than its database (a rollback): it was never tested on that database, which can lack
+# what it needs (beta.19 on a database without foods.visibility), so it doesn't open, and the database stays as it
+# is (2026-11-20 audit, R12; before, it opened anyway). The fix is the newer version, or the backup taken before the
+# update. Prints the reason when it is.
+older_than_database() {
+	local known applied
+	known=$(jq '.entries | length' /app/drizzle/meta/_journal.json) || return 1
+	[[ $(obur_psql -c "select to_regclass('public.schema_migrations') is not null") == t ]] || return 1
+	applied=$(obur_psql -c 'select count(*) from schema_migrations') || return 1
+	((applied > known)) || return 1
+	echo "this obur is older than its database ($applied database steps, this version knows $known): it does not open. Start the newer version again, or restore the backup taken before the update (docs/install/updating.md)"
+}
+
 upgrade() {
 	local known applied
 	# This installation's own administrator password (also after a restore or a move from another setup). Here and
@@ -144,11 +157,6 @@ upgrade() {
 	applied=-1
 	if [[ $(obur_psql -c "select to_regclass('public.schema_migrations') is not null") == t ]]; then
 		applied=$(obur_psql -c 'select count(*) from schema_migrations')
-	fi
-	if ((applied > known)); then
-		# An older obur than the database (a rollback): run it on the database as it is, changing nothing.
-		log "this obur is older than its database (rolled back?): starting without changing the database"
-		return
 	fi
 	if ((applied >= 0 && applied < known)); then
 		if [[ -f /data/backups/backup/obur/backup.info ]]; then
@@ -231,11 +239,15 @@ while :; do
 			[[ -n $web_pid ]] || start_web
 		elif ((!migrated)); then
 			stop_app
-			upgrade
 			migrated=1
-			start_web
-			start_worker
-			log "ready on port 3000 for $PUBLIC_ORIGIN"
+			if reason=$(older_than_database); then
+				log "$reason"
+			else
+				upgrade
+				start_web
+				start_worker
+				log "ready on port 3000 for $PUBLIC_ORIGIN"
+			fi
 		fi
 		if [[ -n $web_pid ]] && ! alive "$web_pid"; then fatal "the web app stopped unexpectedly"; fi
 		if [[ -n $worker_pid ]] && ! alive "$worker_pid"; then fatal "the worker stopped unexpectedly"; fi

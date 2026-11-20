@@ -59,6 +59,6 @@ COPY deploy/obur/obur deploy/obur/obur-backup deploy/obur/obur-restore deploy/ob
 EXPOSE 3000
 STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=15s --timeout=5s --start-period=120s --retries=5 \
-	CMD node -e "fetch('http://127.0.0.1:3000/login').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+	CMD node -e "fetch('http://127.0.0.1:3000/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/obur"]
 CMD ["start"]

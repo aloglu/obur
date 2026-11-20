@@ -111,6 +111,7 @@ const PUBLIC_PATHS = [
 	'/api/v1/auth/setup',
 	'/api/v1/auth/join',
 	'/api/v1/auth/recovery/begin',
+	'/api/v1/health',
 	'/manifest.webmanifest'
 ];
 const RECOVERY_PATHS = ['/recover', '/api/v1/auth/recovery', '/api/v1/auth/logout'];

@@ -39,6 +39,15 @@ Every release is also published under its number, e.g. `ghcr.io/aloglu/obur:1.0.
 
 ## Going back to an older version
 
-Run the older version's image. If the newer one had changed the database, the older one says so in its log and
-starts without touching the database; features it doesn't know stay unused. If that is not enough, restore the
-backup obur took before the update (`docker exec obur obur backup info` lists it; see [Restoring](../restore.md)).
+Run the older version's image. If the newer version did not change the database, the older one starts as usual.
+
+If the newer version changed the database, the older one does not open. Its log says "this obur is older than its
+database", and it changes nothing. Then do one of these:
+
+- **Start the newer version again.** Nothing is lost.
+- **Restore the backup obur took before the update,** with the older version running. Changes made after the
+  update are lost. `docker exec obur obur backup info` lists the backups; the one before the update is the last
+  one taken before you updated. Then follow [Restoring](../restore.md) with
+  `--set=<its label> --type=immediate --target-action=promote`.
+
+(Versions before 1.0.0-rc.6 opened anyway on a newer database, which could fail or write wrong data.)
