@@ -52,7 +52,7 @@ describe('trash purge', () => {
 			await admin`select id from diary_entries where user_id = ${MEHMET} order by created_at`;
 		expect(left.map((r) => r.id)).toEqual([recent.id, kept.id]);
 
-		// The offline queue retries with the same ID: refused as gone, not recreated.
+		// A save sent again with the same ID (a lost answer, an older version's queue): refused as gone, not recreated.
 		await expect(diary.quickAdd(MEHMET, { ...ctx, id: old.id }, 300, 'Simit')).rejects.toEqual(
 			new DiaryError('gone')
 		);

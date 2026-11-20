@@ -56,7 +56,6 @@ export async function openQueue(ownerId: string, onClosed?: () => void) {
 	};
 	const store = (mode: IDBTransactionMode) => db.transaction('ops', mode).objectStore('ops');
 	return {
-		add: (op: QueuedOp) => request(store('readwrite').add(op)) as Promise<number>,
 		put: (op: QueuedOp) => request(store('readwrite').put(op)),
 		/**
 		 * Updates an item only if it is still queued, in one transaction: one discarded (in this tab or another) while
@@ -74,7 +73,6 @@ export async function openQueue(ownerId: string, onClosed?: () => void) {
 				tx.onerror = () => reject(tx.error);
 			}),
 		remove: (seq: number) => request(store('readwrite').delete(seq)),
-		has: async (seq: number) => (await request(store('readonly').getKey(seq))) !== undefined,
 		/** All items in creation order. */
 		all: async () =>
 			((await request(store('readonly').getAll())) as QueuedOp[]).sort((a, b) => a.seq! - b.seq!),

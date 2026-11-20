@@ -57,6 +57,9 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   than it declares (fflate stops at the declared size; probed), so the declared-size limit already bounds memory.
   Not done, judged impractical: counting bytes while reading JSON and media bodies (the adapter already stops any
   request over 21 MB, and only signed-in members can send them).
+- R15 done: the old queue's unused `add` and `has` are gone, three comments no longer describe offline saves, and
+  the image leaves out test files and drizzle-kit's snapshots (1087.8 MB to 1081.6 MB; migrations need only the SQL
+  and journal). Smoke, off-site outage, off-site restore and upgrade from beta.19 passed on it.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

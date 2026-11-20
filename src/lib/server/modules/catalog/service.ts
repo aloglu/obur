@@ -68,8 +68,8 @@ async function writeChildren(tx: Tx, foodId: string, input: FoodInput) {
 	await tx.delete(foodNutrients).where(eq(foodNutrients.foodId, foodId));
 	if (nutrients.length)
 		await tx.insert(foodNutrients).values(nutrients.map((n) => ({ ...n, foodId })));
-	// A portion keeps its ID while its name stays (the same portion, perhaps resized): an entry waiting offline and a
-	// retried save name the portion chosen by its ID, and a rename or icon change must not tell them it is gone
+	// A portion keeps its ID while its name stays (the same portion, perhaps resized): an entry left in an older version's
+	// queue and a retried save name the portion chosen by its ID, and a rename or icon change must not tell them it is gone
 	// (2026-11-20 audit).
 	const unclaimed = await tx
 		.select({ id: foodServings.id, name: foodServings.name })
