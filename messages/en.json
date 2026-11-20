@@ -13,6 +13,7 @@
 	"toast_undo_failed_detail": "Nothing changed. Check the connection and try again from the day.",
 	"signout_offline": "Signing out needs a connection",
 	"signout_offline_detail": "Nothing was removed from this device. Try again when you're back online.",
+	"device_clear_blocked": "Close obur's other tabs to finish clearing this device",
 	"error_generic": "Something went wrong. Please try again.",
 	"error_cancelled": "The passkey prompt was closed. Try again when you're ready.",
 	"error_rate_limited": "Too many attempts. Please wait a few minutes and try again.",

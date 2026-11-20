@@ -60,7 +60,8 @@
 			return;
 		}
 		setAccount(null);
-		if (offline.ownerId) await clearDeviceData(offline.ownerId);
+		if (offline.ownerId && !(await clearDeviceData(offline.ownerId)))
+			showToast({ message: m.device_clear_blocked() });
 		await invalidateAll();
 		await goto(resolve('/login'));
 	}

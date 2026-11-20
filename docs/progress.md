@@ -30,6 +30,12 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
   contents. DB tests run two refreshes against a held row lock (both fail before: both succeeded).
 - Step 6 done: the offline copy carries each food's stored `searchKey` (aliases); `searchable` uses it and keeps
   it out of the details. Unit and DB tests.
+- Step 7 done: sign-in, sign-out and account deletion label their answer with the account after them
+  (`locals.session`); the service worker counts account changes (`accountEpoch`) and ignores, and never saves, an
+  older request's answer for another account; the page tells it `obur:signed-out` (memory cleared too). Queue
+  connections close on `versionchange`; `deleteQueue` reports false if still blocked after 5 s (toast
+  `device_clear_blocked`). Two offline e2e tests (both fail before). The "stays on the page" test searched
+  `mercimek`, which now finds Lentils by alias offline (step 6): changed to a word that matches nothing.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 

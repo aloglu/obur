@@ -84,6 +84,11 @@ sw.addEventListener('activate', (event) => {
 
 /** The signed-in account as the server last said (null: nobody; undefined: not read yet since this worker started). */
 let account: string | null | undefined;
+/**
+ * Changes with each change of account. An answer to a request sent before the latest change is an earlier
+ * account's: it neither changes the account back nor is saved (2026-11-20 audit).
+ */
+let accountEpoch = 0;
 
 async function signedIn(): Promise<string | null> {
 	if (account === undefined) {
@@ -96,12 +101,24 @@ async function signedIn(): Promise<string | null> {
 /**
  * Every answer from the server says whose it is. When that changes (someone signed in or out), the earlier person's
  * copies are removed, whatever the page does; until then copies saved for anyone else are never served (savedCopy).
+ * Returns whether the answer is the current account's, to keep.
  */
-async function noteAccount(response: Response): Promise<void> {
-	if (!response.headers.has(ACCOUNT_HEADER)) return;
+async function noteAccount(response: Response, sentAt?: number): Promise<boolean> {
+	const labelled = response.headers.has(ACCOUNT_HEADER);
 	const now = response.headers.get(ACCOUNT_HEADER) || null;
-	if (now === (await signedIn())) return;
+	// Sent before the latest change: kept only if it is the current account's, and never changes it back.
+	if (sentAt !== undefined && sentAt !== accountEpoch)
+		return labelled && now === (await signedIn());
+	if (!labelled) return true;
+	if (now === (await signedIn())) return true;
+	await switchAccount(now);
+	return true;
+}
+
+/** Forgets everything kept for the earlier account, in memory and saved, at once. */
+async function switchAccount(now: string | null): Promise<void> {
 	account = now;
+	accountEpoch++;
 	forgetPrepared();
 	foodsCopy = undefined;
 	await caches.delete(DATA);
@@ -148,12 +165,13 @@ function refreshFoods(): Promise<void> {
 			const cache = await caches.open(DATA);
 			const tag = (await ownCopy(await cache.match(foodCopyKey())))?.headers.get('etag');
 			const startedAt = generation;
+			const sentAt = accountEpoch;
 			const response = await fetch(foodCopyKey(), {
 				credentials: 'same-origin',
 				headers: tag ? { 'if-none-match': tag } : {},
 				signal: AbortSignal.timeout(30_000)
 			});
-			await noteAccount(response);
+			if (!(await noteAccount(response, sentAt))) return;
 			if (response.status === 304 || !response.ok || response.redirected) return;
 			// A write landed meanwhile: this copy may predate it, and the write asks again.
 			if (generation !== startedAt || writes > 0) return;
@@ -222,6 +240,9 @@ sw.addEventListener('message', (event) => {
 		event.waitUntil(prepareAll(event.data.urls as string[]));
 	} else if (type === 'obur:forget') {
 		forgetPrepared();
+	} else if (type === 'obur:signed-out') {
+		// The page signed out or deleted the account: nothing of that account stays, not even in memory.
+		event.waitUntil(switchAccount(null));
 	}
 });
 
@@ -254,6 +275,7 @@ async function prepareOne(url: string) {
 	let done = () => {};
 	preparing.set(key, new Promise<void>((resolve) => (done = resolve)));
 	const startedAt = generation;
+	const sentAt = accountEpoch;
 	try {
 		const response = await fetch(url, {
 			credentials: 'same-origin',
@@ -264,7 +286,7 @@ async function prepareOne(url: string) {
 			throw e;
 		});
 		unreachableUntil = 0;
-		await noteAccount(response);
+		if (!(await noteAccount(response, sentAt))) return;
 		if (!response.ok || response.redirected || response.type !== 'basic') return;
 		const body = await response.clone().arrayBuffer();
 		if (generation !== startedAt || writes > 0) return;
@@ -308,14 +330,19 @@ function preparedAnswer(request: Request): Response | undefined {
 	return new Response(entry.body.slice(0), { status: entry.status, headers: entry.headers });
 }
 
+/** Writes after which someone else (or nobody) is signed in. */
+const ACCOUNT_CHANGES =
+	/^\/api\/v1\/(auth\/(login\/verify|setup\/verify|join\/verify|logout|recovery(\/.*)?)|account)$/;
+
 /** A change sent to the server: prepared pages may now be out of date, before and after it lands. */
 async function write(request: Request): Promise<Response> {
 	writes++;
 	forgetPrepared();
+	// Signing in or out (or deleting the account) says who is signed in now, whatever was sent before it.
+	const sentAt = ACCOUNT_CHANGES.test(new URL(request.url).pathname) ? undefined : accountEpoch;
 	try {
 		const response = await fetch(request);
-		// Signing in or out is a write: its answer is the first to say who is signed in now.
-		await noteAccount(response).catch(() => {});
+		await noteAccount(response, sentAt).catch(() => {});
 		return response;
 	} finally {
 		writes--;
@@ -378,6 +405,7 @@ async function fromNetwork(
 	announceLive: boolean
 ) {
 	let response: Response;
+	const sentAt = accountEpoch;
 	try {
 		response = await Promise.race([
 			fetch(request),
@@ -390,10 +418,11 @@ async function fromNetwork(
 		throw e;
 	}
 	unreachableUntil = 0;
-	await noteAccount(response).catch(() => {});
-	// Only successful, non-redirected responses are kept (never a sign-in redirect). The page gets its answer at
-	// once; the copy is written behind it (writing first held every page change back, most on a phone).
-	if (response.ok && !response.redirected)
+	const current = await noteAccount(response, sentAt).catch(() => false);
+	// Only successful, non-redirected responses are kept (never a sign-in redirect), and only the current account's.
+	// The page gets its answer at once; the copy is written behind it (writing first held every page change back,
+	// most on a phone).
+	if (current && response.ok && !response.redirected)
 		event.waitUntil(
 			save(cache, key, response.clone())
 				.then(() => trimSaved(cache))

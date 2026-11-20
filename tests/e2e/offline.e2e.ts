@@ -265,6 +265,57 @@ test('an entry discarded while it is being sent stays discarded when that send f
 	expect(day.entries).toEqual([]);
 });
 
+test('after signing out, nothing of the account answers offline, not even the food copy in memory', async ({
+	page,
+	context
+}, testInfo) => {
+	// 2026-11-20 audit: the service worker kept the account and its food copy in memory after a sign-out.
+	await signedInAs(page, 'Mehmet');
+	const name = `Quince jam ${testInfo.project.name}`;
+	await createFood(page, {
+		name,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 250, qualifier: 'reported' }]
+	});
+	await primeCache(page);
+	const offlineSearch = () =>
+		page.evaluate(async () => {
+			const r = await fetch('/__offline/foods?q=quince');
+			return r.ok ? ((await r.json()) as { results: { name: string }[] }).results.length : r.status;
+		});
+	await expect.poll(offlineSearch, { timeout: 15_000 }).toBe(1);
+
+	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
+	await nav.getByRole('link', { name: 'More' }).click();
+	await page.getByRole('button', { name: 'Sign out' }).click();
+	await expect(page).toHaveURL(/\/login$/);
+	await context.setOffline(true);
+	expect(await offlineSearch()).toBe(503);
+});
+
+test('signing out removes the waiting-entries store even while another tab has it open', async ({
+	page,
+	context
+}) => {
+	await signedInAs(page, 'Mehmet');
+	await primeCache(page);
+	const other = await context.newPage();
+	await other.goto('/');
+	const queues = (p: Page) =>
+		p.evaluate(async () =>
+			(await indexedDB.databases()).map((d) => d.name).filter((n) => n?.startsWith('obur-queue-'))
+		);
+	await expect.poll(() => queues(other)).toHaveLength(1);
+
+	const nav = page.getByRole('navigation', { name: 'Main' }).filter({ visible: true });
+	await nav.getByRole('link', { name: 'More' }).click();
+	await page.getByRole('button', { name: 'Sign out' }).click();
+	await expect(page).toHaveURL(/\/login$/);
+	expect(await queues(page)).toEqual([]);
+	await expect(page.getByText("Close obur's other tabs")).toHaveCount(0);
+	await other.close();
+});
+
 test('signing out asks before discarding entries that have not been sent', async ({
 	page,
 	context,
@@ -412,8 +463,8 @@ test('offline, the app stays on the page it is on, says what it cannot do, and n
 		document.dispatchEvent(new Event('visibilitychange'));
 	});
 	// Search answers from this device's copy of the person's foods (none match here) and offers quick add.
-	await page.getByLabel('Search foods').fill('mercimek');
-	await expect(page.getByText('No food found for “mercimek”.')).toBeVisible();
+	await page.getByLabel('Search foods').fill('qwzx');
+	await expect(page.getByText('No food found for “qwzx”.')).toBeVisible();
 	await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
 
 	// A page never saved on this device says so instead of showing Today.

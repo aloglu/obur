@@ -94,11 +94,13 @@ const routes: Record<string, Handler> = {
 			clientIp(event)
 		);
 		setSessionCookie(cookies, sessionToken);
+		event.locals.session = await auth.resolveSession(sessionToken);
 		return json({ ok: true });
 	},
-	'POST logout': async ({ cookies }, session) => {
+	'POST logout': async ({ cookies, locals }, session) => {
 		if (session) await auth.signOut(session);
 		clearSessionCookie(cookies);
+		locals.session = undefined;
 		return json({ ok: true });
 	},
 	'POST reauth/options': async (_, session) =>

@@ -48,6 +48,8 @@ export async function openQueue(ownerId: string) {
 		req.onsuccess = () => resolve(req.result);
 		req.onerror = () => reject(req.error);
 	});
+	// Another tab is removing this queue (sign-out there): let it, rather than block it (2026-11-20 audit).
+	db.onversionchange = () => db.close();
 	const store = (mode: IDBTransactionMode) => db.transaction('ops', mode).objectStore('ops');
 	return {
 		add: (op: QueuedOp) => request(store('readwrite').add(op)) as Promise<number>,
@@ -78,10 +80,22 @@ export async function openQueue(ownerId: string) {
 
 export type Queue = Awaited<ReturnType<typeof openQueue>>;
 
-/** Removes an account's queue from this device (sign-out with nothing pending, or after discarding). */
-export function deleteQueue(ownerId: string): Promise<void> {
+/**
+ * Removes an account's queue from this device (sign-out with nothing pending, or after discarding). Resolves false
+ * when it could not be removed: another tab (of an older version) kept it open, or the browser refused. A blocked
+ * removal still happens once that tab closes it.
+ */
+export function deleteQueue(ownerId: string, waitMs = 5000): Promise<boolean> {
 	return new Promise((resolve) => {
 		const req = indexedDB.deleteDatabase(dbName(ownerId));
-		req.onsuccess = req.onerror = req.onblocked = () => resolve();
+		const timer = setTimeout(() => resolve(false), waitMs);
+		req.onsuccess = () => {
+			clearTimeout(timer);
+			resolve(true);
+		};
+		req.onerror = () => {
+			clearTimeout(timer);
+			resolve(false);
+		};
 	});
 }

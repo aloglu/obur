@@ -14,5 +14,6 @@ export const DELETE: RequestHandler = ({ request, locals, cookies }) =>
 		await readJson(request, v.object({}));
 		await portability.deleteAccount(session.userId, session.userId);
 		clearSessionCookie(cookies);
+		locals.session = undefined;
 		return json({ deleted: true });
 	});

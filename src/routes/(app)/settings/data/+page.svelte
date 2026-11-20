@@ -287,7 +287,8 @@
 			() =>
 				withRecentAuth(async () => {
 					await api('DELETE', '/api/v1/account', {});
-					if (data.user) await clearDeviceData(data.user.id);
+					if (data.user && !(await clearDeviceData(data.user.id)))
+						showToast({ message: m.device_clear_blocked() });
 					confirming = false;
 					await invalidateAll();
 					await goto(resolve('/login'));

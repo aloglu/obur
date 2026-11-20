@@ -318,15 +318,20 @@ export async function discard(seq: number): Promise<void> {
 	await refresh();
 }
 
-/** Removes this device's copy of an account's local data: its queue and cached pages and API responses. */
-export async function clearDeviceData(ownerId: string): Promise<void> {
+/**
+ * Removes this device's copy of an account's local data: its queue, and the service worker's saved pages, answers
+ * and food copy (in its memory too). False when the queue could not be removed yet (another tab holds it open).
+ */
+export async function clearDeviceData(ownerId: string): Promise<boolean> {
 	stopSync();
-	await deleteQueue(ownerId);
+	navigator.serviceWorker?.controller?.postMessage({ type: 'obur:signed-out' });
+	const removed = await deleteQueue(ownerId);
 	noteWaiting(ownerId, '', 0);
 	if ('caches' in globalThis) {
 		for (const key of await caches.keys())
 			if (key.startsWith('obur-data')) await caches.delete(key);
 	}
+	return removed;
 }
 
 /** Cached pages belong to whoever was signed in; clear them when a different person signs in on this device. */
