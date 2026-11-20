@@ -12,6 +12,7 @@ import { updates } from '#lib/server/updates.ts';
 import { maintainOffer } from '#lib/shared/goals.ts';
 import { localDate } from '#lib/shared/diary-rules.ts';
 import type { StoredAchievement } from '#lib/server/modules/progress/index.ts';
+import { describeError } from '#lib/server/log.ts';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, depends, parent }) => {
@@ -27,7 +28,7 @@ export const load: LayoutServerLoad = async ({ locals, depends, parent }) => {
 			const { list } = await progress.sync(locals.session.userId, today, locals.zone);
 			celebrate = list.filter((a) => !a.seen);
 		} catch (e) {
-			console.error('achievements: sync failed', (e as Error).message);
+			console.error('achievements: sync failed', describeError(e));
 		}
 	}
 	// The goal weight is reached and the budget still has its deficit: Today and the goal's celebration offer to
@@ -52,7 +53,7 @@ export const load: LayoutServerLoad = async ({ locals, depends, parent }) => {
 			if (target?.mode === 'calculated')
 				goalPace = typeof requested === 'number' ? requested : (target.rateKgPerWeek ?? 0);
 		} catch (e) {
-			console.error('maintain offer: failed', (e as Error).message);
+			console.error('maintain offer: failed', describeError(e));
 		}
 	}
 	// What the More list shows beside its rows. Kept here, with everything else that refreshes behind a page change,
@@ -93,7 +94,7 @@ export const load: LayoutServerLoad = async ({ locals, depends, parent }) => {
 				newerVersion
 			};
 		} catch (e) {
-			console.error('more: counts failed', (e as Error).message);
+			console.error('more: counts failed', describeError(e));
 		}
 	}
 	// What reads this person's recordings and photos: their own key, the server's add-on, or nothing yet.

@@ -1,10 +1,11 @@
 import { json, redirect } from '@sveltejs/kit';
-import { sequence, type Handle } from '@sveltejs/kit/hooks';
+import { sequence, type Handle, type HandleServerError } from '@sveltejs/kit/hooks';
 import { defineCustomServerStrategy, getTextDirection } from '#lib/paraglide/runtime.js';
 import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { auth, SESSION_COOKIE } from '#lib/server/auth.ts';
 import { config } from '#lib/server/config.ts';
 import { clearSessionCookie } from '#lib/server/http.ts';
+import { describeError } from '#lib/server/log.ts';
 import { restorePending } from '#lib/server/restore-guard.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { ACCOUNT_HEADER, WRONG_ACCOUNT } from '#lib/shared/account-data.ts';
@@ -193,3 +194,16 @@ export const handle: Handle = sequence(
 	handleSession,
 	handleParaglide
 );
+
+/**
+ * Unexpected errors: logged without their message, which for a failed query holds its values (server/log.ts). The
+ * method and path (never the query string, which can hold searches) say where. The answer keeps SvelteKit's defaults
+ * (500, "Internal Error"); errors raised on purpose (`error(...)`) and framework errors are not logged here.
+ */
+export const handleError: HandleServerError = (input) => {
+	if (input.kind !== 'unknown') return;
+	const { event } = input;
+	console.error(
+		`obur: error: ${event.request.method} ${event.url.pathname}: ${describeError(input.error)}`
+	);
+};

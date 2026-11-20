@@ -62,6 +62,9 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
     test checks every SECURITY DEFINER function, and that runtime roles cannot create temporary tables.
   - Fix 4.1 done: a queue closed by a sign-out in another tab is opened again by the next new entry (`liveQueue`,
     sync.svelte.ts; only a new entry, so an idle tab never recreates it). Offline e2e test (fails before).
+  - Fix 5.1 done: `handleError` (hooks.server.ts) logs unknown errors as method, path and `describeError` (kind and
+    database code only; server/log.ts, unit test); the three layout log lines use it too. Checked with a temporary
+    route throwing a failed query with a secret value: the log line had no value.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
