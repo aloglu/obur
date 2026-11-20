@@ -73,6 +73,29 @@ afterAll(async () => {
 	await Promise.all([admin.end(), appSql.end()]);
 });
 
+/** Runs `attempts` while the row is locked, releasing it once all of them wait on it: they truly overlap. */
+async function overlapping<T>(table: string, id: string, attempts: () => Promise<T>[]) {
+	const holder = postgres(urls.admin, { max: 1, ...quiet });
+	const watcher = postgres(urls.admin, { max: 1, ...quiet });
+	try {
+		let started: Promise<PromiseSettledResult<T>[]> | undefined;
+		await holder.begin(async (tx) => {
+			await tx`select 1 from ${tx(table)} where id = ${id} for update`;
+			const list = attempts();
+			started = Promise.allSettled(list);
+			for (let i = 0; i < 300; i++) {
+				const [w] = await watcher`select count(*)::int as n from pg_stat_activity
+					where wait_event_type = 'Lock'`;
+				if (w.n >= list.length) break;
+				await new Promise((r) => setTimeout(r, 10));
+			}
+		});
+		return await started!;
+	} finally {
+		await Promise.all([holder.end(), watcher.end()]);
+	}
+}
+
 describe('saving and logging', () => {
 	it('saves entries with their snapshots and logs them as ordinary entries, keeping repeats', async () => {
 		const meal = await breakfast();
@@ -243,6 +266,17 @@ describe('managing', () => {
 		const kept = await saved.refresh(ZEYNEP, meal.id, 2, new Map());
 		expect(kept).toMatchObject({ refreshed: 0, kept: 1 });
 		expect(kept.meal.kcal).toBeCloseTo(250 * 0.52 + 120);
+	});
+
+	it('lets only one of two overlapping refreshes from the same revision through (2026-11-20 audit)', async () => {
+		const meal = await breakfast();
+		const foods = new Map((await catalog.foodsById(ZEYNEP, [breadId])).map((f) => [f.id, f]));
+		const results = await overlapping('saved_meals', meal.id, () => [
+			saved.refresh(ZEYNEP, meal.id, 1, foods),
+			saved.refresh(ZEYNEP, meal.id, 1, foods)
+		]);
+		expect(results.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected']);
+		expect((await saved.get(ZEYNEP, meal.id)).revision).toBe(2);
 	});
 
 	it('replaces contents in one step: amounts from the snapshot, removals, new foods, order and name', async () => {

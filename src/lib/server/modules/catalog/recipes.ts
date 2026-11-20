@@ -265,8 +265,18 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 			current: Map<string, FoodDetail>
 		): Promise<{ recipe: Recipe; refreshed: number; kept: number }> {
 			return withUser(db, userId, async (tx) => {
+				// The version is claimed before anything is read: a save that commits meanwhile makes this a conflict,
+				// never a refresh built on what it replaced (2026-11-20 audit).
+				const claimed = await tx
+					.update(foods)
+					.set({ version: expectedVersion + 1, updatedAt: now() })
+					.where(and(eq(foods.id, id), eq(foods.version, expectedVersion)))
+					.returning({ id: foods.id });
+				if (claimed.length === 0) {
+					await loadRecipe(tx, id); // not_found when it is gone
+					throw new CatalogError('conflict');
+				}
 				const recipe = await loadRecipe(tx, id);
-				if (recipe.version !== expectedVersion) throw new CatalogError('conflict');
 				let refreshed = 0;
 				const rows = recipe.ingredients.map((i) => {
 					const food = i.foodId ? current.get(i.foodId) : undefined;
@@ -295,10 +305,6 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 					refreshed += 1;
 					return { ...i, food: snapshot, unit, nutrients };
 				});
-				await tx
-					.update(foods)
-					.set({ version: recipe.version + 1, updatedAt: now() })
-					.where(eq(foods.id, id));
 				await writeContents(tx, userId, id, recipe.servings, rows);
 				return { recipe: await loadRecipe(tx, id), refreshed, kept: rows.length - refreshed };
 			});

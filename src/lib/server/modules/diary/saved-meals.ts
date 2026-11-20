@@ -385,8 +385,18 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 			foods: Map<string, FoodDetail>
 		): Promise<{ meal: SavedMeal; refreshed: number; kept: number }> {
 			return withUser(db, userId, async (tx) => {
+				// The revision is claimed before the items are read: an edit that commits meanwhile makes this a
+				// conflict, never a refresh that hides it (2026-11-20 audit).
+				const claimed = await tx
+					.update(savedMeals)
+					.set({ revision: expectedRevision + 1, updatedAt: now() })
+					.where(and(eq(savedMeals.id, id), eq(savedMeals.revision, expectedRevision)))
+					.returning({ id: savedMeals.id });
+				if (claimed.length === 0) {
+					await load(tx, id); // not_found when it is gone
+					throw new DiaryError('conflict');
+				}
 				const meal = await load(tx, id);
-				if (meal.revision !== expectedRevision) throw new DiaryError('conflict');
 				let refreshed = 0;
 				let kept = 0;
 				for (const item of meal.items) {
@@ -405,10 +415,6 @@ export function createSavedMeals(db: Database, now: () => Date = () => new Date(
 						.where(eq(savedMealItems.id, item.id));
 					refreshed += 1;
 				}
-				await tx
-					.update(savedMeals)
-					.set({ revision: meal.revision + 1, updatedAt: now() })
-					.where(eq(savedMeals.id, id));
 				return { meal: await load(tx, id), refreshed, kept };
 			});
 		},

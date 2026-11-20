@@ -85,6 +85,29 @@ afterAll(async () => {
 	await Promise.all([admin.end(), appSql.end()]);
 });
 
+/** Runs `attempts` while the row is locked, releasing it once all of them wait on it: they truly overlap. */
+async function overlapping<T>(table: string, id: string, attempts: () => Promise<T>[]) {
+	const holder = postgres(urls.admin, { max: 1, ...quiet });
+	const watcher = postgres(urls.admin, { max: 1, ...quiet });
+	try {
+		let started: Promise<PromiseSettledResult<T>[]> | undefined;
+		await holder.begin(async (tx) => {
+			await tx`select 1 from ${tx(table)} where id = ${id} for update`;
+			const list = attempts();
+			started = Promise.allSettled(list);
+			for (let i = 0; i < 300; i++) {
+				const [w] = await watcher`select count(*)::int as n from pg_stat_activity
+					where wait_event_type = 'Lock'`;
+				if (w.n >= list.length) break;
+				await new Promise((r) => setTimeout(r, 10));
+			}
+		});
+		return await started!;
+	} finally {
+		await Promise.all([holder.end(), watcher.end()]);
+	}
+}
+
 describe('values', () => {
 	it('is a food per serving: the ingredients summed and divided, with a serving weight from the cooked dish', async () => {
 		const recipe = await soup();
@@ -125,6 +148,19 @@ describe('pinning and editing', () => {
 		expect(result).toMatchObject({ refreshed: 2, kept: 0 });
 		expect(await kcal()).toBe(195);
 		expect(await errorCode(recipes.refresh(MEHMET, recipe.id, 1, current))).toBe('conflict');
+	});
+
+	it('lets only one of two overlapping refreshes from the same version through (2026-11-20 audit)', async () => {
+		const recipe = await soup();
+		const current = new Map(
+			(await catalog.foodsById(MEHMET, [lentilsId, onionId])).map((f) => [f.id, f])
+		);
+		const results = await overlapping('foods', recipe.id, () => [
+			recipes.refresh(MEHMET, recipe.id, 1, current),
+			recipes.refresh(MEHMET, recipe.id, 1, current)
+		]);
+		expect(results.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected']);
+		expect((await catalog.getFood(MEHMET, recipe.id)).version).toBe(2);
 	});
 
 	it('replaces name, servings and ingredients in one step, with version checks', async () => {

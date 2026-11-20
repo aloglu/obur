@@ -26,6 +26,8 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
   a saved answer only for foods not in it. New offline e2e test (fails before); offline and prepared suites passed.
 - Step 4 done: `writeChildren` (catalog/service.ts) keeps a portion's ID while its name stays (resized in place),
   deletes removed ones, inserts new ones. Rename keeps the fingerprint. DB tests (catalog; diary retry by portion).
+- Step 5 done: recipe and saved-meal `refresh` claim the version with a conditional update before reading the
+  contents. DB tests run two refreshes against a held row lock (both fail before: both succeeded).
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 
