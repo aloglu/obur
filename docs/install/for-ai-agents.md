@@ -76,6 +76,8 @@ backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cl
    }
    ```
    Keep `OBUR_BIND_ADDRESS` at its default `127.0.0.1`. Open only ports 80 and 443 (and SSH) in the firewall.
+   A proxy or tunnel connector on another machine also needs `OBUR_TRUSTED_PROXIES=<its address>`, or everyone
+   shares one sign-in limit (`remote-access.md`).
 6. **Check:** `curl -sI https://<address>/login` returns `200`.
 7. **First account:** the log printed a one-time setup link (`obur: no account exists yet …`), valid for 24 hours.
    Give it to the person privately. A new one: `docker exec obur obur setup-link`. Remind them to save the recovery

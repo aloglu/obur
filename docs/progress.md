@@ -70,7 +70,8 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   WebKit and desktop Chromium, Playwright image) 295 passed, 22 skipped by design; image built, smoke, off-site
   outage, off-site restore, upgrade from beta.19 and both add-on tests passed. Not run: the release workflow on
   GitHub (its new Publish job needs a tag; ask the owner), real-phone checks (owner).
-- **Next step:** the owner decides whether to tag 1.0.0-rc.6 (the first run of the new Publish job).
+- Release 1.0.0-rc.6 tagged on the owner's go (2026-11-21); agents guide checked (new waiting and older-version
+  lines, `OBUR_TRUSTED_PROXIES`). **Next step:** watch the release run; its Publish job runs for the first time.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 
