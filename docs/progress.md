@@ -24,6 +24,8 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
   db/identity.ts) and compresses after it. DB test pauses the export on a lock while an edit commits (fails before).
 - Step 3 done: offline, the service worker answers a food's details from the food copy first (`offlineAnswer`),
   a saved answer only for foods not in it. New offline e2e test (fails before); offline and prepared suites passed.
+- Step 4 done: `writeChildren` (catalog/service.ts) keeps a portion's ID while its name stays (resized in place),
+  deletes removed ones, inserts new ones. Rename keeps the fingerprint. DB tests (catalog; diary retry by portion).
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 

@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as v from 'valibot';
 import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
+import { foodFingerprint } from '../../../shared/diary-rules.ts';
 import { bulkParts, MAX_BULK_FOODS } from '../../../shared/food-bulk.ts';
 import { FoodInput } from '../../../shared/food-input.ts';
 import { foodSearchKey } from '../../../shared/search-text.ts';
@@ -176,6 +177,39 @@ describe('edit rights', () => {
 			expect(await errorCode(catalog.setArchived(who, id, true))).toBe('not_found');
 		}
 		expect(await catalog.updateFood(MEHMET, id, 1, food({ name: 'Ayran (ev)' }))).toBe(2);
+	});
+
+	it('keeps a portion’s ID while its name stays, so a rename changes nothing entries rely on (2026-11-20 audit)', async () => {
+		const portions = [
+			{ name: 'glass', amount: 200, unit: 'ml' },
+			{ name: 'bottle', amount: 500, unit: 'ml' }
+		];
+		const id = await catalog.createFood(MEHMET, food({ servings: portions }));
+		const before = await catalog.getFood(MEHMET, id);
+		await catalog.updateFood(MEHMET, id, 1, food({ name: 'Ayran (ev)', servings: portions }));
+		const renamed = await catalog.getFood(MEHMET, id);
+		expect(renamed.servings).toEqual(before.servings);
+		expect(foodFingerprint(renamed)).toBe(foodFingerprint(before));
+
+		// Resized keeps its ID; removed goes; added is new.
+		await catalog.updateFood(
+			MEHMET,
+			id,
+			2,
+			food({
+				servings: [
+					{ name: 'glass', amount: 250, unit: 'ml' },
+					{ name: 'cup', amount: 150, unit: 'ml' }
+				]
+			})
+		);
+		const edited = await catalog.getFood(MEHMET, id);
+		const glass = before.servings.find((s) => s.name === 'glass')!;
+		expect(edited.servings.find((s) => s.name === 'glass')).toEqual({ ...glass, amount: 250 });
+		expect(edited.servings.map((s) => s.name).sort()).toEqual(['cup', 'glass']);
+		expect(edited.servings.find((s) => s.name === 'cup')!.id).not.toBe(
+			before.servings.find((s) => s.name === 'bottle')!.id
+		);
 	});
 
 	it('rejects a stale edit instead of overwriting a newer one', async () => {

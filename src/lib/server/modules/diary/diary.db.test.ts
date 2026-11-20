@@ -294,9 +294,8 @@ describe('retries', () => {
 
 		expect(await diary.retriedFood(MEHMET, ctx({ id }), breadId, 2, slice)).toEqual(first);
 		// The same request through the create path is recognised too, even with the portion's new size.
-		const sameSlice = resolveUnit(slice, now.servings, []);
-		if (sameSlice)
-			expect(await diary.logFood(MEHMET, ctx({ id }), now, 2, sameSlice)).toEqual(first);
+		const sameSlice = resolveUnit(slice, now.servings, [])!;
+		expect(await diary.logFood(MEHMET, ctx({ id }), now, 2, sameSlice)).toEqual(first);
 		// Different content under the same ID is still a conflict; a new ID is not a retry.
 		expect(await errorCode(diary.retriedFood(MEHMET, ctx({ id }), breadId, 3, slice))).toBe(
 			'conflict'

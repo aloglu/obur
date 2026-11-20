@@ -58,10 +58,34 @@ async function writeChildren(tx: Tx, foodId: string, input: FoodInput) {
 	await tx.delete(foodNutrients).where(eq(foodNutrients.foodId, foodId));
 	if (nutrients.length)
 		await tx.insert(foodNutrients).values(nutrients.map((n) => ({ ...n, foodId })));
-	await tx.delete(foodServings).where(eq(foodServings.foodId, foodId));
-	if (input.servings.length) {
-		await tx.insert(foodServings).values(input.servings.map((s) => ({ ...s, foodId })));
+	// A portion keeps its ID while its name stays (the same portion, perhaps resized): an entry waiting offline and a
+	// retried save name the portion chosen by its ID, and a rename or icon change must not tell them it is gone
+	// (2026-11-20 audit).
+	const unclaimed = await tx
+		.select({ id: foodServings.id, name: foodServings.name })
+		.from(foodServings)
+		.where(eq(foodServings.foodId, foodId));
+	const fresh: (FoodInput['servings'][number] & { foodId: string })[] = [];
+	for (const s of input.servings) {
+		const i = unclaimed.findIndex((u) => u.name === s.name);
+		if (i < 0) {
+			fresh.push({ ...s, foodId });
+			continue;
+		}
+		const [{ id }] = unclaimed.splice(i, 1);
+		await tx
+			.update(foodServings)
+			.set({ amount: s.amount, unit: s.unit, source: s.source })
+			.where(eq(foodServings.id, id));
 	}
+	if (unclaimed.length)
+		await tx.delete(foodServings).where(
+			inArray(
+				foodServings.id,
+				unclaimed.map((u) => u.id)
+			)
+		);
+	if (fresh.length) await tx.insert(foodServings).values(fresh);
 }
 
 const columns = (input: FoodInput) => ({
