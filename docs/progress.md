@@ -26,7 +26,13 @@ of about a second stops it). Plan, one commit each:
 
 Step 3 in parts. 3a done: offline search and the food copy removed (`local-food-search.ts`,
 `GET /api/v1/foods/offline`, `catalog.offlineFoods`/`offlineFoodsStamp`, the worker's copy, the start's request);
-Log search says "Search needs a connection." when the server can't answer in 10 s. Next: 3b, saved copies.
+Log search says "Search needs a connection." when the server can't answer in 10 s. 3b done: the service worker keeps no saved pages (about 330 lines, was 638): code files cache-first as before,
+pages prepared ahead in memory, writes, reminders, and "obur needs a connection" (`shared/no-connection-page.ts`,
+built in the worker from the catalog in every language, picked by the language cookie) for a page that can't load
+in 10 s or within a minute of a failure; failed page data makes SvelteKit load the page in full, which shows it.
+Old caches (`obur-data-*`, `obur-account`) are deleted on activation. The start no longer downloads 7 pages and
+their data (the code preloading stays). Browser tests not yet run (offline.e2e.ts still expects saved pages).
+Next: 3c, saves without the queue.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 

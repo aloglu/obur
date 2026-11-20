@@ -2,47 +2,42 @@
 /// <reference no-default-lib="true"/>
 /// <reference lib="esnext" />
 /// <reference lib="webworker" />
-// Offline support within the bounded scope of docs/design.md ("Offline scope and synchronization"): the app shell
-// is cache-first so the installed app opens offline; signed-in pages and a few read-only API responses are
-// network-first with a cached fallback, so the last-seen day and recent foods stay viewable. Sign-in flows and
-// all writes always go to the network. The data cache is cleared on sign-out and when another person signs in, and
-// a saved copy is only ever served to the account it was saved for.
+// obur needs a connection (docs/design.md, "Connection required"). The service worker keeps the app's code files,
+// cache-first, so the app opens at once; prepares the pages likely to be opened next, in memory only, so a tap shows
+// them at once; shows "obur needs a connection" when a page can't be loaded; and shows reminders. It keeps no copy
+// of anyone's data on the device.
 import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
-import { ACCOUNT_HEADER } from './lib/shared/account-data.ts';
-import { answerFromCopy, mergePageData, nothingNew } from './lib/shared/page-data-copy.ts';
+import { m } from './lib/paraglide/messages.js';
+import { DEFAULT_LANGUAGE, LANGUAGES } from './lib/shared/languages.ts';
+import { noConnectionPage } from './lib/shared/no-connection-page.ts';
+import { nothingNew } from './lib/shared/page-data.ts';
 import { PREPARED_AGAIN_MS, askedLayers, mayAnswer, preparedKey } from './lib/shared/prepare.ts';
-import { TRIM_EVERY_MS, savedCopyExpired } from './lib/shared/saved-copies.ts';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 const SHELL = `obur-shell-${version}`;
-// v2: copies carry the account they were saved for (v1's did not, and are removed).
-const DATA = 'obur-data-v2';
-/** Who the server last said was signed in, kept apart from the copies (pages clear those by their prefix). */
-const ACCOUNT_CACHE = 'obur-account';
-const ACCOUNT_KEY = '/__account';
 // Paths are relative to the base path; requests are compared by absolute pathname.
 // The other app icons are left out: only a Home Screen asks for them, and all of them together are megabytes.
 // Food and achievement icons (about 390 files) are kept when first shown instead of all at install (2026-11-19
-// audit): a page shows only a few, and an icon seen online is there offline.
+// audit): a page shows only a few.
 const ON_FIRST_USE = /^\/icons\/(food|achievements)\//;
 const SHELL_ASSETS = new Set(
 	[...immutable, ...assets]
 		.map(({ path }) => `/${path.replace(/^\//, '')}`)
 		.filter((path) => !path.startsWith('/app-icons/') && !ON_FIRST_USE.test(path))
 );
-const NETWORK_TIMEOUT_MS = 3000;
-const NO_CACHE_PAGES = /^\/(login|setup|join|recover)(\/|$)/;
-const CACHEABLE_API = [
-	/^\/api\/v1\/foods\/[0-9a-f-]{36}$/,
-	/^\/api\/v1\/diary\/recent$/,
-	/^\/api\/v1\/measures$/,
-	/^\/api\/v1\/diary\/\d{4}-\d{2}-\d{2}$/
-];
+/** A page or its data that takes longer counts as no connection (iOS can leave a request hanging). */
+const NETWORK_TIMEOUT_MS = 10_000;
+/** Preparing ahead gives up sooner: nothing waits for it. */
+const PREPARE_TIMEOUT_MS = 3000;
+/** After a failed request, pages show the connection page at once for this long, instead of waiting each time. */
+const UNREACHABLE_HOLD_MS = 60_000;
+/** Sent by a page (or the connection page) that has just reached the server: the hold ends. */
+const REACHABLE = 'obur:reachable';
 
 sw.addEventListener('install', (event) => {
-	// File by file rather than addAll: one missing or failing file must not stop the whole install (with addAll it
-	// does, and the app then has no offline support at all). Missing files are fetched when first needed.
+	// File by file rather than addAll: one missing or failing file must not stop the whole install. Missing files
+	// are fetched when first needed.
 	event.waitUntil(
 		caches
 			.open(SHELL)
@@ -51,8 +46,9 @@ sw.addEventListener('install', (event) => {
 	);
 });
 
-// Keeps the previous version's shell too: a page opened before an update still runs the old code, and offline it
-// must still find that code's files (seen on the owner's iPhone after a deploy). Older versions are removed.
+// Keeps the previous version's code too: a page opened before an update still runs the old code and must find its
+// files (seen on the owner's iPhone after a deploy). Older versions are removed, and so is everything the offline
+// support of earlier versions kept (saved pages, the account marker, the food copy; removed 2026-11-20).
 const KEEP_SHELLS = 2;
 
 sw.addEventListener('activate', (event) => {
@@ -63,106 +59,33 @@ sw.addEventListener('activate', (event) => {
 				// Versions are build times, so the newest sort last.
 				const shells = keys.filter((k) => k.startsWith('obur-shell-')).sort();
 				const keep = new Set([...shells.slice(-KEEP_SHELLS), SHELL]);
-				const stale = keys.filter((k) => k.startsWith('obur-data-') && k !== DATA);
-				return Promise.all(
-					[...shells.filter((k) => !keep.has(k)), ...stale].map((k) => caches.delete(k))
-				);
+				return Promise.all(keys.filter((k) => !keep.has(k)).map((k) => caches.delete(k)));
 			})
 			.then(() => sw.clients.claim())
 	);
 });
 
-/** The signed-in account as the server last said (null: nobody; undefined: not read yet since this worker started). */
-let account: string | null | undefined;
-/**
- * Changes with each change of account. An answer to a request sent before the latest change is an earlier
- * account's: it neither changes the account back nor is saved (2026-11-20 audit).
- */
-let accountEpoch = 0;
-
-async function signedIn(): Promise<string | null> {
-	if (account === undefined) {
-		const kept = await (await caches.open(ACCOUNT_CACHE)).match(ACCOUNT_KEY);
-		account = kept ? (await kept.text()) || null : null;
-	}
-	return account;
-}
-
-/**
- * Every answer from the server says whose it is. When that changes (someone signed in or out), the earlier person's
- * copies are removed, whatever the page does; until then copies saved for anyone else are never served (savedCopy).
- * Returns whether the answer is the current account's, to keep.
- */
-async function noteAccount(response: Response, sentAt?: number): Promise<boolean> {
-	const labelled = response.headers.has(ACCOUNT_HEADER);
-	const now = response.headers.get(ACCOUNT_HEADER) || null;
-	// Sent before the latest change: kept only if it is the current account's, and never changes it back.
-	if (sentAt !== undefined && sentAt !== accountEpoch)
-		return labelled && now === (await signedIn());
-	if (!labelled) return true;
-	if (now === (await signedIn())) return true;
-	await switchAccount(now);
-	return true;
-}
-
-/** Forgets everything kept for the earlier account, in memory and saved, at once. */
-async function switchAccount(now: string | null): Promise<void> {
-	account = now;
-	accountEpoch++;
-	forgetPrepared();
-	await caches.delete(DATA);
-	await (await caches.open(ACCOUNT_CACHE)).put(ACCOUNT_KEY, new Response(now ?? ''));
-}
-
-/** A saved copy belongs to the person signed in now. */
-async function ownCopy(saved: Response | undefined): Promise<Response | undefined> {
-	if (!saved) return undefined;
-	const owner = saved.headers.get(ACCOUNT_HEADER) || null;
-	return owner !== null && owner === (await signedIn()) ? saved : undefined;
-}
-
-/** SvelteKit varies x-sveltekit-invalidated between data requests; it does not change the data's meaning. */
-function cacheKey(request: Request): string {
-	const url = new URL(request.url);
-	url.searchParams.delete('x-sveltekit-invalidated');
-	return url.href;
-}
-
-/**
- * Tells open pages whether the page data they just received is live or this device's saved copy, so they can say
- * so and refresh again later. Only for page data, not the API responses components fetch.
- */
-async function announce(request: Request, copy: 'live' | 'cached') {
-	const url = new URL(request.url);
-	if (request.mode !== 'navigate' && !url.pathname.endsWith('/__data.json')) return;
-	for (const client of await sw.clients.matchAll({ type: 'window' }))
-		client.postMessage({ type: 'obur:page-data', copy });
-}
-
-/** After a failed request, pages come from the saved copy at once for this long (iOS can hang offline requests). */
-const UNREACHABLE_HOLD_MS = 60_000;
 let unreachableUntil = 0;
+const unreachable = () => Date.now() < unreachableUntil;
+const failed = () => (unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS);
 
-// A page that has just reached the server (its queue sent something) ends the hold at once, so the refresh that
-// follows shows live data instead of the saved copy. The reply tells the page it may refresh now.
 sw.addEventListener('message', (event) => {
 	const type = event.data?.type;
-	if (type === 'obur:reachable') {
+	if (type === REACHABLE) {
 		unreachableUntil = 0;
 		event.ports[0]?.postMessage('ok');
 	} else if (type === 'obur:prepare' && Array.isArray(event.data.urls)) {
 		event.waitUntil(prepareAll(event.data.urls as string[]));
-	} else if (type === 'obur:forget') {
+	} else if (type === 'obur:forget' || type === 'obur:signed-out') {
+		// The time zone changed, or the page signed out: nothing prepared stays.
 		forgetPrepared();
-	} else if (type === 'obur:signed-out') {
-		// The page signed out or deleted the account: nothing of that account stays, not even in memory.
-		event.waitUntil(switchAccount(null));
 	}
 });
 
 // Pages prepared ahead (shared/prepare.ts): the open page names the pages likely to be opened next, and their data
-// is fetched now, so a tap shows the page at once. Kept in memory only, for a minute; any write drops them all,
-// and nothing fetched while a write was under way is kept, so a prepared page never predates a change made here.
+// is fetched now, so a tap shows the page at once. Kept in memory only, for a minute; any write (signing in and out
+// included) drops them all, and nothing fetched while a write was under way is kept, so a prepared page never
+// predates a change made here or belongs to someone who signed out.
 interface Prepared {
 	body: ArrayBuffer;
 	status: number;
@@ -189,20 +112,18 @@ async function prepareOne(url: string) {
 	let done = () => {};
 	preparing.set(key, new Promise<void>((resolve) => (done = resolve)));
 	const startedAt = generation;
-	const sentAt = accountEpoch;
 	try {
 		const response = await fetch(url, {
 			credentials: 'same-origin',
-			signal: AbortSignal.timeout(NETWORK_TIMEOUT_MS)
+			signal: AbortSignal.timeout(PREPARE_TIMEOUT_MS)
 		}).catch((e: unknown) => {
-			// Hanging or failing like any other request: pages come from the saved copy at once for a while.
-			unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS;
+			// Hanging or failing like any other request: pages show the connection page at once for a while.
+			failed();
 			throw e;
 		});
 		unreachableUntil = 0;
-		if (!(await noteAccount(response, sentAt))) return;
 		if (!response.ok || response.redirected || response.type !== 'basic') return;
-		const body = await response.clone().arrayBuffer();
+		const body = await response.arrayBuffer();
 		if (generation !== startedAt || writes > 0) return;
 		prepared.set(key, {
 			body,
@@ -211,10 +132,8 @@ async function prepareOne(url: string) {
 			at: Date.now(),
 			layers: askedLayers(url)
 		});
-		// It is fresh: the copy for use offline gets it too.
-		await save(await caches.open(DATA), key, response);
 	} catch {
-		// Not reachable: the page is answered from the saved copy when it is opened.
+		// Not reachable: the page is asked for again when it is opened.
 	} finally {
 		preparing.delete(key);
 		done();
@@ -244,20 +163,15 @@ function preparedAnswer(request: Request): Response | undefined {
 	return new Response(entry.body.slice(0), { status: entry.status, headers: entry.headers });
 }
 
-/** Writes after which someone else (or nobody) is signed in. */
-const ACCOUNT_CHANGES =
-	/^\/api\/v1\/(auth\/(login\/verify|setup\/verify|join\/verify|logout|recovery(\/.*)?)|account)$/;
-
 /** A change sent to the server: prepared pages may now be out of date, before and after it lands. */
 async function write(request: Request): Promise<Response> {
 	writes++;
 	forgetPrepared();
-	// Signing in or out (or deleting the account) says who is signed in now, whatever was sent before it.
-	const sentAt = ACCOUNT_CHANGES.test(new URL(request.url).pathname) ? undefined : accountEpoch;
 	try {
-		const response = await fetch(request);
-		await noteAccount(response, sentAt).catch(() => {});
-		return response;
+		return await fetch(request).catch((e: unknown) => {
+			failed();
+			throw e;
+		});
 	} finally {
 		writes--;
 		forgetPrepared();
@@ -267,144 +181,72 @@ async function write(request: Request): Promise<Response> {
 	}
 }
 
-const isPageData = (key: string) => new URL(key).pathname.endsWith('/__data.json');
-/** Which parts of a page's data a request asked for (SvelteKit's digits); null means all of them. */
-const askedParts = (request: Request) =>
-	new URL(request.url).searchParams.get('x-sveltekit-invalidated');
-
-/** A response with another body: the original's headers, without the ones that described the old body. */
-function rewritten(body: string, original: Response): Response {
-	const headers = new Headers(original.headers);
-	headers.delete('content-length');
-	headers.delete('content-encoding');
-	return new Response(body, { status: original.status, headers });
-}
-
-/** Writes to the saved copies wait for each other, so two answers for one page build on one another in order. */
-let saving: Promise<unknown> = Promise.resolve();
-
-/**
- * Keeps a copy of an answer. A page change brings only part of a page's data (often just the page, not what all
- * pages share), so page data is laid over the copy already there (shared/page-data-copy.ts).
- */
-function save(cache: Cache, key: string, response: Response): Promise<unknown> {
-	if (!isPageData(key)) return cache.put(key, response);
-	const write = async () => {
-		const fresh = await response.text();
-		const merged = mergePageData(await (await cache.match(key))?.text(), fresh);
-		if (merged !== undefined) await cache.put(key, rewritten(merged, response));
-	};
-	return (saving = saving.then(write, write));
-}
-
-/** When expired saved copies were last looked for (0: not since this worker started). */
-let trimmedAt = 0;
-
-/** Removes saved copies past their limit (shared/saved-copies.ts), at most every few hours, behind the page. */
-async function trimSaved(cache: Cache): Promise<void> {
-	if (Date.now() - trimmedAt < TRIM_EVERY_MS) return;
-	trimmedAt = Date.now();
-	for (const request of await cache.keys()) {
-		const saved = await cache.match(request);
-		if (saved && savedCopyExpired(saved.headers.get('date'), Date.now()))
-			await cache.delete(request);
-	}
-}
-
-async function fromNetwork(
-	event: FetchEvent,
-	request: Request,
-	cache: Cache,
-	key: string,
-	announceLive: boolean
-) {
-	let response: Response;
-	const sentAt = accountEpoch;
+/** The network's answer, or a rejection after the timeout (which also starts the hold). */
+async function fromNetwork(request: Request): Promise<Response> {
 	try {
-		response = await Promise.race([
+		const response = await Promise.race([
 			fetch(request),
 			new Promise<never>((_, reject) =>
 				setTimeout(() => reject(new Error('timeout')), NETWORK_TIMEOUT_MS)
 			)
 		]);
+		unreachableUntil = 0;
+		return response;
 	} catch (e) {
-		unreachableUntil = Date.now() + UNREACHABLE_HOLD_MS;
+		failed();
 		throw e;
 	}
-	unreachableUntil = 0;
-	const current = await noteAccount(response, sentAt).catch(() => false);
-	// Only successful, non-redirected responses are kept (never a sign-in redirect), and only the current account's.
-	// The page gets its answer at once; the copy is written behind it (writing first held every page change back,
-	// most on a phone).
-	if (current && response.ok && !response.redirected)
-		event.waitUntil(
-			save(cache, key, response.clone())
-				.then(() => trimSaved(cache))
-				.catch(() => {})
-		);
-	if (announceLive) void announce(request, 'live');
-	return response;
 }
 
-/**
- * The saved copy for a request. Pages that read their query in the browser (the + buttons open /log?meal=…) are
- * served from the copy saved under the plain address; any other page never saved gets the "not available offline"
- * page, never another page in its place (a day's address must not show today).
- */
-const READS_OWN_QUERY = new Set(['/log']);
+let connectionPage: string | undefined;
 
-async function savedCopy(request: Request, cache: Cache, key: string) {
-	const exact = await ownCopy(await cache.match(key));
-	// Page data: only the parts this request asked for.
-	if (exact && isPageData(key))
-		return rewritten(answerFromCopy(await exact.text(), askedParts(request)), exact);
-	if (exact) return exact;
-	const isPage =
-		request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html');
-	if (!isPage) return undefined;
-	const plain = new URL(request.url);
-	plain.search = '';
-	const samePage = READS_OWN_QUERY.has(plain.pathname)
-		? await ownCopy(await cache.match(plain.href))
-		: undefined;
-	return samePage ?? (await ownCopy(await cache.match(new URL('/offline', location.origin).href)));
+/** "obur needs a connection", in every language; the page picks one by the language cookie. */
+function noConnection(): Response {
+	connectionPage ??= noConnectionPage(
+		Object.fromEntries(
+			LANGUAGES.map((locale) => [
+				locale,
+				{
+					title: m.no_connection_title({}, { locale }),
+					line: m.no_connection_line({}, { locale }),
+					retry: m.no_connection_retry({}, { locale }),
+					still: m.no_connection_still({}, { locale })
+				}
+			])
+		),
+		DEFAULT_LANGUAGE,
+		REACHABLE
+	);
+	return new Response(connectionPage, {
+		status: 503,
+		headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }
+	});
 }
 
-const offlineAnswer = savedCopy;
+/** A page opened in full (the app's start, a reload, a link): the server's, or the connection page. */
+async function page(request: Request): Promise<Response> {
+	if (unreachable()) return noConnection();
+	return fromNetwork(request).catch(noConnection);
+}
 
-const pageData = (body: string) =>
+const nothingChanged = (body: string) =>
 	new Response(body, {
 		headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store' }
 	});
 
-async function networkFirst(event: FetchEvent): Promise<Response> {
-	const { request } = event;
-	const cache = await caches.open(DATA);
-	const key = cacheKey(request);
-	// Known to be unreachable a moment ago: answer from the saved copy without waiting, and keep checking the
-	// network in the background (which also refreshes the copy and ends the hold once it is back).
-	if (Date.now() < unreachableUntil) {
-		const cached = await offlineAnswer(request, cache, key);
-		if (cached) {
-			event.waitUntil(fromNetwork(event, request.clone(), cache, key, false).catch(() => {}));
-			void announce(request, 'cached');
-			return cached;
-		}
-	}
+/**
+ * A page's data on a page change. When it can't be loaded, the page loads in full instead (SvelteKit does that
+ * after failed data), which shows the connection page. A background refresh of what all pages share is answered
+ * "nothing new" instead, so it never replaces the page being looked at.
+ */
+async function pageData(request: Request): Promise<Response> {
+	const quiet = nothingNew(new URL(request.url).searchParams.get('x-sveltekit-invalidated'));
+	if (unreachable()) return quiet ? nothingChanged(quiet) : Response.error();
 	try {
-		const response = await fromNetwork(event, request, cache, key, true);
-		// The server is there but failing, and this only refreshes what pages share: leave the page as it is
-		// rather than replace it with an error.
-		const quiet = response.status >= 500 && isPageData(key) && nothingNew(askedParts(request));
-		return quiet ? pageData(quiet) : response;
+		const response = await fromNetwork(request);
+		return quiet && response.status >= 500 ? nothingChanged(quiet) : response;
 	} catch {
-		const cached = await offlineAnswer(request, cache, key);
-		if (cached) void announce(request, 'cached');
-		if (cached) return cached;
-		// A refresh of what pages share, with nothing saved to answer it: nothing changed, the page stays.
-		const quiet = isPageData(key) && nothingNew(askedParts(request));
-		if (quiet) return pageData(quiet);
-		return new Response('Offline', { status: 503, headers: { 'content-type': 'text/plain' } });
+		return quiet ? nothingChanged(quiet) : Response.error();
 	}
 }
 
@@ -427,12 +269,11 @@ sw.addEventListener('fetch', (event) => {
 		// ignoreVary: a module import sends headers (Origin) that the install-time copy was not fetched with.
 		event.respondWith(
 			(async () => {
-				// This version's files first: looking through every cache means searching the saved pages too, which
-				// grow with use. The other caches only matter for a page still running the previous version.
+				// This version's files first; the other versions only matter for a page still running older code.
 				const shell = await caches.open(SHELL);
 				const own = await shell.match(request, { ignoreVary: true });
 				if (own) return own;
-				// An icon isn't hashed and may have changed: the previous version's copy only when offline.
+				// An icon isn't hashed and may have changed: the previous version's copy only without a connection.
 				const older = () => caches.match(request, { ignoreVary: true });
 				if (!ON_FIRST_USE.test(url.pathname)) {
 					const hit = await older();
@@ -443,7 +284,7 @@ sw.addEventListener('fetch', (event) => {
 					if (hit) return hit;
 					throw e;
 				});
-				// Fill a gap left at install time, so it is there next time the network is not.
+				// Fill a gap left at install time, so it is there next time.
 				if (response.ok) event.waitUntil(shell.put(request, response.clone()).catch(() => {}));
 				return response;
 			})()
@@ -453,43 +294,27 @@ sw.addEventListener('fetch', (event) => {
 	// Prepared a moment ago for exactly this: answered at once.
 	const ready = preparedAnswer(request);
 	if (ready) {
-		void announce(request, 'live');
 		event.respondWith(ready);
 		return;
 	}
 	// Being prepared right now (a finger touched it a moment ago): wait for that answer.
 	const underWay = preparing.get(preparedKey(request.url));
 	if (underWay) {
-		event.respondWith(
-			underWay.then(() => {
-				const arrived = preparedAnswer(request);
-				if (arrived) {
-					void announce(request, 'live');
-					return arrived;
-				}
-				return answerNormally(event);
-			})
-		);
+		event.respondWith(underWay.then(() => preparedAnswer(request) ?? answer(request)));
 		return;
 	}
-	const handled = route(event, url);
+	const handled = route(request, url);
 	if (handled) event.respondWith(handled);
 });
 
 /** How a GET is answered when nothing prepared applies; undefined when it goes to the network untouched. */
-function route(event: FetchEvent, url: URL): Promise<Response> | undefined {
-	const { request } = event;
-	const page =
-		request.mode === 'navigate' ||
-		url.pathname.endsWith('/__data.json') ||
-		request.headers.get('accept')?.includes('text/html');
-	if (page && !NO_CACHE_PAGES.test(url.pathname)) return networkFirst(event);
-	if (CACHEABLE_API.some((pattern) => pattern.test(url.pathname))) return networkFirst(event);
+function route(request: Request, url: URL): Promise<Response> | undefined {
+	if (request.mode === 'navigate') return page(request);
+	if (url.pathname.endsWith('/__data.json')) return pageData(request);
 	return undefined;
 }
 
-const answerNormally = (event: FetchEvent) =>
-	route(event, new URL(event.request.url)) ?? fetch(event.request);
+const answer = (request: Request) => route(request, new URL(request.url)) ?? fetch(request);
 
 // Reminders (docs/ui.md, "Reminders"): show what the server sent; a tap opens the app, reusing an open window.
 sw.addEventListener('push', (event) => {

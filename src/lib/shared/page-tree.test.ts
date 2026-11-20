@@ -16,7 +16,7 @@ describe('parentOf', () => {
 	});
 
 	it('gives tabs and pages outside the tree no parent', () => {
-		for (const tab of ['/', '/log', '/journal', '/progress', '/more', '/onboarding', '/offline'])
+		for (const tab of ['/', '/log', '/journal', '/progress', '/more', '/onboarding'])
 			expect(parentOf(tab)).toBeNull();
 	});
 });

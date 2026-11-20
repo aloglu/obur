@@ -10,7 +10,6 @@
 		preloadCode
 	} from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
 	import { offer } from '#lib/client/celebration.svelte.ts';
 	import {
@@ -128,32 +127,12 @@
 				wasOffline = false;
 				void invalidateAll();
 			});
-		// Keep a copy of every main tab on this device, so each one opens without a connection, not only the
-		// pages visited while online. Done once per app start, after the current page has settled.
+		// Every page's code is read in ahead of the first visit, once per app start, after the current page has settled.
 		let ahead: ReturnType<typeof setInterval> | undefined;
 		const warm = setTimeout(() => {
 			if (recentlyUnreachable()) return;
-			const tabs = [
-				resolve('/(app)'),
-				resolve('/(app)/log'),
-				resolve('/(app)/journal'),
-				resolve('/(app)/progress'),
-				resolve('/(app)/more'),
-				resolve('/(app)/profile'),
-				resolve('/(app)/offline')
-			];
-			const get = (url: string, accept?: string) =>
-				fetch(url, { credentials: 'same-origin', headers: accept ? { accept } : undefined }).catch(
-					() => {}
-				);
-			for (const href of tabs) {
-				// The page itself (for a reload), and its data as SvelteKit requests it on an in-app move. The
-				// page that was opened first has its data built into the HTML, so it is fetched here explicitly.
-				get(href, 'text/html');
-				get(href === '/' ? '/__data.json?x-sveltekit-trailing-slash=1' : `${href}/__data.json`);
-			}
-			// Every page's code, one at a time, so the first visit to a page does not wait for it (the files are already
-			// on this device, in the service worker's copy; this reads them in before the tap).
+			// One at a time, so the first visit to a page does not wait for it (the files are already on this device, in
+			// the service worker's copy; this reads them in before the tap).
 			const pages = [
 				'/(app)',
 				'/(app)/log',
@@ -193,17 +172,6 @@
 			clearTimeout(accountTimer);
 		};
 	});
-	// Keep the service worker's copy of this page current, so an offline reload shows the latest data rather than
-	// the page as it was first loaded. Only while online; failures are irrelevant.
-	$effect(() => {
-		void page.data;
-		const url = page.url.href;
-		const timer = setTimeout(() => {
-			fetch(url, { headers: { accept: 'text/html' }, credentials: 'same-origin' }).catch(() => {});
-		}, 800);
-		return () => clearTimeout(timer);
-	});
-
 	const waiting = $derived(offline.items.filter((i) => i.status === 'pending').length);
 	// Offline means the page is the saved copy (the queue's own test of reachability, never navigator.onLine).
 	let wasOffline = false;
