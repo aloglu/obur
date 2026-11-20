@@ -13,3 +13,17 @@ export async function effectiveSource(userId: string, feature: Feature): Promise
 	if (choice !== 'server' && (await remoteModels.allowed(userId))) return choice;
 	return hasLocal(feature) ? 'server' : null;
 }
+
+/**
+ * The source for one request. `viaServer` (the person tapped "Read this one on obur's server instead"): this
+ * server's add-on or nothing, never a provider, even when the add-on was removed after the page opened. `normal` is
+ * the person's usual choice (effectiveSource).
+ */
+export async function requestSource(
+	viaServer: boolean,
+	local: boolean,
+	normal: () => Promise<Source | null>
+): Promise<Source | 'local_missing' | null> {
+	if (viaServer) return local ? 'server' : 'local_missing';
+	return normal();
+}

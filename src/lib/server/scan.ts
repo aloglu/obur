@@ -10,7 +10,7 @@ import {
 } from '#lib/server/modules/label-parser/index.ts';
 import type { RemoteError, Source } from '#lib/shared/remote-models.ts';
 import { config } from './config.ts';
-import { effectiveSource, hasLocal } from './model-source.ts';
+import { effectiveSource, hasLocal, requestSource } from './model-source.ts';
 import { RemoteFailure, readLabel } from './providers.ts';
 import { remoteModels } from './remote-models.ts';
 
@@ -51,7 +51,10 @@ export async function scanLabel(
 	ocrMs: number;
 	queueMs: number;
 }> {
-	const source = viaServer && hasLocal('scan') ? 'server' : await effectiveSource(userId, 'scan');
+	const source = await requestSource(viaServer, hasLocal('scan'), () =>
+		effectiveSource(userId, 'scan')
+	);
+	if (source === 'local_missing') throw new ScanFailure('unavailable');
 	if (!source) throw new ScanFailure('off');
 	if (image.length === 0) throw new ScanFailure('decode_failed');
 	if (image.length > MAX_IMAGE_BYTES) throw new ScanFailure('too_large');

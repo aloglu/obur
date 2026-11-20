@@ -2,6 +2,20 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Release-readiness audit (owner's go, 2026-11-20)
+
+The owner's audit of rc.5: `~/Documents/Obur-1.0-Release-Readiness-Review.md` (not in the repository), items R01-R15.
+Owner's choices: R12 A (an older version refuses a newer database and points to the backup taken before the
+update), R06 A (unpack imports in parts, one import at a time, in the web app), R13 A (keep the preparation; fix
+stale data after a session ends elsewhere or the connection is lost; make the page code list automatic).
+Skipped by my judgement, told the owner: development-only npm advisories; a permanent image scanner (one scan by
+hand after R04); R15 only removes unused queue code and test files from the image.
+Order, one commit each: R02, R01, R04, R03 (+R11 release record), R08, R05, R07, R09, R10, R12, R14, R15, README
+and licence, R06, R13. Real-phone checks stay with the owner.
+
+- R02 done: `model-source.ts` `requestSource`: "Read this one on obur's server instead" uses the add-on or fails
+  ("unavailable"), never the person's provider (unit test).
+
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 
 Owner's go, with two conditions: real technical debt goes away, and no speed loss a person can feel (a slowdown

@@ -8,7 +8,7 @@ import { catalog } from './catalog.ts';
 import { config } from './config.ts';
 import { diary } from './diary.ts';
 import { understandEntry } from './typed-entry.ts';
-import { effectiveSource, hasLocal } from './model-source.ts';
+import { effectiveSource, hasLocal, requestSource } from './model-source.ts';
 import { RemoteFailure, transcribe } from './providers.ts';
 import { remoteModels } from './remote-models.ts';
 import type { RemoteError, Source } from '#lib/shared/remote-models.ts';
@@ -61,7 +61,10 @@ export async function understandSpeech(
 	mime = 'audio/mp4',
 	viaServer = false
 ): Promise<{ entry: ParsedEntry; source: Source; audioS: number; asrMs: number; queueMs: number }> {
-	const source = viaServer && hasLocal('speak') ? 'server' : await effectiveSource(userId, 'speak');
+	const source = await requestSource(viaServer, hasLocal('speak'), () =>
+		effectiveSource(userId, 'speak')
+	);
+	if (source === 'local_missing') throw new SpeechFailure('unavailable');
 	if (!source) throw new SpeechFailure('off');
 	// An empty clip (Done tapped at once) is nothing heard, not an error.
 	if (audio.length === 0) throw new SpeechFailure('nothing_heard');
