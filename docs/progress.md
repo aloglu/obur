@@ -79,7 +79,10 @@ Browser suite: 289 passed, 19 skipped, 1 failed (that title test).
 Image `obur:test` built from `0ff86de`: smoke, off-site outage and upgrade from beta.19 passed. Agents' install
 guide checked; it now explains the `obur: error:` log line. Hand checks for the owner: `~/Documents` checklist.
 Release 1.0.0-rc.5 (owner's go, 2026-11-20). The first tag run failed at its first step: package.json still said
-rc.4 (nothing was built or published); the tag was moved to the version commit.
+rc.4 (nothing was built or published); the tag was moved to the version commit. The second run failed in the
+browser tests (nothing published): `turkish.e2e.ts` "no main screen scrolls sideways" hit the same early-leave
+reload as the title test (also fails with the retry). It and the diary back-link loop now wait for each page to
+finish loading (Turkish test 20 of 20); the tag was moved again.
 Next: the release run; then the owner updates and goes through the checklist in `~/Documents`.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
@@ -149,7 +152,10 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
     route throwing a failed query with a secret value: the log line had no value.
   - Checks on `21352d3`: lint, check, Vitest 1196 passed; full e2e 304 passed, 19 skipped by design; image smoke,
     off-site and upgrade (beta.19, includes migration 0060) tests passed. Release 1.0.0-rc.5 (owner's go, 2026-11-20). The first tag run failed at its first step: package.json still said
-rc.4 (nothing was built or published); the tag was moved to the version commit.
+rc.4 (nothing was built or published); the tag was moved to the version commit. The second run failed in the
+browser tests (nothing published): `turkish.e2e.ts` "no main screen scrolls sideways" hit the same early-leave
+reload as the title test (also fails with the retry). It and the diary back-link loop now wait for each page to
+finish loading (Turkish test 20 of 20); the tag was moved again.
 Next: the release run; then the owner updates and goes through the checklist in `~/Documents`.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`

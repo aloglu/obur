@@ -446,6 +446,8 @@ test('every nested page has the same "<" beside its title, leading one level up'
 	];
 	for (const [path, up, lands] of pages) {
 		await page.goto(path);
+		// Done loading first (see app-shell.e2e.ts, "every page title").
+		await page.waitForLoadState('networkidle').catch(() => {});
 		const title = page.getByRole('heading', { level: 1 });
 		const back = page.getByRole('main').getByRole('link', { name: up, exact: true });
 		await expect(back, path).toBeVisible();

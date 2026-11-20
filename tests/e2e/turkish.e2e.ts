@@ -125,6 +125,9 @@ test('no main screen scrolls sideways in Turkish', async ({ page }) => {
 		'/achievements'
 	]) {
 		await page.goto(path);
+		// Done loading first: leaving a page while its code still loads made WebKit fail the import, and
+		// SvelteKit then loaded that page again over the next one.
+		await page.waitForLoadState('networkidle').catch(() => {});
 		await expect(page.locator('html')).toHaveAttribute('lang', 'tr');
 		const wide = await page.evaluate(
 			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
