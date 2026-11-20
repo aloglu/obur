@@ -65,10 +65,26 @@ ready_again() {
 docker exec "$name" obur restore start --set=does-not-exist >/dev/null 2>&1 && fail "a restore of no backup worked"
 out=$(docker exec "$name" obur restore start --set=does-not-exist 2>&1) && fail "the second bad restore worked"
 [[ $out == *'did not complete; starting it again'* ]] || fail "a failed restore could not be retried: $out"
+# While another restore command runs, start and cancel are refused and change nothing (2026-11-20 audit).
+docker exec -d "$name" flock /run/obur/restore.lock sleep 10
+sleep 1
+out=$(docker exec "$name" obur restore cancel 2>&1) && fail "cancel ran beside another restore command"
+[[ $out == *'still running'* ]] || fail "cancel beside another restore command: $out"
+out=$(docker exec "$name" obur restore start 2>&1) && fail "start ran beside another restore command"
+[[ $out == *'still running'* ]] || fail "start beside another restore command: $out"
+docker exec "$name" flock /run/obur/restore.lock true # waits for it to end
 out=$(docker exec "$name" obur restore cancel 2>&1) || fail "cancel after a failed restore: $out"
 [[ $out == *'from before the restore is back'* ]] || fail "cancel did not put the database back: $out"
 ready_again 2 "not ready again after cancelling a failed restore"
-[[ $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3199/login) == 200 ]] || fail "no sign-in page after cancel"
+# The ready line comes just before the web server listens: give it a few seconds.
+signin_page() {
+	for _ in $(seq 10); do
+		[[ $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3199/login) == 200 ]] && return 0
+		sleep 1
+	done
+	return 1
+}
+signin_page || fail "no sign-in page after cancel"
 docker stop -t 60 "$name" >/dev/null
 [[ $(logs) == *'database system is shut down'* ]] || fail "the database did not shut down cleanly"
 

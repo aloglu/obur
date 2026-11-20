@@ -40,8 +40,17 @@ hold_obur() {
 	return 1
 }
 
+# One restore command at a time: a second `start` or a `cancel` while one is still restoring would remove the
+# database it is writing (2026-11-20 audit). Holding the lock also tells a running command from an interrupted one:
+# a mark without restoredAt found while holding it is a failed or interrupted attempt. Held until this command ends.
+restore_lock() {
+	exec 9>"$OBUR_RUN/restore.lock"
+	flock -n 9 || obur_fail "another 'obur restore' command is still running; wait for it to end, then try again"
+}
+
 restore_start() {
 	supervised
+	restore_lock
 	local retry=0
 	if [[ -f $OBUR_STATUS_DIR/restore-pending ]]; then
 		restore_completed && obur_fail "a restore is already pending: finish it with 'obur restore finish', or put the old database back with 'obur restore cancel'"
@@ -78,6 +87,7 @@ restore_start() {
 
 restore_finish() {
 	supervised
+	restore_lock
 	[[ -f $OBUR_STATUS_DIR/restore-pending ]] || obur_fail "no restore is pending"
 	for _ in $(seq 120); do
 		pg_isready -q -h "$OBUR_SOCKET" -U obur_admin -d obur && break
@@ -100,6 +110,7 @@ restore_finish() {
 
 restore_cancel() {
 	supervised
+	restore_lock
 	[[ -f $OBUR_STATUS_DIR/restore-pending || -f $ASIDE_NOTE || -f $OBUR_RUN/aside ]] ||
 		obur_fail "no restore is pending"
 	local aside
