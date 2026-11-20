@@ -56,7 +56,10 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
 - Checks on `c66a1c0`: lint, check, Vitest 1194 passed; full e2e 302 passed, 19 skipped by design; image smoke,
   off-site and upgrade (beta.19) tests passed. Owner's decision (2026-11-20): imports and start-up preparation stay as they are. Full audit by us done
   2026-11-20 (report in the owner's Documents, outside the repo): 4 problems, none high. Next: the owner decides
-  which to fix; then ask before tagging rc.5.
+  which to fix; then ask before tagging rc.5. Owner: fix all four (2026-11-20).
+  - Fix 7.1 done: `reminders_off_failed` in Turkish uses "Hatırlatmalar" (glossary).
+  - Fix 1.1 done: migration 0060 puts `pg_temp` last in the search path of 10 privileged functions; isolation DB
+    test checks every SECURITY DEFINER function, and that runtime roles cannot create temporary tables.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 

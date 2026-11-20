@@ -92,6 +92,16 @@ describe('runtime roles', () => {
 		expect(await errorCode(appSql.unsafe(`set role ${ROLES.migrator}`))).toBe('42501');
 		expect(await errorCode(appSql`create table sneaky (id int)`)).toBe('42501');
 	});
+
+	it('runtime roles cannot make temporary tables, and privileged functions search pg_temp last', async () => {
+		// A temporary table must never stand in for a real one inside a SECURITY DEFINER function (2026-11-20 audit).
+		expect(await errorCode(appSql`create temporary table users (id uuid)`)).toBe('42501');
+		const loose = await admin`
+			select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+			where n.nspname = 'public' and p.prosecdef
+				and not exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%pg_temp')`;
+		expect(loose.map((r) => r.proname)).toEqual([]);
+	});
 });
 
 describe('withUser isolation', () => {

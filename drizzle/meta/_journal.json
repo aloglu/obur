@@ -421,6 +421,13 @@
       "when": 1794953501986,
       "tag": "0059_trash_foods_meals_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795181621697,
+      "tag": "0060_search_path_pg_temp",
+      "breakpoints": true
     }
   ]
 }
