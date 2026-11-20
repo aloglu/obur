@@ -94,6 +94,24 @@ test('a page change without a connection shows the connection page, never anothe
 	await context.setOffline(false);
 });
 
+test('pages and API answers are never cached; code files are', async ({ page }) => {
+	await signedInAs(page, 'Kaan');
+	for (const path of [
+		'/',
+		'/progress',
+		'/api/v1/profile',
+		'/__data.json?x-sveltekit-invalidated=01'
+	]) {
+		const response = await page.request.get(path);
+		expect(response.headers()['cache-control'], path).toContain('no-store');
+		expect(response.headers()['cache-control'], path).toContain('private');
+	}
+	const html = await (await page.request.get('/')).text();
+	const code = html.match(/\/_app\/immutable\/[^"']+\.js/)?.[0];
+	expect(code).toBeTruthy();
+	expect((await page.request.get(code!)).headers()['cache-control']).toContain('immutable');
+});
+
 test('nothing of anyone’s data is kept in the browser’s storage', async ({ page }) => {
 	await signedInAs(page, 'Kaan');
 	await ready(page);
@@ -287,6 +305,59 @@ test('entries an older version left waiting are sent at the start; a refused one
 		`/api/v1/diary/${date}`
 	);
 	expect(day.entries.map((e) => e.description)).toEqual(['Ayran']);
+});
+
+test('sign-out asks before it discards an old entry the server could not take just now', async ({
+	page,
+	context
+}, testInfo) => {
+	// 2026-11-20 audit (R08): a waiting entry was deleted unasked when only the save failed. Only Chromium lets a
+	// test hold back the service worker's own requests.
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'needs Chromium request routing');
+	const ownerId = await signedInAs(page, 'Ece');
+	await ready(page);
+	await context.route('**/api/v1/diary/entries', (route) =>
+		route.request().method() === 'POST'
+			? route.fulfill({ status: 503, json: { error: 'unavailable' } })
+			: route.continue()
+	);
+	const id = crypto.randomUUID();
+	const date = await today(page);
+	await oldQueue(page, ownerId, [
+		{
+			id,
+			ownerId,
+			path: '/api/v1/diary/entries',
+			body: { id, date, meal: 'snacks', zone: 'UTC', kind: 'quick', kcal: 90, description: 'Plum' },
+			preview: {
+				kind: 'diary',
+				localDate: date,
+				meal: 'snacks',
+				name: 'Plum',
+				quantity: '1',
+				kcal: 90
+			},
+			createdAt: new Date().toISOString(),
+			attempts: 0,
+			status: 'pending'
+		}
+	]);
+	await page.goto('/more');
+	let asked = '';
+	page.once('dialog', (dialog) => {
+		asked = dialog.message();
+		void dialog.dismiss();
+	});
+	await page.getByRole('button', { name: 'Sign out' }).click();
+	await expect.poll(() => asked).toContain("1 entries on this device haven't been sent yet");
+	await expect(page).toHaveURL(/\/more$/);
+	expect(
+		await page.evaluate(
+			async (name) => (await indexedDB.databases()).some((d) => d.name === name),
+			`obur-queue-${ownerId}`
+		)
+	).toBe(true);
+	await context.unroute('**/api/v1/diary/entries');
 });
 
 test('a save that landed but whose answer was lost is acknowledged when sent again, even after the food changed', async ({

@@ -25,6 +25,10 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   index once (18.7 notes: GIN bugs could point entries at wrong rows). The notes' warning about incremental backups
   is about PostgreSQL's own (`pg_basebackup --incremental`), not pgBackRest's, which obur uses. Checks: Vitest 1196
   passed on 18.7; image smoke, off-site outage, off-site restore and upgrade from beta.19 passed.
+- R08 done: sign-out counts old entries still waiting as well as refused ones (`unsentOld`) and asks before it
+  discards them. Browser test (Chromium) fails without the fix.
+- R05 done: every page and API answer without its own rule gets `Cache-Control: private, no-store`
+  (`hooks.server.ts`); code files keep `immutable`. Browser test; install guide says not to cache every response.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

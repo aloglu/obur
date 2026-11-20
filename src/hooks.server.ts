@@ -88,6 +88,10 @@ const handleSecurity: Handle = async ({ event, resolve }) => {
 		}
 	}
 	const response = await resolve(event);
+	// Pages and API answers hold one person's data: no browser or proxy cache keeps them (2026-11-20 audit, R05).
+	// Code files and icons never reach this hook; the static file server gives them their own long-lived rules.
+	if (!response.headers.has('cache-control'))
+		response.headers.set('cache-control', 'private, no-store');
 	response.headers.set('referrer-policy', 'no-referrer');
 	response.headers.set('x-content-type-options', 'nosniff');
 	response.headers.set('permissions-policy', 'camera=(self), microphone=(self), geolocation=()');

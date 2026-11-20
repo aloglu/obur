@@ -37,6 +37,13 @@ obur.example.com {
 Then `sudo systemctl reload caddy` and open `https://obur.example.com`. Open ports 80 and 443 in the VPS firewall,
 and nothing else for obur.
 
+## Caches in front of obur
+
+obur marks every page and data answer `Cache-Control: private, no-store`, and only its code files and icons as
+cacheable. Keep a proxy's default behaviour, which follows these rules. Do not add a rule that caches every
+response for obur's address (in Cloudflare: no "Cache Everything" rule for it): one person's diary could then be
+shown to another.
+
 ## The passkey domain
 
 By default passkeys belong to the address's host (`obur.example.com`). Setting `WEBAUTHN_RP_ID=example.com` instead
