@@ -316,6 +316,16 @@ describe('retries', () => {
 		const first = await diary.logFood(MEHMET, ctx({ id }), food, 283.49523125, grams);
 		expect(first.amount).toBe(283.4952);
 		expect(await diary.logFood(MEHMET, ctx({ id }), food, 283.49523125, grams)).toEqual(first);
+		// A third of a portion, as Type it now sends it ("1/3 of a container").
+		const slice = resolveUnit(
+			{ kind: 'serving', servingId: food.servings[0].id },
+			food.servings,
+			[]
+		)!;
+		const third = randomUUID();
+		const once = await diary.logFood(MEHMET, ctx({ id: third }), food, 1 / 3, slice);
+		expect(once.amount).toBe(0.3333);
+		expect(await diary.logFood(MEHMET, ctx({ id: third }), food, 1 / 3, slice)).toEqual(once);
 	});
 
 	it('rejects the same ID reused with different content', async () => {

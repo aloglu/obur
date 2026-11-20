@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createFood, signedInAs, choose } from './fixtures.ts';
+import { apiAs, createFood, signedInAs, choose } from './fixtures.ts';
 
 test('a typed sentence becomes items to confirm, logged together and undone together', async ({
 	page
@@ -87,10 +87,7 @@ test('a fraction of a container and a portion named by its own word (owner repor
 });
 
 test('a third of a container counts as a third, not 0.33', async ({ page }, testInfo) => {
-	// Known bug (found 2026-11-20, owner to decide): the card keeps the amount as the text "0.33", so it shows and
-	// logs 148.5 kcal (149) for a third of 300 g at 150 kcal per 100 g. The old search hid it: an unrelated typo
-	// match in the same card carried the "150" this test looked for.
-	test.fail();
+	// A third is a third: 150 kcal, not 148.5 from the field's 0.33 (fixed 2026-11-20).
 	const tag = testInfo.project.name.replace(/[^a-z]/gi, '');
 	await signedInAs(page, `Üçte ${tag}`);
 	await createFood(page, {
@@ -106,6 +103,16 @@ test('a third of a container counts as a third, not 0.33', async ({ page }, test
 	await sheet.getByLabel('You typed').fill(`1/3 of a container of ricotta peyniri ${tag}`);
 	const ricotta = sheet.getByRole('region', { name: `Ricotta Peyniri ${tag}` });
 	await expect(ricotta).toContainText('150 kcal', { timeout: 5000 });
+	// And it is saved as a third.
+	await sheet.getByRole('button', { name: /^Log 1 to/ }).click();
+	await expect(sheet).toBeHidden();
+	const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+	const day = await apiAs<{ entries: { nutrients: { energy_kcal?: { value: number } } }[] }>(
+		page,
+		'GET',
+		`/api/v1/diary/${date}`
+	);
+	expect(day.entries.map((e) => Math.round(e.nutrients.energy_kcal!.value))).toEqual([150]);
 });
 
 test('weight, calories-only and a curated food with a bare count', async ({ page }, testInfo) => {

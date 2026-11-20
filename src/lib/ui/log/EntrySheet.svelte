@@ -74,6 +74,8 @@
 				optionKey: string;
 				said: string | null;
 				amountText: string;
+				/** The amount as understood ("1/3"), kept exact until the person changes the field. */
+				exact: number | null;
 				/** Matched only loosely: asks which one before it can be logged. */
 				unsure: boolean;
 				searching: boolean;
@@ -85,6 +87,11 @@
 		| { kind: 'activity'; id: string; kcalText: string; note: string; open: boolean };
 
 	const num = (n: number | null) => (n === null ? '' : formatDecimal(n, 2));
+	/** A third stays a third: the field shows 0.33, but until it is changed the amount is the one understood. */
+	const amountOf = (card: Extract<Card, { kind: 'food' }>) =>
+		card.exact !== null && card.amountText === num(card.exact)
+			? card.exact
+			: parseDecimal(card.amountText);
 	const keyOf = (u: UnitOption['input'] | null) =>
 		!u
 			? ''
@@ -117,6 +124,7 @@
 								: '',
 						said: i.said,
 						amountText: num(i.amount),
+						exact: i.amount,
 						unsure: i.candidates[0]?.loose ?? false,
 						searching: false,
 						open: false
@@ -247,7 +255,7 @@
 	function foodNutrients(card: Extract<Card, { kind: 'food' }>) {
 		const option =
 			card.food && unitOptions(card.food, measures).find((o) => o.key === card.optionKey);
-		const amount = parseDecimal(card.amountText);
+		const amount = amountOf(card);
 		if (!card.food || !option || amount === undefined || amount <= 0) return undefined;
 		const factor = basisFactor(card.food, amount, toUnit(option));
 		return factor === undefined ? undefined : scaleNutrients(card.food.nutrients, factor);
@@ -376,7 +384,7 @@
 				meal,
 				zone,
 				foodId: c.food!.id,
-				amount: parseDecimal(c.amountText),
+				amount: amountOf(c),
 				unit: option.input,
 				expected: foodFingerprint(c.food!)
 			});

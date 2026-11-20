@@ -60,8 +60,10 @@ Checks: lint, type check, Vitest 1194 passed, browser suite 288 passed, 18 skipp
 contrast check, below).
 Found, owner to decide (2026-11-20): Type it keeps "1/3 of a container" as the text "0.33", so it shows and logs
 148.5 kcal (149) instead of 150 for a third of 300 g at 150 kcal per 100 g. The old search hid it in a test (an
-unrelated typo match carried the "150"); `typed-entry.e2e.ts` now marks it as a known failure (`test.fail`).
-Next: tell the owner; then ask before tagging rc.5.
+unrelated typo match carried the "150"). Fixed (owner's go): a card keeps the amount it understood until the
+field is changed (`EntrySheet.svelte`, `exact`); the server already compared a retried amount at the 4 stored
+decimals (`storedAmount`), now tested with a third too. Browser test checks the card and the saved 150 kcal.
+Next: the dark Today contrast check (owner's go), then ask before tagging rc.5.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 
