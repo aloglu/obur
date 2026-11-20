@@ -39,6 +39,9 @@ OBUR_BACKUP_PASSPHRASE=a-long-phrase-only-you-know
 - `PUBLIC_ORIGIN` is the https address people will open (see [Remote access](remote-access.md)).
 - `OBUR_BACKUP_PASSPHRASE` encrypts every backup. **Save a copy in your password manager now.** Without it no backup
   can be read, and obur cannot show it to you later.
+- After the first start, also copy `data/secrets/obur.env` to a safe place off the server (it is readable by root
+  only: `sudo cp`). It keeps people's own AI keys and reminders working after a restore on a new server
+  ([Restoring](../restore.md)).
 - Set `TZ` to your time zone (for example `Europe/Istanbul`), so the nightly backup runs at night.
 
 Everything else has a sensible default; the file explains each line.

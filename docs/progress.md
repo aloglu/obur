@@ -37,6 +37,9 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   only after all three: it loads the tested images, pushes the version, checks all three can be pulled, then moves
   `latest` (full releases only), then makes the GitHub release. The update notice reads GitHub's releases, not tags
   (unit and browser tests). actionlint clean. Not run on GitHub yet (needs a tag; ask the owner first).
+- R09 done: restore guide and Docker guide say to keep `data/secrets/obur.env` off the server, where it goes on a
+  new server, and what happens without it (AI keys entered again, reminders turned on again; both handled already).
+  Install and agents guides list R01's two new waiting lines.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

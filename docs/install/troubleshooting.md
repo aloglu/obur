@@ -19,6 +19,11 @@ container. Add the volume (`/data`) and start again.
 a restore instead of starting empty and losing your history: see [Restoring](../restore.md). If you really want a
 new, empty database, move the backups aside and set `OBUR_ALLOW_NEW_DATABASE=1` for that start.
 
+**"waiting: the database folder is empty and the off-site copy has backups"**, or **"… the off-site store can't be
+reached to look for backups"**. The same, for backups kept only off site: restore them with `--repo=2` (see
+[Restoring](../restore.md)), or check the `OBUR_OFFSITE_*` values when the store can't be reached (obur looks again
+every minute).
+
 **The passkey prompt never appears, or says the site is not allowed.** The address in the browser must be exactly
 `PUBLIC_ORIGIN`, over https. Passkeys created on another address don't work here.
 

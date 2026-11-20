@@ -13,6 +13,11 @@ backup, and taken a fresh full backup. obur never reopens with restored sessions
 
 - **The backup passphrase** (`OBUR_BACKUP_PASSPHRASE`). Without it no backup can be read.
 - **The off-site credentials** (`OBUR_OFFSITE_*`), if the server's own backups are lost too.
+- **The secrets file** `data/secrets/obur.env` (in obur's data folder; readable by root only). It holds the key
+  that encrypts people's own AI keys for Speak and Scan, and the Web Push keys for reminders. It is never in the
+  backups, on purpose. Copy it off the server once, and again only if you change those keys. Without it a new
+  server still restores everything else: people enter their AI keys again, and each device turns its reminders on
+  again (Settings → Reminders).
 - **The deleted-accounts list** from Members → Backups → Deleted accounts. Copy it whenever an account is deleted
   (**Copy list** gives the entries in the form `finish` takes below). Each entry is an account ID and the date. It
   never contains diary content.
@@ -34,7 +39,8 @@ their deletions are applied again after every restore.
 1. **New server only.** Install obur as in its guide (`docs/install/`) with the same `PUBLIC_ORIGIN`,
    `WEBAUTHN_RP_ID`, `OBUR_BACKUP_PASSPHRASE` and `TZ` (backups are named by local time: with an earlier time zone,
    new backups fail until the clock passes the old ones), and put the old backups where its backups go (`OBUR_BACKUP_DIR`,
-   or `data/backups`) before the first start. With backups there and no database, obur waits for a restore instead
+   or `data/backups`) before the first start. Put the copied secrets file at `data/secrets/obur.env` before the
+   first start too (folder `700`, file `600`, both owned by root). With backups there and no database, obur waits for a restore instead
    of starting empty. To restore from the off-site copy instead, set the `OBUR_OFFSITE_*` values and leave the
    backups folder empty: obur finds the off-site backups and waits for a restore ("the off-site copy has backups").
    If the store can't be reached, obur also waits and tries again every minute; check the `OBUR_OFFSITE_*` values.

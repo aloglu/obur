@@ -125,6 +125,12 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
 - **"waiting: the database folder is empty but backups exist":** stop. The data folder is wrong or lost. Check that
   `OBUR_DATA_DIR` points where it used to. If the database really is gone, restoring is the person's decision; walk
   them through `docs/restore.md`. Never set `OBUR_ALLOW_NEW_DATABASE`.
+- **"waiting: the database folder is empty and the off-site copy has backups":** the same, with the backups only in
+  the off-site store (a new server for a lost one). Restoring is the person's decision: `docs/restore.md`, with
+  `--repo=2`. Never set `OBUR_ALLOW_NEW_DATABASE`.
+- **"waiting: the database folder is empty and the off-site store can't be reached to look for backups":** check the
+  `OBUR_OFFSITE_*` values and the server's connection; obur looks again every minute. For a truly new installation
+  whose off-site store is still empty or not ready, ask the person before setting `OBUR_ALLOW_NEW_DATABASE=1` once.
 - **"this obur is older than its database":** someone went back to an older version. It runs without changing the
   database; move forward to the newer version again when possible.
 - **An upgrade or backup failed:** report the log lines to the person. More in `troubleshooting.md`.
