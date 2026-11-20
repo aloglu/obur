@@ -11,10 +11,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export class IdentityError extends Error {}
 
+/** For reads that must see one moment (an export): every query in the transaction sees the same snapshot. */
+export const SNAPSHOT = { isolationLevel: 'repeatable read', accessMode: 'read only' } as const;
+
 export async function withUser<T>(
 	db: Database,
 	userId: string,
-	run: (tx: Tx) => Promise<T>
+	run: (tx: Tx) => Promise<T>,
+	config?: typeof SNAPSHOT
 ): Promise<T> {
 	if (typeof userId !== 'string' || !UUID.test(userId)) {
 		throw new IdentityError('A valid user identity is required');
@@ -22,5 +26,5 @@ export async function withUser<T>(
 	return db.transaction(async (tx) => {
 		await tx.execute(sql`select set_config('app.user_id', ${userId}, true)`);
 		return run(tx);
-	});
+	}, config);
 }

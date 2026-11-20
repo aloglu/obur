@@ -20,6 +20,8 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
 - Step 1 done: `diary.retriedFood` (service.ts) answers a create whose ID is already saved with the same request,
   checked in `POST /api/v1/diary/entries` before the fingerprint; a portion or measure is compared by its ID, not
   its saved size. DB test and an offline e2e test (fails on the old route).
+- Step 2 done: `exportArchive` collects in one read-only repeatable-read transaction (`SNAPSHOT`,
+  db/identity.ts) and compresses after it. DB test pauses the export on a lock while an edit commits (fails before).
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 

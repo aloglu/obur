@@ -319,6 +319,50 @@ const count = async (table: string, userId: string) =>
 	);
 
 describe('export', () => {
+	it('reads one moment: an edit committed during the export never mixes into it (2026-11-20 audit)', async () => {
+		const flour = await catalog.createFood(
+			MEHMET,
+			food({
+				name: 'Flour',
+				basis: '100g',
+				nutrients: [{ code: 'energy_kcal', value: 364, qualifier: 'reported' }]
+			})
+		);
+		const recipeId = randomUUID();
+		await recipes.save(MEHMET, {
+			id: recipeId,
+			version: null,
+			name: 'Flatbread',
+			icon: null,
+			servings: 2,
+			cookedYieldG: null,
+			ingredients: [{ food: await catalog.getFood(MEHMET, flour), amount: 100, unit: grams }]
+		});
+		const editor = postgres(urls.admin, { max: 1, ...quiet });
+		const watcher = postgres(urls.admin, { max: 1, ...quiet });
+		try {
+			let exporting: Promise<Uint8Array> | undefined;
+			// The export reads the recipe, then waits on its ingredients while the edit commits.
+			await editor.begin(async (tx) => {
+				await tx`lock table recipe_ingredients in access exclusive mode`;
+				exporting = portability.exportArchive(MEHMET);
+				for (let i = 0; i < 200; i++) {
+					const [w] = await watcher`select count(*)::int as n from pg_stat_activity
+						where wait_event_type = 'Lock' and query ilike '%recipe_ingredients%'`;
+					if (w.n > 0) break;
+					await new Promise((r) => setTimeout(r, 10));
+				}
+				await tx`update recipes set servings = 4 where food_id = ${recipeId}`;
+				await tx`update recipe_ingredients set amount = 200 where recipe_id = ${recipeId}`;
+			});
+			const { data } = readArchive(await exporting!);
+			const recipe = data.recipes.find((r) => r.foodId === recipeId)!;
+			expect([recipe.servings, recipe.ingredients[0].amount]).toEqual([2, 100]);
+		} finally {
+			await Promise.all([editor.end(), watcher.end()]);
+		}
+	});
+
 	it('contains the person’s data, trash and the foods it depends on, and nobody else’s', async () => {
 		await buildHistory();
 		await diary.quickAdd(ZEYNEP, { localDate: '2026-10-01', meal: 'lunch', ...ist }, 999, 'Zeynep');

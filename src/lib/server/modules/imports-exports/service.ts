@@ -12,7 +12,7 @@ import { DEFAULT_APP_ICON, isAppIcon } from '../../../shared/app-icons.ts';
 import { DEFAULT_PALETTE, isPalette } from '../../../shared/themes.ts';
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { withUser, type Database, type Tx } from '../../db/identity.ts';
+import { SNAPSHOT, withUser, type Database, type Tx } from '../../db/identity.ts';
 import { foodSearchKey } from '../../../shared/search-text.ts';
 import { users } from '../auth/index.ts';
 import { activityEntries, waterEntries, weightEntries } from '../body/index.ts';
@@ -1183,13 +1183,18 @@ export function createPortability(db: Database) {
 	return {
 		/** The person's export archive (run only after a recent passkey check). */
 		async exportArchive(userId: string, now = new Date()): Promise<Uint8Array> {
-			return withUser(db, userId, async (tx) => {
-				const data = await collect(tx, userId);
-				return writeArchive(data, {
-					exportedAt: now.toISOString(),
+			// One snapshot: an edit committed during the export must not leave a recipe's ingredients from before it
+			// beside its values from after (2026-11-20 audit). Compressed once the connection is free again.
+			const { data, sourceInstallation } = await withUser(
+				db,
+				userId,
+				async (tx) => ({
+					data: await collect(tx, userId),
 					sourceInstallation: await installationId(tx)
-				});
-			});
+				}),
+				SNAPSHOT
+			);
+			return writeArchive(data, { exportedAt: now.toISOString(), sourceInstallation });
 		},
 
 		/** Validates an archive and reports what an import would do, without writing anything. */
