@@ -40,6 +40,9 @@ Report outside the repo, checked against `517f4db`; every finding real. Owner's 
   `reminders_off_failed`). Sign-out sends the device's `pushEndpoint` with the logout, which removes it before
   ending the session (a failure fails the sign-out). Reminders e2e test (fails before). The Off switch itself needs a
   real push service: not browser-tested; check on the iPhone.
+- Step 9 in progress: `restore_lock` (flock on `/run/obur/restore.lock`) in restore start/finish/cancel; smoke test
+  holds the lock and checks start and cancel are refused. Image build and smoke test running.
+- Step 10 done: `shortMonth` and `longDate` removed with their tests.
 
 ## Release candidate 4 (2026-11-19), as `v1.0.0-rc.4`
 

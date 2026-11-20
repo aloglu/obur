@@ -4,10 +4,8 @@ import {
 	dayBoxTitle,
 	dayHeading,
 	dayTitle,
-	longDate,
 	quantityText,
 	shortDay,
-	shortMonth,
 	weekdayShort
 } from './format.ts';
 import { overwriteLocale } from './test-locale.ts';
@@ -18,8 +16,6 @@ describe('format', () => {
 		expect(dayTitle('2026-10-24', '2026-10-25')).toBe('Yesterday');
 		expect(dayTitle('2026-10-20', '2026-10-25')).toBe('Tue 20 Oct');
 		expect(dayTitle('2025-12-31', '2026-01-02')).toBe('Wed 31 Dec');
-		expect(longDate('2026-10-20')).toBe('Tuesday 20 October 2026');
-		expect(longDate('2028-02-29')).toBe('Tuesday 29 February 2028');
 		expect(dateWithYear('1992-04-12')).toBe('12 April 1992');
 	});
 
@@ -27,7 +23,6 @@ describe('format', () => {
 		const tr = <T>(fn: () => T) => overwriteLocale('tr', fn);
 		expect(tr(() => dayTitle('2026-10-25', '2026-10-25'))).toBe('Bugün');
 		expect(tr(() => dayTitle('2026-10-20', '2026-10-25'))).toBe('20 Eki Sal');
-		expect(tr(() => longDate('2026-10-20'))).toBe('20 Ekim 2026 Salı');
 		expect(tr(() => dayHeading('2026-10-20', '2026-10-20'))).toEqual({
 			title: 'Bugün',
 			detail: '20 Ekim Salı'
@@ -40,7 +35,6 @@ describe('format', () => {
 		expect(tr(() => dayBoxTitle('2026-11-10', '2026-11-14'))).toBe('10 Kasım Salı');
 		expect(dayBoxTitle('2026-11-10', '2026-11-14')).toBe('Tuesday 10 Nov');
 		expect(tr(() => shortDay('2026-11-10'))).toBe('10 Kas Sal');
-		expect(tr(() => shortMonth('2027-01-01'))).toBe('Oca ’27');
 		expect(tr(() => dateWithYear('1992-04-12'))).toBe('12 Nisan 1992');
 		// In a sentence ("… gününden beri") Turkish uses the whole weekday.
 		expect(tr(() => weekdayShort('2026-11-12'))).toBe('Perşembe');

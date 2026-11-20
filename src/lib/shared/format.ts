@@ -187,13 +187,6 @@ export function shortDay(date: string): string {
 	return withWeekday(shortWeekday(date), shortDate(date));
 }
 
-/** "Oct", or "Jan ’27" for January, so a long chart's axis shows where years change. */
-export function shortMonth(date: string): string {
-	const { y, mo } = parts(date);
-	const short = names().monthsShort[mo - 1];
-	return mo === 1 ? `${short} ’${String(y).slice(2)}` : short;
-}
-
 /** "12 April 1992". */
 export function dateWithYear(date: string): string {
 	const { y, mo, d } = parts(date);
@@ -209,13 +202,6 @@ export function monthTitle(month: string): string {
 /** "October". */
 export function monthName(month: string): string {
 	return names().months[Number(month.slice(5, 7)) - 1];
-}
-
-/** "Tuesday 20 October 2026" ("20 Ekim 2026 Salı"). */
-export function longDate(date: string): string {
-	const { y, mo, d, weekday } = parts(date);
-	const n = names();
-	return withWeekday(n.weekdays[weekday], `${d} ${n.months[mo - 1]} ${y}`);
 }
 
 const UNIT_LABELS: Record<'en' | 'tr', Record<string, string>> = {
