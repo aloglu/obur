@@ -14,7 +14,7 @@
 	"signout_offline": "Çıkış için bağlantı gerekiyor",
 	"signout_offline_detail": "Bu cihazdan hiçbir şey silinmedi. Tekrar çevrimiçi olunca yeniden dene.",
 	"device_clear_blocked": "Bu cihazı temizlemeyi bitirmek için obur'un diğer sekmelerini kapat",
-	"reminders_off_failed": "Hatırlatıcılar kapatılamadı. Tekrar dene.",
+	"reminders_off_failed": "Hatırlatmalar kapatılamadı. Tekrar dene.",
 	"error_generic": "Bir şeyler ters gitti. Lütfen tekrar dene.",
 	"error_cancelled": "Geçiş anahtarı penceresi kapandı. Hazır olduğunda tekrar dene.",
 	"error_rate_limited": "Çok fazla deneme oldu. Birkaç dakika bekleyip tekrar dene.",
