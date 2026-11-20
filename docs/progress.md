@@ -40,7 +40,15 @@ version's queue is sent once at the start (`client/old-queue.svelte.ts`, one rel
 existing Today card and sheet, sign-out clears it. The worker now tries the server for 3 s, not 10, in the minute
 after a failure (the browser tests caught a first version that showed the connection page for the whole minute).
 `tests/e2e/connection.e2e.ts` replaces `offline.e2e.ts` (34 passed, 1 Chromium-only skipped on WebKit).
-Next: full checks, then step 3's speed measurement against the baseline.
+Checks after 3c: lint, type check, Vitest 1180 passed; full browser suite 286 passed, 18 skipped; the removed
+sign-in warning's test deleted. Phone WebKit accessibility check: dark Today sometimes reads the budget number and
+meal names as black (contrast 1.25); it fails the same way on `47752e2`, before this work (several of 24 runs), so
+it is older and intermittent; told the owner, not fixed.
+Speed after (old, new, old in a row on the same machine, medians): phone WebKit start 390 / 401 / 395 ms, tabs
+119-177 / 118-173 / 119-177 ms, search 790 / 790 / 788 ms, save 1030 / 1024 / 1033 ms; Chromium 4x CPU start
+329 / 325 / 319 ms, tabs 56-101 / 56-124 / 58-133 ms, save 947 / 951 / 948 ms. No difference beyond the noise
+between runs of the same version: the owner's speed condition holds.
+Next: step 4, the search rule.
 Earlier: step 3 started after the owner read and agreed to the design (2026-11-20). Owner accepted that entries left in an old queue
 by someone who never signs in on that device again are lost when the later release removes the step.
 
