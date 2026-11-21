@@ -23,6 +23,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import av
 import numpy as np
 from faster_whisper import WhisperModel
+from faster_whisper.audio import pad_or_trim
+from faster_whisper.tokenizer import Tokenizer
 
 MODEL_DIR = os.environ.get("SPEECH_MODEL_DIR", "/models/faster-whisper-small")
 THREADS = int(os.environ.get("SPEECH_THREADS", "4"))
@@ -86,18 +88,7 @@ class Transcriber:
                 if seconds < 0.3:
                     return {"text": "", "language": None, "audioS": round(seconds, 2),
                             "queueMs": round((started - queued) * 1000), "asrMs": 0}
-                # Turkish or English only: unrestricted detection once read a mixed sentence as Persian.
-                _, _, probs = self.model.detect_language(audio)
-                language = max((p for p in probs if p[0] in LANGUAGES), key=lambda p: p[1])[0]
-                segments, _ = self.model.transcribe(
-                    audio,
-                    language=language,
-                    beam_size=5,
-                    initial_prompt=prompt or None,
-                    condition_on_previous_text=False,
-                    temperature=0.0,
-                    vad_filter=False,
-                )
+                language, segments = self.transcribe(audio, prompt)
                 text = " ".join(s.text.strip() for s in segments).strip()
                 done = time.perf_counter()
                 return {"text": text, "language": language, "audioS": round(seconds, 2),
@@ -105,6 +96,31 @@ class Transcriber:
         finally:
             with self.count_lock:
                 self.waiting -= 1
+
+    def transcribe(self, audio: np.ndarray, prompt: str | None):
+        """Detects Turkish or English and transcribes, with one pass of the encoder (the model's first stage, about
+        a third of the time) for both (2026-11-21 audit, C10). faster-whisper has no public way to share that pass, so
+        this uses its internals, checked against the pinned 1.1.1: the first window exactly as `generate_segments`
+        cuts it, encoded once, then given to it. The text is the same as `transcribe(language=...)` gives."""
+        m = self.model
+        features = m.feature_extractor(audio)
+        first = pad_or_trim(features[:, : min(m.feature_extractor.nb_max_frames, features.shape[-1] - 1)])
+        encoded = m.encode(first)
+        # Turkish or English only: unrestricted detection once read a mixed sentence as Persian.
+        probs = {token[2:-2]: p for token, p in m.model.detect_language(encoded)[0]}
+        language = max(LANGUAGES, key=lambda code: probs.get(code, 0.0))
+        # transcribe() builds the options with every default; its segments are lazy and never run.
+        _, info = m.transcribe(
+            audio,
+            language=language,
+            beam_size=5,
+            initial_prompt=prompt or None,
+            condition_on_previous_text=False,
+            temperature=0.0,
+            vad_filter=False,
+        )
+        tokenizer = Tokenizer(m.hf_tokenizer, m.model.is_multilingual, task="transcribe", language=language)
+        return language, m.generate_segments(features, tokenizer, info.transcription_options, False, encoded)
 
 
 def make_handler(transcriber: Transcriber):

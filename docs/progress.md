@@ -25,6 +25,10 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   prettier-plugin-svelte 4.1.1, now pinned exactly: the newer pair moves text inside tags onto their own lines in
   81 files, which can add visible spaces. npm audit: the 4 known drizzle-kit/esbuild moderates only. check, lint,
   Vitest 1,222, database 285, build and the full browser suite (306 passed) pass.
+- C10 done: the speech add-on encodes each clip once and detects Turkish or English from that pass
+  (`speech/service.py` `transcribe`, faster-whisper 1.1.1 internals: the first window as `generate_segments` cuts it,
+  then given to it). Same text as before on both test clips; 0.90 → 0.60 s and 0.91 → 0.70 s on this desktop
+  (4 cores). Add-on test passes. Owner to compare one real clip on the server after the release.
 
 ## Second 1.0 audit (owner's go, 2026-11-21)
 
