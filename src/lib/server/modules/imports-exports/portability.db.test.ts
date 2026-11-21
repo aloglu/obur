@@ -492,6 +492,19 @@ describe('import', () => {
 		const before = readArchive(archive).data;
 		const after = readArchive(await portability.exportArchive(ZEYNEP)).data;
 		expect(semantic(after)).toEqual(semantic(before));
+		// Each entry keeps its icon and where its values and portions came from (A18, A23).
+		const logged = (name: string, origin: string) =>
+			after.diary.find((e) => e.food?.name === name && e.food.origin === origin)?.food;
+		expect(logged('Annemin böreği', 'manual')).toMatchObject({ icon: '1F967' });
+		expect(logged('Premium Light Ekmek', 'variant')).toBeDefined();
+		expect(logged('Premium Light Ekmek', 'curated')).toMatchObject({
+			origin: 'curated',
+			dataset: 'sr_legacy',
+			servings: [expect.objectContaining({ name: 'dilim', source: 'reference' })]
+		});
+		const [stored] = await admin`select food from diary_entries
+			where user_id = ${ZEYNEP} and food->>'name' = 'Annemin böreği'`;
+		expect(stored.food.icon).toBe('1F967');
 		// Everything imported is Zeynep's own, including her copies of the other installation's built-in foods.
 		expect(after.foods.every((f) => f.mine && f.origin !== 'curated')).toBe(true);
 		const ids = new Set(before.diary.map((e) => e.id));

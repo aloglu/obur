@@ -105,7 +105,7 @@ describe('using curated foods', () => {
 		const medium = banana.servings.find((s) => s.name.startsWith('medium'))!;
 		expect(medium).toMatchObject({ amount: 118, unit: 'g' });
 		const kcal = snapshotNutrients(
-			{ ...banana, servingSize: null, basisNutrients: banana.nutrients },
+			{ ...banana, servingSize: null, basisNutrients: banana.nutrients, origin: 'curated' },
 			1,
 			{ kind: 'serving', servingId: medium.id, name: medium.name, amount: 118, unit: 'g' }
 		)?.energy_kcal?.value;

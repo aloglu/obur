@@ -3,6 +3,7 @@ import type {
 	DayTotals,
 	DiaryEntry,
 	EntryNutrients,
+	FoodOrigin,
 	FoodSnapshot,
 	SnapshotUnit
 } from './diary-types.ts';
@@ -10,7 +11,20 @@ import type { FoodDetail } from './food-types.ts';
 import { NUTRIENT_CODES, type NutrientValue } from './nutrients.ts';
 import { basisFactor, scaleNutrients, type Unit } from './quantity.ts';
 
-/** What a diary entry, saved meal item or recipe ingredient keeps of a food: enough to show and re-scale it. */
+const FOOD_ORIGINS: readonly string[] = [
+	'manual',
+	'label_scan',
+	'loseit',
+	'curated',
+	'variant',
+	'recipe'
+];
+const isFoodOrigin = (o: string): o is FoodOrigin => FOOD_ORIGINS.includes(o);
+
+/**
+ * What a diary entry, saved meal item or recipe ingredient keeps of a food: enough to show and re-scale it, and where
+ * its values and portion sizes came from.
+ */
 export function snapshotOf(food: FoodDetail): FoodSnapshot {
 	return {
 		name: food.name,
@@ -18,10 +32,19 @@ export function snapshotOf(food: FoodDetail): FoodSnapshot {
 		basis: food.basis,
 		servingLabel: food.servingLabel,
 		servingSize: food.servingSize ?? null,
-		servings: food.servings.map(({ id, name, amount, unit }) => ({ id, name, amount, unit })),
+		servings: food.servings.map(({ id, name, amount, unit, source }) => ({
+			id,
+			name,
+			amount,
+			unit,
+			...(source ? { source } : {})
+		})),
 		basisNutrients: food.nutrients,
 		icon: food.icon,
-		...(food.origin === 'curated' ? { curated: true } : {})
+		...(food.origin === 'curated' ? { curated: true } : {}),
+		// Provenance stays with the entry when the food later changes or is gone (2026-11-21 audit, A23).
+		...(isFoodOrigin(food.origin) ? { origin: food.origin } : {}),
+		...(food.curatedDataset ? { dataset: food.curatedDataset } : {})
 	};
 }
 

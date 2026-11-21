@@ -18,15 +18,27 @@ export interface FoodSnapshot {
 	basis: Basis;
 	servingLabel: string | null;
 	servingSize: { amount: number; unit: 'g' | 'ml' } | null;
-	/** The portions available when logged, so an amount can be changed in any of them later. */
-	servings: FoodServing[];
+	/**
+	 * The portions available when logged, so an amount can be changed in any of them later; with where each size
+	 * came from (snapshots from 2026-11-21 on; older ones have none, which means unknown).
+	 */
+	servings: (FoodServing & { source?: PortionSource })[];
 	/** Nutrients per basis, as the food had them when logged. */
 	basisNutrients: NutrientValue[];
 	/** The food's chosen icon when logged (display only; older snapshots have none). */
 	icon?: string | null;
 	/** A built-in USDA food: its name and portions show in the interface language (display only). */
 	curated?: boolean;
+	/**
+	 * Where the food's values came from when logged (snapshots from 2026-11-21 on; older ones have none, which
+	 * means unknown): typed, read from a label, LoseIt, a built-in food (with its dataset), a variant or a recipe.
+	 */
+	origin?: FoodOrigin;
+	dataset?: 'sr_legacy' | 'foundation';
 }
+
+export type PortionSource = 'label' | 'user' | 'estimate' | 'reference';
+export type FoodOrigin = 'manual' | 'label_scan' | 'loseit' | 'curated' | 'variant' | 'recipe';
 
 export type EntryNutrients = Partial<Record<NutrientCode, { value: number; qualifier: Qualifier }>>;
 

@@ -120,7 +120,8 @@ function snapshotFor(e: LoseItEntry): { food: FoodSnapshot; amount: number; unit
 			? { amount: e.quantity, unit: e.unit.kind === 'mass' ? 'g' : 'ml' }
 			: null,
 		servings: [],
-		basisNutrients: values(withDerived(e.nutrients))
+		basisNutrients: values(withDerived(e.nutrients)),
+		origin: 'loseit'
 	};
 	if (e.unit.kind === 'mass')
 		return { food, amount: e.quantity, unit: { kind: 'mass', unit: 'g' } };

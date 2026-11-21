@@ -49,6 +49,10 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   change decides. Failure handling unchanged (the next weight change catches up). Database test holds the first
   recalculation and checks the second waits. Goals browser tests: one failure in a slow first run, all 21
   passed on the rerun.
+- A18 + A23 done: snapshots keep the food's origin, a built-in food's dataset and each portion's source; LoseIt
+  entries say `loseit`. The archive reads them and the icon (both were dropped on import). Older snapshots
+  stay without (unknown). Not shown in the interface yet (a display choice for the owner later, if wanted).
+  Round-trip database test checks icon, origin, dataset and portion source; fails without the archive change.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

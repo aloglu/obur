@@ -111,10 +111,23 @@ const FoodSnapshot = v.object({
 	basis: v.picklist(['100g', '100ml', 'serving']),
 	servingLabel: v.nullable(Text(200)),
 	servingSize: v.nullable(v.object({ amount: Positive, unit: v.picklist(['g', 'ml']) })),
-	servings: v.array(Serving),
+	// Each portion's source added 2026-11-21 (A23); older archives have none (unknown).
+	servings: v.array(
+		v.object({
+			...Serving.entries,
+			source: v.optional(v.picklist(['label', 'user', 'estimate', 'reference']))
+		})
+	),
 	basisNutrients: v.array(NutrientValue),
 	// Added 2026-11-14: a built-in food's copy shows its name in the interface language.
-	curated: v.optional(v.boolean())
+	curated: v.optional(v.boolean()),
+	// The icon was written since 2026-10-30 but dropped on reading until 2026-11-21 (A18).
+	icon: v.optional(v.nullable(v.pipe(v.string(), v.regex(/^[0-9A-F]{4,5}(-[0-9A-F]{4,5}){0,3}$/)))),
+	// Added 2026-11-21 (A23): where the values came from; absent means unknown.
+	origin: v.optional(
+		v.picklist(['manual', 'label_scan', 'loseit', 'curated', 'variant', 'recipe'])
+	),
+	dataset: v.optional(v.picklist(['sr_legacy', 'foundation']))
 });
 
 const EntryNutrients = v.pipe(
