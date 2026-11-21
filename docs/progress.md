@@ -14,6 +14,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   sign-out question and their 18 messages. Vitest, check, lint, connection e2e pass.
 - C02 done: a repeated LoseIt water row (same date and value) gets `#2`, `#3`; the first keeps the key earlier
   imports stored, so a later import still finds them. Database test (fails without the fix).
+- C07 done: at most 10 API key checks per person in 15 minutes (429 `rate_limited`, the sheet says to wait).
+  Own-key e2e pass.
 
 ## Second 1.0 audit (owner's go, 2026-11-21)
 

@@ -481,7 +481,7 @@ Status: **requirements** from the owner (2026-11-07): personal keys first, expli
 
 **Keys.**
 - Stored per person in their own table row (forced RLS: only its owner; admins and exports never see it), encrypted with AES-256-GCM under a server key generated on first start into `/data/secrets` (`OBUR_SECRETS_KEY`; in development from `.env`). Backups hold only the encrypted key; the server key is not in backups, so a stolen backup does not reveal it. After a restore onto another server the key can't be decrypted: the person is asked to enter it again.
-- Shown afterwards only as its last four characters. Checked when added (OpenAI: list models; OpenRouter: the key's own info endpoint) and removable at any time, which deletes the row.
+- Shown afterwards only as its last four characters. Checked when added (OpenAI: list models; OpenRouter: the key's own info endpoint; at most 10 checks per person in 15 minutes, 2026-11-21 audit, C07) and removable at any time, which deletes the row.
 - Never logged; request logs and errors redact the Authorization header. Only two fixed hosts are contacted (`api.openai.com`, `openrouter.ai`); nothing a person enters can change where the server calls. (`AI_PROVIDER_TEST_URL`, an operator setting for the browser tests' stand-in provider, replaces both.)
 
 **Speak.**

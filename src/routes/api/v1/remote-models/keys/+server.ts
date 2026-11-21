@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { readJson } from '#lib/server/http.ts';
+import { RateLimiter } from '#lib/server/modules/auth/index.ts';
 import { checkKey } from '#lib/server/providers.ts';
 import { remoteModels } from '#lib/server/remote-models.ts';
 import { PROVIDERS } from '#lib/shared/remote-models.ts';
@@ -16,6 +17,10 @@ const Key = v.object({
 	)
 });
 
+// Each check asks the provider from this server's address: a few per person, enough for typing mistakes
+// (2026-11-21 audit, C07).
+const checks = new RateLimiter(10, 15 * 60_000);
+
 /**
  * POST /api/v1/remote-models/keys {provider, key}: asks the provider once whether the key works; saves it only if it
  * does. Nothing else changes: Speak and Scan keep what they used until the person chooses the key for them.
@@ -24,6 +29,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const userId = locals.session!.userId;
 	if (!(await remoteModels.allowed(userId))) error(403, 'Personal keys are off on this server');
 	const body = await readJson(request, Key);
+	if (!checks.attempt(userId)) return json({ error: 'rate_limited' }, { status: 429 });
 	const result = await checkKey(body.provider, body.key);
 	if (result !== 'ok')
 		return json({ error: result }, { status: result === 'key_refused' ? 422 : 503 });

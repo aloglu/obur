@@ -50,7 +50,9 @@
 			problem =
 				code === 'key_refused'
 					? m.models_key_refused({ provider: name })
-					: m.models_key_unreachable({ provider: name });
+					: code === 'rate_limited'
+						? m.error_rate_limited()
+						: m.models_key_unreachable({ provider: name });
 		} finally {
 			checking = false;
 		}
