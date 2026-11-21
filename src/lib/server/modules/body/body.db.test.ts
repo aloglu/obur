@@ -75,6 +75,21 @@ describe('weight', () => {
 		expect(await errorCode(body.logWeight(MEHMET, at('2026-10-24', id), 82.4))).toBe('conflict');
 	});
 
+	it('answers the same save sent several times at once as saved, once (A21)', async () => {
+		const id = randomUUID();
+		const saves = await Promise.all(
+			Array.from({ length: 4 }, () => body.logWeight(AYSE, at('2026-10-24', id), 82.4))
+		);
+		expect(new Set(saves.map((s) => s.id))).toEqual(new Set([id]));
+		const [{ n }] = await admin`select count(*)::int as n from weight_entries where id = ${id}`;
+		expect(n).toBe(1);
+		const activity = randomUUID();
+		const logged = await Promise.all(
+			Array.from({ length: 3 }, () => body.logActivity(AYSE, at('2026-10-24', activity), 200, null))
+		);
+		expect(logged.every((a) => a.id === activity)).toBe(true);
+	});
+
 	it('deletes to the trash and restores within 30 days only', async () => {
 		const r = await body.logWeight(AYSE, at('2026-10-24'), 82.4);
 		await body.removeWeight(AYSE, r.id);

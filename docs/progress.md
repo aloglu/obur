@@ -79,6 +79,9 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   `speech/THIRD-PARTY-NOTICES.md` (also in the image, linked from README and the GitHub release notes) treats
   them as GPL-3.0+ and lists their sources and the build configuration. Both add-on images build with pip
   26.3 and then remove pip. Add-on tests (speech, labels) pass. Model unchanged, so no new measurement needed.
+- A21 done: diary, weight, water and activity creates insert with ON CONFLICT DO NOTHING on the client-made ID, then
+  read again: the same save sent several times at once answers as saved, once; another person's ID stays a
+  conflict. Database tests (four saves at once; the weight one fails without the fix).
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

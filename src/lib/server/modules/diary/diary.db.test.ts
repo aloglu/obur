@@ -226,6 +226,20 @@ describe('corrections', () => {
 });
 
 describe('retries', () => {
+	it('answers the same entry sent several times at once as saved, once (A21)', async () => {
+		const id = randomUUID();
+		const saves = await Promise.all(
+			Array.from({ length: 4 }, () => diary.quickAdd(MEHMET, ctx({ id }), 300, 'Simit'))
+		);
+		expect(saves.every((s) => s.id === id)).toBe(true);
+		const [{ n }] = await admin`select count(*)::int as n from diary_entries where id = ${id}`;
+		expect(n).toBe(1);
+		// Someone else's ID stays a conflict.
+		await expect(diary.quickAdd(ZEYNEP, ctx({ id }), 300, 'Simit')).rejects.toMatchObject({
+			code: 'conflict'
+		});
+	});
+
 	it('returns the original entry for a repeated create with the same ID', async () => {
 		const id = randomUUID();
 		const first = await diary.quickAdd(MEHMET, ctx({ id }), 300, 'Simit');

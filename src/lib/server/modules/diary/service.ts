@@ -174,15 +174,18 @@ export async function insertEntry(
 ): Promise<DiaryEntry> {
 	const prior = await earlier(tx, values);
 	if (prior) return prior;
-	try {
-		const [row] = await tx.insert(diaryEntries).values(values).returning();
-		return toEntry(row);
-	} catch (e) {
-		// Another person's row with this ID (invisible under RLS) or a concurrent identical retry.
-		const code = (e as { cause?: { code?: string } }).cause?.code;
-		if (code === '23505') throw new DiaryError('conflict');
-		throw e;
-	}
+	const [row] = await tx
+		.insert(diaryEntries)
+		.values(values)
+		.onConflictDoNothing({ target: diaryEntries.id })
+		.returning();
+	if (row) return toEntry(row);
+	// Taken meanwhile: the same save sent twice at once (the insert waited for the first to commit, and it is now
+	// visible, so this one answers as saved; 2026-11-21 audit, A21), or another person's row with this ID, invisible
+	// under RLS, which is a conflict.
+	const meanwhile = await earlier(tx, values);
+	if (meanwhile) return meanwhile;
+	throw new DiaryError('conflict');
 }
 
 export function createDiary(db: Database, now: () => Date = () => new Date()) {

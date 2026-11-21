@@ -94,33 +94,35 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 		const valueColumn = table === weightEntries ? 'kg' : 'ml';
 		value = stored(table, value);
 		return withUser(db, userId, async (tx) => {
-			const [existing] = await tx.select().from(table).where(eq(table.id, id));
-			if (existing) {
+			const saved = async () => {
+				const [existing] = await tx.select().from(table).where(eq(table.id, id));
+				if (!existing) return undefined;
 				const same =
 					existing.localDate === ctx.localDate &&
 					existing.zone === ctx.zone &&
 					Number((existing as Record<string, unknown>)[valueColumn]) === value;
 				if (!same) throw new BodyError('conflict');
 				return toReading(existing, value);
-			}
+			};
+			const prior = await saved();
+			if (prior) return prior;
 			await refusePurged(tx, id);
-			try {
-				const [row] = await tx
-					.insert(table)
-					.values({
-						id,
-						userId,
-						localDate: ctx.localDate,
-						zone: ctx.zone,
-						[valueColumn]: value
-					} as never)
-					.returning();
-				return toReading(row, value);
-			} catch (e) {
-				if ((e as { cause?: { code?: string } }).cause?.code === '23505')
-					throw new BodyError('conflict');
-				throw e;
-			}
+			const [row] = await tx
+				.insert(table)
+				.values({
+					id,
+					userId,
+					localDate: ctx.localDate,
+					zone: ctx.zone,
+					[valueColumn]: value
+				} as never)
+				.onConflictDoNothing({ target: table.id })
+				.returning();
+			if (row) return toReading(row, value);
+			// The same save sent twice at once answers as saved; another person's ID is a conflict (A21).
+			const meanwhile = await saved();
+			if (meanwhile) return meanwhile;
+			throw new BodyError('conflict');
 		});
 	}
 
@@ -194,11 +196,12 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 		): Promise<ActivityEntry> {
 			const id = ctx.id ?? randomUUID();
 			return withUser(db, userId, async (tx) => {
-				const [existing] = await tx
-					.select()
-					.from(activityEntries)
-					.where(eq(activityEntries.id, id));
-				if (existing) {
+				const saved = async () => {
+					const [existing] = await tx
+						.select()
+						.from(activityEntries)
+						.where(eq(activityEntries.id, id));
+					if (!existing) return undefined;
 					const same =
 						existing.localDate === ctx.localDate &&
 						existing.kcal === kcal &&
@@ -206,28 +209,29 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 						existing.kind === kind;
 					if (!same) throw new BodyError('conflict');
 					return toActivity(existing);
-				}
+				};
+				const prior = await saved();
+				if (prior) return prior;
 				await refusePurged(tx, id);
-				try {
-					const [row] = await tx
-						.insert(activityEntries)
-						.values({
-							id,
-							userId,
-							localDate: ctx.localDate,
-							zone: ctx.zone,
-							kcal,
-							note,
-							countsTowardBudget: true,
-							kind
-						})
-						.returning();
-					return toActivity(row);
-				} catch (e) {
-					if ((e as { cause?: { code?: string } }).cause?.code === '23505')
-						throw new BodyError('conflict');
-					throw e;
-				}
+				const [row] = await tx
+					.insert(activityEntries)
+					.values({
+						id,
+						userId,
+						localDate: ctx.localDate,
+						zone: ctx.zone,
+						kcal,
+						note,
+						countsTowardBudget: true,
+						kind
+					})
+					.onConflictDoNothing({ target: activityEntries.id })
+					.returning();
+				if (row) return toActivity(row);
+				// The same save sent twice at once answers as saved; another person's ID is a conflict (A21).
+				const meanwhile = await saved();
+				if (meanwhile) return meanwhile;
+				throw new BodyError('conflict');
 			});
 		},
 		removeActivity: (userId: string, id: string) => setDeleted(userId, activityEntries, id, true),
