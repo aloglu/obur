@@ -48,6 +48,12 @@ restore_lock() {
 	flock -n 9 || obur_fail "another 'obur restore' command is still running; wait for it to end, then try again"
 }
 
+move_aside() {
+	mv "$PGDATA" "$1"
+	sync /data
+	echo "obur: the current database was moved aside to $1 (kept until you delete it)"
+}
+
 restore_start() {
 	supervised
 	restore_lock
@@ -64,16 +70,25 @@ restore_start() {
 		rm -f "$OBUR_RUN/hold"
 		obur_fail "obur did not stop within two minutes; nothing was changed"
 	}
-	if ((retry)); then
+	local aside
+	aside=$(cat "$ASIDE_NOTE" 2>/dev/null || true)
+	if ((retry)) && [[ -n $aside && ! -d $aside && -d $PGDATA ]]; then
+		# Stopped after it noted where the database goes but before the move: the database is still in place.
+		echo "obur: an earlier restore stopped before it began; starting it again"
+		move_aside "$aside"
+	elif ((retry)); then
 		# The database folder holds only what the failed attempt left; the one it replaced is still aside.
 		echo "obur: an earlier restore did not complete; starting it again"
 		rm -rf "$PGDATA"
 	elif [[ -d $PGDATA ]]; then
-		local aside
 		aside=/data/postgres-before-restore-$(date +%Y%m%d-%H%M%S)
-		mv "$PGDATA" "$aside"
-		echo "$aside" >"$ASIDE_NOTE"
-		echo "obur: the current database was moved aside to $aside (kept until you delete it)"
+		# The note first, on disk before the move: an interruption at any point leaves the database findable, in its
+		# place or at the noted path (2026-11-21 audit, A04). A rename within /data is all or nothing.
+		echo "$aside" >"$ASIDE_NOTE.new"
+		sync "$ASIDE_NOTE.new"
+		mv "$ASIDE_NOTE.new" "$ASIDE_NOTE"
+		sync "$OBUR_STATUS_DIR"
+		move_aside "$aside"
 	fi
 	if ! obur-restore start "$@"; then
 		echo "obur: the restore failed; obur stays stopped. Fix the cause and run 'obur restore start' again," >&2
@@ -117,11 +132,15 @@ restore_cancel() {
 	# $OBUR_RUN/aside: where versions before 1.0.0 noted it.
 	aside=$(cat "$ASIDE_NOTE" 2>/dev/null || cat "$OBUR_RUN/aside" 2>/dev/null || true)
 	hold_obur || obur_fail "obur did not stop within two minutes"
-	rm -rf "$PGDATA"
 	if [[ -n $aside && -d $aside ]]; then
+		rm -rf "$PGDATA"
 		mv "$aside" "$PGDATA"
 		echo "obur: the database from before the restore is back; obur starts again."
+	elif [[ -n $aside ]]; then
+		# Noted but never moved (the restore stopped before the move): the database never left its place.
+		echo "obur: the restore stopped before it moved the database, so it is still in place; obur starts again."
 	else
+		rm -rf "$PGDATA"
 		# Nothing was moved aside: there was no database before the restore.
 		echo "obur: the restore is cancelled. There was no database before it, so obur is back to how it was then."
 	fi

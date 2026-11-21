@@ -158,11 +158,13 @@ upgrade() {
 	if [[ $(obur_psql -c "select to_regclass('public.schema_migrations') is not null") == t ]]; then
 		applied=$(obur_psql -c 'select count(*) from schema_migrations')
 	fi
+	# Every upgrade of an existing database takes a backup first, also when the local repository is missing (a new
+	# backup disk, a mount typo): it is set up again and the backup is then a full one. A repository that can't be
+	# used stops the upgrade (2026-11-21 audit, A03).
 	if ((applied >= 0 && applied < known)); then
-		if [[ -f /data/backups/backup/obur/backup.info ]]; then
-			log "upgrading the database ($((known - applied)) step(s)); taking a backup first"
-			gosu postgres obur-backup pre-upgrade || fatal "the backup before the upgrade failed, so nothing was changed"
-		fi
+		log "upgrading the database ($((known - applied)) step(s)); taking a backup first (a full one if there is none)"
+		gosu postgres obur-backup pre-upgrade ||
+			fatal "the backup before the upgrade failed, so nothing was changed: check that /data/backups can be written"
 	fi
 	# As the database's own system user, through the socket: the only way the administrator may sign in.
 	(cd /app && env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp DATABASE_ADMIN_SOCKET="$OBUR_SOCKET" \

@@ -99,6 +99,12 @@ signin_page() {
 	return 1
 }
 signin_page || fail "no sign-in page after cancel"
+# A restore stopped after it noted where the database goes but before it moved it (A04): cancel keeps the database.
+docker exec "$name" bash -c 'echo /data/postgres-before-restore-never-moved >/data/status/restore-aside'
+out=$(docker exec "$name" obur restore cancel 2>&1) || fail "cancel of a restore stopped before the move: $out"
+[[ $out == *'still in place'* ]] || fail "cancel of a restore stopped before the move: $out"
+ready_again 3 "not ready again after cancelling a restore stopped before the move"
+signin_page || fail "no sign-in page after the second cancel"
 # An obur older than its database does not open (R12): one database step this version doesn't know.
 sql "insert into schema_migrations (name, checksum) values ('9999_from_a_newer_version', 'x')" >/dev/null
 docker restart -t 60 "$name" >/dev/null
@@ -112,7 +118,17 @@ sleep 5
 [[ $(health) == none ]] || fail "an older obur opened: $(health)"
 sql "delete from schema_migrations where name = '9999_from_a_newer_version'" >/dev/null
 docker restart -t 60 "$name" >/dev/null
-ready_again 3 "not ready again with a database it knows"
+ready_again 4 "not ready again with a database it knows"
+# An upgrade with the local backups gone (a new backup disk) takes a full backup before it changes anything (A03).
+# The last database step only rebuilds an index, so it can run again: removing its row makes it pending.
+sql "delete from schema_migrations where name = '$(jq -r '.entries[-1].tag' "$(dirname "$0")/../../drizzle/meta/_journal.json")'" >/dev/null
+docker stop -t 60 "$name" >/dev/null
+docker run --rm -v "$data:/d" --entrypoint bash "$image" -c 'rm -rf /d/backups/*' || fail "removing the backups"
+docker start "$name" >/dev/null
+ready_again 5 "not ready after an upgrade with no local backups"
+[[ $(logs) == *'taking a backup first'*'no prior backup exists, incr backup has been changed to full'* ]] ||
+	fail "the upgrade did not take a full backup first"
+[[ $(docker exec "$name" obur backup info) == *'full backup'* ]] || fail "no backup before the upgrade"
 docker stop -t 60 "$name" >/dev/null
 [[ $(logs) == *'database system is shut down'* ]] || fail "the database did not shut down cleanly"
 

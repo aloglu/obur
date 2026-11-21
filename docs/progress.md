@@ -2,6 +2,24 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Second 1.0 audit (owner's go, 2026-11-21)
+
+The owner's outside audit of rc.6: `~/Documents/Obur-1.0-Audit-Codex.md` (not in the repository), items A01-A50.
+Owner's choices: A02 keep the setup link in the log, plus a warning not to share logs before setup and a log line
+once it is used; A36+A37 update PyAV and ship a licence notice for its FFmpeg (treated as GPL: it includes x264);
+A49 keep about 5 weeks of backups (`OBUR_BACKUP_KEEP_WEEKS`) and correct the design; A28 no zoom stays.
+Judged wrong: A24 (`isLateNight` is used by the amount and saved-meal sheets). Skipped by my judgement: A11 (the
+queue sits beside the unencrypted database in /data), A35 (seconds, only on a failed publish), A40 (later), A45
+(as R-audit). Documentation only: A09, A33, A42, A48, A50. A43 changes Today's look: screenshot review first.
+Order: data-loss and privacy fixes, then small fixes, then documents; one commit each.
+
+- A03 done: every upgrade of an existing database takes a backup first, also with no local repository (it is set
+  up again; the backup is then full); a repository that can't be used stops the upgrade. Smoke test: backups
+  removed, one step pending → full backup, then ready.
+- A04 done: `obur restore start` writes and syncs where the database goes before it moves it; `cancel` and a
+  retried `start` handle a note whose move never happened (the database is still in place, never removed). Smoke
+  test covers cancel in that state.
+
 ## Release-readiness audit (owner's go, 2026-11-20)
 
 The owner's audit of rc.5: `~/Documents/Obur-1.0-Release-Readiness-Review.md` (not in the repository), items R01-R15.
