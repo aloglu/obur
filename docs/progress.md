@@ -120,6 +120,10 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   `today-unknown` (unknown|now), `journal` (plus|now), `progress` (plus|now). Next step: read the picks, adjust
   the branch, merge, update docs/ui.md. Screenshots: `touch .review-shots && npm run test:e2e -- review-a43
   --project desktop-chromium` on the branch.
+- A43 done (owner's picks 2026-11-21: note, "?" with note, "+" in Journal and Progress; partial days keep counting
+  toward under/over budget). Notes agreed in conversation: "1 item has no calories, so the total is higher." and
+  "Nothing logged has calories, so the total is unknown." Recorded in docs/ui.md. Merged into main. Next: a
+  screenshot review of Journal's day box row (owner: calories, status and weight don't line up).
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

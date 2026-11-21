@@ -35,9 +35,11 @@
 	const note = $derived(
 		allUnknown
 			? m.budget_eaten_unknown()
-			: unknownEntries
-				? m.budget_eaten_partial({ count: unknownEntries })
-				: null
+			: unknownEntries === 1
+				? m.budget_eaten_partial_one()
+				: unknownEntries
+					? m.budget_eaten_partial({ count: unknownEntries })
+					: null
 	);
 
 	let showBreakdown = $state(false);
