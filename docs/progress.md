@@ -65,6 +65,13 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   Unit tests.
 - A34 done: only a pushed `v*` tag publishes (`github.event_name == 'push'` on the flag and the Publish job); a
   run started by hand on a tag only tests. actionlint 1.7.7 clean.
+- A02 done (owner's choice: keep the link in the log): after the first account is made the log says "the setup
+  link in this log no longer works"; Docker, first-start and agents guides say not to share the log before then.
+- A10 done: `obur restore finish` needs the deleted-accounts entries or `--none`, and refuses before any waiting;
+  the restore guide explains which list to use. Smoke test checks the refusal.
+- A13 done: obur stops at start when `/data` is not a mount (`OBUR_ALLOW_UNMOUNTED_DATA=1` only for a throwaway
+  test). Smoke test checks it; troubleshooting and agents guides updated. Smoke, off-site outage and off-site
+  restore tests pass.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

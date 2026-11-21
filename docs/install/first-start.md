@@ -11,7 +11,8 @@ https://obur.example.com/setup#…
 
 Open it on your phone, choose your name and create a passkey. You are the admin. If the link expired
 or got lost, make a new one: `docker exec obur obur setup-link` (on Unraid or TrueNAS, `obur setup-link` in the
-container's console or shell).
+container's console or shell). Until you use it, anyone with the link can become the admin, so don't share or post
+the log before then. Afterwards the log says "the setup link in this log no longer works".
 
 Then save the **recovery codes** obur shows you somewhere safe: they let you back in if you lose your phone.
 

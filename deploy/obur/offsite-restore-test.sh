@@ -69,7 +69,7 @@ done
 docker exec "$name" test -e /data/postgres/18/docker/PG_VERSION && fail "the new server made a database"
 docker exec "$name" test -e /data/backups/backup && fail "the new server made a local backup repository"
 out=$(docker exec "$name" obur restore start --repo=2 2>&1) || fail "restore start: $out"
-out=$(docker exec "$name" obur restore finish 2>&1) || fail "restore finish: $out"
+out=$(docker exec "$name" obur restore finish --none 2>&1) || fail "restore finish: $out"
 ready "not ready after the restore"
 [[ $(sql 'select note from restore_marker') == kept ]] || fail "the restored data is missing"
 [[ -z $(docker exec "$name" ls /data/status/restore-pending 2>/dev/null) ]] || fail "the restore is still pending"

@@ -8,7 +8,7 @@
 #       Leaves a restore-pending mark, so the web app answers "restore in progress" until the restore is finished.
 #       Run through `obur restore start`, which stops obur and moves the old database aside first.
 #
-#   obur-restore finish [<account ID>[@<deletion date>] ...]
+#   obur-restore finish --none | <account ID>[@<deletion date>] ...
 #       With the restored database running: signs everyone out, cancels recovery links, unused invites and setup
 #       links, deletes again each account from the admin's off-server deletion list (with its foods), takes a full backup of the new history (locally; the off-site copy too when it can be
 #       reached, otherwise with the next nightly backup), and removes the mark.
@@ -45,7 +45,19 @@ start() {
 	say "restored"
 }
 
+# The deletion list must be given, or --none said for an empty one: forgetting it would bring deleted accounts back
+# (2026-11-21 audit, A10).
+deletions_given() {
+	if [[ ${1:-} == --none ]]; then
+		[[ $# == 1 ]] || fail "--none means the deleted-accounts list is empty: pass either --none or the entries, not both"
+	elif [[ $# == 0 ]]; then
+		fail "pass every entry from Members → Backups → Deleted accounts, or --none if that list is empty (docs/restore.md)"
+	fi
+}
+
 finish() {
+	deletions_given "$@"
+	[[ ${1:-} == --none ]] && shift
 	[[ -f $MARK ]] || fail "no restore is pending"
 	local sql=(psql -X -q -v ON_ERROR_STOP=1 -h /var/run/postgresql -U "${PGBACKREST_PG1_USER:-postgres}" -d "${POSTGRES_DB:-obur}")
 	local statements="begin;
@@ -94,7 +106,7 @@ finish)
 	finish "$@"
 	;;
 *)
-	echo "usage: obur-restore start [pgBackRest restore options] | finish [<id>[@YYYY-MM-DD] ...]" >&2
+	echo "usage: obur-restore start [pgBackRest restore options] | finish --none | <id>[@YYYY-MM-DD] ..." >&2
 	exit 2
 	;;
 esac

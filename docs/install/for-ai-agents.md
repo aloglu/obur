@@ -80,8 +80,10 @@ backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cl
    shares one sign-in limit (`remote-access.md`).
 6. **Check:** `curl -sI https://<address>/login` returns `200`.
 7. **First account:** the log printed a one-time setup link (`obur: no account exists yet …`), valid for 24 hours.
-   Give it to the person privately. A new one: `docker exec obur obur setup-link`. Remind them to save the recovery
-   codes the app shows after they create their passkey.
+   Give it to the person privately, and don't paste the log anywhere until it is used (then the log says "the setup
+   link in this log no longer works"). A new one: `docker exec obur obur setup-link`. Remind them to save the
+   recovery codes the app shows after they create their passkey. If obur stops at once with "/data is not a mounted
+   folder", the data folder mapping is missing or mistyped.
 8. **Tell the person** where the folder is, that the passphrase must be kept safe, and whether there is an off-site
    copy (Members → Backups warns while there isn't).
 

@@ -67,7 +67,9 @@ obur: no account exists yet. Open this link on the device you will use first (va
 https://obur.example.com/setup#…
 ```
 
-Open it on your phone once the https address works, and follow [First start](first-start.md).
+Open it on your phone once the https address works, and follow [First start](first-start.md). Until you have used
+it, the log holds a link that makes whoever opens it the administrator: don't share or post the log before then.
+Once the first account exists, the log says "the setup link in this log no longer works".
 
 `docker compose ps` shows `obur` as `healthy` when all is well.
 

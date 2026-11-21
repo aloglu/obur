@@ -15,8 +15,15 @@ install -d -m 755 "$OBUR_RUN"
 echo $$ >"$OBUR_RUN/init.pid"
 rm -f "$OBUR_RUN/hold" "$OBUR_RUN/held"
 
+# Without a mounted /data, everything would live inside this container and go with it, and a replacement container
+# whose mount is mistyped would quietly start an empty installation: obur stops instead (2026-11-21 audit, A13).
 if ! mountpoint -q /data; then
-	log "WARNING: /data is not a mounted folder. Your data lives inside this container and is lost when it is removed."
+	if [[ ${OBUR_ALLOW_UNMOUNTED_DATA:-} == 1 ]]; then
+		log "WARNING: /data is not a mounted folder (OBUR_ALLOW_UNMOUNTED_DATA=1). Your data lives inside this container and is lost when it is removed."
+	else
+		log "/data is not a mounted folder, so obur does not start: map a folder or volume to /data (docs/install/troubleshooting.md)"
+		exit 1
+	fi
 fi
 # The database and the web app run as their own users, who must be able to pass through /data to their folders.
 chmod a+x /data

@@ -25,6 +25,11 @@ fail() {
 	exit 1
 }
 
+# Without a mounted /data, obur stops at once instead of starting an installation inside the container (A13).
+out=$(timeout 60 docker run --rm -e PUBLIC_ORIGIN=http://localhost:3199 \
+	-e OBUR_BACKUP_PASSPHRASE=smoke-test-passphrase "$image" 2>&1) && fail "obur started without a mounted /data"
+[[ $out == *'/data is not a mounted folder, so obur does not start'* ]] || fail "no mount: $out"
+
 docker run -d --name "$name" -p 127.0.0.1:3199:3000 -v "$data:/data" \
 	-e PUBLIC_ORIGIN=http://localhost:3199 -e OBUR_BACKUP_PASSPHRASE=smoke-test-passphrase "$image" >/dev/null
 for _ in $(seq 90); do
@@ -156,7 +161,10 @@ docker exec "$name" obur restore start --set=does-not-exist >/dev/null 2>&1 && f
 out=$(docker exec "$name" obur restore cancel 2>&1) || fail "cancel with no database before: $out"
 [[ $out == *'no database before it'* ]] || fail "cancel with no database before: $out"
 out=$(docker exec "$name" obur restore start 2>&1) || fail "restore after a cancelled one: $out"
-out=$(docker exec "$name" obur restore finish 2>&1) || fail "restore finish: $out"
+# Without the deleted-accounts list, or --none, finish refuses and changes nothing (A10).
+out=$(docker exec "$name" obur restore finish 2>&1) && fail "restore finish ran without a deletion list"
+[[ $out == *'or --none if that list is empty'* ]] || fail "restore finish without a list: $out"
+out=$(docker exec "$name" obur restore finish --none 2>&1) || fail "restore finish: $out"
 ready_again 1 "not ready after restoring a lost database"
 docker stop -t 60 "$name" >/dev/null
 echo "smoke test passed"

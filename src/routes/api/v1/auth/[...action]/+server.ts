@@ -64,6 +64,8 @@ const routes: Record<string, Handler> = {
 			body.label
 		);
 		setSessionCookie(cookies, result.sessionToken);
+		// The setup link printed in the log at first start can no longer be used (2026-11-21 audit, A02).
+		console.log('obur: the first account was created; the setup link in this log no longer works');
 		return json({ recoveryCodes: result.recoveryCodes });
 	},
 	'POST join/options': async (event) => {

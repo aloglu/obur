@@ -120,7 +120,7 @@ grep -q 'retrying the failed backup to repository 2 (attempt 1 of 3)' <<<"$logs"
 echo "a restore finishes while the store is away"
 docker exec "$name" chmod 000 /offsite
 out=$(docker exec "$name" obur restore start 2>&1) || fail "restore start: $out"
-out=$(docker exec "$name" obur restore finish 2>&1) || fail "restore finish with the store away: $out"
+out=$(docker exec "$name" obur restore finish --none 2>&1) || fail "restore finish with the store away: $out"
 [[ $out == *'next nightly backup'* ]] || fail "restore finish did not say the off-site copy waits: $out"
 docker exec "$name" test -f /data/status/offsite-full-needed || fail "the off-site full backup is not remembered"
 docker exec "$name" test ! -f /data/status/restore-pending || fail "obur stayed closed after the restore"

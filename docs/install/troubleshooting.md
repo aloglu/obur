@@ -12,8 +12,10 @@ manager and start again. If an earlier version already made backups with the pla
 with the new phrase: move the old backup folder (`/data/backups`) aside and empty the off-site location, and obur
 starts fresh copies.
 
-**"WARNING: /data is not a mounted folder."** The data folder isn't mapped, so everything would be lost with the
-container. Add the volume (`/data`) and start again.
+**"/data is not a mounted folder, so obur does not start".** The data folder isn't mapped, so everything would be
+lost with the container, or a new, empty installation would start beside your real one. Map your data folder or
+volume to `/data` (check the path for typos) and start again. Only for a throwaway test, `OBUR_ALLOW_UNMOUNTED_DATA=1`
+starts it anyway, with a warning.
 
 **"waiting: the database folder is empty but backups exist".** obur found backups but no database, so it waits for
 a restore instead of starting empty and losing your history: see [Restoring](../restore.md). If you really want a

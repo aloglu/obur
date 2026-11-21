@@ -59,9 +59,11 @@ their deletions are applied again after every restore.
    stopped: fix the cause and run it again (what the failed attempt left is cleared first), or run
    `obur restore cancel` to go back to how it was: the old database, or none if there was none.
 
-3. **Finish.** Pass every entry from the deleted-accounts list, as `<ID>`, optionally followed by `@<date>`. With
-   an empty list, pass nothing. (Lists copied before 2026-11-17 may mark some entries `:shared`; pass them as they
-   are.)
+3. **Finish.** Pass every entry from the deleted-accounts list, as `<ID>`, optionally followed by `@<date>`. If the
+   list is empty, pass `--none`: finish refuses to run with neither, so a forgotten list never brings a deleted
+   account back. (Lists copied before 2026-11-17 may mark some entries `:shared`; pass them as they are.)
+   Deletions made before the moment you restore to are in the restored database already; the list matters for
+   the ones after it, so use the copy you made after the latest deletion.
    ```
    docker exec obur obur restore finish 2b7c…e1@2026-10-20 9f41…0a@2026-10-27
    ```
