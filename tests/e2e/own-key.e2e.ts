@@ -228,6 +228,6 @@ test('an admin is told which add-on a server without them needs', async ({ page 
 test('an admin sees the personal keys switch, on by default', async ({ page }, testInfo) => {
 	test.skip(testInfo.project.name !== 'desktop-chromium', 'one browser is enough for a switch');
 	await signedInAs(page, 'Yönetici Anahtar', 'admin');
-	await page.goto('/members');
+	await page.goto('/server');
 	await expect(page.getByRole('switch', { name: 'Personal AI keys' })).toBeChecked();
 });

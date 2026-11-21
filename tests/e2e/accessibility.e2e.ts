@@ -157,6 +157,7 @@ test('every signed-in page passes the automated accessibility checks in light an
 		'/settings/reminders',
 		'/settings/security',
 		'/members',
+		'/server',
 		'/help',
 		'/onboarding'
 	];

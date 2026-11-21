@@ -5,7 +5,7 @@ if the database change fails, nothing is changed and the error is in the log.
 
 ## Knowing when there is a new version
 
-obur can tell you: as an admin, turn on **More → Members → Updates → Check for new versions**. It then asks
+obur can tell you: as an admin, turn on **More → Server → Updates → Check for new versions**. It then asks
 GitHub once a day which versions are published (nothing about you or the other members is sent) and shows "Version … is
 available" there, and "Update available" on More. It is off until you turn it on, and obur never updates itself.
 You can also watch the repository's releases on GitHub.

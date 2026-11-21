@@ -22,7 +22,7 @@ add-ons. They never reach the internet: audio and photos stay on your server, in
 
 **Without the add-ons**, each person can still use Speak and Scan with their own OpenAI or OpenRouter key (More →
 Speak and Scan), after allowing that company to receive their recordings or photos. They pay that company for what
-they use. An admin can switch this off for everyone on Members.
+they use. An admin can switch this off for everyone on Server.
 
 ## 2. Give it an https address
 

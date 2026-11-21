@@ -85,11 +85,11 @@ backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cl
    recovery codes the app shows after they create their passkey. If obur stops at once with "/data is not a mounted
    folder", the data folder mapping is missing or mistyped.
 8. **Tell the person** where the folder is, that the passphrase must be kept safe, and whether there is an off-site
-   copy (Members → Backups warns while there isn't).
+   copy (Server → Backups warns while there isn't).
 
 ## Routine maintenance
 
-- **Health:** `docker compose ps` (obur `healthy`), `docker compose logs --tail 100 obur`, and in the app Members →
+- **Health:** `docker compose ps` (obur `healthy`), `docker compose logs --tail 100 obur`, and in the app Server →
   Backups (last backup, last weekly restore check, last off-site restore check).
 - **Update:** `docker compose pull && docker compose up -d`, then read the log. Before changing the database, obur
   takes a backup by itself; a failed upgrade changes nothing and stops with the reason in the log. Afterwards
@@ -115,11 +115,11 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
   repeats for the same path, report it with the path and times (never paste a query or personal data).
 - **"obur: error: POST /path: DrizzleQueryError (PostgresError 22001)"** (log): a request failed unexpectedly. The
   line names only the error's type and code, never the query or what was saved. If it repeats, report the line.
-- **New versions:** obur does not look for them unless an admin turns on Members → Updates → "Check for new
+- **New versions:** obur does not look for them unless an admin turns on Server → Updates → "Check for new
   versions" (it then reads GitHub's public release list once a day; `updates: the published versions could not be read`
   in the log means GitHub was unreachable, which is harmless). It never updates itself.
 - **"the off-site store cannot be reached; WAL is waiting for it"** (log) or **"The off-site store can't be
-  reached"** (Members → Backups): the off-site storage is not answering. Local backups continue; changes wait in
+  reached"** (Server → Backups): the off-site storage is not answering. Local backups continue; changes wait in
   `/data/offsite-queue` (limit `OBUR_OFFSITE_QUEUE_MAX_MB`, default 1024) and are sent when it answers ("the off-site
   store is back: N waiting WAL file(s) sent"). Check the `OBUR_OFFSITE_*` values and the server's connection. After
   "the off-site store has been away too long", run `docker exec obur obur backup now` once it is reachable.
@@ -144,7 +144,7 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
 - **"the backup before the upgrade failed, so nothing was changed: check that /data/backups can be written":** the
   backup folder (`OBUR_BACKUP_DIR`) is missing, full or not writable. Fix that; obur takes the backup (a full one if
   there is none) and upgrades on the next start.
-- **Members → Backups says changes wait to be archived, or the backup timer has stopped:** read the last 200 log
+- **Server → Backups says changes wait to be archived, or the backup timer has stopped:** read the last 200 log
   lines for `obur-backup` errors and report them; for a stopped timer, `docker compose restart obur`.
 - **An upgrade or backup failed:** report the log lines to the person. More in `troubleshooting.md`.
 

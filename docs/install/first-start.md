@@ -36,5 +36,5 @@ docker exec obur obur recovery-link "Their name"
 
 ## Check the backups
 
-Members → **Backups** shows when the last backup ran and whether the weekly restore check passed. It warns while
+Server → **Backups** shows when the last backup ran and whether the weekly restore check passed. It warns while
 there is no off-site copy; see the off-site lines in `.env`.

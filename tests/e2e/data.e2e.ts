@@ -127,8 +127,6 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	// A passkey check just now: a new session for the same admin (another person would be refused on this page).
 	await signedInAgain(page, adminId);
 	await page.reload();
-	// Development and test installations have no backup service, and the page says so.
-	await expect(page.getByText("Backups aren't set up on this installation.")).toBeVisible();
 	const people = page.getByRole('region', { name: 'People' });
 	await people
 		.getByRole('listitem')
@@ -144,7 +142,10 @@ test('an admin deletes a member, and the deletion is listed by ID only', async (
 	await sheet.getByRole('checkbox').check();
 	await sheet.getByRole('button', { name: 'Delete account' }).click();
 	await expect(people).not.toContainText(name);
-	// Listed under Backups (it matters only for a restore), by ID and who deleted it, never by name.
+	// Listed on Server under Backups (it matters only for a restore), by ID and who deleted it, never by name.
+	await page.goto('/server');
+	// Development and test installations have no backup service, and the page says so.
+	await expect(page.getByText("Backups aren't set up on this installation.")).toBeVisible();
 	const deletions = page.getByRole('region', { name: 'Backups' }).getByTestId('deletions');
 	await expect(deletions).toContainText(memberId);
 	await expect(deletions).toContainText('Deleted by an admin');

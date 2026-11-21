@@ -9,7 +9,7 @@
 	let { data } = $props();
 
 	// More opens from what the app already holds. An admin's "Update available" is looked up afterwards (at most
-	// one question to GitHub a day, and only with the check turned on in Members); if the answer is news, the
+	// one question to GitHub a day, and only with the check turned on in Server); if the answer is news, the
 	// row follows.
 	onMount(() => {
 		if (data.user?.role !== 'admin') return;

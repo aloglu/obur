@@ -29,6 +29,10 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   (`speech/service.py` `transcribe`, faster-whisper 1.1.1 internals: the first window as `generate_segments` cuts it,
   then given to it). Same text as before on both test clips; 0.90 → 0.60 s and 0.91 → 0.70 s on this desktop
   (4 cores). Add-on test passes. Owner to compare one real clip on the server after the release.
+- Members and Server split done (owner, 2026-11-21): Members keeps People and Invite someone; the new Server page
+  (`/server`, admins) holds Backups with the deleted accounts, Updates, Personal AI keys and Label scans. More:
+  Settings, Members, Server (with "Update available"), Help. Design, ui.md, install docs, restore guide and help
+  text say Server. check, lint, Vitest and the full browser suite (306 passed) pass.
 
 ## Second 1.0 audit (owner's go, 2026-11-21)
 

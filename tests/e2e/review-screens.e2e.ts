@@ -192,10 +192,12 @@ for (const theme of ['light', 'dark'] as const) {
 		await expect(page.getByText('USDA FoodData Central')).toBeVisible();
 		await shot(page, '15-food-usda', theme, true);
 
-		// Your data and Members.
+		// Your data, Members and Server.
 		await page.goto('/settings/data');
 		await shot(page, '16-your-data', theme, true);
 		await page.goto('/members');
 		await shot(page, '17-members', theme, true);
+		await page.goto('/server');
+		await shot(page, '18-server', theme, true);
 	});
 }

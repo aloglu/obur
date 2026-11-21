@@ -49,6 +49,7 @@ test('an iPhone set to its largest text gets text at 200 %, and the pages still 
 		'/more/appearance',
 		'/foods/new',
 		'/members',
+		'/server',
 		'/profile'
 	]) {
 		await page.goto(path);

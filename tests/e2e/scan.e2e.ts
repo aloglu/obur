@@ -205,7 +205,7 @@ test('Scan opens as a sheet over Log; a corrected value is counted and admins se
 	// Check the label opened without a reading (a reload) goes back to Log with the sheet open.
 	await page.goto('/scan');
 	await expect(page.getByRole('dialog', { name: 'Scan a label' })).toBeVisible();
-	await page.goto('/members');
+	await page.goto('/server');
 	await expect(page.getByTestId('scan-totals')).toContainText('Labels saved');
 });
 

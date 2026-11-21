@@ -18,7 +18,7 @@ backup, and taken a fresh full backup. obur never reopens with restored sessions
   backups, on purpose. Copy it off the server once, and again only if you change those keys. Without it a new
   server still restores everything else: people enter their AI keys again, and each device turns its reminders on
   again (Settings → Reminders).
-- **The deleted-accounts list** from Members → Backups → Deleted accounts. Copy it whenever an account is deleted
+- **The deleted-accounts list** from Server → Backups → Deleted accounts. Copy it whenever an account is deleted
   (**Copy list** gives the entries in the form `finish` takes below). Each entry is an account ID and the date. It
   never contains diary content.
 
@@ -77,7 +77,7 @@ their deletions are applied again after every restore.
    ```
    docker exec obur obur backup restore-check
    ```
-   Then look at Members → Backups. Everyone signs in again with their passkey: passkeys and recovery codes are
+   Then look at Server → Backups. Everyone signs in again with their passkey: passkeys and recovery codes are
    unchanged. obur needs a connection, so nothing waits on the phones: entries made while the server was down were
    never saved and must be logged again.
 

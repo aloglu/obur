@@ -179,7 +179,7 @@ test('an admin setting asks for the passkey again once the last check is old', a
 	const sql = postgres(e2eEnv.DATABASE_MIGRATOR_URL, { max: 1, onnotice: () => {} });
 	await sql`update sessions set verified_at = now() - interval '1 hour'`;
 	await sql.end();
-	await page.goto('/members');
+	await page.goto('/server');
 	const keys = page.getByRole('switch', { name: 'Personal AI keys' });
 	await expect(keys).toBeChecked();
 	const saved = () =>

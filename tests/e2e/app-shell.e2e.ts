@@ -83,6 +83,7 @@ test('every page title sits at the same height and stays there while a page open
 		'/recipes',
 		'/saved-meals',
 		'/members',
+		'/server',
 		'/help',
 		'/achievements'
 	]) {
