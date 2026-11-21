@@ -50,7 +50,9 @@ export function createAuthService(
 		loginIp: new RateLimiter(30, MINUTES_15),
 		loginAccount: new RateLimiter(20, MINUTES_15),
 		enrolIp: new RateLimiter(20, MINUTES_15),
-		recoveryIp: new RateLimiter(10, MINUTES_15)
+		recoveryIp: new RateLimiter(10, MINUTES_15),
+		// Passkey prompts a signed-in person asks for (re-verify, add a passkey, recovery's new passkey).
+		promptAccount: new RateLimiter(30, MINUTES_15)
 	};
 	const limit = (limiter: RateLimiter, key: string) => {
 		if (!limiter.attempt(key)) throw new AuthError('rate_limited');
@@ -281,6 +283,7 @@ export function createAuthService(
 
 		async reauthOptions(session: SessionRecord) {
 			requireNormal(session);
+			limit(limits.promptAccount, session.userId);
 			const creds = await store.credentialIds(session.userId);
 			const opts = await generateAuthenticationOptions({
 				rpID: config.rpId,
@@ -320,6 +323,7 @@ export function createAuthService(
 
 		async addCredentialOptions(session: SessionRecord) {
 			requireRecent(session);
+			limit(limits.promptAccount, session.userId);
 			const opts = await registrationOptions(
 				session.userId,
 				session.displayName,
@@ -387,6 +391,7 @@ export function createAuthService(
 
 		async recoveryOptions(session: SessionRecord, recoveryToken: string) {
 			if (session.kind !== 'recovery') throw new AuthError('forbidden');
+			limit(limits.promptAccount, session.userId);
 			const opts = await registrationOptions(session.userId, session.displayName, []);
 			const challengeId = challenges.put({
 				challenge: opts.challenge,

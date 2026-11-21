@@ -91,6 +91,8 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   `archive_busy` ("The server is busy with other imports and exports"), also on export. The manifest's row
   count must match each JSON file on import; CSV views now count records, not lines (not checked on import:
   older archives counted lines). Database tests.
+- A08 done: at most five open passkey prompts per account (a new one replaces that account's oldest, never
+  someone else's), and 30 signed-in prompt requests per account in 15 minutes. Unit test.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

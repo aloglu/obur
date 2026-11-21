@@ -90,6 +90,16 @@ describe('ChallengeStore', () => {
 		expect(store.take(first, 'login')).toBeUndefined();
 		expect(store.take(third, 'login')?.challenge).toBe('c');
 	});
+
+	it('keeps a few open prompts per account, replacing only that account’s oldest (A08)', () => {
+		const store = new ChallengeStore(100, Date.now, 2);
+		const other = store.put({ challenge: 'theirs', purpose: 'login' });
+		const first = store.put({ challenge: 'a', purpose: 'reauth', userId: 'u' });
+		store.put({ challenge: 'b', purpose: 'reauth', userId: 'u' });
+		for (let i = 0; i < 50; i++) store.put({ challenge: `x${i}`, purpose: 'reauth', userId: 'u' });
+		expect(store.take(first, 'reauth')).toBeUndefined();
+		expect(store.take(other, 'login')?.challenge).toBe('theirs');
+	});
 });
 
 describe('RateLimiter', () => {

@@ -26,14 +26,22 @@ export class ChallengeStore {
 
 	private readonly maxItems: number;
 	private readonly now: () => number;
+	private readonly perAccount: number;
 
-	constructor(maxItems = 10_000, now: () => number = Date.now) {
+	constructor(maxItems = 10_000, now: () => number = Date.now, perAccount = 5) {
 		this.maxItems = maxItems;
 		this.now = now;
+		this.perAccount = perAccount;
 	}
 
 	put(challenge: Challenge): string {
 		this.#sweep();
+		// One account's open prompts are few: a new one replaces that account's oldest, never someone else's
+		// (2026-11-21 audit, A08).
+		if (challenge.userId) {
+			const own = [...this.#items].filter(([, item]) => item.userId === challenge.userId);
+			if (own.length >= this.perAccount) this.#items.delete(own[0][0]);
+		}
 		if (this.#items.size >= this.maxItems) {
 			// Drop the oldest entry rather than refusing everyone.
 			const oldest = this.#items.keys().next().value;
