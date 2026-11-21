@@ -43,6 +43,12 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   none waiting) and when the scheduler missed three looks (at least half an hour). Unit tests; the smoke test
   checks both fields. The smoke test's upgrade step now re-runs 0061 by name (0063 can't run twice; its DROPs
   are IF EXISTS anyway). Smoke and off-site outage tests pass.
+- Image tests after A01-A12: upgrade from beta.19 (runs 0062, 0063 on older data) and off-site restore pass.
+- A20 done: a budget recalculation after a weight change runs one at a time for each person (advisory lock),
+  reads the latest weight inside its own transaction, and stamps its version after the lock, so the last
+  change decides. Failure handling unchanged (the next weight change catches up). Database test holds the first
+  recalculation and checks the second waits. Goals browser tests: one failure in a slow first run, all 21
+  passed on the rerun.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

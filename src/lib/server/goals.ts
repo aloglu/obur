@@ -1,16 +1,17 @@
 // The application's goals instance and its HTTP error mapping.
 import { json } from '@sveltejs/kit';
 import { createGoals, GoalError, type BudgetChange } from '#lib/server/modules/goals/index.ts';
+import { latestWeightKg } from '#lib/server/modules/body/index.ts';
 import { localDate } from '#lib/shared/diary-rules.ts';
-import { body } from './body.ts';
 import { db } from './db/index.ts';
 
 export const goals = createGoals(db);
 
 /**
  * After a weight is added, removed or restored: moves a calculated budget to the latest weight from today on.
- * Runs after the weight's own transaction; a failure here leaves the weight saved and the next weight change
- * catches the budget up, so it never fails the request.
+ * Runs after the weight's own transaction, one at a time for each person, reading the latest weight inside its own
+ * transaction (A20). A failure here leaves the weight saved and the next weight change catches the budget up, so it
+ * never fails the request.
  */
 export async function followLatestWeight(
 	userId: string,
@@ -18,8 +19,7 @@ export async function followLatestWeight(
 ): Promise<BudgetChange | null> {
 	try {
 		const today = localDate(new Date(), zone);
-		const latest = await body.latestWeight(userId, today);
-		return await goals.followWeight(userId, today, latest?.value ?? null);
+		return await goals.followWeight(userId, today, (tx) => latestWeightKg(tx, today));
 	} catch (e) {
 		console.error('Budget recalculation after a weight change failed', (e as Error).name);
 		return null;

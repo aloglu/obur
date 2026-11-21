@@ -71,6 +71,17 @@ async function refusePurged(tx: Tx, id: string) {
 	if (purged) throw new BodyError('gone');
 }
 
+/** The latest weight (kg) on or before a day, read inside a transaction that already has the person's identity. */
+export async function latestWeightKg(tx: Tx, onOrBefore: string): Promise<number | null> {
+	const [row] = await tx
+		.select({ kg: weightEntries.kg })
+		.from(weightEntries)
+		.where(and(lte(weightEntries.localDate, onOrBefore), isNull(weightEntries.deletedAt)))
+		.orderBy(desc(weightEntries.localDate), desc(weightEntries.createdAt))
+		.limit(1);
+	return row ? Number(row.kg) : null;
+}
+
 export function createBody(db: Database, now: () => Date = () => new Date()) {
 	/** Inserts a reading, or returns the existing one for a retry with the same ID and content. */
 	async function insert(

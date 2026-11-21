@@ -7,7 +7,7 @@ import {
 	type Preferences
 } from '../../../shared/preferences.ts';
 import { isPalette } from '../../../shared/themes.ts';
-import { desc, eq, lte } from 'drizzle-orm';
+import { desc, eq, lte, sql } from 'drizzle-orm';
 import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import {
 	ageOn,
@@ -557,14 +557,23 @@ export function createGoals(db: Database) {
 		 * activity"): when the latest reading on or before `today` changes the numbers of the calculated target in
 		 * force today, records a new version from today with the same choices. Past days never change; manual
 		 * targets, "none" and refused calculations are left alone. Safe to call again: no change, no new version.
+		 *
+		 * One at a time for each person, and `latest` may read the weight inside this transaction: two weight changes
+		 * close together then each recalculate after the other, the last one from the latest weight, and never
+		 * commit in the wrong order (2026-11-21 audit, A20).
 		 */
 		async followWeight(
 			userId: string,
 			today: string,
-			latestWeightKg: number | null
+			latest: number | null | ((tx: Tx) => Promise<number | null>)
 		): Promise<BudgetChange | null> {
-			if (!latestWeightKg) return null;
+			if (latest === null) return null;
 			return withUser(db, userId, async (tx) => {
+				await tx.execute(
+					sql`select pg_advisory_xact_lock(hashtextextended('obur.follow-weight:' || ${userId}, 0))`
+				);
+				const latestWeightKg = typeof latest === 'function' ? await latest(tx) : latest;
+				if (!latestWeightKg) return null;
 				const [current] = await tx
 					.select()
 					.from(goalVersions)
@@ -591,6 +600,8 @@ export function createGoals(db: Database) {
 					(current.inputs as Record<string, unknown>).weightKg === latestWeightKg;
 				if (same) return null;
 				values.inputs = { ...(values.inputs as Record<string, unknown>), source: 'weight' };
+				// The time now, after the lock, not when the transaction began: versions on one day are ordered by it.
+				values.createdAt = sql`clock_timestamp()` as unknown as Date;
 				const [row] = await tx.insert(goalVersions).values(values).returning();
 				const budget = (r: VersionRow) => Math.max(r.floorKcal, r.baseBurnKcal! - r.deficitKcal);
 				return { beforeKcal: budget(current), afterKcal: budget(row), target: toVersion(row) };

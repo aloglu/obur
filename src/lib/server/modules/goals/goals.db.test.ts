@@ -240,6 +240,31 @@ describe('following the latest weight', () => {
 		expect((await goals.targetFor(MEHMET, '2026-06-10'))?.id).toBe(change!.target.id);
 	});
 
+	it('runs one recalculation at a time for a person, so the last one decides (A20)', async () => {
+		await goals.saveProfile(MEHMET, adult);
+		await goals.setTarget(MEHMET, calculated, 80);
+		const order: string[] = [];
+		let release!: () => void;
+		const held = new Promise<void>((r) => (release = r));
+		// The first reads 79 and is slow to finish; the second, started meanwhile, reads 78.
+		const first = goals.followWeight(MEHMET, '2026-06-10', async () => {
+			order.push('first reads');
+			await held;
+			return 79;
+		});
+		await new Promise((r) => setTimeout(r, 50));
+		const second = goals.followWeight(MEHMET, '2026-06-10', async () => {
+			order.push('second reads');
+			return 78;
+		});
+		await new Promise((r) => setTimeout(r, 100));
+		expect(order).toEqual(['first reads']);
+		release();
+		await Promise.all([first, second]);
+		expect(order).toEqual(['first reads', 'second reads']);
+		expect((await goals.targetFor(MEHMET, '2026-06-10'))?.inputs).toMatchObject({ weightKg: 78 });
+	});
+
 	it('does nothing when the numbers stay the same, so repeating it is harmless', async () => {
 		await goals.saveProfile(MEHMET, adult);
 		await goals.setTarget(MEHMET, calculated, 80);
