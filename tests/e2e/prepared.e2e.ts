@@ -82,6 +82,32 @@ test('nothing prepared is used once the server answers without a session', async
 	await context.unroute('**/journal/__data.json*');
 });
 
+test('an API read that finds the session ended drops what was prepared too (A44)', async ({
+	page,
+	context
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'needs Chromium request routing');
+	await signedInAs(page, 'Api Gone');
+	await settledOnToday(page);
+	const out = await page.request.post('/api/v1/auth/logout', {
+		data: {},
+		headers: { origin: new URL(page.url()).origin }
+	});
+	expect(out.ok()).toBe(true);
+	// Only an API read learns it, through the service worker.
+	const status = await page.evaluate(async () => (await fetch('/api/v1/foods?q=ayran')).status);
+	expect(status).toBe(401);
+	await context.route('**/journal/__data.json*', async (route) => {
+		await new Promise((r) => setTimeout(r, 3000));
+		await route.continue().catch(() => {});
+	});
+	await tabs(page).getByRole('link', { name: 'Journal' }).click();
+	await page.waitForTimeout(1500);
+	await expect(page.getByRole('heading', { level: 1, name: 'Journal' })).toBeHidden();
+	await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
+	await context.unroute('**/journal/__data.json*');
+});
+
 test('a change made in the app shows on a page prepared before it', async ({ page }) => {
 	await signedInAs(page, 'Never Stale');
 	await settledOnToday(page);

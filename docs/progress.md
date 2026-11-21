@@ -58,6 +58,9 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   tracks and records nothing; Try again after busy/limited/unavailable sends the kept recording, and records
   again only when the recording itself was the problem. Chromium browser tests for A29 and A30 fail without
   the fix.
+- A44 done: the service worker watches API reads too (an answer without a session, or no connection, drops what
+  was prepared), and the server marks its API 401 answer like the others. Chromium browser test fails without
+  the fix.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

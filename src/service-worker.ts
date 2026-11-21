@@ -332,10 +332,25 @@ sw.addEventListener('fetch', (event) => {
 	if (handled) event.respondWith(handled);
 });
 
+/**
+ * An API read: passed on as it is, but watched like every other answer, so the first one to find the session ended
+ * (or the connection gone) drops what was prepared (2026-11-21 audit, A44).
+ */
+async function apiRead(request: Request): Promise<Response> {
+	const response = await fetch(request).catch((e: unknown) => {
+		failed();
+		throw e;
+	});
+	unreachableUntil = 0;
+	notSignedIn(response);
+	return response;
+}
+
 /** How a GET is answered when nothing prepared applies; undefined when it goes to the network untouched. */
 function route(request: Request, url: URL): Promise<Response> | undefined {
 	if (request.mode === 'navigate') return page(request);
 	if (url.pathname.endsWith('/__data.json')) return pageData(request);
+	if (url.pathname.startsWith('/api/')) return apiRead(request);
 	return undefined;
 }
 

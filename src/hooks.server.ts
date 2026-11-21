@@ -147,7 +147,8 @@ const handleSession: Handle = async ({ event, resolve }) => {
 		redirect(303, '/recover');
 	}
 	if (!session && !matches(path, PUBLIC_PATHS)) {
-		if (api) return json({ error: 'unauthenticated' }, { status: 401 });
+		// Marked too: an API read can be the first to learn the session ended (2026-11-21 audit, A44).
+		if (api) return json({ error: 'unauthenticated' }, { status: 401, headers: NO_SESSION });
 		// A page change's data asks the same: answered here, as SvelteKit answers a redirect for page data, because a
 		// redirect thrown here never passes the hook that marks answers without a session (R13; tested in
 		// prepared.e2e.ts, so a change in SvelteKit's format shows).
