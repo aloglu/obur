@@ -124,6 +124,12 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   toward under/over budget). Notes agreed in conversation: "1 item has no calories, so the total is higher." and
   "Nothing logged has calories, so the total is unknown." Recorded in docs/ui.md. Merged into main. Next: a
   screenshot review of Journal's day box row (owner: calories, status and weight don't line up).
+- Journal day box review published (private): https://claude.ai/artifact/9EUh33BSnFPEbKb4Zoq9iH, db collection
+  `picks`, doc `daybox` (`labels`: Eaten / Under budget or Left / Weight in three equal columns, "· Not complete"
+  beside the date | `two-lines`: "455 of 1602 kcal" and weight, status on its own line | `now`). Option "one even
+  row" was dropped: three equal columns cut "455 of 1602" at phone width. Next step: read the pick, build it in
+  `src/lib/ui/journal/DayBox.svelte` (same fixed height for every day, the empty day too), update docs/ui.md
+  ("Journal") and the screenshot baselines.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
