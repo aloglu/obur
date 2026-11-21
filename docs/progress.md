@@ -12,6 +12,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
 
 - C01 done: the step that sent an old offline queue (rc.5 to rc.7) is removed with its Today card and sheet, the
   sign-out question and their 18 messages. Vitest, check, lint, connection e2e pass.
+- C02 done: a repeated LoseIt water row (same date and value) gets `#2`, `#3`; the first keeps the key earlier
+  imports stored, so a later import still finds them. Database test (fails without the fix).
 
 ## Second 1.0 audit (owner's go, 2026-11-21)
 

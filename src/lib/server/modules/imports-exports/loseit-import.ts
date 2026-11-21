@@ -94,6 +94,16 @@ function identities<T>(rows: T[], content: (row: T) => string): string[] {
 	});
 }
 
+/** Keys made distinct by occurrence: the first keeps its key, a repeat gets `#2`, `#3`. */
+function occurrences(keys: string[]): string[] {
+	const seen = new Map<string, number>();
+	return keys.map((key) => {
+		const n = (seen.get(key) ?? 0) + 1;
+		seen.set(key, n);
+		return n === 1 ? key : `${key}#${n}`;
+	});
+}
+
 const values = (n: EntryNutrients): NutrientValue[] =>
 	Object.entries(n).map(([code, v]) => ({
 		code: code as NutrientCode,
@@ -333,7 +343,8 @@ export async function planLoseIt(
 	const ids = {
 		entries: identities(data.entries, (e) => e.fingerprint),
 		weights: identities(data.weights, (w) => w.fingerprint),
-		water: data.water.map((w) => `${w.date}:${w.ml}`),
+		// Date and value, as earlier imports stored them; a repeat of both gets #2, #3 (2026-11-21 audit, C02).
+		water: occurrences(data.water.map((w) => `${w.date}:${w.ml}`)),
 		activity: identities(data.activity, (a) => a.fingerprint)
 	};
 	ids.entries.forEach((id) => decide('diary', id));

@@ -233,6 +233,24 @@ describe('LoseIt import', () => {
 		expect(n).toBe(1);
 	});
 
+	it('imports two water rows with the same date and value as two, and both once only (2026-11-21 audit, C02)', async () => {
+		const twice = {
+			...files,
+			'water-intake.csv':
+				files['water-intake.csv'] + '1/6/2026,2500.0,-1.0,2026-01-06T23:00:00+0300\n'
+		};
+		await applyLoseIt(MEHMET, zip(twice), options);
+		const count = async () =>
+			(
+				await admin`select count(*)::int as n from water_entries
+					where user_id = ${MEHMET} and local_date = '2026-01-06' and deleted_at is null`
+			)[0].n;
+		expect(await count()).toBe(2);
+		// The same rows again in a later export: nothing new.
+		const later = { ...twice, 'food-logs.csv': files['food-logs.csv'] + '\n' };
+		expect((await portability.previewLoseIt(MEHMET, zip(later), options)).counts.water.new).toBe(0);
+	});
+
 	it('remembers what was imported from LoseIt after a move to another installation by export and import', async () => {
 		await applyLoseIt(MEHMET, zip(), options);
 		const archive = await portability.exportArchive(MEHMET);
