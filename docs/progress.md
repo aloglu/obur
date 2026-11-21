@@ -5,7 +5,7 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 ## Claude's 1.0 audit (owner's go, 2026-11-21)
 
 Report: `~/Documents/Obur-1.0-Audit-Claude.md` (not in the repository), items C01-C12. Owner's choices: do C01, C02,
-C07, C08, C09 (patch updates only), C10 (speech add-on encodes each clip once) and C11; C05 soon after 1.0; skip
+C07, C08, C09 (patch updates only), C10 (speech add-on encodes each clip once) and C11; C05 before the next release candidate; skip
 C03, C04, C06. C12 measured (2,500 entries: import 0.55 s; five times that: 2.3 s), no work. Features agreed after
 the audit: Members split into Members and Server (after the audit fixes, with screenshots); pounds for 1.0 if the
 work is moderate; no word list for Speak, no cost figures for personal keys. One commit each.
@@ -39,8 +39,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
   setting in export and backups). First a review page with screenshots for the achievement screens, then build.
-  After pounds: the 1.0 checklist (`~/Documents`), real-phone checks, then the tag only when the owner asks. C05
-  comes soon after 1.0.
+- **To do before the next release candidate (owner, 2026-11-22), picked up next session:** C05 (one "target in
+  force" helper and `budgetForDay` for the budget without activity in the goals service; no behaviour change), then
+  pounds. Then rc.8 (only when the owner asks), so the owner can test both and measure Speak on the server (C10).
+  1.0 comes only after the owner has tested the release candidates and every issue is sorted; never assume the next
+  release is 1.0.
 
 ## Second 1.0 audit (owner's go, 2026-11-21)
 
