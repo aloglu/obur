@@ -74,6 +74,14 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   lines, `OBUR_TRUSTED_PROXIES`). Release run 44823369550 passed every job; Publish pushed the three images (all
   pullable), skipped `latest` (a test release) and made the GitHub pre-release. GitHub warns that three actions still
   target Node 20 (run on Node 24 for now). **Next step:** the owner's hand checks (`~/Documents` checklist, rc.6).
+- Owner's rc.6 notes, built on the owner's go (2026-11-21), unreleased: (1) the icon line says "Suggested" (was
+  "Suggested from the name", which wrapped); (2) Progress's range uses the shared Menu, not a native select, so a tap
+  elsewhere only closes it; `swallow-press.ts` now also stops the press itself and its moves and release, which the
+  charts follow (browser test holds a press on the chart: fails before, passes after); the closed header is
+  pixel-identical before and after (phone and desktop); (3) toasts (also the achievement toast) swipe away sideways
+  or down (`client/swipe-away.ts`), the timer stops under a finger, and a Dismiss button shows only to the keyboard
+  (owner's choice B). Checks: type check, lint, Vitest 1198 passed, full browser suite 301 passed, 22 skipped.
+  **Next step:** the owner tries the swipe on a real phone, then the rest of the rc.6 checklist.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
 

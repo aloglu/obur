@@ -43,6 +43,17 @@ export function restoreToast(): void {
 	}
 }
 
+/** A finger is on the toast (a swipe may follow): it stays until let go. */
+export function holdToast(): void {
+	clearTimeout(timer);
+}
+
+/** Let go without swiping it away: it stays its full time again. */
+export function releaseToast(): void {
+	clearTimeout(timer);
+	if (toast.current) timer = setTimeout(dismissToast, LIFETIME_MS);
+}
+
 export function dismissToast(): void {
 	clearTimeout(timer);
 	toast.current = undefined;

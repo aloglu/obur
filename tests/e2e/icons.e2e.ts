@@ -17,7 +17,7 @@ test('foods show the icon their name suggests, or the one chosen in the picker',
 		servings: []
 	});
 
-	// Suggested from the name (peynir → cheese) in the Foods list.
+	// Suggested by the name (peynir → cheese) in the Foods list.
 	await page.goto('/foods');
 	await page.getByLabel('Search foods').fill(`beyaz peynir ${tag}`);
 	const row = page.getByRole('link', { name: new RegExp(`Beyaz peynir ${tag}`) });
@@ -25,7 +25,7 @@ test('foods show the icon their name suggests, or the one chosen in the picker',
 
 	// Chosen in the food form: search the picker in Turkish, pick milk instead.
 	await page.goto(`/foods/${id}`);
-	await expect(page.getByText('Suggested from the name')).toBeVisible();
+	await expect(page.getByText('Suggested', { exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Change icon' }).click();
 	const picker = page.getByRole('dialog', { name: 'Choose an icon' });
 	await picker.getByLabel('Search icons').fill('süt');

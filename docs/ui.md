@@ -18,7 +18,8 @@ The final demos are in `docs/ui/review-2026-11/`: `diary.html` (the daily app an
   - **Settings choices** are rows showing the value; tapping opens a menu (Goal pace, Units, Profile, the LoseIt weight unit).
   - **Every other open menu is only as wide as its longest option** and lines up with the right edge of its row. It never stretches across the row. It is at most 288 px wide, and every option stays on one line: a longer one is cut with "…". In the unit menu the size ("125 g") sits apart on the right, always whole, so only the portion's name is cut (owner picked option B of the unit menu demo, 2026-11-16, over cutting the whole line and over also shortening names).
   - **Two buttons side by side:** the way back or the lesser choice on the left, the main button on the right, everywhere (owner, 2026-11-18). **Small add links** inside a card are accent text with a + in front (Add portion, Add a key).
-  - **A tap outside an open menu only closes it.** What was tapped does nothing, so closing a menu never presses a row or link by accident (owner report, 2026-11-16).
+  - **A tap outside an open menu only closes it.** What was tapped does nothing, so closing a menu never presses a row or link by accident (owner report, 2026-11-16). This includes the press itself: a chart under it doesn't move to a point (owner report, 2026-11-21).
+  - **Every dropdown is the shared Menu**, never the browser's own list, which a page can't stop a tap from going through (the Progress range changed, owner 2026-11-21). Date and time fields keep the phone's own pickers.
   - **Menus have a visible edge** (a hairline in the text colour at 16 % and a stronger shadow), so they stand apart from the white cards under them in every theme and mode (owner picked it in the menu edge demo, 2026-11-16, over the earlier faint edge and a deeper shadow alone). The tap-outside rule applies to every dropdown and every … menu (owner, 2026-11-16 and 2026-11-18; `client/swallow-press.ts`).
   - **The unit sits inside the amount field:** "piece ⌄" opens a menu when there are several units; a single unit (g, ml) is plain text, not a button.
   - **Forms with two or three options filled in once** (Female / Male, Appearance mode) keep a segmented control with the usual corners. **Type it** has a toggle listing all four meals.
@@ -255,6 +256,8 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
 - Appears bottom-left of the main area on desktop and above the tab bar on phone.
 - It has a check icon that pops in, a bold message and a muted detail ("Logged to Lunch · 240 kcal"), plus Undo where relevant.
 - It lives for 5 s and uses `role="status"`.
+- **Swipe it away** (owner, 2026-11-21; `client/swipe-away.ts`), as with a phone's own notifications, for an ordinary and an achievement toast. Sideways or down it follows the finger; let go past half its width (half its height going down), or with a quick flick, and it slides off; otherwise it goes back. A finger on it stops its timer. Touch and pen only. With reduced motion it still follows the finger, without the slide.
+- **Dismiss button** for the keyboard and screen readers: hidden until the keyboard reaches it (owner's choice B, 2026-11-21: a computer screen has room to wait, so no visible ×).
 
 **Journal** (built 2026-10-31; see "Achievements, Journal and Help" below)
 - **Month calendar** at the top (on Progress until 2026-10-31; an old `/progress?month=` link opens the Journal):

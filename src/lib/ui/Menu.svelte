@@ -133,7 +133,7 @@
 		const pressOutside = (event: PointerEvent) => {
 			const target = event.target as Node;
 			if (list?.contains(target) || trigger?.contains(target)) return;
-			swallowRestOfPress();
+			swallowRestOfPress(event);
 			list?.hidePopover();
 		};
 		window.addEventListener('scroll', close, { capture: true, passive: true });

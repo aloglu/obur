@@ -58,7 +58,7 @@
 		if (!open) return;
 		const outside = (e: PointerEvent) => {
 			if (menu?.contains(e.target as Node) || button.contains(e.target as Node)) return;
-			swallowRestOfPress();
+			swallowRestOfPress(e);
 			close(false);
 		};
 		window.addEventListener('pointerdown', outside, { capture: true });

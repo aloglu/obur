@@ -35,7 +35,7 @@ test('create a recipe, log a serving, edit it without changing the diary, and ke
 	await page.getByLabel('Servings it makes').fill('4');
 	await page.getByLabel('Cooked weight, g').fill('1200');
 	// The icon: suggested from the name (çorba → soup), then a casserole chosen in the picker.
-	await expect(page.getByText('Suggested from the name')).toBeVisible();
+	await expect(page.getByText('Suggested', { exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Change icon' }).click();
 	const picker = page.getByRole('dialog', { name: 'Choose an icon' });
 	await picker.getByLabel('Search icons').fill('güveç');

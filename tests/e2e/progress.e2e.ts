@@ -181,8 +181,40 @@ test('history: weigh-ins and their trend, calories against budget, averages over
 	// The over-budget day was a calories-only quick add: its macros are unknown, never zero.
 	await expect(nutrients).toContainText('Protein, carbs, fat from 1 of 2 days');
 
-	await page.getByLabel('Range').selectOption('1W');
-	await expect(page).toHaveURL(/range=1W/);
 	await tab('Weight').click();
+	const range = page.getByRole('button', { name: /^Range:/ });
+	const rangeMenu = page.getByRole('listbox', { name: 'Range' });
+	// Owner, 2026-11-21: with the list open, a press on the chart only closes it. The chart shows a point only while
+	// the finger is down, so the press is held: before the fix it moved to the oldest weigh-in.
+	await range.click();
+	await expect(rangeMenu).toBeVisible();
+	await expect(range).toHaveAttribute('aria-expanded', 'true');
+	const slider = page.getByRole('slider', { name: 'Weight' });
+	const press = (type: string) =>
+		slider.evaluate((node, type) => {
+			const box = node.getBoundingClientRect();
+			node.dispatchEvent(
+				new PointerEvent(type, {
+					bubbles: true,
+					pointerId: 9,
+					pointerType: 'touch',
+					isPrimary: true,
+					buttons: type === 'pointerdown' || type === 'pointermove' ? 1 : 0,
+					clientX: box.left + 4,
+					clientY: box.top + box.height / 2
+				})
+			);
+		}, type);
+	await press('pointerdown');
+	await press('pointermove');
+	await expect(rangeMenu).toBeHidden();
+	await expect(page.getByRole('tabpanel').locator('[aria-live="polite"]')).toContainText(
+		': 82.6 kg'
+	);
+	await press('pointerup');
+	await press('click');
+	await range.click();
+	await rangeMenu.getByRole('option', { name: '1 week' }).click();
+	await expect(page).toHaveURL(/range=1W/);
 	await expect(page.getByText('Weigh-ins3').filter({ visible: true })).toHaveCount(1);
 });

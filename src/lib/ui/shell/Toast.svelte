@@ -1,9 +1,18 @@
 <script lang="ts">
 	// docs/ui.md "Toast": bottom-left of the main area on desktop, above the tab bar on phones; 5 s; role="status".
 	import Check from '@lucide/svelte/icons/check';
+	import X from '@lucide/svelte/icons/x';
 	import { m } from '#lib/paraglide/messages.js';
 	import { onMount } from 'svelte';
-	import { dismissToast, restoreToast, showToast, toast } from '#lib/client/toast.svelte.ts';
+	import {
+		dismissToast,
+		holdToast,
+		releaseToast,
+		restoreToast,
+		showToast,
+		toast
+	} from '#lib/client/toast.svelte.ts';
+	import { swipeAway } from '#lib/client/swipe-away.ts';
 	import AchievementToast from '../achievements/AchievementToast.svelte';
 
 	onMount(restoreToast);
@@ -30,6 +39,7 @@
 	{#if toast.current}
 		{#key toast.current.id}
 			<div
+				use:swipeAway={{ ondismiss: dismissToast, onhold: holdToast, onrelease: releaseToast }}
 				class="toast pointer-events-auto flex max-w-[min(440px,100%)] min-w-0 items-center gap-3 rounded-tile bg-toast-bg py-3 pr-2 pl-3.5 text-toast-text shadow-toast"
 			>
 				<span
@@ -50,6 +60,14 @@
 						>{m.toast_undo()}</button
 					>
 				{/if}
+				<!-- Swiped away on a phone; for a keyboard and screen readers, a button that shows only when reached. -->
+				<button
+					type="button"
+					onclick={dismissToast}
+					aria-label={m.toast_dismiss()}
+					class="sr-only shrink-0 place-items-center rounded-small focus-visible:not-sr-only focus-visible:grid focus-visible:min-h-11 focus-visible:min-w-11 focus-visible:outline-2 focus-visible:outline-current"
+					><X size={18} strokeWidth={2.4} aria-hidden="true" /></button
+				>
 			</div>
 		{/key}
 	{/if}

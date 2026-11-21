@@ -47,6 +47,17 @@ export function offer(list: Achievement[]) {
 	timer = setTimeout(dismissToast, TOAST_MS);
 }
 
+/** A finger is on the toast (a swipe may follow): it stays until let go. */
+export function holdToast() {
+	clearTimeout(timer);
+}
+
+/** Let go without swiping it away: it stays its full time again. */
+export function releaseToast() {
+	clearTimeout(timer);
+	if (celebration.toast) timer = setTimeout(dismissToast, TOAST_MS);
+}
+
 export function dismissToast() {
 	clearTimeout(timer);
 	celebration.toast = null;
