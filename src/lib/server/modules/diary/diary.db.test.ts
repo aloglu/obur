@@ -538,8 +538,23 @@ it('sums energy per logged day, skipping deleted entries and unlogged days', asy
 	const gone = await diary.quickAdd(MEHMET, ctx({ localDate: '2026-10-03' }), 999, null);
 	await diary.remove(MEHMET, gone.id);
 	await diary.quickAdd(ZEYNEP, ctx({ localDate: '2026-10-01' }), 5000, null);
+	// A food whose calories are unknown (possible for imported foods): the day counts it as missing, never as zero
+	// calories (A43).
+	const unknownId = await catalog.createFood(
+		MEHMET,
+		v.parse(FoodInput, {
+			name: 'Homemade granola',
+			basis: '100g',
+			nutrients: [{ code: 'protein', value: 10, qualifier: 'reported' }],
+			servings: []
+		}),
+		{ requireEnergy: false }
+	);
+	const granola = (await catalog.getFood(MEHMET, unknownId))!;
+	await diary.logFood(MEHMET, ctx({ localDate: '2026-10-02' }), granola, 50, grams);
 	expect(await diary.dailyEnergy(MEHMET, '2026-10-01', '2026-10-31')).toEqual([
-		{ localDate: '2026-10-01', kcal: 750 }
+		{ localDate: '2026-10-01', kcal: 750, kcalMissing: 0 },
+		{ localDate: '2026-10-02', kcal: 0, kcalMissing: 1 }
 	]);
 });
 

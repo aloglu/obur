@@ -58,7 +58,7 @@
 
 	function label(d: CalendarDay): string {
 		const day = dayAndMonth(d.date);
-		const eaten = kcal(d.eatenKcal);
+		const eaten = `${kcal(d.eatenKcal)}${d.partial ? '+' : ''}`;
 		const budget = kcal(d.budgetKcal ?? 0);
 		switch (d.status) {
 			case 'under':

@@ -46,7 +46,9 @@
 		>
 			<span class="truncate">
 				{#if logged}
-					<b class="font-bold"><Roll value={kcal(day.eatenKcal)} /></b>
+					<b class="font-bold"
+						><Roll value={kcal(day.eatenKcal)} />{#if day.partial}+{/if}</b
+					>
 					<small class="text-[0.8125rem] text-muted"
 						>{day.budgetKcal === null
 							? 'kcal'

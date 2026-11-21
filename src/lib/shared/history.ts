@@ -110,6 +110,8 @@ export interface DayNutrient {
 export interface HistoryDay {
 	date: string;
 	eatenKcal: number;
+	/** Some entries have no calorie value, so eatenKcal is partial (A43). */
+	eatenPartial?: boolean;
 	complete: boolean;
 	protein: DayNutrient;
 	carbohydrate: DayNutrient;
@@ -135,6 +137,8 @@ export interface CalorieBar {
 	to: string;
 	/** A day's total, or a week's average over its logged days; null when nothing was logged. */
 	eatenKcal: number | null;
+	/** A day in it has entries without a calorie value, so the total or average is partial. */
+	partial: boolean;
 	/** The day's budget, or the week's average budget over its logged days (all its days when none is logged);
 	 * null without a budget. */
 	budgetKcal: number | null;
@@ -154,6 +158,8 @@ export interface HistoryAverages {
 	/** Days logged and marked complete: the days the averages count. */
 	completeDays: number;
 	eatenKcal: Average;
+	/** A counted day has entries without a calorie value, so the average is partial (A43). */
+	eatenPartial: boolean;
 	/** Eaten minus budget, over complete days that have a budget. */
 	againstBudget: Average;
 	overBudgetDays: number;
@@ -198,6 +204,7 @@ export function history(input: HistoryInput): History {
 			from: dates[0],
 			to: dates.at(-1)!,
 			eatenKcal: mean(inBar.map((d) => d.eatenKcal)),
+			partial: inBar.some((d) => d.eatenPartial),
 			budgetKcal: budgets.some((b) => b === null) ? null : mean(budgets as number[]),
 			complete: inBar.length > 0 && inBar.every((d) => d.complete),
 			loggedDays: inBar.length,
@@ -219,6 +226,7 @@ export function history(input: HistoryInput): History {
 		averages: {
 			completeDays: counted.length,
 			eatenKcal: average(counted.map((d) => d.eatenKcal)),
+			eatenPartial: counted.some((d) => d.eatenPartial),
 			againstBudget: average(withBudget.map((d) => d.eatenKcal - d.budget!)),
 			overBudgetDays: withBudget.filter((d) => d.eatenKcal > d.budget!).length,
 			protein: known('protein'),

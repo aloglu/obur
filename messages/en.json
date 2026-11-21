@@ -227,6 +227,8 @@
 	"budget_row_own": "Your own target",
 	"budget_row_activity": "Activity",
 	"budget_row_goal": "Goal",
+	"budget_eaten_partial": "{count} logged without calories, so you ate more than this.",
+	"budget_eaten_unknown": "What you logged has no calories, so today's total isn't known.",
 	"budget_eaten_kcal": "kcal eaten",
 	"nutrients_title": "Nutrients",
 	"nutrients_unknown_entries": "Partial · {count} unknown",

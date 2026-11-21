@@ -123,6 +123,8 @@
 	let highlight = $state<string[]>(page.url.searchParams.get('highlight')?.split(',') ?? []);
 
 	const eaten = $derived(data.totals.energy_kcal?.value ?? 0);
+	// Entries with no calorie value: unknown, never counted as zero (A43).
+	const unknownEnergy = $derived(data.totals.energy_kcal?.unknown ?? data.entries.length);
 	const byMeal = $derived(
 		Object.fromEntries(
 			MEALS.map((meal) => [meal, data.entries.filter((e) => e.meal === meal)])
@@ -392,6 +394,8 @@
 		<div class="o-budget">
 			<BudgetCard
 				{eaten}
+				unknownEntries={unknownEnergy}
+				allUnknown={data.entries.length > 0 && !data.totals.energy_kcal}
 				budget={data.budget}
 				manual={data.target?.mode === 'manual'}
 				floor={data.target?.floorKcal ?? 0}

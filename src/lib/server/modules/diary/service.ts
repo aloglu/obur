@@ -20,6 +20,8 @@ import { dayCompletions, dayNotes, diaryEntries, purgedRecords } from './schema.
 export interface DailyHistoryRow {
 	localDate: string;
 	kcal: number;
+	/** Entries without a calorie value. */
+	kcalMissing: number;
 	protein: { value: number; missing: number };
 	carbohydrate: { value: number; missing: number };
 	fat: { value: number; missing: number };
@@ -513,12 +515,14 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 			userId: string,
 			from: string,
 			to: string
-		): Promise<{ localDate: string; kcal: number }[]> {
+		): Promise<{ localDate: string; kcal: number; kcalMissing: number }[]> {
 			const rows = await withUser(db, userId, (tx) =>
 				tx
 					.select({
 						localDate: diaryEntries.localDate,
-						kcal: sql<string>`coalesce(sum(${diaryEntries.energyKcal}), 0)`
+						kcal: sql<string>`coalesce(sum(${diaryEntries.energyKcal}), 0)`,
+						// Entries without a calorie value: the day's total is partial, never padded with zeros (A43).
+						kcalMissing: sql<number>`(count(*) filter (where ${diaryEntries.energyKcal} is null))::int`
 					})
 					.from(diaryEntries)
 					.where(
@@ -531,7 +535,11 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 					.groupBy(diaryEntries.localDate)
 					.orderBy(asc(diaryEntries.localDate))
 			);
-			return rows.map((r) => ({ localDate: r.localDate, kcal: Math.round(Number(r.kcal)) }));
+			return rows.map((r) => ({
+				localDate: r.localDate,
+				kcal: Math.round(Number(r.kcal)),
+				kcalMissing: r.kcalMissing
+			}));
 		},
 
 		/**
@@ -555,6 +563,7 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 					.select({
 						localDate: diaryEntries.localDate,
 						kcal: sql<string>`coalesce(sum(${diaryEntries.energyKcal}), 0)`,
+						kcalMissing: sql<number>`(count(*) filter (where ${diaryEntries.energyKcal} is null))::int`,
 						protein: protein.sum,
 						proteinMissing: protein.missing,
 						carbohydrate: carbohydrate.sum,
@@ -576,6 +585,7 @@ export function createDiary(db: Database, now: () => Date = () => new Date()) {
 			return rows.map((r) => ({
 				localDate: r.localDate,
 				kcal: Math.round(Number(r.kcal)),
+				kcalMissing: r.kcalMissing,
 				protein: { value: Number(r.protein), missing: r.proteinMissing },
 				carbohydrate: { value: Number(r.carbohydrate), missing: r.carbohydrateMissing },
 				fat: { value: Number(r.fat), missing: r.fatMissing }

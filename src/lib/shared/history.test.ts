@@ -106,6 +106,18 @@ describe('weight history', () => {
 });
 
 describe('calorie bars', () => {
+	it('marks a bar and the average partial when a day has entries without calories (A43)', () => {
+		const h = history(
+			input({
+				versions: [manual('2026-01-01', 2000)],
+				days: [day('2026-10-05', 1800, { eatenPartial: true }), day('2026-10-06', 1900)]
+			})
+		);
+		expect(h.bars.find((b) => b.from === '2026-10-05')?.partial).toBe(true);
+		expect(h.bars.find((b) => b.from === '2026-10-06')?.partial).toBe(false);
+		expect(h.averages.eatenPartial).toBe(true);
+	});
+
 	it('gives a bar per day up to a month, with each day against its own budget', () => {
 		const { bars, weekly } = history(
 			input({

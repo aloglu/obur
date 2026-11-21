@@ -77,8 +77,12 @@ describe('calendarDays', () => {
 		completed: new Set(['2026-10-01', '2026-10-03']),
 		versions: [version('2026-10-01', 2000)]
 	};
-	const days = calendarDays('2026-10', '2026-10-05', data);
+	const days = calendarDays('2026-10', '2026-10-05', { ...data, partial: new Set(['2026-10-02']) });
 	const day = (d: string) => days.find((x) => x.date === d)!;
+	it('marks a day whose total is partial (A43)', () => {
+		expect(day('2026-10-02').partial).toBe(true);
+		expect(day('2026-10-01').partial).toBe(false);
+	});
 
 	it('is green only for complete days at or under budget', () => {
 		expect(day('2026-10-01')).toMatchObject({ status: 'under', fill: 0.9 });

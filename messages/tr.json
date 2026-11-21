@@ -227,6 +227,8 @@
 	"budget_row_own": "Kendi hedefin",
 	"budget_row_activity": "Aktivite",
 	"budget_row_goal": "Hedef",
+	"budget_eaten_partial": "{count} kayıt kalorisiz, yani bundan fazlasını yedin.",
+	"budget_eaten_unknown": "Kaydettiklerinin kalorisi yok, bu yüzden bugünün toplamı bilinmiyor.",
 	"budget_eaten_kcal": "kcal yendi",
 	"nutrients_title": "Besin değerleri",
 	"nutrients_unknown_entries": "Eksik · {count} bilinmiyor",

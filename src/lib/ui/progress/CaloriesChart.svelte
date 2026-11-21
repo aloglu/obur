@@ -32,7 +32,7 @@
 	function describe(b: CalorieBar): string {
 		const when = weekly ? m.history_week({ date: shortDate(b.from) }) : dayAndMonth(b.from);
 		if (b.eatenKcal === null) return m.history_bar_unlogged({ when });
-		const eaten = kcal(b.eatenKcal);
+		const eaten = `${kcal(b.eatenKcal)}${b.partial ? '+' : ''}`;
 		if (weekly) {
 			const counts = { logged: String(b.loggedDays), days: String(b.days) };
 			if (b.budgetKcal === null) return m.history_week_no_budget({ when, eaten, ...counts });
