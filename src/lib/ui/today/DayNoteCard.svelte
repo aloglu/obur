@@ -30,6 +30,17 @@
 	let instant = $state(false);
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let dirty = false;
+	// When the words waiting to be saved were typed: a retry sent later keeps that time, so it never counts as newer
+	// than an edit made on another device in between (A22).
+	let typedAt = '';
+
+	// A newer note arrived with the page's data (typed on another device): shown unless words here wait to be saved.
+	$effect(() => {
+		const next = saved;
+		untrack(() => {
+			if (!dirty && status !== 'saving' && next !== text) text = next;
+		});
+	});
 
 	/** The server's answer: saved as typed, or it kept a newer note from another device, which the card shows. */
 	function settled(kept: string, typed: string) {
@@ -65,7 +76,7 @@
 			const result = await send<{ text: string }>(`/api/v1/diary/days/${date}/note`, {
 				id: crypto.randomUUID(),
 				text: typed,
-				typedAt: new Date().toISOString()
+				typedAt
 			});
 			// Typed again meanwhile: the next save answers for it.
 			if (!dirty) settled(result.text, typed);
@@ -78,6 +89,7 @@
 
 	function changed() {
 		dirty = true;
+		typedAt = new Date().toISOString();
 		status = 'saving';
 		clearTimeout(timer);
 		timer = setTimeout(save, SAVE_AFTER_MS);
@@ -177,6 +189,7 @@
 								ontask={(line, done) => {
 									text = setTask(text, line, done);
 									dirty = true;
+									typedAt = new Date().toISOString();
 									void save();
 								}}
 							/>

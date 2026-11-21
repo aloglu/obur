@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { e2eEnv } from '../../playwright.config.ts';
 import { foodFingerprint } from '../../src/lib/shared/diary-rules.ts';
 import type { FoodDetail } from '../../src/lib/shared/food-types.ts';
-import { apiAs, createFood, openCaloriesOnly, signedInAs } from './fixtures.ts';
+import { apiAs, createFood, notesOf, openCaloriesOnly, signedInAs } from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 const today = (page: Page) => page.evaluate(() => new Date().toLocaleDateString('en-CA'));
@@ -230,6 +230,64 @@ test('a tab left open never saves into the account of someone who signed in sinc
 		`/api/v1/diary/${await today(page)}`
 	);
 	expect(day.entries).toEqual([]);
+});
+
+test('a tab whose data refreshes with someone else signed in starts again, without the earlier person’s draft', async ({
+	page,
+	context
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'needs Chromium request routing');
+	const ayten = await signedInAs(page, 'Ayten');
+	await ready(page);
+	const card = page.getByRole('region', { name: 'Notes' });
+	await card.getByRole('button', { name: /^Notes/ }).click();
+	// A draft the server could not save yet stays on the card (refused, not offline: being offline would hold
+	// back the refresh below for a minute).
+	await context.route('**/note', (route) =>
+		route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"busy"}' })
+	);
+	await card.getByLabel('Note for this day').fill('Ayten’s own note');
+	await expect(card.getByText('Not saved · it goes with your next change')).toBeVisible();
+	await context.unroute('**/note');
+	// Someone else signs in on this browser; coming back to this tab refreshes the account's data (A01).
+	const murat = await signedInAs(page, 'Murat');
+	const reloaded = page.waitForEvent('load');
+	await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+	await reloaded;
+	await expect(heading(page, 'Today')).toBeVisible();
+	await expect(page.getByText('Ayten’s own note')).toHaveCount(0);
+	// Saved for nobody: not for Murat, and not for Ayten, who is no longer signed in here.
+	expect(await notesOf(murat)).toEqual([]);
+	expect(await notesOf(ayten)).toEqual([]);
+});
+
+test('a note sent again later keeps the time it was typed, so a newer one from another device stays', async ({
+	page,
+	context
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'needs Chromium request routing');
+	await signedInAs(page, 'Ece');
+	await ready(page);
+	const card = page.getByRole('region', { name: 'Notes' });
+	await card.getByRole('button', { name: /^Notes/ }).click();
+	await context.route('**/note', (route) =>
+		route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"busy"}' })
+	);
+	await card.getByLabel('Note for this day').fill('Typed first');
+	await expect(card.getByText('Not saved · it goes with your next change')).toBeVisible();
+	await context.unroute('**/note');
+	// Later, on the phone (A22).
+	await apiAs(page, 'POST', `/api/v1/diary/days/${await today(page)}/note`, {
+		id: crypto.randomUUID(),
+		text: 'Typed later on the phone',
+		typedAt: new Date().toISOString()
+	});
+	// Closing the card sends the waiting words again, with the time they were typed.
+	const sent = page.waitForResponse((r) => /\/note$/.test(r.url()) && r.ok());
+	await card.getByRole('button', { name: /^Notes/ }).click();
+	await sent;
+	await page.reload();
+	await expect(card).toContainText('Typed later on the phone');
 });
 
 /** Puts entries in this account's queue as versions before 2026-11-20 kept it. */

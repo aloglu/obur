@@ -21,7 +21,20 @@
 	let { children, data } = $props();
 
 	// Writes from this tab say whose they are; the server refuses them if someone else has signed in since.
-	$effect.pre(() => setAccount(data.user?.id ?? null));
+	// Someone else signed in since this tab opened (its data refreshed with them): everything on it, a draft
+	// note, a chosen file, prepared pages, belongs to the person before. The tab starts again for the new one,
+	// and keeps saying it is the earlier person's until then, so nothing still on it is saved for them (A01).
+	let shown: string | null | undefined;
+	$effect.pre(() => {
+		const id = data.user?.id ?? null;
+		if (shown && id !== shown) {
+			forgetPrepared();
+			location.reload();
+			return;
+		}
+		shown = id;
+		setAccount(id);
+	});
 
 	// Achievements the server found waiting: the toast offers the most notable (docs/ui.md).
 	$effect(() => offer(data.celebrate));

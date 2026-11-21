@@ -54,6 +54,12 @@ export async function signedInAgain(page: Page, userId: string): Promise<void> {
 	]);
 }
 
+/** The texts of a person's day notes (read only, to check what was saved for whom). */
+export async function notesOf(userId: string): Promise<string[]> {
+	const rows = await sql`select text from day_notes where user_id = ${userId}`;
+	return rows.map((r) => r.text as string);
+}
+
 /** Makes every session of a person's look as if their last passkey check was long ago (test setup only). */
 export async function staleSessions(userId: string): Promise<void> {
 	await sql`update sessions set verified_at = now() - interval '1 day' where user_id = ${userId}`;

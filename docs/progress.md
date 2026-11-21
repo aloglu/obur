@@ -27,6 +27,11 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   preview answering last replaced a newer one (unit changed quickly); now only the newest counts, and Import
   waits for it. Settings (reminders, model choices) are a counted kind. Database tests (stale and missing
   confirmation, two imports at once, settings only) and data/Turkish browser tests pass.
+- A01 + A22 done: when the account's data refreshes with someone else signed in, the tab forgets prepared pages
+  and reloads, and keeps the earlier account's header until then (anything still on it is refused, never saved
+  for the new person). A day note keeps the time it was typed across retries, and takes a newer saved note from
+  the page's data when no words wait. Browser tests (Chromium: they hold back the service worker's requests) fail
+  without each fix.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
