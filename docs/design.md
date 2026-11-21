@@ -440,7 +440,7 @@ Reference: [pgBackRest backup, retention and restore guide](https://pgbackrest.o
 
 **Deletion and retained copies**
 
-- Account deletion removes private user records, credentials, sessions, tokens and pending jobs from the live database in one transaction; it is not an ordinary trash action. Server-side uploads and caches are cleaned through durable retryable tasks. An offline phone cannot be remotely erased: clear its account cache on its next server contact or sign-out, but already exported/downloaded copies cannot be recalled. Disabled/deleted accounts cannot submit old queued operations.
+- Account deletion removes private user records, credentials, sessions, tokens and pending jobs from the live database in one transaction; it is not an ordinary trash action. obur stores no uploads (photos and recordings live in memory for one request) and keeps no copy of a person's data on the device, so nothing else waits to be cleaned. Exported or downloaded files cannot be recalled. A deleted account's sessions are gone, so its open tabs cannot write.
 - A person's foods are deleted with their account; no one else's data refers to them.
 - State the retention limit honestly: deleted records can remain in encrypted historical backups until those backups expire. Backup retention is not a user-accessible undo for account deletion.
 - Each account deletion is listed on the admin page with only an opaque account ID and date. The operator keeps a copy of that list off the server, alongside the backup key, and entries drop off once every backup that could contain the account has expired. It never contains diary content.
