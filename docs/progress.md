@@ -130,6 +130,9 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   row" was dropped: three equal columns cut "455 of 1602" at phone width. Next step: read the pick, build it in
   `src/lib/ui/journal/DayBox.svelte` (same fixed height for every day, the empty day too), update docs/ui.md
   ("Journal") and the screenshot baselines.
+- Journal day box done (owner's pick `labels`, with the condition that the three columns stay left, centred and
+  right whatever the values): three equal columns, a browser test measures the label edges on two days with
+  different values; large text stacks the columns. Screenshot baselines regenerated and reviewed.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

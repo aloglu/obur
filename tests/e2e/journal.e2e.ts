@@ -48,11 +48,11 @@ test('the month calendar colours days by budget and completion', async ({ page }
 	// Tapping a day selects it, without leaving: the box shows it, and Open goes there.
 	await calendar.getByRole('button', { name: /^Wednesday 2 September/ }).click();
 	await expect(calendar).toContainText('Wednesday 2 Sep');
-	await expect(calendar).toContainText('2400 of 2000');
-	await expect(calendar).toContainText('400 over');
+	await expect(calendar).toContainText('Eaten 2400');
+	await expect(calendar).toContainText('Over budget 400');
 	await calendar.getByRole('button', { name: /^Friday 4 September/ }).click();
 	await expect(calendar).toContainText('Nothing logged');
-	await expect(calendar).not.toContainText('of 2000');
+	await expect(calendar).not.toContainText('Eaten');
 	await calendar.getByRole('button', { name: /^Wednesday 2 September/ }).click();
 	await calendar.getByRole('link', { name: 'Open' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: /^2 September/ })).toBeVisible();
@@ -147,5 +147,42 @@ test('a day with a weigh-in but no food keeps its columns', async ({ page }, tes
 	await page.goto('/journal?day=2026-09-05');
 	const calendar = page.getByRole('region', { name: 'September 2026' });
 	await expect(calendar).toContainText('82.4 kg');
-	await expect(calendar).toContainText('Nothing logged');
+	// Nothing eaten: a dash under Eaten, never 0 (the empty day without a weigh-in says "Nothing logged").
+	await expect(calendar.getByRole('definition').first()).toHaveText('–');
+	await expect(calendar).not.toContainText('Nothing logged');
+});
+
+test('the day box keeps its three columns in place whatever the values', async ({
+	page
+}, testInfo) => {
+	// Owner, 2026-11-21: left on the left, the middle centred on the box, right on the right; values never move them.
+	await signedInAs(page, `Columns ${testInfo.project.name}`);
+	for (const [date, kg] of [
+		['2026-09-05', 82.4],
+		['2026-09-06', 101.25]
+	] as const)
+		await apiAs(page, 'POST', '/api/v1/body/weight', { date, zone: 'UTC', value: kg });
+	const edges = async (day: string) => {
+		await page.goto(`/journal?day=${day}`);
+		const box = page.getByRole('link', { name: /^Open/ }).locator('xpath=../..');
+		await expect(box.getByRole('definition').last()).toContainText('kg');
+		return box.evaluate((el) => {
+			const b = el.getBoundingClientRect();
+			const cols = [...el.querySelectorAll('dl > div')].map((c) => {
+				const r = (c.querySelector('dt') as HTMLElement).getBoundingClientRect();
+				return {
+					left: r.left - b.left,
+					centre: (r.left + r.right) / 2 - b.left,
+					right: b.right - r.right
+				};
+			});
+			return { width: b.width, cols };
+		});
+	};
+	const a = await edges('2026-09-05');
+	const b = await edges('2026-09-06');
+	expect(Math.abs(a.cols[1].centre - a.width / 2)).toBeLessThan(1);
+	expect(a.cols[0].left).toBeCloseTo(b.cols[0].left, 0);
+	expect(a.cols[1].centre).toBeCloseTo(b.cols[1].centre, 0);
+	expect(a.cols[2].right).toBeCloseTo(b.cols[2].right, 0);
 });
