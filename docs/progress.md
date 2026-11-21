@@ -140,8 +140,10 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   Publish job). Next step: the owner's go for rc.7; then real-phone checks (RC checklist in ~/Documents).
 - Release 1.0.0-rc.7 tagged on the owner's go (2026-11-21); agents guide checked (new lines: /data not mounted,
   upgrade backup failure, Members archive/timer warnings). Correction: rc.6's run (2026-11-20) already ran the
-  Publish job successfully; rc.7 is the first run with the Node 24 actions. **Next step:** watch the rc.7 run;
-  then the owner's real-phone checks (`~/Documents/obur-rc-test-checklist.md`, "New in 1.0.0-rc.7").
+  Publish job successfully; rc.7 is the first run with the Node 24 actions. rc.7 run green (checks, browser
+  tests, three images, Publish, 32 min); images 1.0.0-rc.7 pullable; GitHub pre-release made; no Node 20 warning
+  in the logs. A38 rule: check `npm audit` for drizzle-kit's old esbuild at each release, never force a fix.
+  **Next step:** the owner's real-phone checks (`~/Documents/obur-rc-test-checklist.md`, "New in 1.0.0-rc.7").
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
