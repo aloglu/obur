@@ -6,9 +6,9 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api, NoConnection, save } from '#lib/client/api.ts';
+	import { api } from '#lib/client/api.ts';
 	import { closeInlineOnOutsideTap } from '#lib/client/inline-field.svelte.ts';
-	import { dayHref, logHref, logSearchHref } from '#lib/client/links.ts';
+	import { dayHref, logHref } from '#lib/client/links.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { addDays, carbohydrateDay } from '#lib/shared/diary-rules.ts';
@@ -19,12 +19,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import X from '@lucide/svelte/icons/x';
 	import Swap from '#lib/ui/Swap.svelte';
-	import { discardOld, oldQueue, restoreOld } from '#lib/client/old-queue.svelte.ts';
-	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
-	import type { QueuedOp } from '#lib/client/offline/store.ts';
 	import ActivitySheet from '#lib/ui/log/ActivitySheet.svelte';
-	import PendingSheet from '#lib/ui/log/PendingSheet.svelte';
 	import EditEntrySheet from '#lib/ui/log/EditEntrySheet.svelte';
 	import SaveMealSheet from '#lib/ui/log/SaveMealSheet.svelte';
 	import BudgetCard from '#lib/ui/today/BudgetCard.svelte';
@@ -57,66 +52,6 @@
 	}
 
 	let addingActivity = $state(false);
-	let pendingOpen = $state<QueuedOp | null>(null);
-	// Entries left by the offline support of older versions that the server refused: kept on this phone until the
-	// person decides, whatever day they were for (docs/design.md, "Connection required"; one release only).
-	const refused = $derived(oldQueue.refused);
-	const owner = $derived(data.user?.id ?? '');
-
-	/** Keeps a refused entry's calories as a calories-only entry for the same day and meal. */
-	async function keepCalories(op: QueuedOp) {
-		const p = op.preview;
-		if (p.kind !== 'diary' || p.kcal === null) return;
-		pendingOpen = null;
-		const id = crypto.randomUUID();
-		const zone = typeof op.body.zone === 'string' ? op.body.zone : deviceZone();
-		// The replacement first: the refused entry is discarded only once its calories are kept.
-		try {
-			await save<DiaryEntry>('/api/v1/diary/entries', {
-				id,
-				kind: 'quick',
-				date: p.localDate,
-				meal: p.meal,
-				zone,
-				kcal: p.kcal,
-				description: p.name
-			});
-		} catch (e) {
-			showToast({
-				message: e instanceof NoConnection ? m.save_no_connection() : m.error_generic()
-			});
-			return;
-		}
-		await discardOld(owner, op.seq!);
-		await invalidateAll();
-		showToast({
-			message: m.offline_refused_kept(),
-			detail: `${p.name} · ${kcal(p.kcal)} kcal · ${mealName(p.meal)}`,
-			undo: async () => {
-				await api('POST', `/api/v1/diary/entries/${id}?action=delete`, {});
-				await restoreOld(owner, op);
-				await invalidateAll();
-			}
-		});
-	}
-	/** Discards a refused entry, with Undo. */
-	async function discardOp(op: QueuedOp) {
-		pendingOpen = null;
-		await discardOld(owner, op.seq!);
-		if (op.preview.kind !== 'diary') return;
-		showToast({
-			message: m.offline_refused_discarded(),
-			detail: op.preview.name,
-			undo: () => restoreOld(owner, op)
-		});
-	}
-	/** Drops the refused entry and looks for the food again on Log, for the same day and meal. */
-	async function chooseOther(op: QueuedOp) {
-		const p = op.preview;
-		if (p.kind !== 'diary') return;
-		await discardOp(op);
-		await goto(logSearchHref(p.meal, p.localDate, p.name));
-	}
 	let savingMeal = $state<Meal | null>(null);
 	let editing = $state<DiaryEntry | null>(null);
 	// Rows just saved: all of them when several were logged at once (a saved meal, Type it, Speak).
@@ -360,26 +295,6 @@
 <!-- The top padding puts "Today" at the height of every other page's title (the day header centres it in 60 px). -->
 <main class="today mx-auto max-w-[1064px] px-3.5 pt-[calc(1rem-1.25px)] pb-3 desk:px-7 desk:pb-5">
 	<DayHeader date={data.date} today={data.today} onmove={move} />
-	{#if refused.length}
-		<button
-			type="button"
-			onclick={() => (pendingOpen = refused[0])}
-			class="mb-3 grid w-full grid-cols-[40px_minmax(0,1fr)_20px] items-center gap-3 rounded-input border border-line bg-surface p-3.5 text-left"
-		>
-			<span class="tile-warn grid size-10 place-items-center rounded-small"
-				><TriangleAlert size={20} aria-hidden="true" /></span
-			>
-			<span class="flex min-w-0 flex-col gap-0.5">
-				<b class="text-[1rem] leading-snug font-bold"
-					>{refused.length === 1
-						? m.offline_refused_one()
-						: m.offline_refused_many({ count: String(refused.length) })}</b
-				>
-				<span class="text-[0.875rem] leading-snug text-muted">{m.offline_refused_line()}</span>
-			</span>
-			<ChevronRight size={20} aria-hidden="true" class="text-muted" />
-		</button>
-	{/if}
 	{#if data.date === data.today && !data.target}
 		<div transition:slide={{ duration: 260 }}>
 			<WelcomeCard name={data.user?.displayName ?? ''} busy={skipping} onskip={justLog} />
@@ -554,16 +469,6 @@
 		watchTotal={data.activity.entries.findLast((e) => e.kind === 'day_total')?.kcal ?? null}
 		onsaved={activityAdded}
 		onclose={() => (addingActivity = false)}
-	/>
-{/if}
-{#if pendingOpen}
-	{@const op = pendingOpen}
-	<PendingSheet
-		{op}
-		ondiscard={() => discardOp(op)}
-		oncalories={() => keepCalories(op)}
-		onother={() => chooseOther(op)}
-		onclose={() => (pendingOpen = null)}
 	/>
 {/if}
 

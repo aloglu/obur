@@ -9,9 +9,9 @@ export function setAccount(id: string | null) {
 	account = id;
 }
 
-/** The header a write carries; `owner` overrides it for an entry an older version queued for a particular account. */
-export function accountHeaders(owner: string | null = account): Record<string, string> {
-	return owner ? { [ACCOUNT_HEADER]: owner } : {};
+/** The header a write carries. */
+export function accountHeaders(): Record<string, string> {
+	return account ? { [ACCOUNT_HEADER]: account } : {};
 }
 
 /**

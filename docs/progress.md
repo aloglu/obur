@@ -2,6 +2,17 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Claude's 1.0 audit (owner's go, 2026-11-21)
+
+Report: `~/Documents/Obur-1.0-Audit-Claude.md` (not in the repository), items C01-C12. Owner's choices: do C01, C02,
+C07, C08, C09 (patch updates only), C10 (speech add-on encodes each clip once) and C11; C05 soon after 1.0; skip
+C03, C04, C06. C12 measured (2,500 entries: import 0.55 s; five times that: 2.3 s), no work. Features agreed after
+the audit: Members split into Members and Server (after the audit fixes, with screenshots); pounds for 1.0 if the
+work is moderate; no word list for Speak, no cost figures for personal keys. One commit each.
+
+- C01 done: the step that sent an old offline queue (rc.5 to rc.7) is removed with its Today card and sheet, the
+  sign-out question and their 18 messages. Vitest, check, lint, connection e2e pass.
+
 ## Second 1.0 audit (owner's go, 2026-11-21)
 
 The owner's outside audit of rc.6: `~/Documents/Obur-1.0-Audit-Codex.md` (not in the repository), items A01-A50.

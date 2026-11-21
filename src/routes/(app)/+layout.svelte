@@ -10,7 +10,6 @@
 	import { resolve } from '$app/paths';
 	import { offer } from '#lib/client/celebration.svelte.ts';
 	import { recentlyUnreachable, serverReachable } from '#lib/client/api.ts';
-	import { sendOldQueue } from '#lib/client/old-queue.svelte.ts';
 	import { setAccount } from '#lib/client/account.ts';
 	import { syncZoneCookie } from '#lib/client/prefs.ts';
 	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
@@ -119,16 +118,6 @@
 			resolve('/(app)/progress'),
 			resolve('/(app)/more')
 		]);
-		// Send anything this account queued while offline; refresh the page when something arrives.
-		// Entries an older version kept on this device for this person are sent now (one release only).
-		const sendOld = () => {
-			if (data.user && document.visibilityState === 'visible')
-				void sendOldQueue(data.user.id).then((sent) => {
-					if (sent > 0) void invalidateAll();
-				});
-		};
-		sendOld();
-		document.addEventListener('visibilitychange', sendOld);
 		// Every page's code is read in ahead of the first visit, once per app start, after the current page has settled.
 		let ahead: ReturnType<typeof setInterval> | undefined;
 		const warm = setTimeout(() => {
@@ -149,7 +138,6 @@
 			clearTimeout(warm);
 			clearInterval(ahead);
 			clearTimeout(accountTimer);
-			document.removeEventListener('visibilitychange', sendOld);
 		};
 	});
 </script>
