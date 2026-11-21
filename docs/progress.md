@@ -133,6 +133,11 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
 - Journal day box done (owner's pick `labels`, with the condition that the three columns stay left, centred and
   right whatever the values): three equal columns, a browser test measures the label edges on two days with
   different values; large text stacks the columns. Screenshot baselines regenerated and reviewed.
+- Release workflow actions moved to Node 24 releases (owner's plan, 2026-11-21), pinned by full commit SHA:
+  checkout 7.0.1, setup-node 7.1.0, upload-artifact 7.0.2, download-artifact 8.0.2, setup-buildx-action 4.4.1,
+  build-push-action 7.4.0. Release notes checked: download by pattern keeps its folders; no removed inputs are
+  used. actionlint 1.7.7 clean. Not yet run on GitHub: the next tag is the first run (also the first run of the
+  Publish job). Next step: the owner's go for rc.7; then real-phone checks (RC checklist in ~/Documents).
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
