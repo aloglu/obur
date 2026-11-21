@@ -67,18 +67,6 @@ const credentialArgs = (c: NewCredential) =>
 export function createAuthStore(db: Database, now: () => Date = () => new Date()) {
 	const expiresIn = (ms: number) => new Date(now().getTime() + ms);
 
-	async function newSession(userId: string): Promise<string> {
-		const token = newToken();
-		await withUser(db, userId, (tx) =>
-			tx.insert(sessions).values({
-				userId,
-				tokenHash: hashToken(token),
-				expiresAt: expiresIn(POLICY.sessionAbsoluteMs)
-			})
-		);
-		return token;
-	}
-
 	async function storeRecoveryCodes(userId: string): Promise<string[]> {
 		const codes = newRecoveryCodes();
 		await withUser(db, userId, async (tx) => {
@@ -90,6 +78,18 @@ export function createAuthStore(db: Database, now: () => Date = () => new Date()
 		return codes;
 	}
 
+	/** A new account's first session and recovery codes, saved by the same SQL call as the account (A06). */
+	function firstSignIn() {
+		const sessionToken = newToken();
+		const recoveryCodes = newRecoveryCodes();
+		const hashes = recoveryCodes.map((code) => hashRecoveryCode(code.replace(/-/g, '')));
+		return {
+			sessionToken,
+			recoveryCodes,
+			args: sql`${hashToken(sessionToken)}, ${expiresIn(POLICY.sessionAbsoluteMs).toISOString()}::timestamptz, ${textArrayLiteral(hashes)}::text[]`
+		};
+	}
+
 	return {
 		async setupAvailable(token: string): Promise<boolean> {
 			const [row] = await db.execute<{ ok: boolean }>(
@@ -98,20 +98,18 @@ export function createAuthStore(db: Database, now: () => Date = () => new Date()
 			return row.ok;
 		},
 
-		/** Creates the first admin; returns a session token and their recovery codes. */
+		/** Creates the first admin with their session and recovery codes, in one transaction. */
 		async bootstrapAdmin(token: string, userId: string, displayName: string, c: NewCredential) {
+			const first = firstSignIn();
 			try {
 				await db.execute(
-					sql`select auth_bootstrap_admin(${hashToken(token)}, ${userId}::uuid, ${displayName}, ${credentialArgs(c)})`
+					sql`select auth_bootstrap_admin(${hashToken(token)}, ${userId}::uuid, ${displayName}, ${credentialArgs(c)}, ${first.args})`
 				);
 			} catch (e) {
 				if (raisedCode(e) === 'bootstrap_unavailable') throw new AuthError('setup_unavailable');
 				throw e;
 			}
-			return {
-				sessionToken: await newSession(userId),
-				recoveryCodes: await storeRecoveryCodes(userId)
-			};
+			return { sessionToken: first.sessionToken, recoveryCodes: first.recoveryCodes };
 		},
 
 		async inviteAvailable(token: string): Promise<boolean> {
@@ -121,19 +119,18 @@ export function createAuthStore(db: Database, now: () => Date = () => new Date()
 			return row.ok;
 		},
 
+		/** Creates a member from an invite with their session and recovery codes, in one transaction. */
 		async redeemInvite(token: string, userId: string, displayName: string, c: NewCredential) {
+			const first = firstSignIn();
 			try {
 				await db.execute(
-					sql`select auth_redeem_invite(${hashToken(token)}, ${userId}::uuid, ${displayName}, ${credentialArgs(c)})`
+					sql`select auth_redeem_invite(${hashToken(token)}, ${userId}::uuid, ${displayName}, ${credentialArgs(c)}, ${first.args})`
 				);
 			} catch (e) {
 				if (raisedCode(e) === 'invite_unavailable') throw new AuthError('invite_unavailable');
 				throw e;
 			}
-			return {
-				sessionToken: await newSession(userId),
-				recoveryCodes: await storeRecoveryCodes(userId)
-			};
+			return { sessionToken: first.sessionToken, recoveryCodes: first.recoveryCodes };
 		},
 
 		async findCredential(credentialId: string) {
@@ -162,10 +159,27 @@ export function createAuthStore(db: Database, now: () => Date = () => new Date()
 			);
 		},
 
-		/** After a verified sign-in: records the counter and opens a session. */
+		/**
+		 * After a verified sign-in: records the counter and opens a session in one transaction, only while the
+		 * passkey still exists. Recovery removes passkeys before sessions, so a sign-in racing it either commits
+		 * first (its session is then removed with the others) or finds the passkey gone (A05).
+		 */
 		async completeSignIn(userId: string, credentialId: string, counter: number): Promise<string> {
-			await this.recordAssertion(userId, credentialId, counter);
-			return newSession(userId);
+			const token = newToken();
+			await withUser(db, userId, async (tx) => {
+				const found = await tx
+					.update(credentials)
+					.set({ counter, lastUsedAt: now() })
+					.where(and(eq(credentials.id, credentialId), eq(credentials.userId, userId)))
+					.returning({ id: credentials.id });
+				if (!found.length) throw new AuthError('unknown_credential');
+				await tx.insert(sessions).values({
+					userId,
+					tokenHash: hashToken(token),
+					expiresAt: expiresIn(POLICY.sessionAbsoluteMs)
+				});
+			});
+			return token;
 		},
 
 		async lookupSession(token: string): Promise<SessionRecord | undefined> {
@@ -270,7 +284,10 @@ export function createAuthStore(db: Database, now: () => Date = () => new Date()
 			return row.n;
 		},
 
-		/** Consumes a recovery code (normalized) and returns a recovery-session token, or undefined. */
+		/**
+		 * Opens a recovery session for an unused recovery code (normalized) and returns its token, or undefined. The
+		 * code is used up only when recovery finishes (A07).
+		 */
 		async beginRecoveryWithCode(normalizedCode: string): Promise<string | undefined> {
 			const token = newToken();
 			const [row] = await db.execute<{ user_id: string | null }>(

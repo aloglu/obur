@@ -136,6 +136,27 @@ describe('invites', () => {
 		expect((await store.listInvites(a.id)).map((i) => i.note)).toEqual(['waiting']);
 	});
 
+	it('saves a new member with their session and codes, or nothing and the invite stays usable', async () => {
+		const a = await setUpAdmin();
+		const token = await store.createInvite(a.id, null);
+		// A passkey ID already in use fails the insert: nothing of the member is kept (A06).
+		const taken = { ...credential(), id: a.cred.id };
+		expect(await errorCode(store.redeemInvite(token, randomUUID(), 'Ayşe', taken))).toBe('23505');
+		const [{ n }] = await admin`select count(*)::int as n from users`;
+		expect(n).toBe(1);
+		expect(await store.inviteAvailable(token)).toBe(true);
+		const id = randomUUID();
+		const joined = await store.redeemInvite(token, id, 'Ayşe', credential());
+		expect(await store.lookupSession(joined.sessionToken)).toMatchObject({
+			userId: id,
+			kind: 'normal'
+		});
+		const [{ codes }] =
+			await admin`select count(*)::int as codes from recovery_codes where user_id = ${id}`;
+		expect(codes).toBe(10);
+		expect(joined.recoveryCodes).toHaveLength(10);
+	});
+
 	it('redeems an invite only once under concurrency', async () => {
 		const a = await setUpAdmin();
 		const token = await store.createInvite(a.id, null);
@@ -240,14 +261,18 @@ describe('sign-in and sessions', () => {
 });
 
 describe('recovery', () => {
-	it('uses a recovery code once and replaces everything on completion', async () => {
+	it('uses a recovery code up when recovery finishes and replaces everything', async () => {
 		const a = await setUpAdmin();
 		await store.addCredential(a.id, credential('YubiKey'));
 		const code = a.recoveryCodes[3].replace(/-/g, '');
 
+		// Starting does not use it up (A07): a second start replaces the first attempt's session.
+		const first = await store.beginRecoveryWithCode(code);
+		expect(first).toBeDefined();
+		expect(await store.unusedRecoveryCodeCount(a.id)).toBe(10);
 		const recovery = await store.beginRecoveryWithCode(code);
 		expect(recovery).toBeDefined();
-		expect(await store.beginRecoveryWithCode(code)).toBeUndefined();
+		expect(await store.lookupSession(first!)).toBeUndefined();
 		expect(await store.lookupSession(recovery!)).toMatchObject({ kind: 'recovery', userId: a.id });
 
 		const replacement = credential('New phone');
@@ -257,10 +282,21 @@ describe('recovery', () => {
 		expect(await store.lookupSession(done.sessionToken)).toMatchObject({ kind: 'normal' });
 		expect((await store.listCredentials(a.id)).map((c) => c.label)).toEqual(['New phone']);
 		expect(await store.unusedRecoveryCodeCount(a.id)).toBe(10);
+		expect(await store.beginRecoveryWithCode(code)).toBeUndefined();
 		expect(await store.beginRecoveryWithCode(a.recoveryCodes[4].replace(/-/g, ''))).toBeUndefined();
 	});
 
-	it('consumes a code only once under concurrency', async () => {
+	it('leaves a code usable when recovery is abandoned or its passkey fails', async () => {
+		const a = await setUpAdmin();
+		const code = a.recoveryCodes[0].replace(/-/g, '');
+		const abandoned = await store.beginRecoveryWithCode(code);
+		await admin`update sessions set expires_at = now() - interval '1 second' where kind = 'recovery'`;
+		expect(await store.lookupSession(abandoned!)).toBeUndefined();
+		const again = await store.beginRecoveryWithCode(code);
+		expect(await store.lookupSession(again!)).toMatchObject({ kind: 'recovery' });
+	});
+
+	it('keeps one recovery session per code when attempts start at once', async () => {
 		const a = await setUpAdmin();
 		const code = a.recoveryCodes[0].replace(/-/g, '');
 		const tokens = await Promise.all([
@@ -268,7 +304,32 @@ describe('recovery', () => {
 			store.beginRecoveryWithCode(code),
 			store.beginRecoveryWithCode(code)
 		]);
-		expect(tokens.filter(Boolean)).toHaveLength(1);
+		const live = await Promise.all(tokens.map((t) => store.lookupSession(t!)));
+		expect(live.filter(Boolean)).toHaveLength(1);
+	});
+
+	it('never leaves a sign-in with a replaced passkey signed in, however it races recovery', async () => {
+		for (let i = 0; i < 10; i++) {
+			await admin`truncate users, bootstrap_tokens cascade`;
+			const a = await setUpAdmin();
+			const recovery = await store.beginRecoveryWithCode(a.recoveryCodes[0].replace(/-/g, ''));
+			const [signIn, done] = await Promise.allSettled([
+				store.completeSignIn(a.id, a.cred.id, 1),
+				store.completeRecovery(recovery!, credential('New phone'))
+			]);
+			expect(done.status).toBe('fulfilled');
+			// The passkey checked before recovery replaced it opens no session that outlives the recovery (A05).
+			if (signIn.status === 'fulfilled')
+				expect(await store.lookupSession(signIn.value)).toBeUndefined();
+			else expect((signIn.reason as AuthError).code).toBe('unknown_credential');
+		}
+	});
+
+	it('refuses a sign-in whose passkey was removed after it was checked', async () => {
+		const a = await setUpAdmin();
+		await store.addCredential(a.id, credential('YubiKey'));
+		await store.removeCredential(a.id, a.cred.id);
+		expect(await errorCode(store.completeSignIn(a.id, a.cred.id, 1))).toBe('unknown_credential');
 	});
 
 	it('accepts an operator recovery link once and only before it expires', async () => {
@@ -276,7 +337,11 @@ describe('recovery', () => {
 		const m = await inviteMember(a.id, 'Ayşe');
 		const { link, displayName } = await issueRecoveryLink(migrator, ORIGIN, 'Ayşe');
 		expect(displayName).toBe('Ayşe');
+		// Usable again while it is valid (A07), until recovery finishes with it.
 		expect(await store.beginRecoveryWithLink(tokenOf(link))).toBeDefined();
+		const recovery = await store.beginRecoveryWithLink(tokenOf(link));
+		expect(recovery).toBeDefined();
+		await store.completeRecovery(recovery!, credential('New phone'));
 		expect(await store.beginRecoveryWithLink(tokenOf(link))).toBeUndefined();
 
 		const late = await issueRecoveryLink(migrator, ORIGIN, m.id);

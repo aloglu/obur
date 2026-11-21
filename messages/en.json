@@ -54,7 +54,7 @@
 	"recover_warning_title": "What happens next",
 	"recover_warning": "Creating a new passkey signs you out everywhere, removes all your old passkeys and replaces your recovery codes.",
 	"recover_button": "Create new passkey",
-	"recover_expired": "Recovery took too long. Start again with another code.",
+	"recover_expired": "Recovery took too long. Start again: the same code or link still works if it hasn't expired.",
 	"home_sign_out": "Sign out",
 	"security_title": "Passkeys and security",
 	"security_passkeys": "Passkeys",

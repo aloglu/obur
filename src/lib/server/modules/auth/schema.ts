@@ -67,7 +67,15 @@ export const sessions = pgTable(
 		lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
 		expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 		// Time of the last passkey assertion; sensitive actions require it to be recent.
-		verifiedAt: timestamp('verified_at', { withTimezone: true }).notNull().defaultNow()
+		verifiedAt: timestamp('verified_at', { withTimezone: true }).notNull().defaultNow(),
+		// A recovery session's proof (one of the two): used up only when the new passkey is saved, so an abandoned
+		// or failed attempt leaves it usable again once the session ends (2026-11-21 audit, A07).
+		recoveryCodeId: uuid('recovery_code_id').references(() => recoveryCodes.id, {
+			onDelete: 'cascade'
+		}),
+		recoveryLinkId: uuid('recovery_link_id').references(() => recoveryLinks.id, {
+			onDelete: 'cascade'
+		})
 	},
 	(t) => [
 		check('sessions_kind_valid', sql`${t.kind} in ('normal', 'recovery')`),

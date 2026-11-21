@@ -435,6 +435,20 @@
       "when": 1795208624921,
       "tag": "0061_reindex_food_search_pg_18_7",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1795256984906,
+      "tag": "0062_recovery_session_proof",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1795256995818,
+      "tag": "0063_auth_atomic_enrolment",
+      "breakpoints": true
     }
   ]
 }

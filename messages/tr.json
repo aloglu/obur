@@ -54,7 +54,7 @@
 	"recover_warning_title": "Bundan sonra ne olacak",
 	"recover_warning": "Yeni bir geçiş anahtarı oluşturunca her yerde oturumun kapanır, eski geçiş anahtarlarının hepsi silinir ve kurtarma kodların yenilenir.",
 	"recover_button": "Yeni geçiş anahtarı oluştur",
-	"recover_expired": "Kurtarma çok uzun sürdü. Başka bir kodla baştan başla.",
+	"recover_expired": "Kurtarma çok uzun sürdü. Baştan başla: süresi dolmadıysa aynı kod ya da bağlantı hâlâ çalışır.",
 	"home_sign_out": "Çıkış yap",
 	"security_title": "Geçiş anahtarları ve güvenlik",
 	"security_passkeys": "Geçiş anahtarları",

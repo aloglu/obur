@@ -32,6 +32,12 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   for the new person). A day note keeps the time it was typed across retries, and takes a newer saved note from
   the page's data when no words wait. Browser tests (Chromium: they hold back the service worker's requests) fail
   without each fix.
+- A05 + A06 + A07 done (migrations 0062, 0063): sign-in records the passkey use and opens its session in one
+  transaction only while the passkey exists, and recovery removes passkeys before sessions; joining saves account,
+  passkey, session and codes in one SQL call; a recovery code or link is used up only when the new passkey is
+  saved (the recovery session records it; a new attempt replaces the earlier session). Database tests: ten
+  sign-in/recovery races, a removed passkey, a failed invite redemption keeps the invite, abandoned recovery
+  keeps the code, links reusable until recovery finishes. Auth browser tests pass.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
