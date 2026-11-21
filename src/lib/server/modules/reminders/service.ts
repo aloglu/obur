@@ -154,7 +154,7 @@ export async function sendDueReminders(
 		if (!due.length) continue;
 		// Under the person's identity: still needed? Not sent yet? Record it, and read their devices.
 		const { kinds, devices } = await withUser(worker, c.user_id, async (tx) => {
-			const kinds: ReminderKind[] = [];
+			const kinds: { kind: ReminderKind; localDate: string }[] = [];
 			for (const { kind, localDate } of due) {
 				const done =
 					kind === 'weigh_in'
@@ -186,7 +186,7 @@ export async function sendDueReminders(
 					.values({ userId: c.user_id, kind, localDate })
 					.onConflictDoNothing()
 					.returning({ kind: reminderSends.kind });
-				if (recorded.length) kinds.push(kind);
+				if (recorded.length) kinds.push({ kind, localDate });
 			}
 			const [profile] = kinds.length
 				? await tx.select({ language: profiles.language }).from(profiles)
@@ -211,15 +211,29 @@ export async function sendDueReminders(
 		// can be due in one pass: each device's failure count carries from one to the next, and a device dropped for
 		// one gets none of the rest.
 		let live = devices;
-		for (const kind of kinds) {
+		for (const { kind, localDate } of kinds) {
 			if (!live.length) break;
 			const outcomes = await Promise.all(live.map(async (d) => ({ d, r: await deliver(d, kind) })));
 			// Counted as sent only when some device took it.
-			if (outcomes.some(({ r }) => r === 'sent')) sent++;
+			const reached = outcomes.some(({ r }) => r === 'sent');
+			if (reached) sent++;
 			const gone = outcomes
 				.filter(({ d, r }) => r === 'gone' || (r === 'failed' && d.failures + 1 >= MAX_FAILURES))
 				.map(({ d }) => d.id);
+			// No device took it because the push service failed for now: the day's mark goes, so a later pass within
+			// the hour tries again (2026-11-21 audit, A46). Once any device has it, the mark stays: no duplicates.
+			const retry = !reached && outcomes.some(({ d, r }) => r === 'failed' && !gone.includes(d.id));
 			await withUser(worker, c.user_id, async (tx) => {
+				if (retry)
+					await tx
+						.delete(reminderSends)
+						.where(
+							and(
+								eq(reminderSends.userId, c.user_id),
+								eq(reminderSends.kind, kind),
+								eq(reminderSends.localDate, localDate)
+							)
+						);
 				if (gone.length)
 					await tx.delete(pushSubscriptions).where(inArray(pushSubscriptions.id, gone));
 				for (const { d, r } of outcomes) {

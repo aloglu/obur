@@ -82,6 +82,11 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
 - A21 done: diary, weight, water and activity creates insert with ON CONFLICT DO NOTHING on the client-made ID, then
   read again: the same save sent several times at once answers as saved, once; another person's ID stays a
   conflict. Database tests (four saves at once; the weight one fails without the fix).
+- A26 + A46 done (migration 0064: the worker may delete its own send marks): a reminder's due time is a real
+  instant, so one set in the hour the clocks skip comes right after the jump (a 02:00 New York reminder on
+  2026-03-08 now comes at 03:00); when no device took a reminder because the push service failed, the day's
+  mark is removed so a later pass within the hour tries again (devices that got it never get it twice). Unit
+  and database tests.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

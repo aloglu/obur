@@ -4,6 +4,7 @@ import {
 	dueReminders,
 	inQuietHours,
 	localTime,
+	zonedInstant,
 	type ReminderSettings
 } from './reminders.ts';
 
@@ -63,5 +64,34 @@ describe('due reminders', () => {
 
 	it('are off unless a time is set', () => {
 		expect(dueReminders(settings({}), at('12:00'), new Set())).toEqual([]);
+	});
+});
+
+describe('clock changes (A26)', () => {
+	const ny = (times: Partial<ReminderSettings['times']>) =>
+		settings(times, { zone: 'America/New_York', quietStart: '00:00', quietEnd: '00:00' });
+	it('sends a reminder set in the hour the clocks skip, at the first moment after the jump', () => {
+		// 2026-03-08: 02:00 EST jumps to 03:00 EDT at 07:00 UTC.
+		expect(zonedInstant('2026-03-08', '02:00', 'America/New_York').toISOString()).toBe(
+			'2026-03-08T07:00:00.000Z'
+		);
+		expect(
+			dueReminders(ny({ breakfast: '02:00' }), new Date('2026-03-08T07:00:00Z'), new Set())
+		).toEqual([{ kind: 'breakfast', localDate: '2026-03-08' }]);
+	});
+	it('keeps ordinary times right on both clock-change days', () => {
+		expect(zonedInstant('2026-03-08', '08:00', 'America/New_York').toISOString()).toBe(
+			'2026-03-08T12:00:00.000Z'
+		);
+		expect(zonedInstant('2026-11-01', '08:00', 'America/New_York').toISOString()).toBe(
+			'2026-11-01T13:00:00.000Z'
+		);
+		// 01:30 happens twice on 2026-11-01: the first one counts.
+		expect(zonedInstant('2026-11-01', '01:30', 'America/New_York').toISOString()).toBe(
+			'2026-11-01T05:30:00.000Z'
+		);
+		expect(zonedInstant('2026-10-31', '14:00', 'Europe/Istanbul').toISOString()).toBe(
+			'2026-10-31T11:00:00.000Z'
+		);
 	});
 });

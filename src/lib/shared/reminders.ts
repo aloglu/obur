@@ -59,9 +59,53 @@ export function inQuietHours(time: string, start: string, end: string): boolean 
 	return s < e ? t >= s && t < e : t >= s || t < e;
 }
 
+/** The zone's offset from UTC at an instant, in minutes (Istanbul: 180). */
+function offsetMinutes(instant: Date, zone: string): number {
+	const parts = Object.fromEntries(
+		new Intl.DateTimeFormat('en-GB', {
+			timeZone: zone,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			hourCycle: 'h23'
+		})
+			.formatToParts(instant)
+			.map((p) => [p.type, p.value])
+	);
+	const wall = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
+	return Math.round((wall - Math.floor(instant.getTime() / 60_000) * 60_000) / 60_000);
+}
+
 /**
- * The reminders due at `now` for one person: switched on, within the send window after their time, outside quiet
- * hours and not yet sent today (`sent` holds "kind:YYYY-MM-DD" keys). Each comes with the local day it is for.
+ * The instant a local day's "HH:MM" happens in a zone. A time the clocks skip (spring forward) moves forward by the
+ * jump, so a 02:00 reminder on that day comes at 03:00; a time that happens twice (fall back) counts the first
+ * (2026-11-21 audit, A26).
+ */
+export function zonedInstant(localDay: string, hhmm: string, zone: string): Date {
+	const wall = Date.UTC(
+		+localDay.slice(0, 4),
+		+localDay.slice(5, 7) - 1,
+		+localDay.slice(8, 10),
+		+hhmm.slice(0, 2),
+		+hhmm.slice(3, 5)
+	);
+	// First with the offset the day before: right on an ordinary day, and the first of two on a fall-back day.
+	const before = offsetMinutes(new Date(wall - 24 * 3600_000), zone);
+	const guess = new Date(wall - before * 60_000);
+	const after = offsetMinutes(guess, zone);
+	if (after === before) return guess;
+	// The offset changed before this time: the time with the new offset, unless the clocks skipped it, when the guess
+	// (with the old offset) is the moment the same distance past the jump.
+	const second = new Date(wall - after * 60_000);
+	return offsetMinutes(second, zone) === after ? second : guess;
+}
+
+/**
+ * The reminders due at `now` for one person: switched on, within the send window after their time (real minutes,
+ * so a time in the hour the clocks skip still comes), outside quiet hours and not yet sent today (`sent` holds
+ * "kind:YYYY-MM-DD" keys). Each comes with the local day it is for.
  */
 export function dueReminders(
 	settings: ReminderSettings,
@@ -71,11 +115,10 @@ export function dueReminders(
 	const date = localDate(now, settings.zone);
 	const time = localTime(now, settings.zone);
 	if (inQuietHours(time, settings.quietStart, settings.quietEnd)) return [];
-	const t = minutes(time);
 	return REMINDER_KINDS.flatMap((kind) => {
 		const at = settings.times[kind];
 		if (!at || sent.has(`${kind}:${date}`)) return [];
-		const since = t - minutes(at);
+		const since = (now.getTime() - zonedInstant(date, at, settings.zone).getTime()) / 60_000;
 		return since >= 0 && since < SEND_WINDOW_MIN ? [{ kind, localDate: date }] : [];
 	});
 }

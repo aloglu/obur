@@ -175,6 +175,28 @@ describe('sending', () => {
 		expect(box.got.filter((g) => g.endpoint === device(2).endpoint)).toHaveLength(1);
 	});
 
+	it('tries a reminder again within its hour when no device got it because the push service failed (A46)', async () => {
+		await on({ lunch: '14:00' });
+		await reminders.subscribe(AYSE, device(1));
+		const failing = postbox({ [device(1).endpoint]: 'failed' });
+		expect(await sendDueReminders(worker, at('14:05'), failing.deliver)).toBe(0);
+		const box = postbox();
+		expect(await sendDueReminders(worker, at('14:15'), box.deliver)).toBe(1);
+		// Once a device has it, not again.
+		expect(await sendDueReminders(worker, at('14:25'), box.deliver)).toBe(0);
+		expect(box.got).toHaveLength(1);
+	});
+
+	it('does not send again to devices that got it when another device failed', async () => {
+		await on({ lunch: '14:00' });
+		await reminders.subscribe(AYSE, device(1));
+		await reminders.subscribe(AYSE, device(2));
+		const box = postbox({ [device(2).endpoint]: 'failed' });
+		expect(await sendDueReminders(worker, at('14:05'), box.deliver)).toBe(1);
+		expect(await sendDueReminders(worker, at('14:15'), box.deliver)).toBe(0);
+		expect(box.got.filter((g) => g.endpoint === device(1).endpoint)).toHaveLength(1);
+	});
+
 	it('skips disabled accounts and people without a device', async () => {
 		await on({ lunch: '14:00' });
 		const box = postbox();
