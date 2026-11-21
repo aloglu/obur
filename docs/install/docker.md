@@ -104,4 +104,6 @@ off-site copy.
 ## Safety
 
 `compose.yaml` makes obur listen on `127.0.0.1` only, which is right when a tunnel or reverse proxy on the same
-machine puts it online. Never open obur's port to the internet directly: put https in front of it.
+machine puts it online. Never open obur's port to the internet directly: put https in front of it. Publish only port
+3000: the image also lists PostgreSQL's port 5432 (inherited from its PostgreSQL base), but the database listens
+only inside the container, and nothing needs that port published.

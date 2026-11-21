@@ -540,11 +540,6 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		},
 
 		/**
-		 * Searches visible, non-archived foods. Every word must appear (in any order), or the whole query must be
-		 * similar enough to tolerate typos. Real matches come before typo-tolerant ones; within them, boosted
-		 * (recent) foods come first, then the person's own foods, then built-in ones.
-		 */
-		/**
 		 * The person's own foods and scans, alphabetically and a page at a time: those in use, or the archived ones (with
 		 * `archived`, optionally narrowed by `query`). Recipes have their own list; deleted foods are in Recently deleted.
 		 * `total` counts the whole list asked for, `archivedTotal` the archive (for the row that opens it).

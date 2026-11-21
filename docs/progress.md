@@ -98,6 +98,10 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   path, query, fragment or user). The worker runs as its own user `obur-worker` (uid 1001); the smoke test checks
   both users and that the web app's user can't read the worker's settings. Smoke, off-site outage, off-site
   restore and upgrade-from-beta.19 tests pass.
+- Documentation done: A09 (which forwarded addresses obur believes, and why to keep the port on 127.0.0.1), A33
+  (the inherited 5432 port), A42 (an old search comment removed), A48 (`VAPID_SUBJECT` reaches the push services),
+  A49 (owner's decision: about five weeks of backups, `OBUR_BACKUP_KEEP_WEEKS`; no monthly points), A50 (`labels/`
+  and `LABELS_URL` in the design).
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

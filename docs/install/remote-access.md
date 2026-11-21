@@ -40,10 +40,17 @@ and nothing else for obur.
 
 ## Which addresses obur believes
 
-Sign-in attempts are limited for each person's address. A proxy tells obur that address, and obur believes it only
-from a proxy on the same machine or in a Docker container. For a proxy on another machine, set
-`OBUR_TRUSTED_PROXIES` to its address or network (comma-separated, for example `192.168.1.20` or `10.8.0.0/24`).
-Without it, everyone who comes through that proxy shares one address, and so one limit.
+Sign-in attempts are limited for each person's address. A proxy tells obur that address in the `X-Forwarded-For`
+header (the address it received the request from, added last). Without `OBUR_TRUSTED_PROXIES`, obur believes that
+header from loopback, from Docker's networks (`172.16.0.0/12`) and from the networks of the container's own
+interfaces, which covers a proxy on the same machine or in a Docker container. Anything that can reach obur's port
+from those networks is believed too, so keep the port on `127.0.0.1` (the default) or on a network only your
+proxy uses.
+
+For a proxy on another machine, or to name your proxy exactly, set `OBUR_TRUSTED_PROXIES` to its address or
+network (comma-separated, for example `192.168.1.20` or `10.8.0.0/24`): then only those are believed. Without it, a
+proxy on another machine makes everyone who comes through it share one address, and so one limit. A wrong setting
+only affects these limits: passkeys and sessions never depend on the address.
 
 ## Caches in front of obur
 
