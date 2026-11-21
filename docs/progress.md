@@ -87,6 +87,10 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   2026-03-08 now comes at 03:00); when no device took a reminder because the push service failed, the day's
   mark is removed so a later pass within the hour tries again (devices that got it never get it twice). Unit
   and database tests.
+- A14 + A19 done: at most four archive tasks (one running, three waiting) on the server; more get 503
+  `archive_busy` ("The server is busy with other imports and exports"), also on export. The manifest's row
+  count must match each JSON file on import; CSV views now count records, not lines (not checked on import:
+  older archives counted lines). Database tests.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

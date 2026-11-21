@@ -869,6 +869,7 @@
 	"data_warn_food_links_dropped": "Bazı girdiler dosyada olmayan yiyeceklere bağlı. Kendi besin değerlerini korurlar.",
 	"data_warn_purged_skipped": "Bazı kayıtlar burada 30 günden uzun süre önce silindi, bu yüzden yeniden eklenmiyor.",
 	"data_error_archive": "Bu dosya içe aktarılamaz. Eksiksiz ve değiştirilmemiş bir obur dışa aktarımı değil.",
+	"data_error_busy": "Sunucu başka içe ve dışa aktarmalarla meşgul. Bir dakika sonra yeniden deneyin.",
 	"data_error_too_large": "Bu dosya içe aktarmak için çok büyük.",
 	"data_error_version": "Bu dışa aktarım obur'un daha yeni bir sürümünden geliyor.",
 	"data_imported_title": "LoseIt'ten gelen yiyecekler",

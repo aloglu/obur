@@ -176,6 +176,7 @@
 	function importProblem(e: unknown): string {
 		if (e instanceof ApiError) {
 			if (e.code === 'archive_too_large') return m.data_error_too_large();
+			if (e.code === 'archive_busy') return m.data_error_busy();
 			if (e.code === 'archive_unsupported_version') return m.data_error_version();
 			if (e.code.startsWith('archive_')) return m.data_error_archive();
 			if (e.code === 'already_imported') return m.data_warn_already_imported();
@@ -202,31 +203,33 @@
 	}
 
 	const download = () =>
-		run(() =>
-			withRecentAuth(async () => {
-				exporting = true;
-				// A JSON body, so the request is never mistaken for a cross-site form post.
-				const response = await fetch('/api/v1/export', {
-					method: 'POST',
-					credentials: 'same-origin',
-					headers: { 'content-type': 'application/json', ...accountHeaders() },
-					body: '{}'
-				});
-				if (!response.ok) {
-					const body = (await response.json().catch(() => ({}))) as { error?: string };
-					wrongAccount(body.error ?? '', response.status);
-					throw new ApiError(body.error ?? 'error', response.status);
-				}
-				const name =
-					/filename="([^"]+)"/.exec(response.headers.get('content-disposition') ?? '')?.[1] ??
-					'obur-export.zip';
-				const url = URL.createObjectURL(await response.blob());
-				const link = Object.assign(document.createElement('a'), { href: url, download: name });
-				link.click();
-				setTimeout(() => URL.revokeObjectURL(url), 10_000);
-				tooLarge = response.headers.get('x-obur-importable') === 'no';
-				showToast({ message: m.data_export_done(), detail: name });
-			}).finally(() => (exporting = false))
+		run(
+			() =>
+				withRecentAuth(async () => {
+					exporting = true;
+					// A JSON body, so the request is never mistaken for a cross-site form post.
+					const response = await fetch('/api/v1/export', {
+						method: 'POST',
+						credentials: 'same-origin',
+						headers: { 'content-type': 'application/json', ...accountHeaders() },
+						body: '{}'
+					});
+					if (!response.ok) {
+						const body = (await response.json().catch(() => ({}))) as { error?: string };
+						wrongAccount(body.error ?? '', response.status);
+						throw new ApiError(body.error ?? 'error', response.status);
+					}
+					const name =
+						/filename="([^"]+)"/.exec(response.headers.get('content-disposition') ?? '')?.[1] ??
+						'obur-export.zip';
+					const url = URL.createObjectURL(await response.blob());
+					const link = Object.assign(document.createElement('a'), { href: url, download: name });
+					link.click();
+					setTimeout(() => URL.revokeObjectURL(url), 10_000);
+					tooLarge = response.headers.get('x-obur-importable') === 'no';
+					showToast({ message: m.data_export_done(), detail: name });
+				}).finally(() => (exporting = false)),
+			importProblem
 		);
 
 	async function upload(apply: boolean): Promise<Summary> {

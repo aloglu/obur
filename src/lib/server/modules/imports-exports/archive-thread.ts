@@ -26,8 +26,16 @@ type Answer =
 const WORKER = path.join(process.cwd(), 'src/lib/server/modules/imports-exports/archive-worker.ts');
 
 let queue: Promise<unknown> = Promise.resolve();
+/**
+ * Tasks running or waiting. Each holds its whole archive or export in memory, so only a few may wait: more are
+ * told "busy" at once and can try again (2026-11-21 audit, A14).
+ */
+let pending = 0;
+export const MAX_PENDING_TASKS = 4;
 
 function run<T>(task: ArchiveTask): Promise<T> {
+	if (pending >= MAX_PENDING_TASKS) return Promise.reject(new ArchiveError('busy'));
+	pending++;
 	const next = queue.then(
 		() =>
 			new Promise<T>((resolve, reject) => {
@@ -53,7 +61,7 @@ function run<T>(task: ArchiveTask): Promise<T> {
 	);
 	// The next task waits for this one, whatever its result.
 	queue = next.catch(() => {});
-	return next;
+	return next.finally(() => pending--);
 }
 
 export const archiveThread = {

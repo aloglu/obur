@@ -27,7 +27,10 @@ export function respondPortability(run: () => Promise<Response>): Promise<Respon
 			return await run();
 		} catch (e) {
 			if (e instanceof ArchiveError)
-				return json({ error: `archive_${e.code}`, detail: e.detail }, { status: 422 });
+				return json(
+					{ error: `archive_${e.code}`, detail: e.detail },
+					{ status: e.code === 'busy' ? 503 : 422 }
+				);
 			if (e instanceof PortabilityError)
 				return json(e.summary ? { error: e.code, summary: e.summary } : { error: e.code }, {
 					status: STATUS[e.code]

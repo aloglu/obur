@@ -865,6 +865,40 @@ describe('import', () => {
 		expect(seen).toHaveLength(0);
 	});
 
+	it('tells a fifth import waiting at once that the server is busy (A14)', async () => {
+		await buildHistory();
+		const archive = fromElsewhere(await portability.exportArchive(MEHMET));
+		const results = await Promise.allSettled(
+			Array.from({ length: 5 }, () => portability.previewImport(ZEYNEP, archive))
+		);
+		expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(4);
+		const refused = results.find((r) => r.status === 'rejected') as PromiseRejectedResult;
+		expect(refused.reason).toMatchObject({ code: 'busy' });
+		// Once they finish, there is room again.
+		await expect(portability.previewImport(ZEYNEP, archive)).resolves.toBeDefined();
+	});
+
+	it('refuses an archive whose manifest miscounts a file, and counts CSV rows by record (A19)', async () => {
+		await buildHistory();
+		await body.logActivity(
+			MEHMET,
+			{ localDate: '2026-10-03', zone: 'Europe/Istanbul' },
+			150,
+			'Walk\nand stairs'
+		);
+		const files = unzipSync(await portability.exportArchive(MEHMET));
+		const manifest = JSON.parse(strFromU8(files['manifest.json']));
+		const listed = (path: string) => manifest.files.find((f: { path: string }) => f.path === path);
+		const activity = JSON.parse(strFromU8(files['data/activity.json']));
+		expect(listed('csv/activity.csv').rows).toBe(activity.length);
+		expect(listed('data/activity.json').rows).toBe(activity.length);
+		listed('data/diary.json').rows += 1;
+		const archive = zipSync({ ...files, 'manifest.json': strToU8(JSON.stringify(manifest)) });
+		await expect(portability.previewImport(ZEYNEP, archive)).rejects.toMatchObject({
+			code: 'invalid_content'
+		});
+	});
+
 	it('reads an export from before foods were private: their shared flag is ignored, someone else’s food becomes a copy', async () => {
 		await buildHistory();
 		// As an older version wrote it: every food says who could see it, and the bread was a member's shared food.

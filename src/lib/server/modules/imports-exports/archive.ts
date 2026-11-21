@@ -387,6 +387,13 @@ const OPTIONAL_FILES = new Set<string>([
 	'data/loseit-identities.json'
 ]);
 const CSV_FILES = ['csv/diary.csv', 'csv/weight.csv', 'csv/water.csv', 'csv/activity.csv'] as const;
+/** The records each CSV view has one row for. */
+const CSV_RECORDS = {
+	'csv/diary.csv': 'diary',
+	'csv/weight.csv': 'weight',
+	'csv/water.csv': 'water',
+	'csv/activity.csv': 'activity'
+} as const satisfies Record<(typeof CSV_FILES)[number], keyof PortableData>;
 
 export interface PortableData {
 	account: v.InferOutput<typeof AccountRecord>;
@@ -531,7 +538,8 @@ export function writeArchive(
 	const views = csvViews(data);
 	for (const path of CSV_FILES) {
 		files[path] = strToU8(views[path]);
-		listed.push({ path, rows: views[path].split('\r\n').length - 2, sha256: sha256(files[path]) });
+		// One row per record (a note with a line break inside is still one row; once counted by lines, A19).
+		listed.push({ path, rows: data[CSV_RECORDS[path]].length, sha256: sha256(files[path]) });
 	}
 	const manifest: Manifest = {
 		format: FORMAT,
@@ -552,7 +560,9 @@ type ArchiveErrorCode =
 	| 'missing_file'
 	| 'unsupported_version'
 	| 'checksum_mismatch'
-	| 'invalid_content';
+	| 'invalid_content'
+	// Too many imports and exports already waiting on the server (A14).
+	| 'busy';
 
 export class ArchiveError extends Error {
 	readonly code: ArchiveErrorCode;
@@ -654,6 +664,14 @@ export function readArchive(bytes: Uint8Array): { manifest: Manifest; data: Port
 				`${path}${at ? ` at ${at}` : ''}: ${issue.message}`
 			);
 		}
+		// The manifest's count must match what the file holds (2026-11-21 audit, A19). The CSV views are not checked:
+		// they are a convenience, and archives before 2026-11-21 counted their lines, not their records.
+		const rows = Array.isArray(result.output) ? result.output.length : 1;
+		if (listed.get(path)!.rows !== rows)
+			throw new ArchiveError(
+				'invalid_content',
+				`${path}: the manifest lists ${listed.get(path)!.rows} rows, the file has ${rows}`
+			);
 		data[KEYS[path as keyof typeof DATA_FILES]] = result.output;
 	}
 	return { manifest: manifest.output, data: data as PortableData };

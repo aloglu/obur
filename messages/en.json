@@ -870,6 +870,7 @@
 	"data_warn_purged_skipped": "Some records were deleted here more than 30 days ago, so they aren't added again.",
 	"data_error_archive": "This file can't be imported. It isn't a complete, unchanged obur export.",
 	"data_error_too_large": "This file is too large to import.",
+	"data_error_busy": "The server is busy with other imports and exports. Try again in a minute.",
 	"data_error_version": "This export comes from a newer version of obur.",
 	"data_imported_title": "Foods from LoseIt",
 	"data_imported_body": "{count} of your foods came from LoseIt. Archive them so your own foods come first; your diary keeps them.",
