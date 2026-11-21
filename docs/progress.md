@@ -61,6 +61,8 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
 - A44 done: the service worker watches API reads too (an answer without a session, or no connection, drops what
   was prepared), and the server marks its API 401 answer like the others. Chromium browser test fails without
   the fix.
+- A27 + A47 done: a decimal with spaces inside ("1 2", "1 000") is refused, not joined; year 0000 is not a date.
+  Unit tests.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

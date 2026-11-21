@@ -52,7 +52,7 @@ describe('parseDecimal', () => {
 		expect(parseDecimal(input)).toBe(value);
 	});
 
-	it.each(['', '1,234.5', '1.234,5', '1,2,3', '-1', 'abc', '1e3', '82,', '12 kg'])(
+	it.each(['', '1,234.5', '1.234,5', '1,2,3', '-1', 'abc', '1e3', '82,', '12 kg', '1 2', '1 000'])(
 		'rejects %j instead of guessing',
 		(input) => {
 			expect(parseDecimal(input)).toBeUndefined();

@@ -121,6 +121,8 @@ describe('days and zones', () => {
 		expect(isIsoDate('2026-10-25')).toBe(true);
 		expect(isIsoDate('2026-02-29')).toBe(false);
 		expect(isIsoDate('2026-10-5')).toBe(false);
+		expect(isIsoDate('0000-01-01')).toBe(false);
+		expect(isIsoDate('0001-01-01')).toBe(true);
 	});
 });
 

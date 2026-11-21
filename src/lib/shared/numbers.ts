@@ -2,10 +2,11 @@ import { getLocale } from '#lib/paraglide/runtime.js';
 
 // Decimal input accepting comma or dot (docs/design.md, "Targets, profile and activity" and "Language and
 // interface"). One separator is always the decimal mark; thousands separators are not accepted, so "1.234" and
-// "1,234" both mean 1.234 rather than a guess.
+// "1,234" both mean 1.234 rather than a guess. Spaces only around it: "1 2" and "1 000" are refused, never read as
+// 12 or 1000 (2026-11-21 audit, A27).
 
 export function parseDecimal(input: string): number | undefined {
-	const s = input.trim().replace(/\s+/g, '');
+	const s = input.trim();
 	if (!/^\d+([.,]\d+)?$|^[.,]\d+$/.test(s)) return undefined;
 	const value = Number(s.replace(',', '.'));
 	return Number.isFinite(value) ? value : undefined;

@@ -206,8 +206,9 @@ export function isValidZone(zone: string): boolean {
 	}
 }
 
+/** A real calendar date, YYYY-MM-DD, from year 1 (PostgreSQL has no year 0; 2026-11-21 audit, A47). */
 export function isIsoDate(value: string): boolean {
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith('0000')) return false;
 	const d = new Date(`${value}T00:00:00Z`);
 	return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }
