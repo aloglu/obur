@@ -3,7 +3,7 @@
 # Nothing is published unless the checks, the browser tests and every image's tests pass (obur: smoke, off-site
 # outage and restore, upgrade and restore; add-ons: one input each), and then all three together. A test release
 # (v1.0.0-beta.1) is published under its own version only, never as `latest`. Pushes to branches run nothing. Run it
-# by hand (Actions → Release → Run workflow) to build and test without publishing.
+# by hand (Actions → Release → Run workflow), on a branch or a tag, to build and test without publishing.
 name: Release
 
 on:
@@ -16,7 +16,8 @@ permissions:
 
 env:
   REGISTRY: ghcr.io/${{ github.repository_owner }}
-  PUBLISH: ${{ startsWith(github.ref, 'refs/tags/v') }}
+  # Only a pushed tag publishes: a run started by hand never does, even on a tag (2026-11-21 audit, A34).
+  PUBLISH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
 
 jobs:
   checks:
@@ -160,7 +161,7 @@ jobs:
     # last (R11).
     name: Publish
     needs: [checks, images]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     permissions:
       contents: write

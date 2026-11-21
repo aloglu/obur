@@ -63,6 +63,8 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   the fix.
 - A27 + A47 done: a decimal with spaces inside ("1 2", "1 000") is refused, not joined; year 0000 is not a date.
   Unit tests.
+- A34 done: only a pushed `v*` tag publishes (`github.event_name == 'push'` on the flag and the Publish job); a
+  run started by hand on a tag only tests. actionlint 1.7.7 clean.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
