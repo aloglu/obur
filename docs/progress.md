@@ -108,6 +108,11 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   stale lint directive removed). Left: esbuild ≤0.24 inside drizzle-kit 0.31.11 (its newest version still
   depends on @esbuild-kit); the advisory is about esbuild's own development server, which obur never runs.
   Production dependencies: no advisories. Lint (after moving one lint exception above its link), check, Vitest (1219) and build pass.
+- Full check after all of the above (2026-11-21): browser suite 307 passed, 28 skipped by test conditions, 0
+  failed; Vitest 1219; database 282; image tests (smoke, off-site outage, off-site restore, upgrade from beta.19,
+  both add-ons) passed. Not yet built: A43 (unknown calories shown as 0 on Today and Progress); next step: build
+  it on branch \`a43-unknown-energy\` with the Nutrients card's "+"/"?" pattern and publish a screenshot review
+  page for the owner. Not tagged (ask first).
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
