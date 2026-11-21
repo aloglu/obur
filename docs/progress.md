@@ -19,6 +19,12 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
 - C08 done: design.md's account-deletion paragraph no longer describes uploads, caches or offline phones.
 - C11 done: a stale doc comment, an unused `errorFor` argument, an unused type; a failed budget follow now logs
   `describeError`.
+- C09 done: updates within the current versions (svelte 5.59.1, kit 3.4.0, vite 8.3.8, adapter-node 6.0.5,
+  tailwind 4.3.5, paraglide 2.29.3, lucide 1.77, eslint-plugin-svelte, globals, svelte-check). Kept back:
+  Playwright 1.64.1 (a new browser build would change the screenshot baselines) and Prettier 3.9.10 with
+  prettier-plugin-svelte 4.1.1, now pinned exactly: the newer pair moves text inside tags onto their own lines in
+  81 files, which can add visible spaces. npm audit: the 4 known drizzle-kit/esbuild moderates only. check, lint,
+  Vitest 1,222, database 285, build and the full browser suite (306 passed) pass.
 
 ## Second 1.0 audit (owner's go, 2026-11-21)
 
