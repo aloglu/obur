@@ -88,3 +88,64 @@ test('Speak says when nothing was heard or the service is busy, and offers to tr
 	await expect(speak).toBeHidden();
 	await expect(page.getByRole('dialog', { name: 'Type what you ate' })).toBeVisible();
 });
+
+test('Try again after a busy service sends the same recording, without recording again (A30)', async ({
+	page
+}) => {
+	await signedInAs(page, 'Tekrar');
+	await page.goto('/log');
+	await nextTranscript({ error: 'busy' }, 503);
+	await page.getByRole('button', { name: 'Speak' }).click();
+	const speak = page.getByRole('dialog', { name: 'Speak' });
+	await page.waitForTimeout(1000);
+	await speak.getByRole('button', { name: 'Done' }).click();
+	await expect(speak.getByRole('alert')).toContainText('The speech service is busy');
+	const first = await (await fetch(`${SPEECH_STUB}/last`)).json();
+	await nextTranscript({
+		text: 'iki bardak su',
+		language: 'tr',
+		audioS: 1,
+		queueMs: 0,
+		asrMs: 300
+	});
+	await speak.getByRole('button', { name: 'Try again' }).click();
+	// Straight to what it heard: no new recording, so no Done to tap.
+	await expect(page.getByRole('dialog', { name: 'Check and log' })).toBeVisible();
+	const again = await (await fetch(`${SPEECH_STUB}/last`)).json();
+	expect(again.audioBytes).toBe(first.audioBytes);
+});
+
+test('closing Speak while the microphone question is open never starts recording (A29)', async ({
+	page
+}) => {
+	// The permission answer comes only when the test gives it, after the sheet is closed.
+	await page.addInitScript(() => {
+		const w = window as unknown as { __grant?: () => Promise<void>; __streams: MediaStream[] };
+		w.__streams = [];
+		const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+		navigator.mediaDevices.getUserMedia = (constraints) =>
+			new Promise((resolve) => {
+				w.__grant = async () => {
+					const stream = await original(constraints);
+					w.__streams.push(stream);
+					resolve(stream);
+				};
+			});
+	});
+	await signedInAs(page, 'Mikrofon');
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Speak' }).click();
+	const speak = page.getByRole('dialog', { name: 'Speak' });
+	await expect(speak).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(speak).toBeHidden();
+	await page.evaluate(() => (window as unknown as { __grant: () => Promise<void> }).__grant());
+	await page.waitForTimeout(500);
+	const live = await page.evaluate(
+		() =>
+			(window as unknown as { __streams: MediaStream[] }).__streams
+				.flatMap((s) => s.getTracks())
+				.filter((t) => t.readyState === 'live').length
+	);
+	expect(live).toBe(0);
+});

@@ -53,6 +53,11 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   entries say `loseit`. The archive reads them and the icon (both were dropped on import). Older snapshots
   stay without (unknown). Not shown in the interface yet (a display choice for the owner later, if wanted).
   Round-trip database test checks icon, origin, dataset and portion source; fails without the archive change.
+- A25 + A29 + A30 done: Speak sends when it was recorded (`at`; a time in the future or over a day old counts as
+  now) and "yesterday" counts from then; a microphone permission answered after the sheet closed stops its
+  tracks and records nothing; Try again after busy/limited/unavailable sends the kept recording, and records
+  again only when the recording itself was the problem. Chromium browser tests for A29 and A30 fail without
+  the fix.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

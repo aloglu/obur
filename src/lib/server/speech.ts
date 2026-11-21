@@ -59,7 +59,8 @@ export async function understandSpeech(
 	viewed: string,
 	zone: string,
 	mime = 'audio/mp4',
-	viaServer = false
+	viaServer = false,
+	recordedAt: Date = new Date()
 ): Promise<{ entry: ParsedEntry; source: Source; audioS: number; asrMs: number; queueMs: number }> {
 	const source = await requestSource(viaServer, hasLocal('speak'), () =>
 		effectiveSource(userId, 'speak')
@@ -97,7 +98,7 @@ export async function understandSpeech(
 	const text = heard.text.trim();
 	if (!text) throw new SpeechFailure('nothing_heard');
 	return {
-		entry: await understandEntry(userId, text, viewed, zone),
+		entry: await understandEntry(userId, text, viewed, zone, recordedAt),
 		source,
 		audioS: heard.audioS,
 		asrMs: heard.asrMs,

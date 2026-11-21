@@ -38,13 +38,18 @@ async function portionFirst(userId: string, p: FoodProposal, recent: string[]) {
 	return null;
 }
 
+/**
+ * `at`: when the words were said or typed. "Yesterday" counts from then, so a recording made before midnight and
+ * understood after it (a slow add-on, Try again later) keeps its day (2026-11-21 audit, A25).
+ */
 export async function understandEntry(
 	userId: string,
 	text: string,
 	viewed: string,
-	zone: string
+	zone: string,
+	at: Date = new Date()
 ): Promise<ParsedEntry> {
-	const today = localDate(new Date(), zone);
+	const today = localDate(at, zone);
 	const parsed = parseEntry(text, isoWeekday(today));
 	const date =
 		parsed.daysAgo !== null ? addDays(today, -parsed.daysAgo) : viewed <= today ? viewed : today;

@@ -92,6 +92,12 @@
 	let remote = $state<RemoteProblem | null>(null);
 	/** The last recording, until it is understood: Try again sends it again. */
 	let lastAudio: Blob | null = null;
+	/** When it was recorded: "yesterday" counts from then, also when it is sent again later (A25). */
+	let recordedAt = '';
+	/** The last failure can be fixed by sending the same recording again (the server was busy or unreachable). */
+	let resend = $state(false);
+	/** The sheet was closed: a microphone permission answered after that must not start recording (A29). */
+	let closed = false;
 	let seconds = $state(0);
 	let recorder: MediaRecorder | undefined;
 	let stream: MediaStream | undefined;
@@ -115,15 +121,23 @@
 		problem = null;
 		remote = null;
 		lastAudio = null;
+		resend = false;
 		seconds = 0;
 		chunks = [];
 		if (!navigator.onLine) return fail(P.offline());
+		let granted: MediaStream;
 		try {
-			stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			granted = await navigator.mediaDevices.getUserMedia({ audio: true });
 		} catch (e) {
 			const name = (e as DOMException).name;
 			return fail(name === 'NotFoundError' ? P.missing() : P.blocked());
 		}
+		if (closed) {
+			granted.getTracks().forEach((t) => t.stop());
+			return;
+		}
+		stream = granted;
+		recordedAt = new Date().toISOString();
 		const type = mimeType();
 		recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
 		recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -141,11 +155,15 @@
 		stopTracks();
 	}
 
-	function fail(message: Problem) {
+	function fail(message: Problem, canResend = false) {
 		stopTracks();
 		problem = message;
+		resend = canResend && lastAudio !== null;
 		phase = 'failed';
 	}
+
+	/** Try again: the same recording when only the sending failed, otherwise a new one (A30). */
+	const tryAgain = () => (resend ? send(true) : start());
 
 	/** The recording just made, or the kept one again (`viaServer`: this once on the server's add-on). */
 	async function send(again = false, viaServer = false) {
@@ -159,7 +177,7 @@
 		const audio = lastAudio!;
 		try {
 			const response = await fetch(
-				`/api/v1/speech?date=${date}&zone=${encodeURIComponent(deviceZone())}${viaServer ? '&via=server' : ''}`,
+				`/api/v1/speech?date=${date}&zone=${encodeURIComponent(deviceZone())}&at=${encodeURIComponent(recordedAt)}${viaServer ? '&via=server' : ''}`,
 				{
 					method: 'POST',
 					headers: { 'content-type': audio.type, ...accountHeaders() },
@@ -184,9 +202,13 @@
 				busy: P.busy,
 				limited: P.limited
 			};
-			fail((problems[body.error ?? ''] ?? P.unavailable)());
+			// Busy, limited for now or unavailable: the recording itself was fine.
+			const again = !['nothing_heard', 'too_long', 'too_large', 'decode_failed'].includes(
+				body.error ?? ''
+			);
+			fail((problems[body.error ?? ''] ?? P.unavailable)(), again);
 		} catch {
-			fail(P.unavailable());
+			fail(P.unavailable(), true);
 		}
 	}
 
@@ -200,6 +222,7 @@
 	onMount(() => {
 		start();
 		return () => {
+			closed = true;
 			if (recorder?.state === 'recording') {
 				recorder.onstop = null; // closing the sheet discards the recording
 				recorder.stop();
@@ -234,7 +257,7 @@
 			{#snippet actions()}
 				<div class="grid grid-cols-2 gap-2">
 					<Button variant="ghost" onclick={ontype}>{m.speak_type_instead()}</Button>
-					<Button onclick={start}>{m.speak_try_again()}</Button>
+					<Button onclick={tryAgain}>{m.speak_try_again()}</Button>
 				</div>
 			{/snippet}
 		</Notice>
