@@ -33,6 +33,14 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   (`/server`, admins) holds Backups with the deleted accounts, Updates, Personal AI keys and Label scans. More:
   Settings, Members, Server (with "Update available"), Help. Design, ui.md, install docs, restore guide and help
   text say Server. check, lint, Vitest and the full browser suite (306 passed) pass.
+- Image tests after these changes: `obur` smoke and upgrade from beta.19 pass; speech add-on passes. Off-site tests
+  not run (no backup code changed).
+- **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
+  for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
+  about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
+  setting in export and backups). First a review page with screenshots for the achievement screens, then build.
+  After pounds: the 1.0 checklist (`~/Documents`), real-phone checks, then the tag only when the owner asks. C05
+  comes soon after 1.0.
 
 ## Second 1.0 audit (owner's go, 2026-11-21)
 
