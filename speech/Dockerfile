@@ -4,10 +4,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
 	HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 \
 	SPEECH_MODEL_DIR=/models/faster-whisper-small
 COPY requirements.txt constraints.txt /app/
-RUN pip install --no-cache-dir -r /app/requirements.txt -c /app/constraints.txt
+# A current pip for the build only, then none in the image: nothing at run time installs packages (2026-11-21 audit,
+# A39).
+RUN pip install --no-cache-dir pip==26.3 && \
+	pip install --no-cache-dir -r /app/requirements.txt -c /app/constraints.txt && \
+	pip uninstall -y pip
 COPY fetch_model.py /app/fetch_model.py
 RUN python -I /app/fetch_model.py /models/faster-whisper-small
-COPY service.py /app/service.py
+COPY service.py THIRD-PARTY-NOTICES.md /app/
 USER nobody
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \

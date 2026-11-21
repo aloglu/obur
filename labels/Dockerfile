@@ -4,7 +4,11 @@ FROM python:3.12-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 OCR_MODEL_DIR=/models/pp-ocrv6-small
 RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt constraints.txt /app/
-RUN pip install --no-cache-dir -r /app/requirements.txt -c /app/constraints.txt
+# A current pip for the build only, then none in the image: nothing at run time installs packages (2026-11-21 audit,
+# A39).
+RUN pip install --no-cache-dir pip==26.3 && \
+	pip install --no-cache-dir -r /app/requirements.txt -c /app/constraints.txt && \
+	pip uninstall -y pip
 COPY fetch_models.py /app/fetch_models.py
 RUN python -I /app/fetch_models.py /models/pp-ocrv6-small
 COPY service.py /app/service.py

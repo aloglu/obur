@@ -20,4 +20,5 @@ For developers:
 - Working rules and verified commands: [`CLAUDE.md`](CLAUDE.md)
 
 Licence: MIT. The food icons are from [OpenMoji](https://openmoji.org) under CC BY-SA 4.0
-([`static/icons/food/LICENSE.txt`](static/icons/food/LICENSE.txt)).
+([`static/icons/food/LICENSE.txt`](static/icons/food/LICENSE.txt)). The optional speech image (`obur-speech`) also contains FFmpeg, x264
+and x265, which are GPL licensed: see [`speech/THIRD-PARTY-NOTICES.md`](speech/THIRD-PARTY-NOTICES.md).

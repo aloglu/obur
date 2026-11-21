@@ -20,7 +20,9 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from faster_whisper import WhisperModel, decode_audio
+import av
+import numpy as np
+from faster_whisper import WhisperModel
 
 MODEL_DIR = os.environ.get("SPEECH_MODEL_DIR", "/models/faster-whisper-small")
 THREADS = int(os.environ.get("SPEECH_THREADS", "4"))
@@ -36,6 +38,29 @@ SAMPLE_RATE = 16000
 
 class Busy(Exception):
     pass
+
+
+def decode_limited(data: bytes, max_seconds: float) -> np.ndarray:
+    """Decodes the first audio stream to 16 kHz mono float32, stopping as soon as it runs past max_seconds: a small
+    upload that holds hours of audio is refused before it fills memory (2026-11-21 audit, A36)."""
+    limit = int((max_seconds + 1) * SAMPLE_RATE)
+    resampler = av.AudioResampler(format="s16", layout="mono", rate=SAMPLE_RATE)
+    chunks: list[np.ndarray] = []
+    total = 0
+    with av.open(io.BytesIO(data), mode="r") as container:
+        stream = container.streams.audio[0]
+        frames = (f for frame in container.decode(stream) for f in resampler.resample(frame))
+        for frame in frames:
+            samples = frame.to_ndarray().reshape(-1)
+            total += samples.size
+            if total > limit:
+                raise ValueError("too_long")
+            chunks.append(samples)
+        for frame in resampler.resample(None):
+            chunks.append(frame.to_ndarray().reshape(-1))
+    if not chunks:
+        return np.zeros(0, dtype=np.float32)
+    return np.concatenate(chunks).astype(np.float32) / 32768.0
 
 
 class Transcriber:
@@ -54,7 +79,7 @@ class Transcriber:
         try:
             with self.lock:
                 started = time.perf_counter()
-                audio = decode_audio(io.BytesIO(audio_bytes), sampling_rate=SAMPLE_RATE)
+                audio = decode_limited(audio_bytes, MAX_AUDIO_S)
                 seconds = len(audio) / SAMPLE_RATE
                 if seconds > MAX_AUDIO_S:
                     raise ValueError("too_long")

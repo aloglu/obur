@@ -72,6 +72,13 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
 - A13 done: obur stops at start when `/data` is not a mount (`OBUR_ALLOW_UNMOUNTED_DATA=1` only for a throwaway
   test). Smoke test checks it; troubleshooting and agents guides updated. Smoke, off-site outage and off-site
   restore tests pass.
+- A36 + A37 + A39 done: PyAV 13.1.0 → 19.0.2 (bundles FFmpeg 9.0.2; the 7.0 series is unsupported). The speech
+  service decodes with its own loop that stops past the time limit, so a small upload holding hours of audio
+  is refused before it fills memory (checked in the image: AAC/MP4, Opus/WebM, Opus/Ogg 3 s decode; 40 s
+  refused; garbage refused). The bundled FFmpeg reports LGPL-3.0+, but the wheel links x264 and x265 (GPL), so
+  `speech/THIRD-PARTY-NOTICES.md` (also in the image, linked from README and the GitHub release notes) treats
+  them as GPL-3.0+ and lists their sources and the build configuration. Both add-on images build with pip
+  26.3 and then remove pip. Add-on tests (speech, labels) pass. Model unchanged, so no new measurement needed.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

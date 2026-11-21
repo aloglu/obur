@@ -204,4 +204,4 @@ jobs:
           [[ $VERSION == *-* ]] && pre=(--prerelease)
           gh release create "v$VERSION" --repo "${{ github.repository }}" --verify-tag "${pre[@]}" \
             --title "obur $VERSION" \
-            --notes "Images: $REGISTRY/obur:$VERSION, obur-speech:$VERSION, obur-labels:$VERSION. Updating: docs/install/updating.md."
+            --notes "Images: $REGISTRY/obur:$VERSION, obur-speech:$VERSION, obur-labels:$VERSION. Updating: docs/install/updating.md. obur-speech contains FFmpeg, x264 and x265 (GPL): speech/THIRD-PARTY-NOTICES.md lists them with their sources."

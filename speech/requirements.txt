@@ -1,7 +1,8 @@
 # Pinned as measured in Phase 0 (docs/feasibility.md, spikes/speech/requirements.lock).
 faster-whisper==1.1.1
 ctranslate2==4.8.3
-av==13.1.0
+# 19.0.2 (2026-11-21 audit, A36): bundles FFmpeg 9.0.2 instead of the unsupported 7.0; see THIRD-PARTY-NOTICES.md.
+av==19.0.2
 tokenizers==0.23.3
 huggingface_hub==2.3.0
 numpy==2.5.4
