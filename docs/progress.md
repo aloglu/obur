@@ -104,6 +104,10 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   and `LABELS_URL` in the design).
 - A41 done: the accessibility test checks every page route the build has (it fails for a page without a check),
   now with recipe and saved-meal detail pages and the public sign-in, setup, join and recovery pages. Passed.
+- A38 done as far as possible: \`npm audit fix\` (minimatch, typescript-eslint 8.73 and other development tools; one
+  stale lint directive removed). Left: esbuild ≤0.24 inside drizzle-kit 0.31.11 (its newest version still
+  depends on @esbuild-kit); the advisory is about esbuild's own development server, which obur never runs.
+  Production dependencies: no advisories. Lint, check, Vitest (1219) and build pass.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

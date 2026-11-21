@@ -5,8 +5,8 @@
 	let { href, label, value }: { href: string; label: string; value?: string | number } = $props();
 </script>
 
+<!-- Every caller passes resolve(...). -->
 <a
-	// eslint-disable-next-line svelte/no-navigation-without-resolve -- every caller passes resolve(...)
 	{href}
 	class="flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-0.5 py-2 text-[0.9375rem] font-semibold"
 >
