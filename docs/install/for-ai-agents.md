@@ -138,6 +138,14 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
 - **"this obur is older than its database … it does not open":** someone went back to an older version after an
   update changed the database. Nothing was changed. Start the newer version again; restoring the backup from before
   the update loses later changes and is the person's decision (`updating.md`).
+- **"/data is not a mounted folder, so obur does not start":** the data folder mapping is missing or mistyped. Fix
+  `OBUR_DATA_DIR` (or the volume) so it points at the person's data. Never set `OBUR_ALLOW_UNMOUNTED_DATA`: it is
+  only for throwaway tests.
+- **"the backup before the upgrade failed, so nothing was changed: check that /data/backups can be written":** the
+  backup folder (`OBUR_BACKUP_DIR`) is missing, full or not writable. Fix that; obur takes the backup (a full one if
+  there is none) and upgrades on the next start.
+- **Members → Backups says changes wait to be archived, or the backup timer has stopped:** read the last 200 log
+  lines for `obur-backup` errors and report them; for a stopped timer, `docker compose restart obur`.
 - **An upgrade or backup failed:** report the log lines to the person. More in `troubleshooting.md`.
 
 ## Moving to another server
