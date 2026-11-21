@@ -201,6 +201,28 @@ describe('LoseIt import', () => {
 		expect(live.filter((r) => r.n === 'Haşlanmış yumurta')).toHaveLength(2);
 	});
 
+	it('offers missing rows of each kind only within that kind’s own dates in the later export', async () => {
+		await portability.applyLoseIt(MEHMET, zip(), options);
+		// A later export whose weight file starts a day later than its diary: the 5 January weigh-in is outside the
+		// weight file's dates, so it says nothing about that weigh-in (once counted as deleted, 2026-11-21 audit).
+		const weights = files['weights.csv']
+			.split('\n')
+			.filter((l) => !l.startsWith('1/5/2026'))
+			.join('\n');
+		const later = {
+			...files,
+			'weights.csv': weights,
+			'water-intake.csv': 'Date,Value,Secondary Value,Last Updated\n'
+		};
+		const preview = await portability.previewLoseIt(MEHMET, zip(later), options);
+		expect(preview.counts.weight.missing).toBe(0);
+		expect(preview.counts.water.missing).toBe(0);
+		await portability.applyLoseIt(MEHMET, zip(later), { ...options, trashMissing: true });
+		const [{ n }] = await admin`select count(*)::int as n from weight_entries
+			where user_id = ${MEHMET} and local_date = '2026-01-05' and deleted_at is null`;
+		expect(n).toBe(1);
+	});
+
 	it('remembers what was imported from LoseIt after a move to another installation by export and import', async () => {
 		await portability.applyLoseIt(MEHMET, zip(), options);
 		const archive = await portability.exportArchive(MEHMET);

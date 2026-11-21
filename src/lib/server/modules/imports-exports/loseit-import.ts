@@ -340,10 +340,19 @@ export async function planLoseIt(
 	ids.water.forEach((id) => decide('water', id));
 	ids.activity.forEach((id) => decide('activity', id));
 
-	const dates = [...data.entries, ...data.weights, ...data.water, ...data.activity]
-		.map((r) => r.date)
-		.sort();
-	const dateRange = dates.length ? { from: dates[0], to: dates.at(-1)! } : null;
+	const span = (rows: { date: string }[]) => {
+		const dates = rows.map((r) => r.date).sort();
+		return dates.length ? { from: dates[0], to: dates.at(-1)! } : null;
+	};
+	const dateRange = span([...data.entries, ...data.weights, ...data.water, ...data.activity]);
+	// Each kind only within its own file's dates: a longer diary must not mark weigh-ins outside the weight file's
+	// dates as deleted, and a kind the export doesn't hold marks nothing (2026-11-21 audit, A16).
+	const kindRange = {
+		diary: span(data.entries),
+		weight: span(data.weights),
+		water: span(data.water),
+		activity: span(data.activity)
+	};
 	const missing = {
 		diary: [] as string[],
 		weight: [] as string[],
@@ -367,14 +376,15 @@ export async function planLoseIt(
 			const earlier = [...known.entries()]
 				.filter(([k]) => k.startsWith(`${kind}:`) && !present[kind].has(k.slice(kind.length + 1)))
 				.map(([, localId]) => localId);
-			if (!earlier.length) continue;
+			const range = kindRange[kind];
+			if (!earlier.length || !range) continue;
 			const table = tables[kind];
 			const live = await tx
 				.select({ id: table.id, date: table.localDate })
 				.from(table)
 				.where(and(inArray(table.id, earlier), isNull(table.deletedAt)));
 			missing[kind] = live
-				.filter((r) => r.date >= dateRange.from && r.date <= dateRange.to)
+				.filter((r) => r.date >= range.from && r.date <= range.to)
 				.map((r) => r.id);
 			counts[kind].missing = missing[kind].length;
 		}

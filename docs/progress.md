@@ -19,6 +19,8 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
 - A04 done: `obur restore start` writes and syncs where the database goes before it moves it; `cancel` and a
   retried `start` handle a note whose move never happened (the database is still in place, never removed). Smoke
   test covers cancel in that state.
+- A16 done: LoseIt's "move to the trash" counts a row missing only within its own kind's dates in the export (a
+  kind the export doesn't hold marks nothing). Database test fails without the fix.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
