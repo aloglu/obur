@@ -34,7 +34,7 @@
 	<div class="page-head flex flex-wrap items-center justify-between gap-3">
 		<h1 class="text-[1.5rem] font-[750]">{m.progress_title()}</h1>
 		<!-- Taller than the title: pulled in, so the title stays at the height it has on every other page. -->
-		<div class="-my-2">
+		<div class="-my-1.5">
 			<RangeSelect id="range" value={data.history.range} onchange={setRange} />
 		</div>
 	</div>

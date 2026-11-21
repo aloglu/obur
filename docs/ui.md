@@ -269,8 +269,9 @@ The owner chose it over the other two directions (Defter, a dense ledger with ha
   - Below the grid: a key and a month summary ("17 days under, 4 over, 3 not logged"). Today isn't counted. "Under" counts complete days only; incomplete days need their own wording in the summary and key.
 **Progress**
 - **History** (owner chose layout B with changes, 2026-10-31; demos in the session's Artifact):
-  - Phone: a tab bar **Weight / Calories / Nutrients** with a compact range dropdown (1W, 1M, 3M, 1Y, All; all time by
-    default) beside it, one tone like the tabs' tray (no raised pill, no focus ring on tap; owner 2026-10-31) in its own tray; one topic at a time, each with a headline number, a chart and a few stat rows.
+  - Phone: a tab bar **Weight / Calories / Nutrients** and a compact range dropdown (1W, 1M, 3M, 1Y, All; all time by
+    default) beside the page title, styled like a settings row's value: muted text and a small arrow, no tray, so it
+    doesn't clash with the tabs below (owner, 2026-11-21; it replaced the earlier tray, 2026-10-31); one topic at a time, each with a headline number, a chart and a few stat rows.
   - Desktop: no tabs; two columns, Weight beside Calories, then Nutrients, with the range
     dropdown beside the page title.
   - Weight: the label above the weight is the switch (owner's pick T2, 2026-10-31, after two demo rounds):

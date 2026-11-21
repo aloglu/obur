@@ -81,6 +81,8 @@ and licence, R06, R13. Real-phone checks stay with the owner.
   pixel-identical before and after (phone and desktop); (3) toasts (also the achievement toast) swipe away sideways
   or down (`client/swipe-away.ts`), the timer stops under a finger, and a Dismiss button shows only to the keyboard
   (owner's choice B). Checks: type check, lint, Vitest 1198 passed, full browser suite 301 passed, 22 skipped.
+  Owner follow-up: the range's tray clashed with the tabs; it now looks like a settings row's value (muted text and
+  arrow, no tray), with the title still at 32 px (phone) and 20 px (desktop).
   **Next step:** the owner tries the swipe on a real phone, then the rest of the rc.6 checklist.
 
 ## Offline support removed, search rule replaced (owner, 2026-11-20; before rc.5)
