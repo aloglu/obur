@@ -45,17 +45,23 @@ import {
 } from './loseit-import.ts';
 import { accountDeletions, importFiles, importIdentities, installation } from './schema.ts';
 
+type PortabilityCode =
+	'already_imported' | 'last_admin' | 'not_found' | 'forbidden' | 'plan_changed';
 export class PortabilityError extends Error {
-	readonly code: 'already_imported' | 'last_admin' | 'not_found' | 'forbidden';
-	// A plain field (not a parameter property): the worker runs this file with Node's type stripping.
-	constructor(code: 'already_imported' | 'last_admin' | 'not_found' | 'forbidden') {
+	readonly code: PortabilityCode;
+	/** plan_changed: what the import would do now, to confirm again. */
+	readonly summary: unknown;
+	// Plain fields (not parameter properties): the worker runs this file with Node's type stripping.
+	constructor(code: PortabilityCode, summary?: unknown) {
 		super(code);
 		this.code = code;
+		this.summary = summary;
 	}
 }
 
 type IdKind = 'food' | 'diary' | 'weight' | 'water' | 'activity' | 'target' | 'saved_meal';
-type CountKind = IdKind | 'dayCompletion' | 'dayNote' | 'profile';
+// settings: reminder times and model choices, imported only where the account has none (2026-11-21 audit, A17).
+type CountKind = IdKind | 'dayCompletion' | 'dayNote' | 'profile' | 'settings';
 export interface Counts {
 	new: number;
 	unchanged: number;
@@ -88,6 +94,15 @@ const canonical = (value: unknown): string =>
 			? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)))
 			: v
 	);
+
+/**
+ * What a preview showed, for that file and those options: an import applies only when its plan, made again inside
+ * the import's transaction, is still what the person confirmed (2026-11-21 audit, A15). Not a secret: it proves the
+ * preview came first and that nothing changed since, not who may import.
+ */
+export function confirmKey(sha: string, options: unknown, summary: unknown): string {
+	return sha256(new TextEncoder().encode(canonical({ sha, options, summary })));
+}
 
 async function installationId(tx: Tx): Promise<string> {
 	const [row] = await tx.select({ id: installation.id }).from(installation);
@@ -433,7 +448,8 @@ async function plan(
 				'saved_meal',
 				'dayCompletion',
 				'dayNote',
-				'profile'
+				'profile',
+				'settings'
 			] as const
 		).map((k) => [k, emptyCounts()])
 	) as Record<CountKind, Counts>;
@@ -742,6 +758,10 @@ async function plan(
 		.from(modelChoices)
 		.where(eq(modelChoices.userId, userId));
 	const importModelChoices = !!data.account.modelChoices && !currentChoices;
+	counts.settings.new = Number(importReminders) + Number(importModelChoices);
+	counts.settings.unchanged =
+		Number(!!data.account.reminders && !importReminders) +
+		Number(!!data.account.modelChoices && !importModelChoices);
 	const [currentProfile] = await tx.select().from(profiles).where(eq(profiles.userId, userId));
 	const incoming = data.account.profile;
 	let importProfile = false;
@@ -1197,29 +1217,33 @@ export function createPortability(db: Database) {
 			return archiveThread.write(data, { exportedAt: now.toISOString(), sourceInstallation });
 		},
 
-		/** Validates an archive and reports what an import would do, without writing anything. */
-		async previewImport(userId: string, bytes: Uint8Array): Promise<ImportSummary> {
+		/**
+		 * Validates an archive and reports what an import would do, without writing anything. Its `confirm` goes
+		 * back with the import.
+		 */
+		async previewImport(
+			userId: string,
+			bytes: Uint8Array
+		): Promise<ImportSummary & { confirm: string }> {
 			const { manifest, data } = await archiveThread.read(bytes);
+			const sha = sha256(bytes);
 			return withUser(db, userId, async (tx) => {
 				const p = await plan(
 					tx,
 					userId,
-					{
-						sha: sha256(bytes),
-						sourceInstallation: manifest.sourceInstallation,
-						exportedAt: manifest.exportedAt
-					},
+					{ sha, sourceInstallation: manifest.sourceInstallation, exportedAt: manifest.exportedAt },
 					data
 				);
-				return p.summary;
+				return { ...p.summary, confirm: confirmKey(sha, null, p.summary) };
 			});
 		},
 
 		/**
-		 * Imports an archive in one transaction, planning again inside it so an old preview never applies blindly.
-		 * The same file cannot be imported twice.
+		 * Imports an archive in one transaction, planning again inside it so an old preview never applies blindly:
+		 * a plan that differs from the confirmed preview is refused with the new one. The same file cannot be
+		 * imported twice.
 		 */
-		async applyImport(userId: string, bytes: Uint8Array): Promise<ImportSummary> {
+		async applyImport(userId: string, bytes: Uint8Array, confirm: string): Promise<ImportSummary> {
 			const { manifest, data } = await archiveThread.read(bytes);
 			const sha = sha256(bytes);
 			return withUser(db, userId, async (tx) => {
@@ -1231,6 +1255,11 @@ export function createPortability(db: Database) {
 					data
 				);
 				if (p.summary.alreadyImported) throw new PortabilityError('already_imported');
+				if (confirmKey(sha, null, p.summary) !== confirm)
+					throw new PortabilityError('plan_changed', {
+						...p.summary,
+						confirm: confirmKey(sha, null, p.summary)
+					});
 				await write(tx, userId, data, p, manifest.sourceInstallation);
 				// The primary key also stops two concurrent imports of the same file.
 				await tx.insert(importFiles).values({ userId, sha256: sha, summary: p.summary });
@@ -1243,19 +1272,24 @@ export function createPortability(db: Database) {
 			userId: string,
 			bytes: Uint8Array,
 			options: LoseItOptions
-		): Promise<LoseItSummary> {
+		): Promise<LoseItSummary & { confirm: string }> {
 			const data = await archiveThread.loseit(bytes);
+			const sha = sha256(bytes);
 			return withUser(db, userId, async (tx) => {
-				const p = await planLoseIt(tx, userId, data, { sha: sha256(bytes) }, options);
-				return p.summary;
+				const p = await planLoseIt(tx, userId, data, { sha }, options);
+				return { ...p.summary, confirm: confirmKey(sha, options, p.summary) };
 			});
 		},
 
-		/** Imports a LoseIt export in one transaction, planning again inside it. The same file cannot be imported twice. */
+		/**
+		 * Imports a LoseIt export in one transaction, planning again inside it; a plan that differs from the
+		 * confirmed preview is refused with the new one. The same file cannot be imported twice.
+		 */
 		async applyLoseIt(
 			userId: string,
 			bytes: Uint8Array,
-			options: LoseItOptions
+			options: LoseItOptions,
+			confirm: string
 		): Promise<LoseItSummary> {
 			const data = await archiveThread.loseit(bytes);
 			const sha = sha256(bytes);
@@ -1263,6 +1297,9 @@ export function createPortability(db: Database) {
 				await lockImports(tx, userId);
 				const p = await planLoseIt(tx, userId, data, { sha }, options);
 				if (p.summary.alreadyImported) throw new PortabilityError('already_imported');
+				const now = confirmKey(sha, options, p.summary);
+				if (now !== confirm)
+					throw new PortabilityError('plan_changed', { ...p.summary, confirm: now });
 				await writeLoseIt(tx, userId, data, p, options);
 				await tx.insert(importFiles).values({ userId, sha256: sha, summary: p.summary });
 				return p.summary;

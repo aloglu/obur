@@ -21,6 +21,12 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   test covers cancel in that state.
 - A16 done: LoseIt's "move to the trash" counts a row missing only within its own kind's dates in the export (a
   kind the export doesn't hold marks nothing). Database test fails without the fix.
+- A15 + A17 done: a preview returns `confirm` (hash of file, options and planned summary); import needs it and is
+  refused with `plan_changed` and the new preview when the plan inside its transaction differs. The page shows the
+  new numbers, and the finished line uses the counts the import reports. Found by the browser test: an older
+  preview answering last replaced a newer one (unit changed quickly); now only the newest counts, and Import
+  waits for it. Settings (reminders, model choices) are a counted kind. Database tests (stale and missing
+  confirmation, two imports at once, settings only) and data/Turkish browser tests pass.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

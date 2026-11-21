@@ -4,13 +4,17 @@ import { portability, readArchiveBody, respondPortability } from '#lib/server/po
 import { isValidZone } from '#lib/shared/diary-rules.ts';
 import type { RequestHandler } from './$types';
 
-// The archive is the request body: an obur export or a LoseIt export, told apart by its files. ?apply=1 imports;
-// otherwise this is the dry run. A LoseIt import also takes zone, weightUnit (kg|lb), trashMissing=1 and keepCopies=1.
+// The archive is the request body: an obur export or a LoseIt export, told apart by its files. Without ?apply=1 this
+// is the dry run, whose summary carries `confirm`; ?apply=1&confirm=… imports only if the plan is still that one
+// (otherwise 409 plan_changed with the new summary). A LoseIt import also takes zone, weightUnit (kg|lb),
+// trashMissing=1 and keepCopies=1.
 export const POST: RequestHandler = ({ request, url, locals }) =>
 	respondPortability(async () => {
 		const bytes = await readArchiveBody(request);
 		const userId = locals.session!.userId;
 		const apply = url.searchParams.get('apply') === '1';
+		const confirm = url.searchParams.get('confirm') ?? '';
+		if (apply && !/^[0-9a-f]{64}$/.test(confirm)) error(400, 'Preview first');
 		const kind = archiveKind(bytes);
 		if (kind === 'loseit') {
 			const zone = url.searchParams.get('zone') ?? '';
@@ -24,13 +28,13 @@ export const POST: RequestHandler = ({ request, url, locals }) =>
 				keepCopies: url.searchParams.get('keepCopies') === '1'
 			};
 			const summary = apply
-				? await portability.applyLoseIt(userId, bytes, options)
+				? await portability.applyLoseIt(userId, bytes, options, confirm)
 				: await portability.previewLoseIt(userId, bytes, options);
 			return json({ summary });
 		}
 		if (kind === 'unknown') throw new ArchiveError('not_an_archive');
 		const summary = apply
-			? await portability.applyImport(userId, bytes)
+			? await portability.applyImport(userId, bytes, confirm)
 			: await portability.previewImport(userId, bytes);
 		return json({ summary });
 	});

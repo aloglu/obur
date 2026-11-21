@@ -12,7 +12,13 @@ import { respond } from './http.ts';
 
 export const portability = createPortability(db);
 
-const STATUS = { already_imported: 409, last_admin: 409, not_found: 404, forbidden: 403 } as const;
+const STATUS = {
+	already_imported: 409,
+	last_admin: 409,
+	not_found: 404,
+	forbidden: 403,
+	plan_changed: 409
+} as const;
 
 /** Like respond(), and also maps archive and portability errors to `{ error, detail? }`. */
 export function respondPortability(run: () => Promise<Response>): Promise<Response> {
@@ -22,7 +28,10 @@ export function respondPortability(run: () => Promise<Response>): Promise<Respon
 		} catch (e) {
 			if (e instanceof ArchiveError)
 				return json({ error: `archive_${e.code}`, detail: e.detail }, { status: 422 });
-			if (e instanceof PortabilityError) return json({ error: e.code }, { status: STATUS[e.code] });
+			if (e instanceof PortabilityError)
+				return json(e.summary ? { error: e.code, summary: e.summary } : { error: e.code }, {
+					status: STATUS[e.code]
+				});
 			if (e instanceof LoseItError)
 				return json({ error: `loseit_${e.code}`, detail: e.detail }, { status: 422 });
 			throw e;

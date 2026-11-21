@@ -19,6 +19,16 @@ const admin = postgres(urls.admin, { max: 1, ...quiet });
 const appSql = postgres(urls.app, { max: 2, ...quiet });
 const db = drizzle(appSql);
 const portability = createPortability(db);
+// An import as the page makes it: the preview first, then the import with what it showed.
+const applyImport = async (userId: string, bytes: Uint8Array) =>
+	portability.applyImport(userId, bytes, (await portability.previewImport(userId, bytes)).confirm);
+const applyLoseIt = async (userId: string, bytes: Uint8Array, o: LoseItOptions) =>
+	portability.applyLoseIt(
+		userId,
+		bytes,
+		o,
+		(await portability.previewLoseIt(userId, bytes, o)).confirm
+	);
 const goals = createGoals(db);
 
 const MEHMET = randomUUID();
@@ -73,7 +83,7 @@ describe('LoseIt import', () => {
 		expect(preview.counts.diary).toEqual({ new: 18, unchanged: 0, missing: 0, skipped: 0 });
 		expect((await admin`select count(*)::int as n from diary_entries`)[0].n).toBe(0);
 
-		await portability.applyLoseIt(MEHMET, zip(), options);
+		await applyLoseIt(MEHMET, zip(), options);
 		expect(await dayTotals(MEHMET)).toEqual({
 			'2026-01-05': 676.5,
 			'2026-01-06': 1371,
@@ -101,7 +111,7 @@ describe('LoseIt import', () => {
 	});
 
 	it('imports foods privately, links diary rows to an unambiguous custom food, and never merges duplicates', async () => {
-		await portability.applyLoseIt(MEHMET, zip(), options);
+		await applyLoseIt(MEHMET, zip(), options);
 		const foods = await admin`select name, origin, basis from foods where owner_id = ${MEHMET}`;
 		expect(foods.every((f) => f.origin === 'loseit')).toBe(true);
 		expect(foods.filter((f) => f.name === 'Mercimek çorbası')).toHaveLength(2);
@@ -123,7 +133,7 @@ describe('LoseIt import', () => {
 	});
 
 	it('keeps LoseIt’s budgets for past days, records activity without counting it, and imports the rest', async () => {
-		await portability.applyLoseIt(MEHMET, zip(), options);
+		await applyLoseIt(MEHMET, zip(), options);
 		expect((await goals.targetFor(MEHMET, '2026-01-05'))?.baseBurnKcal).toBe(2150);
 		expect((await goals.targetFor(MEHMET, '2026-01-07'))?.baseBurnKcal).toBe(2121);
 		expect(await goals.history(MEHMET)).toHaveLength(2);
@@ -152,7 +162,7 @@ describe('LoseIt import', () => {
 	});
 
 	it('converts pounds when the preview says the weights were in pounds', async () => {
-		await portability.applyLoseIt(MEHMET, zip(), { ...options, weightUnit: 'lb' });
+		await applyLoseIt(MEHMET, zip(), { ...options, weightUnit: 'lb' });
 		const weights =
 			await admin`select kg::float from weight_entries where user_id = ${MEHMET} order by local_date`;
 		expect(weights.map((w) => w.kg)).toEqual([41.46, 41.32]);
@@ -166,15 +176,15 @@ describe('LoseIt import', () => {
 		);
 		const preview = await portability.previewLoseIt(MEHMET, zip(), options);
 		expect(preview.warnings).toContain('budgets_after_own_target');
-		await portability.applyLoseIt(MEHMET, zip(), options);
+		await applyLoseIt(MEHMET, zip(), options);
 		expect((await goals.targetFor(MEHMET, '2026-01-05'))?.baseBurnKcal).toBe(2150);
 		expect((await goals.targetFor(MEHMET, '2026-01-07'))?.baseBurnKcal).toBe(2000);
 	});
 
 	it('refuses the same file twice; a later overlapping export adds only new rows and offers missing ones for the trash', async () => {
-		await portability.applyLoseIt(MEHMET, zip(), options);
+		await applyLoseIt(MEHMET, zip(), options);
 		expect((await portability.previewLoseIt(MEHMET, zip(), options)).alreadyImported).toBe(true);
-		await expect(portability.applyLoseIt(MEHMET, zip(), options)).rejects.toThrow(PortabilityError);
+		await expect(applyLoseIt(MEHMET, zip(), options)).rejects.toThrow(PortabilityError);
 
 		// The next export: the banana was deleted in LoseIt and a new row was logged.
 		const lines = files['food-logs.csv'].split('\n');
@@ -189,7 +199,7 @@ describe('LoseIt import', () => {
 		const preview = await portability.previewLoseIt(MEHMET, zip(later), options);
 		expect(preview.counts.diary).toEqual({ new: 1, unchanged: 17, missing: 1, skipped: 0 });
 		expect(preview.warnings).toContain('missing_rows');
-		await portability.applyLoseIt(MEHMET, zip(later), { ...options, trashMissing: true });
+		await applyLoseIt(MEHMET, zip(later), { ...options, trashMissing: true });
 		const live = await admin`select food->>'name' as n from diary_entries
 			where user_id = ${MEHMET} and deleted_at is null`;
 		expect(live.map((r) => r.n)).toContain('Apple');
@@ -202,7 +212,7 @@ describe('LoseIt import', () => {
 	});
 
 	it('offers missing rows of each kind only within that kind’s own dates in the later export', async () => {
-		await portability.applyLoseIt(MEHMET, zip(), options);
+		await applyLoseIt(MEHMET, zip(), options);
 		// A later export whose weight file starts a day later than its diary: the 5 January weigh-in is outside the
 		// weight file's dates, so it says nothing about that weigh-in (once counted as deleted, 2026-11-21 audit).
 		const weights = files['weights.csv']
@@ -217,20 +227,20 @@ describe('LoseIt import', () => {
 		const preview = await portability.previewLoseIt(MEHMET, zip(later), options);
 		expect(preview.counts.weight.missing).toBe(0);
 		expect(preview.counts.water.missing).toBe(0);
-		await portability.applyLoseIt(MEHMET, zip(later), { ...options, trashMissing: true });
+		await applyLoseIt(MEHMET, zip(later), { ...options, trashMissing: true });
 		const [{ n }] = await admin`select count(*)::int as n from weight_entries
 			where user_id = ${MEHMET} and local_date = '2026-01-05' and deleted_at is null`;
 		expect(n).toBe(1);
 	});
 
 	it('remembers what was imported from LoseIt after a move to another installation by export and import', async () => {
-		await portability.applyLoseIt(MEHMET, zip(), options);
+		await applyLoseIt(MEHMET, zip(), options);
 		const archive = await portability.exportArchive(MEHMET);
 		// A fresh installation: no accounts, another installation ID.
 		await admin`truncate users cascade`;
 		await admin`insert into users (id, display_name) values (${MEHMET}, 'Mehmet'), (${ZEYNEP}, 'Zeynep')`;
 		await admin`update installation set id = ${randomUUID()}`;
-		await portability.applyImport(MEHMET, archive);
+		await applyImport(MEHMET, archive);
 
 		const lines = files['food-logs.csv'].split('\n');
 		const later = {
@@ -247,7 +257,7 @@ describe('LoseIt import', () => {
 		expect(preview.counts.weight.new).toBe(0);
 		expect(preview.counts.water.new).toBe(0);
 		expect(preview.counts.activity.new).toBe(0);
-		await portability.applyLoseIt(MEHMET, zip(later), { ...options, trashMissing: true });
+		await applyLoseIt(MEHMET, zip(later), { ...options, trashMissing: true });
 		const live = await admin`select food->>'name' as n from diary_entries
 			where user_id = ${MEHMET} and deleted_at is null`;
 		expect(live).toHaveLength(18);
@@ -266,7 +276,7 @@ describe('LoseIt import', () => {
 			...files,
 			'food-logs.csv': [files['food-logs.csv'].trimEnd(), ...days.map(row), ''].join('\n')
 		});
-		await portability.applyLoseIt(MEHMET, zip(withRows(7)), options);
+		await applyLoseIt(MEHMET, zip(withRows(7)), options);
 		const later = await portability.previewLoseIt(MEHMET, zip(withRows(7, 8)), options);
 		expect(later.counts.food.new).toBe(0);
 		expect(later.counts.diary.new).toBe(1);
@@ -280,8 +290,8 @@ describe('LoseIt import', () => {
 	});
 
 	it('leaves another person’s data alone', async () => {
-		await portability.applyLoseIt(ZEYNEP, zip(), options);
-		await portability.applyLoseIt(MEHMET, zip(), options);
+		await applyLoseIt(ZEYNEP, zip(), options);
+		await applyLoseIt(MEHMET, zip(), options);
 		expect(await dayTotals(ZEYNEP)).toEqual(await dayTotals(MEHMET));
 		expect((await admin`select count(*)::int as n from diary_entries`)[0].n).toBe(36);
 	});
@@ -325,7 +335,7 @@ describe('already in your foods', () => {
 		expect(copies.matchedFoods).toBe(0);
 		expect(plain.counts.food.new).toBe(copies.counts.food.new - 2);
 
-		await portability.applyLoseIt(MEHMET, zip(), options);
+		await applyLoseIt(MEHMET, zip(), options);
 		const names =
 			await admin`select name from foods where owner_id = ${MEHMET} and origin = 'loseit'`;
 		expect(names.map((r) => r.name)).not.toContain('Ekmek, tam buğday');

@@ -45,6 +45,8 @@
 		reconciliation?: { days: number; mismatched: string[] };
 		/** LoseIt foods the person already has, used instead of a copy. */
 		matchedFoods?: number;
+		/** Goes back with the import: it applies only if its plan is still this one. */
+		confirm: string;
 	}
 
 	const KINDS = [
@@ -57,7 +59,8 @@
 		'saved_meal',
 		'dayCompletion',
 		'dayNote',
-		'profile'
+		'profile',
+		'settings'
 	];
 	const kindName: Record<string, () => string> = {
 		diary: m.data_kind_diary,
@@ -69,7 +72,8 @@
 		saved_meal: m.data_kind_saved_meal,
 		dayCompletion: m.data_kind_dayCompletion,
 		dayNote: m.data_kind_dayNote,
-		profile: m.data_kind_profile
+		profile: m.data_kind_profile,
+		settings: m.data_kind_settings
 	};
 	const warning: Record<string, () => string> = {
 		already_imported: m.data_warn_already_imported,
@@ -138,6 +142,7 @@
 	const missing = $derived(
 		summary ? Object.values(summary.counts).reduce((n, c) => n + (c.missing ?? 0), 0) : 0
 	);
+	const added = (s: Summary) => KINDS.reduce((n, k) => n + (s.counts[k]?.new ?? 0), 0);
 	const toAdd = $derived(rows.reduce((n, r) => n + r.new, 0));
 	const size = (bytes: number) =>
 		bytes < 1_000_000
@@ -174,6 +179,7 @@
 			if (e.code === 'archive_unsupported_version') return m.data_error_version();
 			if (e.code.startsWith('archive_')) return m.data_error_archive();
 			if (e.code === 'already_imported') return m.data_warn_already_imported();
+			if (e.code === 'plan_changed') return m.data_import_changed();
 			if (e.code === 'loseit_unsupported_layout' || e.code === 'loseit_not_loseit')
 				return m.data_error_loseit_layout();
 			if (e.code === 'loseit_too_large') return m.data_error_too_large();
@@ -231,7 +237,10 @@
 			trashMissing: trashMissing ? '1' : '0',
 			keepCopies: keepCopies ? '1' : '0'
 		});
-		if (apply) params.set('apply', '1');
+		if (apply) {
+			params.set('apply', '1');
+			params.set('confirm', summary?.confirm ?? '');
+		}
 		const response = await fetch(`/api/v1/import?${params}`, {
 			method: 'POST',
 			credentials: 'same-origin',
@@ -245,6 +254,8 @@
 		};
 		if (!response.ok) {
 			wrongAccount(body.error ?? 'error', response.status);
+			// Something changed since the preview (another device, another import): show what it would do now.
+			if (body.error === 'plan_changed' && body.summary) summary = body.summary;
 			throw new ApiError(body.error ?? 'error', response.status, body.detail);
 		}
 		return body.summary!;
@@ -261,21 +272,32 @@
 		if (file) void preview();
 	}
 
-	/** Runs the dry run again, e.g. after a LoseIt option changed. */
-	const preview = () =>
-		run(async () => {
-			summary = await upload(false);
-		}, importProblem);
+	/**
+	 * Runs the dry run again, e.g. after a LoseIt option changed. Only the newest one counts: an older answer that
+	 * comes back last must not replace it (its numbers would be for other options), and Import waits for it.
+	 */
+	let previewing = $state(0);
+	let previewSeq = 0;
+	const preview = () => {
+		const seq = ++previewSeq;
+		previewing++;
+		return run(async () => {
+			const next = await upload(false);
+			if (seq === previewSeq) summary = next;
+		}, importProblem).finally(() => previewing--);
+	};
 
 	const apply = () =>
 		run(async () => {
 			importing = true;
+			let done: Summary;
 			try {
-				await upload(true);
+				done = await upload(true);
 			} finally {
 				importing = false;
 			}
-			finished = { count: toAdd, from: summary?.dateRange?.from ?? null };
+			// What the import did, as it reports it.
+			finished = { count: added(done), from: done.dateRange?.from ?? null };
 			summary = null;
 			file = null;
 			showToast({ message: m.data_import_done() });
@@ -457,6 +479,7 @@
 									label={m.data_import_missing_label({ count: String(missing) })}
 									detail={m.data_import_missing_detail()}
 									bind:checked={trashMissing}
+									onchange={preview}
 								/>
 							{/if}
 						</div>
@@ -467,7 +490,7 @@
 					{#if nothingNew}
 						<p class="text-[0.875rem] text-muted">{m.data_import_nothing()}</p>
 					{:else}
-						<Button disabled={busy} onclick={apply}>
+						<Button disabled={busy || previewing > 0} onclick={apply}>
 							{importing
 								? m.data_importing()
 								: toAdd > 0

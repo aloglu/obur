@@ -36,6 +36,9 @@ const goals = createGoals(db);
 const savedMeals = createSavedMeals(db);
 const recipes = createRecipes(db);
 const portability = createPortability(db);
+// An import as the page makes it: the preview first, then the import with what it showed.
+const applyImport = async (userId: string, bytes: Uint8Array) =>
+	portability.applyImport(userId, bytes, (await portability.previewImport(userId, bytes)).confirm);
 const reminders = createReminders(db);
 const remoteModels = createRemoteModels(db, Buffer.alloc(32, 7));
 const MEHMET_KEY = 'sk-portability-test-key-0123456789';
@@ -474,7 +477,7 @@ describe('import', () => {
 		expect(preview.counts.diary).toEqual({ new: 6, unchanged: 0, changed: 0, skipped: 0 });
 		expect(await count('diary_entries', ZEYNEP)).toBe(0); // the preview wrote nothing
 
-		await portability.applyImport(ZEYNEP, archive);
+		await applyImport(ZEYNEP, archive);
 		// Settings come along, and count as saved.
 		expect(await goals.preferences(ZEYNEP)).toMatchObject({
 			preferences: {
@@ -545,7 +548,7 @@ describe('import', () => {
 		);
 		expect(sent.savedMeals[0].deletedAt).toEqual(expect.any(String));
 
-		await portability.applyImport(ZEYNEP, archive);
+		await applyImport(ZEYNEP, archive);
 		// Nowhere in use, and both waiting in Recently deleted, where they can be restored.
 		expect(await savedMeals.list(ZEYNEP)).toEqual([]);
 		const [deletedMeal] = await savedMeals.trash(ZEYNEP);
@@ -587,7 +590,7 @@ describe('import', () => {
 			new: 1,
 			unchanged: 2
 		});
-		await portability.applyImport(ZEYNEP, archive);
+		await applyImport(ZEYNEP, archive);
 		expect((await diary.dayNote(ZEYNEP, DAY)).text).toBe('from the archive');
 		expect((await diary.dayNote(ZEYNEP, '2026-10-24')).text).toBe('typed later here');
 	});
@@ -606,10 +609,7 @@ describe('import', () => {
 		);
 		await diary.quickAdd(MEHMET, { ...at('2026-10-20'), id: randomUUID() }, 350, 'Lunch out');
 		await diary.logFood(MEHMET, at('2026-10-20'), await catalog.getFood(MEHMET, kraker), 50, grams);
-		await portability.applyImport(
-			ZEYNEP,
-			fromElsewhere(await portability.exportArchive(MEHMET), S)
-		);
+		await applyImport(ZEYNEP, fromElsewhere(await portability.exportArchive(MEHMET), S));
 
 		// Zeynep deletes all of it; a month later the nightly purge removes it for good.
 		for (const e of await diary.day(ZEYNEP, '2026-10-20')) await diary.remove(ZEYNEP, e.id);
@@ -627,12 +627,9 @@ describe('import', () => {
 		expect(preview.counts.diary).toMatchObject({ new: 1, skipped: 2 });
 		expect(preview.counts.food).toMatchObject({ new: 0, skipped: 1 });
 		expect(preview.warnings).toContain('purged_skipped');
-		await portability.applyImport(ZEYNEP, second);
+		await applyImport(ZEYNEP, second);
 		await diary.quickAdd(MEHMET, { ...at('2026-10-22'), id: randomUUID() }, 90, 'Tea');
-		await portability.applyImport(
-			ZEYNEP,
-			fromElsewhere(await portability.exportArchive(MEHMET), S)
-		);
+		await applyImport(ZEYNEP, fromElsewhere(await portability.exportArchive(MEHMET), S));
 
 		expect(await diary.day(ZEYNEP, '2026-10-20')).toEqual([]);
 		const [later] = await diary.day(ZEYNEP, '2026-10-21');
@@ -647,7 +644,7 @@ describe('import', () => {
 		await diary.saveDayNote(ZEYNEP, DAY, 'old text', new Date('2026-10-25T09:00:00Z'));
 		await diary.saveDayNote(MEHMET, DAY, '', new Date('2026-10-25T10:00:00Z'));
 		const archive = fromElsewhere(await portability.exportArchive(MEHMET));
-		await portability.applyImport(ZEYNEP, archive);
+		await applyImport(ZEYNEP, archive);
 		expect((await diary.dayNote(ZEYNEP, DAY)).text).toBe('');
 	});
 
@@ -661,7 +658,7 @@ describe('import', () => {
 		let importing: Promise<unknown> | undefined;
 		await admin.begin(async (tx) => {
 			await tx`select 1 from day_notes where user_id = ${ZEYNEP} and local_date = ${DAY} for update`;
-			importing = portability.applyImport(ZEYNEP, archive);
+			importing = applyImport(ZEYNEP, archive);
 			await new Promise((r) => setTimeout(r, 500));
 			await tx`update day_notes set text = 'typed during the import', typed_at = '2026-10-25T11:00:00Z'
 				where user_id = ${ZEYNEP} and local_date = ${DAY}`;
@@ -681,7 +678,7 @@ describe('import', () => {
 		files['manifest.json'] = strToU8(JSON.stringify(manifest));
 		const older = zipSync(files);
 		expect(readArchive(older).data.savedMeals).toEqual([]);
-		await portability.applyImport(ZEYNEP, older);
+		await applyImport(ZEYNEP, older);
 		expect(await savedMeals.list(ZEYNEP)).toEqual([]);
 		expect(await count('diary_entries', ZEYNEP)).toBe(6);
 	});
@@ -689,9 +686,9 @@ describe('import', () => {
 	it('refuses the same file twice and adds only what is new from an overlapping later export', async () => {
 		await buildHistory();
 		const first = fromElsewhere(await portability.exportArchive(MEHMET), AYSE);
-		await portability.applyImport(ZEYNEP, first);
+		await applyImport(ZEYNEP, first);
 		expect((await portability.previewImport(ZEYNEP, first)).alreadyImported).toBe(true);
-		await expect(portability.applyImport(ZEYNEP, first)).rejects.toThrow(PortabilityError);
+		await expect(applyImport(ZEYNEP, first)).rejects.toThrow(PortabilityError);
 
 		await diary.quickAdd(
 			MEHMET,
@@ -706,7 +703,7 @@ describe('import', () => {
 		const preview = await portability.previewImport(ZEYNEP, second);
 		expect(preview.counts.diary).toEqual({ new: 1, unchanged: 6, changed: 0, skipped: 0 });
 		expect(preview.counts.food.new).toBe(0);
-		await portability.applyImport(ZEYNEP, second);
+		await applyImport(ZEYNEP, second);
 		expect(await count('diary_entries', ZEYNEP)).toBe(7);
 		expect(await count('weight_entries', ZEYNEP)).toBe(2);
 	});
@@ -724,14 +721,68 @@ describe('import', () => {
 			await portability.exportArchive(MEHMET, new Date('2026-10-05T00:00:00Z')),
 			AYSE
 		);
-		// Without one import at a time, both plan the same records as new: they would be added twice, or the second
-		// would fail on a row both add (her profile, her settings).
-		await Promise.all([
-			portability.applyImport(ZEYNEP, first),
-			portability.applyImport(ZEYNEP, second)
+		// Both previews first, then both imports at once. Without one import at a time, both plan the same records
+		// as new: they would be added twice, or the second would fail on a row both add (her profile, her settings).
+		// The second to run finds its plan changed by the first and is refused with the new one (A15).
+		const [a, b] = await Promise.all([
+			portability.previewImport(ZEYNEP, first),
+			portability.previewImport(ZEYNEP, second)
 		]);
+		const results = await Promise.allSettled([
+			portability.applyImport(ZEYNEP, first, a.confirm),
+			portability.applyImport(ZEYNEP, second, b.confirm)
+		]);
+		const refused = results.filter((r) => r.status === 'rejected');
+		expect(refused).toHaveLength(1);
+		const error = (refused[0] as PromiseRejectedResult).reason as PortabilityError;
+		expect(error.code).toBe('plan_changed');
+		const again = error.summary as { confirm: string };
+		await portability.applyImport(
+			ZEYNEP,
+			results[0].status === 'rejected' ? first : second,
+			again.confirm
+		);
 		expect(await count('diary_entries', ZEYNEP)).toBe(7);
 		expect(await count('weight_entries', ZEYNEP)).toBe(2);
+	});
+
+	it('counts settings it would import, so an archive with nothing else still has something to import', async () => {
+		await buildHistory();
+		const archive = fromElsewhere(await portability.exportArchive(MEHMET), AYSE);
+		await applyImport(ZEYNEP, archive);
+		await admin`delete from reminder_settings where user_id = ${ZEYNEP}`;
+		// The same records again (another file), now only the reminder times are new to her (A17).
+		const again = fromElsewhere(
+			await portability.exportArchive(MEHMET, new Date('2026-10-06')),
+			AYSE
+		);
+		const preview = await portability.previewImport(ZEYNEP, again);
+		expect(preview.counts.diary.new).toBe(0);
+		expect(preview.counts.settings).toMatchObject({ new: 1, unchanged: 1 });
+		await portability.applyImport(ZEYNEP, again, preview.confirm);
+		const [row] =
+			await admin`select count(*)::int as n from reminder_settings where user_id = ${ZEYNEP}`;
+		expect(row.n).toBe(1);
+	});
+
+	it('imports only what the preview showed: a stale or missing confirmation is refused with the new plan', async () => {
+		await buildHistory();
+		const archive = fromElsewhere(await portability.exportArchive(MEHMET), AYSE);
+		await expect(portability.applyImport(ZEYNEP, archive, '')).rejects.toMatchObject({
+			code: 'plan_changed'
+		});
+		const preview = await portability.previewImport(ZEYNEP, archive);
+		expect(preview.counts.diary.new).toBe(6);
+		// Another device adds one of the same records before this import runs: the plan is no longer the preview.
+		await applyImport(
+			ZEYNEP,
+			fromElsewhere(await portability.exportArchive(MEHMET, new Date('2026-10-06')), AYSE)
+		);
+		await expect(portability.applyImport(ZEYNEP, archive, preview.confirm)).rejects.toMatchObject({
+			code: 'plan_changed',
+			summary: { counts: { diary: { new: 0 } } }
+		});
+		expect(await count('diary_entries', ZEYNEP)).toBe(6);
 	});
 
 	it('keeps the current version of changed records, existing targets and an existing profile', async () => {
@@ -755,7 +806,7 @@ describe('import', () => {
 		expect(changed.counts.diary).toMatchObject({ unchanged: 5, changed: 1 });
 		expect(changed.counts.profile).toMatchObject({ skipped: 1 });
 		expect(changed.warnings).toEqual(expect.arrayContaining(['changed_kept', 'profile_kept']));
-		await portability.applyImport(MEHMET, archive);
+		await applyImport(MEHMET, archive);
 		expect((await diary.get(MEHMET, entry.id)).meal).toBe('lunch');
 		expect((await goals.profile(MEHMET))?.heightCm).toBe(181);
 		expect(await count('diary_entries', MEHMET)).toBe(6);
@@ -770,7 +821,7 @@ describe('import', () => {
 		const other = await portability.previewImport(ZEYNEP, archive);
 		expect(other.counts.target).toEqual({ new: 0, unchanged: 0, changed: 0, skipped: 2 });
 		expect(other.warnings).toContain('targets_kept');
-		await portability.applyImport(ZEYNEP, archive);
+		await applyImport(ZEYNEP, archive);
 		expect((await goals.targetFor(ZEYNEP, '2026-10-05'))?.baseBurnKcal).toBe(1900);
 	});
 
@@ -780,7 +831,7 @@ describe('import', () => {
 		const preview = await portability.previewImport(ZEYNEP, archive);
 		// Mehmet's own foods are invisible to Zeynep and become her copies; the built-in bread and ayran are reused.
 		expect(preview.counts.food).toEqual({ new: 4, unchanged: 2, changed: 0, skipped: 0 });
-		await portability.applyImport(ZEYNEP, archive);
+		await applyImport(ZEYNEP, archive);
 		// Her copy of the recipe is a working recipe of her own, its ingredients linked to foods she can see.
 		const [recipe] = await admin`select food_id from recipes where owner_id = ${ZEYNEP}`;
 		const ingredients = await admin`select food_id from recipe_ingredients
@@ -788,7 +839,7 @@ describe('import', () => {
 		expect(ingredients).toHaveLength(2);
 		expect(ingredients.every((i) => i.food_id !== null)).toBe(true);
 		// The same file again is refused, so no second ingredient list appears.
-		await expect(portability.applyImport(ZEYNEP, archive)).rejects.toThrow('already_imported');
+		await expect(applyImport(ZEYNEP, archive)).rejects.toThrow('already_imported');
 		expect(await admin`select 1 from recipes where owner_id = ${ZEYNEP}`).toHaveLength(1);
 		const linked = await admin`select food_id from diary_entries
 			where user_id = ${ZEYNEP} and local_date = '2026-10-01' and meal = 'breakfast'`;
@@ -823,7 +874,7 @@ describe('import', () => {
 				'manifest.json': strToU8(JSON.stringify(manifest))
 			})
 		);
-		await portability.applyImport(ZEYNEP, archive);
+		await applyImport(ZEYNEP, archive);
 		const hers =
 			await admin`select name, origin, derived_from from foods where owner_id = ${ZEYNEP}`;
 		expect(hers.map((f) => f.origin)).not.toContain('curated');
@@ -855,7 +906,7 @@ describe('import', () => {
 			'data/weight.json': bytes,
 			'manifest.json': strToU8(JSON.stringify(manifest))
 		});
-		await expect(portability.applyImport(ZEYNEP, archive)).rejects.toThrow();
+		await expect(applyImport(ZEYNEP, archive)).rejects.toThrow();
 		for (const table of ['diary_entries', 'weight_entries', 'import_files', 'import_identities'])
 			expect(await count(table, ZEYNEP)).toBe(0);
 	});
