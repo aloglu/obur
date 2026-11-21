@@ -263,14 +263,26 @@ claim_local_repository() {
 }
 
 archive_status() {
-	local row
+	local row waiting=0 oldest=''
 	row=$("${PSQL[@]}" -c "select coalesce(to_char(last_archived_time at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'), ''),
 		failed_count, coalesce(to_char(last_failed_time at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'), '')
 		from pg_stat_archiver" 2>/dev/null) || return 0
 	IFS='|' read -r archived failed failed_at <<<"$row"
+	# WAL files PostgreSQL finished but has not archived yet, and since when the oldest waits: a stuck archiver
+	# shows here even when it records no failure, and an idle database has none (2026-11-21 audit, A12).
+	local ready=${PGBACKREST_PG1_PATH:-/var/lib/postgresql/18/docker}/pg_wal/archive_status
+	if [[ -d $ready ]]; then
+		waiting=$(find "$ready" -maxdepth 1 -name '*.ready' | wc -l)
+		if ((waiting > 0)); then
+			oldest=$(find "$ready" -maxdepth 1 -name '*.ready' -printf '%T@\n' | sort -n | head -1)
+			oldest=$(date -u -d "@${oldest%.*}" +%Y-%m-%dT%H:%M:%SZ)
+		fi
+	fi
 	status --arg a "$archived" --arg f "$failed_at" --argjson n "${failed:-0}" \
+		--argjson w "$waiting" --arg o "$oldest" \
 		'.archive = {lastArchivedAt: (if $a == "" then null else $a end), failedCount: $n,
-			lastFailedAt: (if $f == "" then null else $f end)}'
+			lastFailedAt: (if $f == "" then null else $f end),
+			waiting: $w, oldestWaitingAt: (if $o == "" then null else $o end)}'
 }
 
 # A backup of type $1 to every repository, or with "local" after it only to the local one, as if no off-site store
@@ -472,6 +484,8 @@ scheduler() {
 			restore_check || true
 		fi
 		archive_status || true
+		# The scheduler is alive: a status file that stops changing says it is not (A12).
+		status --argjson every "$TICK_SECONDS" '.scheduler = {at: $now, everySeconds: $every}' || true
 		sleep "$TICK_SECONDS"
 	done
 }

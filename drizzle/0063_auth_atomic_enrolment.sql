@@ -7,9 +7,9 @@
 -- A05: finishing recovery removes the passkeys before the sessions, so a sign-in that verified a passkey and is
 -- committing its session either finishes first (and its session is then removed) or finds the passkey gone.
 
-DROP FUNCTION auth_bootstrap_admin(text, uuid, text, text, text, bigint, text[], text, boolean, text);
+DROP FUNCTION IF EXISTS auth_bootstrap_admin(text, uuid, text, text, text, bigint, text[], text, boolean, text);
 --> statement-breakpoint
-DROP FUNCTION auth_redeem_invite(text, uuid, text, text, text, bigint, text[], text, boolean, text);
+DROP FUNCTION IF EXISTS auth_redeem_invite(text, uuid, text, text, text, bigint, text[], text, boolean, text);
 --> statement-breakpoint
 
 CREATE FUNCTION auth_bootstrap_admin(

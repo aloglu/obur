@@ -4,7 +4,16 @@ export interface BackupStatusFile {
 	offsiteConfigured?: boolean;
 	lastBackup?: { at: string; type: string; ok: boolean; repos: Record<string, boolean> };
 	lastSuccessfulBackupAt?: string;
-	archive?: { lastArchivedAt: string | null; failedCount: number; lastFailedAt: string | null };
+	archive?: {
+		lastArchivedAt: string | null;
+		failedCount: number;
+		lastFailedAt: string | null;
+		/** Finished WAL files not archived yet, and since when the oldest waits (absent before 2026-11-21). */
+		waiting?: number;
+		oldestWaitingAt?: string | null;
+	};
+	/** The scheduler's last look at the time, and how often it looks (absent before 2026-11-21). */
+	scheduler?: { at: string; everySeconds: number };
 	lastRestoreCheck?: { at: string; ok: boolean; detail: string };
 	/** The same check restoring from the off-site copy (when one is configured). */
 	lastOffsiteRestoreCheck?: { at: string; ok: boolean; detail: string };
@@ -25,6 +34,8 @@ export type BackupProblem =
 	| 'offsite_behind'
 	| 'offsite_gap'
 	| 'archive_failing'
+	| 'archive_behind'
+	| 'scheduler_stopped'
 	| 'restore_check_failed'
 	| 'restore_check_stale'
 	| 'offsite_restore_failed'
@@ -46,6 +57,11 @@ export const BACKUP_MAX_AGE_MS = 36 * HOUR;
 export const RESTORE_CHECK_MAX_AGE_MS = 8 * 24 * HOUR;
 /** A store that answers again within the hour is not worth a warning. */
 export const OFFSITE_BEHIND_MAX_AGE_MS = HOUR;
+/** Changes are archived within minutes (archive_timeout is 5); half an hour waiting means the archive is stuck. */
+export const ARCHIVE_BEHIND_MAX_AGE_MS = HOUR / 2;
+/** The scheduler looks every few minutes; three missed looks (at least half an hour) mean it has stopped. */
+export const schedulerMaxAgeMs = (everySeconds: number) =>
+	Math.max(HOUR / 2, 3 * everySeconds * 1000);
 
 export function assessBackups(
 	status: BackupStatusFile | null,
@@ -71,6 +87,13 @@ export function assessBackups(
 		// Failing now: the latest failure is newer than the latest success.
 		if (archive?.lastFailedAt && age(archive.lastFailedAt) < age(archive.lastArchivedAt))
 			problems.push('archive_failing');
+		else if (archive?.waiting && age(archive.oldestWaitingAt) > ARCHIVE_BEHIND_MAX_AGE_MS)
+			problems.push('archive_behind');
+		if (
+			status.scheduler &&
+			age(status.scheduler.at) > schedulerMaxAgeMs(status.scheduler.everySeconds)
+		)
+			problems.push('scheduler_stopped');
 		if (status.lastRestoreCheck && !status.lastRestoreCheck.ok)
 			problems.push('restore_check_failed');
 		else if (age(status.lastRestoreCheck?.at) > RESTORE_CHECK_MAX_AGE_MS)

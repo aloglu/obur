@@ -49,6 +49,14 @@ for _ in $(seq 30); do
 	sleep 2
 done
 [[ $(docker exec "$name" obur backup info) == *'full backup'* ]] || fail "no first backup"
+# The status says the scheduler is alive and how many changes wait to be archived (A12).
+for _ in $(seq 30); do
+	docker exec "$name" jq -e '.scheduler.at and (.archive.waiting | type == "number")' /data/status/backup.json \
+		>/dev/null 2>&1 && break
+	sleep 2
+done
+docker exec "$name" jq -e '.scheduler.at and (.archive.waiting | type == "number")' /data/status/backup.json \
+	>/dev/null || fail "no scheduler time or archive backlog in the backup status"
 if docker exec -u node "$name" psql -h 127.0.0.1 -U obur_admin -d obur -c 'select 1' </dev/null >/dev/null 2>&1; then
 	fail "the app's user reached the database as administrator"
 fi
@@ -120,8 +128,8 @@ sql "delete from schema_migrations where name = '9999_from_a_newer_version'" >/d
 docker restart -t 60 "$name" >/dev/null
 ready_again 4 "not ready again with a database it knows"
 # An upgrade with the local backups gone (a new backup disk) takes a full backup before it changes anything (A03).
-# The last database step only rebuilds an index, so it can run again: removing its row makes it pending.
-sql "delete from schema_migrations where name = '$(jq -r '.entries[-1].tag' "$(dirname "$0")/../../drizzle/meta/_journal.json")'" >/dev/null
+# One database step only rebuilds an index, so it can run again: removing its row makes it pending.
+sql "delete from schema_migrations where name = '0061_reindex_food_search_pg_18_7'" >/dev/null
 docker stop -t 60 "$name" >/dev/null
 docker run --rm -v "$data:/d" --entrypoint bash "$image" -c 'rm -rf /d/backups/*' || fail "removing the backups"
 docker start "$name" >/dev/null

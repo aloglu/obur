@@ -912,6 +912,8 @@
 	"backup_offsite_behind": "Sunucu dışı depoya ulaşılamıyor. Bu sunucudaki yedekler sürüyor; son değişiklikler sunucu dışına kopyalanmayı bekliyor.",
 	"backup_offsite_gap": "Sunucu dışı depoya çok uzun süre ulaşılamadı, bu yüzden sunucu dışı kopyada bazı değişiklikler eksik. Ona ulaşan bir sonraki yedek kopyayı yeniden tamamlar.",
 	"backup_archive_failing": "Son değişiklikler arşivlenmiyor. Gece yedekleri arasındaki dönem eksik kalıyor.",
+	"backup_archive_behind": "Son değişiklikler yarım saatten uzun süredir arşivlenmeyi bekliyor. Şimdi geri yüklense bunlar eksik kalır.",
+	"backup_scheduler_stopped": "Yedek zamanlayıcısı durdu, yeni yedek ya da denetim çalışmıyor. obur kapsayıcısını yeniden başlatın.",
 	"backup_restore_check_failed": "Son geri yükleme denetimi başarısız oldu. Yedekler geri yüklenemeyebilir.",
 	"backup_restore_check_stale": "Son bir haftada başarılı bir geri yükleme denetimi olmadı.",
 	"backup_offsite_restore_failed": "Sunucu dışı kopyadan yapılan son geri yükleme denetimi başarısız oldu. O kopya geri yüklenemeyebilir.",

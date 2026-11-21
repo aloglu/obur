@@ -38,6 +38,11 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   saved (the recovery session records it; a new attempt replaces the earlier session). Database tests: ten
   sign-in/recovery races, a removed passkey, a failed invite redemption keeps the invite, abandoned recovery
   keeps the code, links reusable until recovery finishes. Auth browser tests pass.
+- A12 done: the scheduler writes `scheduler.at` every tick, and the archive status counts finished WAL not yet
+  archived with the oldest one's age. Members warns when changes wait over half an hour (an idle database has
+  none waiting) and when the scheduler missed three looks (at least half an hour). Unit tests; the smoke test
+  checks both fields. The smoke test's upgrade step now re-runs 0061 by name (0063 can't run twice; its DROPs
+  are IF EXISTS anyway). Smoke and off-site outage tests pass.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

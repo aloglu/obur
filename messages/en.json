@@ -912,6 +912,8 @@
 	"backup_offsite_behind": "The off-site store can't be reached. Backups on this server continue; recent changes wait to be copied off-site.",
 	"backup_offsite_gap": "The off-site store was out of reach for too long, so the off-site copy misses some changes. The next backup that reaches it makes it complete again.",
 	"backup_archive_failing": "Recent changes are not being archived. Backups between nightly runs are incomplete.",
+	"backup_archive_behind": "Recent changes have waited over half an hour to be archived. A restore now would miss them.",
+	"backup_scheduler_stopped": "The backup timer has stopped, so no new backups or checks run. Restart the obur container.",
 	"backup_restore_check_failed": "The last restore check failed. The backups may not be restorable.",
 	"backup_restore_check_stale": "No restore check has passed in the last week.",
 	"backup_offsite_restore_failed": "The last restore check from the off-site copy failed. That copy may not be restorable.",

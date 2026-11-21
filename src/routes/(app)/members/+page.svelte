@@ -118,6 +118,8 @@
 		offsite_behind: m.backup_offsite_behind,
 		offsite_gap: m.backup_offsite_gap,
 		archive_failing: m.backup_archive_failing,
+		archive_behind: m.backup_archive_behind,
+		scheduler_stopped: m.backup_scheduler_stopped,
 		restore_check_failed: m.backup_restore_check_failed,
 		restore_check_stale: m.backup_restore_check_stale,
 		offsite_restore_failed: m.backup_offsite_restore_failed,

@@ -51,6 +51,28 @@ describe('assessBackups', () => {
 		expect(assessBackups(failing, now, true).problems).toEqual(['archive_failing']);
 	});
 
+	it('flags changes waiting too long to be archived, but not an idle database (A12)', () => {
+		const archive = { ...healthy.archive!, waiting: 3, oldestWaitingAt: '2026-10-29T11:20:00Z' };
+		expect(assessBackups({ ...healthy, archive }, now, true).problems).toEqual(['archive_behind']);
+		const recent = { ...archive, oldestWaitingAt: '2026-10-29T11:50:00Z' };
+		expect(assessBackups({ ...healthy, archive: recent }, now, true).problems).toEqual([]);
+		// Nothing written for days: nothing waits, nothing to warn about.
+		const idle = {
+			...healthy.archive!,
+			lastArchivedAt: '2026-10-20T00:00:00Z',
+			waiting: 0,
+			oldestWaitingAt: null
+		};
+		expect(assessBackups({ ...healthy, archive: idle }, now, true).problems).toEqual([]);
+	});
+
+	it('flags a scheduler that stopped looking at the time (A12)', () => {
+		const alive = { ...healthy, scheduler: { at: '2026-10-29T11:55:00Z', everySeconds: 600 } };
+		expect(assessBackups(alive, now, true).problems).toEqual([]);
+		const stopped = { ...healthy, scheduler: { at: '2026-10-29T11:00:00Z', everySeconds: 600 } };
+		expect(assessBackups(stopped, now, true).problems).toEqual(['scheduler_stopped']);
+	});
+
 	it('flags a failed or overdue restore check', () => {
 		const failed = { ...healthy, lastRestoreCheck: { ...healthy.lastRestoreCheck!, ok: false } };
 		expect(assessBackups(failed, now, true).problems).toEqual(['restore_check_failed']);
