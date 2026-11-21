@@ -102,6 +102,8 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   (the inherited 5432 port), A42 (an old search comment removed), A48 (`VAPID_SUBJECT` reaches the push services),
   A49 (owner's decision: about five weeks of backups, `OBUR_BACKUP_KEEP_WEEKS`; no monthly points), A50 (`labels/`
   and `LABELS_URL` in the design).
+- A41 done: the accessibility test checks every page route the build has (it fails for a page without a check),
+  now with recipe and saved-meal detail pages and the public sign-in, setup, join and recovery pages. Passed.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
