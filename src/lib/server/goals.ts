@@ -4,6 +4,7 @@ import { createGoals, GoalError, type BudgetChange } from '#lib/server/modules/g
 import { latestWeightKg } from '#lib/server/modules/body/index.ts';
 import { localDate } from '#lib/shared/diary-rules.ts';
 import { db } from './db/index.ts';
+import { describeError } from './log.ts';
 
 export const goals = createGoals(db);
 
@@ -21,7 +22,7 @@ export async function followLatestWeight(
 		const today = localDate(new Date(), zone);
 		return await goals.followWeight(userId, today, (tx) => latestWeightKg(tx, today));
 	} catch (e) {
-		console.error('Budget recalculation after a weight change failed', (e as Error).name);
+		console.error('Budget recalculation after a weight change failed', describeError(e));
 		return null;
 	}
 }

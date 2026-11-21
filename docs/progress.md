@@ -17,6 +17,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
 - C07 done: at most 10 API key checks per person in 15 minutes (429 `rate_limited`, the sheet says to wait).
   Own-key e2e pass.
 - C08 done: design.md's account-deletion paragraph no longer describes uploads, caches or offline phones.
+- C11 done: a stale doc comment, an unused `errorFor` argument, an unused type; a failed budget follow now logs
+  `describeError`.
 
 ## Second 1.0 audit (owner's go, 2026-11-21)
 

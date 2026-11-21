@@ -20,8 +20,8 @@ describe('refusals', () => {
 		['openai', 429, { error: { code: 'rate_limit_exceeded' } }, 'provider_busy'],
 		['openrouter', 502, null, 'provider_unavailable'],
 		['openai', 500, null, 'provider_unavailable']
-	] as const)('%s %i means %s', (provider, status, body, want) => {
-		expect(errorFor(provider, status, body)).toBe(want);
+	] as const)('%s %i means %s', (_provider, status, body, want) => {
+		expect(errorFor(status, body)).toBe(want);
 	});
 });
 

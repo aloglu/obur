@@ -40,7 +40,7 @@ function base(provider: Provider): string {
 }
 
 /** What a provider's refusal means for the person. */
-export function errorFor(provider: Provider, status: number, body: unknown): RemoteError {
+export function errorFor(status: number, body: unknown): RemoteError {
 	const code = JSON.stringify(body ?? '').toLowerCase();
 	if (status === 401 || status === 403) return 'key_refused';
 	if (status === 402 || code.includes('insufficient_quota') || code.includes('credit'))
@@ -127,7 +127,7 @@ async function call(
 		throw new RemoteFailure('provider_unavailable');
 	}
 	const body = await response.json().catch(() => null);
-	if (!response.ok) throw new RemoteFailure(errorFor(provider, response.status, body));
+	if (!response.ok) throw new RemoteFailure(errorFor(response.status, body));
 	return body;
 }
 

@@ -27,7 +27,6 @@ export type Achievement =
 	| { kind: 'goal'; level: number; date: string }
 	| { kind: 'streak'; level: number; date: string }
 	| { kind: 'first'; level: First; date: string };
-export type AchievementKind = Achievement['kind'];
 
 /** One achievement's identity: what is reached once only. */
 export const achievementKey = (a: Pick<Achievement, 'kind' | 'level'>) => `${a.kind}:${a.level}`;

@@ -301,7 +301,6 @@ export function createBody(db: Database, now: () => Date = () => new Date()) {
 			return rows.map((r) => ({ localDate: r.localDate, ml: Number(r.ml) }));
 		},
 
-		/** The first day with a live weigh-in, or null. */
 		/** The first day with a weigh-in, water or activity (Progress → All starts at the earliest of anything). */
 		async firstDay(userId: string): Promise<string | null> {
 			const [row] = await withUser(db, userId, (tx) =>
