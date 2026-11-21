@@ -20,6 +20,8 @@ export interface CalendarDay {
 	date: string;
 	status: DayStatus;
 	eatenKcal: number;
+	/** Some entries have no calorie value, so eatenKcal is partial (A43). */
+	partial: boolean;
 	budgetKcal: number | null;
 	/** eaten ÷ budget, capped at 1. */
 	fill: number;
@@ -82,6 +84,8 @@ export function shiftMonth(month: string, delta: number): string {
 export interface MonthData {
 	/** Energy eaten per logged day (days with at least one entry). */
 	eaten: Map<string, number>;
+	/** Days whose total is partial: some entries have no calorie value. */
+	partial?: Set<string>;
 	/** Counted activity per day. */
 	activity: Map<string, number>;
 	completed: Set<string>;
@@ -102,6 +106,15 @@ export function calendarDays(month: string, today: string, data: MonthData): Cal
 		else if (budgetKcal === null) status = 'no_budget';
 		else if (eatenKcal > budgetKcal) status = 'over';
 		else status = data.completed.has(date) ? 'under' : 'incomplete';
-		return { date, status, eatenKcal, budgetKcal, fill: status === 'over' ? 1 : fill, isToday };
+		const partial = data.partial?.has(date) ?? false;
+		return {
+			date,
+			status,
+			eatenKcal,
+			partial,
+			budgetKcal,
+			fill: status === 'over' ? 1 : fill,
+			isToday
+		};
 	});
 }

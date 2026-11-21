@@ -37,6 +37,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const completed = new Set(completedDays);
 	const calendar = calendarDays(month, today, {
 		eaten: new Map(eaten.map((d) => [d.localDate, d.kcal])),
+		partial: new Set(eaten.filter((d) => d.kcalMissing > 0).map((d) => d.localDate)),
 		activity: new Map(activity.map((d) => [d.localDate, d.kcal])),
 		completed,
 		versions

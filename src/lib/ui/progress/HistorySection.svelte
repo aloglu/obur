@@ -103,7 +103,8 @@
 	});
 	const calorieValue = $derived.by(() => {
 		const value = lookedBar ? lookedBar.eatenKcal : a.eatenKcal.value;
-		return value === null ? '–' : kcal(value);
+		const partial = lookedBar ? lookedBar.partial : a.eatenPartial;
+		return value === null ? '–' : `${kcal(value)}${partial ? '+' : ''}`;
 	});
 	function barSub(b: CalorieBar): string {
 		if (b.eatenKcal === null) return m.journal_nothing_logged();

@@ -13,12 +13,34 @@
 
 	interface Props {
 		eaten: number;
+		/** Entries without a calorie value: the eaten total is partial, or unknown when it is all of them (A43). */
+		unknownEntries?: number;
+		allUnknown?: boolean;
 		budget: DayBudget | null;
 		manual: boolean;
 		floor: number;
 		onaddactivity: () => void;
 	}
-	let { eaten, budget, manual, floor, onaddactivity }: Props = $props();
+	let {
+		eaten,
+		unknownEntries = 0,
+		allUnknown = false,
+		budget,
+		manual,
+		floor,
+		onaddactivity
+	}: Props = $props();
+	// Unknown is not zero (docs/design.md): a partial total says so with "+", an unknown one is "?".
+	const eatenText = $derived(allUnknown ? '?' : `${kcal(eaten)}${unknownEntries ? '+' : ''}`);
+	const note = $derived(
+		allUnknown
+			? m.budget_eaten_unknown()
+			: unknownEntries === 1
+				? m.budget_eaten_partial_one()
+				: unknownEntries
+					? m.budget_eaten_partial({ count: unknownEntries })
+					: null
+	);
 
 	let showBreakdown = $state(false);
 	const total = $derived(budget?.budget ?? null);
@@ -37,7 +59,10 @@
 				class={[
 					'font-display text-[2.875rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums',
 					over && 'text-bad'
-				]}><Roll value={kcal(total ? Math.abs(total - eaten) : eaten)} /></span
+				]}
+				>{#if allUnknown}?{:else}<Roll
+						value={kcal(total ? Math.abs(total - eaten) : eaten)}
+					/>{#if !total && unknownEntries}+{/if}{/if}</span
 			>
 			<span class={['ml-1 text-[0.9375rem] font-[650]', over ? 'text-bad' : 'text-muted']}
 				>{#if total}<Swap
@@ -82,7 +107,7 @@
 		<div class="-mb-3 flex items-center justify-between gap-3 text-[0.875rem] text-muted">
 			<span class="flex items-center gap-1.5 whitespace-nowrap"
 				>{m.budget_eaten()}<b class="font-bold text-text tabular-nums"
-					><Roll value={kcal(eaten)} /></b
+					>{#if allUnknown || unknownEntries}{eatenText}{:else}<Roll value={kcal(eaten)} />{/if}</b
 				></span
 			>
 			<button
@@ -103,6 +128,9 @@
 				/>
 			</button>
 		</div>
+		{#if note}<p class="mt-3 text-[0.8125rem] text-muted" data-testid="budget-unknown">
+				{note}
+			</p>{/if}
 		<div class={['collapse-row', showBreakdown && 'open']}>
 			<div>
 				<dl id="budget-breakdown" class="-mb-2 flex flex-col pt-5 text-[0.875rem]">
@@ -133,5 +161,7 @@
 				</dl>
 			</div>
 		</div>
+	{:else if note}
+		<p class="mt-2 text-[0.8125rem] text-muted" data-testid="budget-unknown">{note}</p>
 	{/if}
 </section>

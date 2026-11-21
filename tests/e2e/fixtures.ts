@@ -121,3 +121,8 @@ export async function openCaloriesOnly(page: Page): Promise<void> {
 	await page.getByRole('searchbox').fill('zzzz');
 	await page.getByRole('button', { name: 'Log calories only' }).click();
 }
+
+/** Removes an entry's calorie value, as an imported entry without one has (review screenshots only). */
+export async function withoutCalories(entryId: string): Promise<void> {
+	await sql`update diary_entries set nutrients = nutrients - 'energy_kcal' where id = ${entryId}`;
+}

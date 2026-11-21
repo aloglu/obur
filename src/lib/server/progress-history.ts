@@ -46,6 +46,7 @@ export async function loadHistory(
 		days: days.map((d) => ({
 			date: d.localDate,
 			eatenKcal: d.kcal,
+			eatenPartial: d.kcalMissing > 0,
 			complete: done.has(d.localDate),
 			protein: d.protein,
 			carbohydrate: d.carbohydrate,
