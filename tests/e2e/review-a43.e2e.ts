@@ -23,6 +23,32 @@ async function shot(page: Page, name: string, theme: string) {
 	await page.screenshot({ path: `${OUT}/${name}-${theme}.jpg`, type: 'jpeg', quality: 85 });
 }
 
+/** Shows the page as main draws it today: no "+", "?" or note (the only differences on this branch). */
+async function asToday(page: Page, eaten: string, left?: string) {
+	await page.evaluate(
+		({ eaten, left }) => {
+			document.querySelector('[data-testid="budget-unknown"]')?.remove();
+			const card = document.querySelector('section[aria-label]');
+			for (const b of card?.querySelectorAll('b') ?? [])
+				if (/^(\d[\d,]*\+|\?)$/.test(b.textContent!.trim())) b.textContent = eaten;
+			if (left)
+				for (const sp of card?.querySelectorAll('span') ?? [])
+					if (sp.textContent!.trim() === '?') sp.textContent = left;
+		},
+		{ eaten, left }
+	);
+}
+
+async function noPlus(page: Page) {
+	await page.evaluate(() => {
+		const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+		for (let n = walk.nextNode(); n; n = walk.nextNode())
+			if (n.textContent === '+') n.textContent = '';
+			else if (/^\d[\d,]*\+$/.test(n.textContent!.trim()))
+				n.textContent = n.textContent!.replace('+', '');
+	});
+}
+
 for (const theme of ['light', 'dark'] as const) {
 	test(`A43 screens (${theme})`, async ({ page, context }) => {
 		mkdirSync(OUT, { recursive: true });
@@ -84,11 +110,17 @@ for (const theme of ['light', 'dark'] as const) {
 		await shot(page, '1-today-partial-note', theme);
 		await page.evaluate(() => document.querySelector('[data-testid="budget-unknown"]')?.remove());
 		await shot(page, '2-today-partial-plain', theme);
+		await asToday(page, '455');
+		await shot(page, '2-today-partial-now', theme);
 		await page.goto(`/journal?day=${today}`);
 		await shot(page, '4-journal-partial', theme);
+		await noPlus(page);
+		await shot(page, '4-journal-now', theme);
 		await page.goto('/progress');
 		await page.getByRole('tab', { name: 'Calories' }).click();
 		await shot(page, '5-progress', theme);
+		await noPlus(page);
+		await shot(page, '5-progress-now', theme);
 		// Only the entry without calories left: the total is unknown.
 		const day = await apiAs<{
 			entries: { id: string; description?: string; food?: { name: string } }[];
@@ -98,5 +130,7 @@ for (const theme of ['light', 'dark'] as const) {
 				await apiAs(page, 'POST', `/api/v1/diary/entries/${e.id}?action=delete`, {});
 		await page.goto('/');
 		await shot(page, '3-today-unknown', theme);
+		await asToday(page, '0', '1602');
+		await shot(page, '3-today-unknown-now', theme);
 	});
 }
