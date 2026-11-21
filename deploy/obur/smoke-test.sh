@@ -62,6 +62,14 @@ for _ in $(seq 30); do
 done
 docker exec "$name" jq -e '.scheduler.at and (.archive.waiting | type == "number")' /data/status/backup.json \
 	>/dev/null || fail "no scheduler time or archive backlog in the backup status"
+# The web app and the worker run as different users, and neither can read the other's settings (A32).
+owner() {
+	docker exec "$name" bash -c "for p in /proc/[0-9]*; do grep -qa '$1' \$p/cmdline 2>/dev/null && stat -c %U \$p && break; done"
+}
+[[ $(owner server.js) == node && $(owner scripts/worker.ts) == obur-worker ]] ||
+	fail "web app runs as $(owner server.js), worker as $(owner scripts/worker.ts)"
+docker exec -u node "$name" bash -c "for p in /proc/[0-9]*; do grep -qa scripts/worker.ts \$p/cmdline 2>/dev/null && cat \$p/environ; done" \
+	2>/dev/null | grep -qa VAPID_PRIVATE_KEY && fail "the web app's user can read the worker's settings"
 if docker exec -u node "$name" psql -h 127.0.0.1 -U obur_admin -d obur -c 'select 1' </dev/null >/dev/null 2>&1; then
 	fail "the app's user reached the database as administrator"
 fi

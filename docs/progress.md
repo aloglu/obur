@@ -93,6 +93,11 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   older archives counted lines). Database tests.
 - A08 done: at most five open passkey prompts per account (a new one replaces that account's oldest, never
   someone else's), and 30 signed-in prompt requests per account in 15 minutes. Unit test.
+- A31 + A32 done: the web server gets `ORIGIN=PUBLIC_ORIGIN`, so request addresses never come from proxy headers
+  and match the passkey checks; PUBLIC_ORIGIN must be exactly an origin (https, or http on localhost only; no
+  path, query, fragment or user). The worker runs as its own user `obur-worker` (uid 1001); the smoke test checks
+  both users and that the web app's user can't read the worker's settings. Smoke, off-site outage, off-site
+  restore and upgrade-from-beta.19 tests pass.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 

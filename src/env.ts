@@ -16,7 +16,15 @@ export const variables = defineEnvVars({
 			v.check((value) => {
 				const url = new URL(value);
 				const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-				return (url.protocol === 'https:' || local) && url.pathname === '/' && !url.search;
+				// Exactly an origin: https, or http on this machine only; no path, query, fragment or user (A31).
+				return (
+					(url.protocol === 'https:' || (url.protocol === 'http:' && local)) &&
+					url.pathname === '/' &&
+					!url.search &&
+					!url.hash &&
+					!url.username &&
+					!url.password
+				);
 			}, 'PUBLIC_ORIGIN must be an https origin without a path (http allowed only for localhost)'),
 			v.transform((value) => new URL(value).origin)
 		)

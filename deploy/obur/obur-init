@@ -192,8 +192,10 @@ app_env() {
 	exec env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp TZ="${TZ:-UTC}" NODE_ENV=production "$@"
 }
 
+# ORIGIN: the web server builds every request's address from the same PUBLIC_ORIGIN the passkey and form checks
+# use, never from a proxy's Host or protocol headers, so the two can't disagree (2026-11-21 audit, A31).
 start_web() {
-	(cd /app && app_env PORT=3000 BODY_SIZE_LIMIT=21M PROTOCOL_HEADER="${PROTOCOL_HEADER:-x-forwarded-proto}" \
+	(cd /app && app_env PORT=3000 BODY_SIZE_LIMIT=21M ORIGIN="$PUBLIC_ORIGIN" \
 		PUBLIC_ORIGIN="$PUBLIC_ORIGIN" WEBAUTHN_RP_ID="$WEBAUTHN_RP_ID" DATABASE_URL="$OBUR_APP_URL" \
 		OBUR_STATUS_DIR="$OBUR_STATUS_DIR" SPEECH_URL="${SPEECH_URL:-}" LABELS_URL="${LABELS_URL:-}" \
 		VAPID_PUBLIC_KEY="$VAPID_PUBLIC_KEY" OBUR_SECRETS_KEY="$OBUR_SECRETS_KEY" \
@@ -202,10 +204,12 @@ start_web() {
 	web_pid=$!
 }
 
+# Its own system user (2026-11-21 audit, A32): the web app and the worker can't read each other's settings (database
+# passwords, the reminder signing key) from the other's process.
 start_worker() {
 	(cd /app && app_env DATABASE_WORKER_URL="$OBUR_WORKER_URL" WORKER_CONCURRENCY="${WORKER_CONCURRENCY:-1}" \
 		VAPID_PUBLIC_KEY="$VAPID_PUBLIC_KEY" VAPID_PRIVATE_KEY="$VAPID_PRIVATE_KEY" VAPID_SUBJECT="$VAPID_SUBJECT" \
-		OBUR_PREVIEW_LANGUAGES="${OBUR_PREVIEW_LANGUAGES:-}" gosu node node scripts/worker.ts) &
+		OBUR_PREVIEW_LANGUAGES="${OBUR_PREVIEW_LANGUAGES:-}" gosu obur-worker node scripts/worker.ts) &
 	worker_pid=$!
 }
 
