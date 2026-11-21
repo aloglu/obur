@@ -113,6 +113,13 @@ Order: data-loss and privacy fixes, then small fixes, then documents; one commit
   both add-ons) passed. Not yet built: A43 (unknown calories shown as 0 on Today and Progress); next step: build
   it on branch `a43-unknown-energy` with the Nutrients card's "+"/"?" pattern and publish a screenshot review
   page for the owner. Not tagged (ask first).
+- A43 built on branch `a43-unknown-energy` (pushed, not merged): Today's budget card shows "455+" and a note when an
+  entry has no calories, "?" and a note when none has; Journal day box, calendar labels, Progress bars and
+  average carry "+". Tests pass on the branch (Vitest 1221, database 284). Review page published (private):
+  https://claude.ai/artifact/JK1oo3v2zWiqPbZ8jXoN92, db collection `picks`, docs `today-partial` (note|plus|now),
+  `today-unknown` (unknown|now), `journal` (plus|now), `progress` (plus|now). Next step: read the picks, adjust
+  the branch, merge, update docs/ui.md. Screenshots: `touch .review-shots && npm run test:e2e -- review-a43
+  --project desktop-chromium` on the branch.
 
 ## Release-readiness audit (owner's go, 2026-11-20)
 
