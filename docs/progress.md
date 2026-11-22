@@ -46,7 +46,9 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
 - Pounds, step 2: Today's weight card and weigh-in, the weigh-in list, the Journal's day and highlights, and typed or
   spoken weigh-ins (the parser keeps the unit said: "180 lb" → lb, "80 kilos" → kg, none → the person's unit) show and
   take the person's unit. `tests/e2e/pounds.e2e.ts`. Vitest 1,225; body, typed-entry, journal, diary, speak e2e pass.
-  Next: Progress (weight chart, history, marks), then Goal, setup, Profile and the maintain offer.
+- Pounds, step 3: Progress's weight tab (headline, change, pace, to goal, lowest, chart readouts and the goal note) in
+  the person's unit (`weightIn` in shared/history.ts converts the points once). Progress and pounds e2e pass.
+  Next: Goal, setup, Profile and the maintain offer (paces 0.5, 1, 1.5, 2 lb a week for pounds).
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

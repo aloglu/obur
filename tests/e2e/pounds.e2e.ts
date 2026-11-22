@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { choose, signedInAs } from './fixtures.ts';
+import { apiAs, choose, signedInAs } from './fixtures.ts';
 
 async function usePounds(page: Page) {
 	await page.goto('/more/units');
@@ -62,4 +62,31 @@ test('weights are shown and typed in pounds, and stored so they show again as ty
 	await choose(page, /^Weight:/, 'Kilograms (kg)');
 	await page.goto('/');
 	await expect(page.getByRole('region', { name: 'Weight' })).toContainText('81.65 kg');
+});
+
+test('Progress shows the weight, its change and the goal in pounds', async ({ page }, testInfo) => {
+	await signedInAs(page, `Progress lb ${testInfo.project.name}`);
+	await usePounds(page);
+	await page.goto('about:blank');
+	const zone = 'Europe/Istanbul';
+	const daysAgo = (n: number) => {
+		const d = new Date();
+		d.setDate(d.getDate() - n);
+		return d.toLocaleDateString('en-CA');
+	};
+	await apiAs(page, 'POST', '/api/v1/targets', {
+		mode: 'manual',
+		effectiveFrom: daysAgo(40),
+		budgetKcal: 2000,
+		goalWeightKg: 79.38 // 175 lb
+	});
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: daysAgo(20), zone, value: 84 });
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: daysAgo(0), zone, value: 82.6 });
+
+	await page.goto('/progress?range=1M');
+	const weight = page.getByRole('tabpanel');
+	await expect(weight).toContainText(/182\.1\s*lb/);
+	await expect(weight).toContainText('−3.1 lb');
+	await expect(weight).toContainText('To goal (175.0 lb)');
+	await expect(weight.locator('[aria-live="polite"]')).toContainText(': 182.1 lb');
 });

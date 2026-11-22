@@ -8,6 +8,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { dayAndMonth, shortDate } from '#lib/shared/format.ts';
 	import type { WeightPoint } from '#lib/shared/history.ts';
+	import type { WeightUnit } from '#lib/shared/weight-unit.ts';
 	import { dayNumber } from './history-axis.ts';
 	import WeightMarks from './WeightMarks.svelte';
 
@@ -16,10 +17,12 @@
 		mode: 'readings' | 'trend';
 		from: string;
 		to: string;
-		goalKg: number | null;
+		/** The goal weight, in `unit` like the points. */
+		goal: number | null;
+		unit: WeightUnit;
 		onlook: (point: WeightPoint | null) => void;
 	}
-	let { points, mode, from, to, goalKg, onlook }: Props = $props();
+	let { points, mode, from, to, goal, unit, onlook }: Props = $props();
 
 	const wide = new MediaQuery('min-width: 760px', false);
 	const data = $derived(points.map((p) => ({ ...p, n: dayNumber(p.date) })));
@@ -47,9 +50,10 @@
 					day,
 					trend: kg(current.trend),
 					pace: pace(current.pacePerWeek),
-					weight: kg(current.weight)
+					weight: kg(current.weight),
+					unit
 				})
-			: m.history_reading_readout({ day, weight: kg(current.weight) });
+			: m.history_reading_readout({ day, weight: kg(current.weight), unit });
 	});
 	const summary = $derived.by(() => {
 		if (!data.length) return '';
@@ -60,9 +64,15 @@
 					...ends,
 					first: kg(first.trend),
 					last: kg(last.trend),
-					pace: pace(last.pacePerWeek)
+					pace: pace(last.pacePerWeek),
+					unit
 				})
-			: m.history_weight_summary({ ...ends, first: kg(first.weight), last: kg(last.weight) });
+			: m.history_weight_summary({
+					...ends,
+					first: kg(first.weight),
+					last: kg(last.weight),
+					unit
+				});
 	});
 	const inset = 6;
 	const gutter = $derived(wide.current ? 42 : 30);
@@ -85,7 +95,8 @@
 					<WeightMarks
 						points={data}
 						{mode}
-						{goalKg}
+						{goal}
+						{unit}
 						{gutter}
 						{inset}
 						firstDate={shortDate(from)}

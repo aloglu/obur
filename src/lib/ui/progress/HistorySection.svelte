@@ -9,7 +9,13 @@
 	import TrendingDown from '@lucide/svelte/icons/trending-down';
 	import { m } from '#lib/paraglide/messages.js';
 	import { dateWithYear, dayAndMonth, kcal, shortDate } from '#lib/shared/format.ts';
-	import type { CalorieBar, ProgressHistory, WeightPoint } from '#lib/shared/history.ts';
+	import {
+		weightIn,
+		type CalorieBar,
+		type ProgressHistory,
+		type WeightPoint
+	} from '#lib/shared/history.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 	import { fixedDecimal, formatDecimal } from '#lib/shared/numbers.ts';
 	import { untrack } from 'svelte';
 	import Roll from '../Roll.svelte';
@@ -36,7 +42,9 @@
 	const tabAt = $derived(TABS.findIndex((t) => t.id === tab));
 	const uid = $props.id();
 
-	// Weights always with one decimal ("83,0 kg"), as the person reads a scale.
+	// Weights in the person's unit, always with one decimal ("83,0 kg"), as the person reads a scale.
+	const unit = $derived(weightUnit());
+	const weight = $derived(weightIn(history.weight, unit));
 	const kg = (v: number) => fixedDecimal(v, 1);
 	const signed = (v: number, f: (n: number) => string) =>
 		`${v > 0 ? '+' : v < 0 ? '−' : '±'}${f(Math.abs(v))}`;
@@ -60,7 +68,7 @@
 		savePreferences({ weightView: next }).catch(() => {});
 	}
 
-	const points = $derived(history.weight.points);
+	const points = $derived(weight.points);
 	const first = $derived(points[0]);
 	const last = $derived(points.at(-1));
 	/** Readings: from the first weigh-in in the range to the latest. */
@@ -68,7 +76,7 @@
 	const readingDays = $derived(first && last ? dayNumber(last.date) - dayNumber(first.date) : 0);
 	/** Trend: from the smoothed weight before the range (or at its first weigh-in) to now. */
 	const trendChange = $derived(
-		first && last ? last.trend - (history.weight.trendBefore ?? first.trend) : null
+		first && last ? last.trend - (weight.trendBefore ?? first.trend) : null
 	);
 	const VIEWS: WeightView[] = ['readings', 'trend'];
 	const a = $derived(history.averages);
@@ -86,9 +94,9 @@
 		}
 		if (!first || !last) return '';
 		if (view === 'trend')
-			return `${m.history_pace({ pace: signed(last.pacePerWeek, kg) })} ${m.history_a_week()}`;
+			return `${m.history_pace({ pace: signed(last.pacePerWeek, kg), unit })} ${m.history_a_week()}`;
 		if (readingChange === null || points.length < 2) return '';
-		return `${signed(readingChange, kg)} kg ${m.history_since({ date: shortDate(first.date) })}`;
+		return `${signed(readingChange, kg)} ${unit} ${m.history_since({ date: shortDate(first.date) })}`;
 	});
 
 	let lookedBar = $state<CalorieBar | null>(null);
@@ -165,7 +173,7 @@
 
 	const big =
 		'font-display text-[2.5rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums';
-	const unit = 'text-[0.9375rem] font-[650] text-muted';
+	const unitClass = 'text-[0.9375rem] font-[650] text-muted';
 	const sub = 'mt-1 min-h-5 text-[0.875rem] text-muted tabular-nums';
 	const rows = 'flex flex-col divide-y divide-line text-[0.875rem] text-muted';
 	const row = 'flex justify-between gap-3 py-2.5';
@@ -182,21 +190,21 @@
 
 {#snippet weightRows(v: WeightView)}
 	{@const current = v === 'trend' ? last!.trend : last!.weight}
-	{#if history.weight.goalKg !== null && current > history.weight.goalKg}
+	{#if weight.goalKg !== null && current > weight.goalKg}
 		<div class={row}>
-			<span>{m.history_to_goal({ goal: kg(history.weight.goalKg) })}</span>
-			<b class={value}>{kg(current - history.weight.goalKg)} kg</b>
+			<span>{m.history_to_goal({ goal: kg(weight.goalKg), unit })}</span>
+			<b class={value}>{kg(current - weight.goalKg)} {unit}</b>
 		</div>
 	{/if}
 	{#if v === 'trend' && trendChange !== null}
 		<div class={row}>
 			<span>{m.history_change_in({ within })}</span>
-			<b class={value}>{signed(trendChange, kg)} kg</b>
+			<b class={value}>{signed(trendChange, kg)} {unit}</b>
 		</div>
 	{:else if v === 'readings' && readingChange !== null && readingDays >= 7}
 		<div class={row}>
 			<span>{m.history_per_week()}</span>
-			<b class={value}>{signed(readingChange / (readingDays / 7), kg)} kg</b>
+			<b class={value}>{signed(readingChange / (readingDays / 7), kg)} {unit}</b>
 		</div>
 	{/if}
 	<div class={row}>
@@ -205,7 +213,7 @@
 	{#if v === 'readings'}
 		<div class={row}>
 			<span>{m.history_lowest()}</span>
-			<b class={value}>{kg(Math.min(...points.map((p) => p.weight)))} kg</b>
+			<b class={value}>{kg(Math.min(...points.map((p) => p.weight)))} {unit}</b>
 		</div>
 	{/if}
 {/snippet}
@@ -281,7 +289,7 @@
 				{/each}
 			</div>
 			<p class="mt-2 flex items-baseline gap-1.5">
-				<span class={big}><Roll value={weightValue} /></span><span class={unit}>kg</span>
+				<span class={big}><Roll value={weightValue} /></span><span class={unitClass}>{unit}</span>
 			</p>
 			<p class={sub}>{weightSub}</p>
 		{/if}
@@ -292,7 +300,8 @@
 					mode={view}
 					from={history.from}
 					to={history.to}
-					goalKg={history.weight.goalKg}
+					goal={weight.goalKg}
+					{unit}
 					onlook={(point) => (lookedAt = point)}
 				/>
 			</div>
@@ -315,7 +324,7 @@
 		<h2 class="sr-only">{m.history_tab_calories()}</h2>
 		<p class="text-[0.8125rem] font-[650] text-muted">{calorieLabel}</p>
 		<p class="mt-2 flex items-baseline gap-1.5">
-			<span class={big}><Roll value={calorieValue} /></span><span class={unit}>kcal</span>
+			<span class={big}><Roll value={calorieValue} /></span><span class={unitClass}>kcal</span>
 		</p>
 		{#if noBars}
 			{@render empty(

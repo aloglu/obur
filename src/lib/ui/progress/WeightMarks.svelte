@@ -4,6 +4,7 @@
 	// across gaps of more than a week; the goal is a line, or a note when it is below the chart. The labels sit in their own
 	// column right of the plot, and the first and last dates reach the card's edges. The line draws on from the left, then
 	// the rest fades in. Tap, drag or use the arrow keys to look at a weigh-in.
+	import type { WeightUnit } from '#lib/shared/weight-unit.ts';
 	import { getChartContext } from 'layerchart';
 	import { m } from '#lib/paraglide/messages.js';
 	import { fixedDecimal, formatDecimal } from '#lib/shared/numbers.ts';
@@ -17,7 +18,9 @@
 	interface Props {
 		points: Point[];
 		mode: 'readings' | 'trend';
-		goalKg: number | null;
+		/** The goal weight, in `unit` like the points. */
+		goal: number | null;
+		unit: WeightUnit;
 		/** The labels' column to the right of the plot, and the room left of it. */
 		gutter: number;
 		inset: number;
@@ -33,7 +36,8 @@
 	let {
 		points,
 		mode,
-		goalKg,
+		goal,
+		unit,
 		gutter,
 		inset,
 		firstDate,
@@ -70,12 +74,12 @@
 	});
 	const current = $derived(selected === null ? undefined : points[selected]);
 	const end = $derived(points.at(-1));
-	const goalInside = $derived(goalKg !== null && goalKg >= low && goalKg <= high);
+	const goalInside = $derived(goal !== null && goal >= low && goal <= high);
 	const ticks = $derived(
 		((ctx.yScale.ticks?.(4) ?? []) as number[]).filter((v) => v >= low && v <= high)
 	);
 	/** A label too close to the goal's gives way to it. */
-	const clearOfGoal = (v: number) => !goalInside || Math.abs(y(v) - y(goalKg!)) >= 15;
+	const clearOfGoal = (v: number) => !goalInside || Math.abs(y(v) - y(goal!)) >= 15;
 
 	// The draw-on is a clip opening from the left, because a dash-based one can't coexist with the dashed gaps.
 	let reveal = $state(0);
@@ -137,29 +141,30 @@
 	<line
 		x1="0"
 		x2={ctx.width}
-		y1={y(goalKg!)}
-		y2={y(goalKg!)}
+		y1={y(goal!)}
+		y2={y(goal!)}
 		class="stroke-good"
 		stroke-width="1.5"
 		stroke-dasharray="4 4"
 	/>
 	<text
 		x={ctx.width + gutter}
-		y={y(goalKg!)}
+		y={y(goal!)}
 		dy=".35em"
 		text-anchor="end"
 		class="fill-good text-[0.65625rem] font-semibold desk:text-[0.84375rem]"
 		>{m.history_goal()}</text
 	>
-{:else if goalKg !== null && goalKg < low && end}
+{:else if goal !== null && goal < low && end}
 	<text
 		x={ctx.width}
 		y="2"
 		text-anchor="end"
 		class="fill-good text-[0.65625rem] font-semibold desk:text-[0.84375rem]"
 		>{m.history_goal_below({
-			goal: formatDecimal(goalKg, 1),
-			distance: fixedDecimal(value(end) - goalKg, 1)
+			goal: formatDecimal(goal, 1),
+			distance: fixedDecimal(value(end) - goal, 1),
+			unit
 		})}</text
 	>
 {/if}

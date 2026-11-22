@@ -1,6 +1,7 @@
 // Progress history rules (docs/design.md, "Progress, graphs and optional encouragement", History; docs/ui.md,
 // "Progress"): ranges, weigh-ins with their smoothed trend, calorie bars against each day's own budget, and averages over days
 // marked complete. Unlogged days and unknown nutrients stay missing; nothing unknown becomes zero.
+import { fromKg, type WeightUnit } from './weight-unit.ts';
 import { isoWeekday, targetOn, type TargetLike } from './calendar.ts';
 import { addDays } from './diary-rules.ts';
 import { budgetForDay, type MacroTargets } from './goals.ts';
@@ -251,4 +252,23 @@ export interface ProgressHistory extends History {
 	};
 	/** Today's macro targets (without activity), for comparison with the averages. */
 	macros: MacroTargets | null;
+}
+
+/** The weight history in the person's unit (kilograms or pounds), for the chart and its figures. */
+export function weightIn(
+	weight: ProgressHistory['weight'],
+	unit: WeightUnit
+): ProgressHistory['weight'] {
+	if (unit === 'kg') return weight;
+	const f = (kg: number) => fromKg(kg, unit);
+	return {
+		points: weight.points.map((p) => ({
+			...p,
+			weight: f(p.weight),
+			trend: f(p.trend),
+			pacePerWeek: f(p.pacePerWeek)
+		})),
+		trendBefore: weight.trendBefore === null ? null : f(weight.trendBefore),
+		goalKg: weight.goalKg === null ? null : f(weight.goalKg)
+	};
 }
