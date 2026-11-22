@@ -1,7 +1,7 @@
 // Progress history rules (docs/design.md, "Progress, graphs and optional encouragement", History; docs/ui.md,
 // "Progress"): ranges, weigh-ins with their smoothed trend, calorie bars against each day's own budget, and averages over days
 // marked complete. Unlogged days and unknown nutrients stay missing; nothing unknown becomes zero.
-import { fromKg, type WeightUnit } from './weight-unit.ts';
+import { fromKg, type WeightUnit } from './weight-convert.ts';
 import { isoWeekday, targetOn, type TargetLike } from './calendar.ts';
 import { addDays } from './diary-rules.ts';
 import { budgetForDay, type MacroTargets } from './goals.ts';

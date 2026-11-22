@@ -59,7 +59,14 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   swaps them quietly. Docs updated (design, ui.md, achievement-comparisons.md, help). Vitest 1,229, database 286, full
   browser suite 314 passed. The WebKit pounds tests needed a wait after the unit save (a full page load at once cut
   the page's refresh short; no reload happens in the app — checked).
-  Next: the image tests (smoke, upgrade from beta.19: migrations 0065-0067), then rc.8 only when the owner asks.
+- Image tests (2026-11-22): the first smoke test failed: the worker stopped at start, because the new weight helpers
+  imported the number formatter, which needs the message catalog the worker runs without. Fixed: conversions in
+  `shared/weight-convert.ts` (no interface text); formatting stays in `weight-unit.ts`. Smoke test passes. The upgrade
+  from beta.19 runs 0065-0067 and starts, then its restore step fails: "unable to acquire lock
+  obur-restore-1.lock". Pre-existing (the image of 4d89fec fails the same way): today is Sunday, the weekly restore
+  check starts with the container and holds the restore lock when the test (or an operator) runs `obur restore start`.
+  **For the owner to decide:** a restore started during the weekly check fails with that bare pgBackRest message.
+  Next: the owner's answer on the restore-check collision; rc.8 only when the owner asks.
   Open: setup has no kg/lb switch of its own — a screen choice for the owner, by screenshot. Open: setup has no kg/lb switch of
   its own (a new person who uses pounds sets Units first) — a screen choice for the owner, by screenshot.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb

@@ -12,7 +12,7 @@ import {
 	type First
 } from '../../../shared/achievements.ts';
 import { addDays } from '../../../shared/diary-rules.ts';
-import type { WeightUnit } from '../../../shared/weight-unit.ts';
+import type { WeightUnit } from '../../../shared/weight-convert.ts';
 import { targetsAllowed } from '../../../shared/goals.ts';
 import { weightEntries } from '../body/index.ts';
 import { foods, recipes } from '../catalog/index.ts';

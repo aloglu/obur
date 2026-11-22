@@ -11,7 +11,7 @@ import type { EntryItem, ParsedEntry, SaidUnit } from '#lib/shared/entry-types.t
 import { catalog } from './catalog.ts';
 import { diary } from './diary.ts';
 import { goals } from './goals.ts';
-import { toKg } from '#lib/shared/weight-unit.ts';
+import { toKg } from '#lib/shared/weight-convert.ts';
 
 const said = (u: ParsedUnit | null): SaidUnit => (!u ? null : u.kind === 'count' ? u.word : u.kind);
 

@@ -6,7 +6,7 @@ import * as v from 'valibot';
 import { APP_ICONS, DEFAULT_APP_ICON, type AppIconId } from './app-icons.ts';
 import { DEFAULT_LANGUAGE, LANGUAGES, type Language } from './languages.ts';
 import { DEFAULT_PALETTE, PALETTES, type PaletteId } from './themes.ts';
-import { WEIGHT_UNITS, type WeightUnit } from './weight-unit.ts';
+import { WEIGHT_UNITS, type WeightUnit } from './weight-convert.ts';
 
 export interface Preferences {
 	/** The interface language (shared/languages.ts). */

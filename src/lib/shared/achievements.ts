@@ -2,7 +2,7 @@
 // Help"). Worked out from the person's records, so a corrected or deleted record withdraws an award it caused, and
 // each is reached once: the first day it was reached, however the weight moves afterwards.
 
-import { fromKg, toKg, type WeightUnit } from './weight-unit.ts';
+import { fromKg, toKg, type WeightUnit } from './weight-convert.ts';
 
 /** Weight lost: one every 2 kg up to 120 kg (docs/achievement-comparisons.md). */
 export const WEIGHT_STEP_KG = 2;
