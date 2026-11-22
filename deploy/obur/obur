@@ -99,13 +99,13 @@ restore_start() {
 	fi
 	rm -f "$OBUR_RUN/hold"
 	echo "obur: restored. obur now says it is being restored until you run:"
-	echo "      obur restore finish <every entry from Members → Deleted accounts>   (or --none if that list is empty)"
+	echo "      obur restore finish <every entry from Server → Backups → Deleted accounts>   (or --none if that list is empty)"
 }
 
 restore_finish() {
 	supervised
 	# Checked before any waiting (obur-restore checks it again).
-	[[ $# -gt 0 ]] || obur_fail "pass every entry from Members → Backups → Deleted accounts, or --none if that list is empty (docs/restore.md)"
+	[[ $# -gt 0 ]] || obur_fail "pass every entry from Server → Backups → Deleted accounts, or --none if that list is empty (docs/restore.md)"
 	restore_lock
 	[[ -f $OBUR_STATUS_DIR/restore-pending ]] || obur_fail "no restore is pending"
 	for _ in $(seq 120); do
@@ -124,7 +124,7 @@ restore_finish() {
 	[[ $recovering == f ]] || obur_fail "the restored database is still replaying after 10 minutes; run 'obur restore finish' again later"
 	obur-restore finish "$@"
 	rm -f "$ASIDE_NOTE" "$OBUR_RUN/aside"
-	echo "obur: obur reopens in a few seconds. Then check Members → Backups, and run: obur backup restore-check"
+	echo "obur: obur reopens in a few seconds. Then check Server → Backups, and run: obur backup restore-check"
 }
 
 restore_cancel() {

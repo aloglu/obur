@@ -52,7 +52,7 @@ deletions_given() {
 	if [[ ${1:-} == --none ]]; then
 		[[ $# == 1 ]] || fail "--none means the deleted-accounts list is empty: pass either --none or the entries, not both"
 	elif [[ $# == 0 ]]; then
-		fail "pass every entry from Members → Backups → Deleted accounts, or --none if that list is empty (docs/restore.md)"
+		fail "pass every entry from Server → Backups → Deleted accounts, or --none if that list is empty (docs/restore.md)"
 	fi
 }
 
