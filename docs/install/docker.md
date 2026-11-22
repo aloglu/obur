@@ -1,4 +1,6 @@
-# obur with Docker (a VPS or any Linux machine)
+# obur with Docker (a VPS or a Linux machine)
+
+obur's images are built for 64-bit Intel and AMD processors (x86-64) only.
 
 ## What you will end up with
 

@@ -9,11 +9,13 @@ Every guide goes step by step and says what you should see.
 
 | Your situation | Follow |
 | --- | --- |
-| A rented server (VPS) or any Linux machine with Docker | [Docker](docker.md) |
+| A rented server (VPS) or a Linux machine with Docker | [Docker](docker.md) |
 | A home server running **Unraid** | [Unraid](unraid.md) |
 | A NAS running **TrueNAS SCALE** | [TrueNAS](truenas.md) |
 
-**What it needs:** Docker, about 1 GB of memory for obur itself, and 1.5 GB more for Speak and Scan (optional).
+**What it needs:** a 64-bit Intel or AMD processor (x86-64; the images are not built for ARM, such as a Raspberry
+Pi or an Apple-silicon Mac), Docker, about 1 GB of memory for obur itself, and 1.5 GB more for Speak and Scan
+(optional).
 Two processor cores are enough; Speak answers faster with more.
 
 **What you get:** three containers. `obur` is the app with its database and automatic, encrypted backups; it is all
