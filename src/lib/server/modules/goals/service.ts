@@ -89,6 +89,7 @@ const toPreferences = (r: ProfileRow): Preferences => ({
 	appIcon: isAppIcon(r.appIcon) ? r.appIcon : DEFAULT_APP_ICON,
 	timeFormat: r.timeFormat,
 	weightView: r.weightView,
+	weightUnit: r.weightUnit,
 	voiceOffSeen: r.voiceOffSeen,
 	holdHintSeen: r.holdHintSeen,
 	maintainOfferDeclinedKg: r.maintainOfferDeclinedKg

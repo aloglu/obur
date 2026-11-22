@@ -331,7 +331,11 @@ describe('settings', () => {
 		});
 		await goals.saveProfile(MEHMET, { ...adult, decimalMark: '.' });
 		await goals.savePreferences(MEHMET, { palette: 'zerde', appIcon: 'kaset', themeMode: 'dark' });
-		await goals.savePreferences(MEHMET, { weightView: 'trend', voiceOffSeen: true });
+		await goals.savePreferences(MEHMET, {
+			weightView: 'trend',
+			voiceOffSeen: true,
+			weightUnit: 'lb'
+		});
 		expect(await goals.preferences(MEHMET)).toEqual({
 			preferences: {
 				...DEFAULT_PREFERENCES,
@@ -339,6 +343,7 @@ describe('settings', () => {
 				appIcon: 'kaset',
 				themeMode: 'dark',
 				weightView: 'trend',
+				weightUnit: 'lb',
 				voiceOffSeen: true
 			},
 			saved: true
@@ -351,6 +356,7 @@ describe('settings', () => {
 		expect((await goals.preferences(AYSE)).saved).toBe(false);
 		// Only known values.
 		await expect(goals.savePreferences(MEHMET, { palette: 'neon' as never })).rejects.toThrow();
+		await expect(goals.savePreferences(MEHMET, { weightUnit: 'st' as never })).rejects.toThrow();
 		await expect(goals.savePreferences(MEHMET, { extra: 1 } as never)).rejects.toThrow();
 		// The language: a known one is kept (the API refuses one the server doesn't offer); others never.
 		await goals.savePreferences(MEHMET, { language: 'tr' });

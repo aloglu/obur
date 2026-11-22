@@ -332,6 +332,8 @@
 	"common_choose": "Choose",
 	"more_mode": "Mode",
 	"units_weight": "Weight",
+	"units_kg": "Kilograms (kg)",
+	"units_lb": "Pounds (lb)",
 	"units_time": "Time",
 	"time_device": "As on this device",
 	"time_24": "24-hour",

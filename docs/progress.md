@@ -38,6 +38,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
 - C05 done (2026-11-22): the goals service finds the version in force in one place (`inForce`) and takes the budget
   without activity from the shared `budgetForDay` (`inactiveBudget`); no behaviour change. check, lint, Vitest 1,222,
   database 285 pass.
+- Pounds, step 1 (2026-11-22): the account setting `weightUnit` (kg or lb; migrations 0065, 0066) on Units and in
+  Settings' summary, in export and import (older archives keep kg), `shared/weight-unit.ts` (stored kg, shown/typed in
+  the unit; pounds with one decimal so a typed value shows again as typed) and `client/weight-unit.ts`. Nothing shows
+  pounds yet. Review page for the achievement screens published (URL in my memory notes; collection `picks`).
+  Pending the owner's picks. Next: weights on Today, the weigh-in, readings, Journal; then Progress; then Goal and setup.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

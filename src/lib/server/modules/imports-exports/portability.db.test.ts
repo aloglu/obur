@@ -170,7 +170,12 @@ async function buildHistory() {
 		values (${randomUUID()}, ${MEHMET}, '2026-10-02', 'Europe/Istanbul', 'loseit', 210, false)`;
 
 	await goals.saveProfile(MEHMET, { heightCm: 180, birthDate: '1990-05-01', sex: 'male' });
-	await goals.savePreferences(MEHMET, { palette: 'kaset', appIcon: 'zerde', timeFormat: '24' });
+	await goals.savePreferences(MEHMET, {
+		palette: 'kaset',
+		appIcon: 'zerde',
+		timeFormat: '24',
+		weightUnit: 'lb'
+	});
 	// A language stored before it can be chosen here (a later version's archive) still travels with the account.
 	await admin`update profiles set language = 'tr' where user_id = ${MEHMET}`;
 	await goals.setTarget(
@@ -485,6 +490,7 @@ describe('import', () => {
 				palette: 'kaset',
 				appIcon: 'zerde',
 				timeFormat: '24',
+				weightUnit: 'lb',
 				themeMode: 'system'
 			},
 			saved: true

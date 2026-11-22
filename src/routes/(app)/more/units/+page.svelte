@@ -1,5 +1,6 @@
 <script lang="ts">
-	// docs/ui.md "More and settings": Time follows the account. Weight is kilograms until pounds are built.
+	// docs/ui.md "More and settings": weight unit and time follow the account. Weights are stored in kilograms, so a
+	// change of unit changes only how they are shown and typed.
 	import PageHead from '#lib/ui/PageHead.svelte';
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
@@ -8,9 +9,22 @@
 	import { savePreferences, setTimeFormat, type TimeFormat } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import MenuRow from '#lib/ui/MenuRow.svelte';
+	import type { WeightUnit } from '#lib/shared/weight-unit.ts';
 
 	let { data } = $props();
 	let time = $state<TimeFormat>(untrack(() => data.timeFormat));
+	let unit = $state<WeightUnit>(untrack(() => data.preferences.weightUnit));
+
+	async function changeUnit(next: WeightUnit) {
+		const before = unit;
+		try {
+			await savePreferences({ weightUnit: next });
+			await invalidateAll();
+		} catch {
+			unit = before;
+			showToast({ message: m.settings_save_failed() });
+		}
+	}
 
 	async function change(next: TimeFormat) {
 		const before = time;
@@ -35,9 +49,15 @@
 		title={m.more_units()}
 	/>
 	<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
-		<div class="flex min-h-14 items-center justify-between gap-3 text-[0.9375rem] font-semibold">
-			{m.units_weight()}<span class="text-[0.875rem] font-medium text-muted">kg</span>
-		</div>
+		<MenuRow
+			label={m.units_weight()}
+			bind:value={unit}
+			onchange={changeUnit}
+			options={[
+				{ value: 'kg', label: m.units_kg() },
+				{ value: 'lb', label: m.units_lb() }
+			]}
+		/>
 		<MenuRow
 			label={m.units_time()}
 			bind:value={time}

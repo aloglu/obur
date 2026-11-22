@@ -313,6 +313,8 @@ export const ProfileRecord = v.object({
 	// No longer used (Scan always goes on to the amount, 2026-11-09); still read so older archives import.
 	scanLogAfter: v.optional(v.boolean()),
 	weightView: v.optional(v.picklist(['readings', 'trend'])),
+	// Added 2026-11-22; older archives keep kilograms.
+	weightUnit: v.optional(v.picklist(['kg', 'lb'])),
 	voiceOffSeen: v.optional(v.boolean()),
 	holdHintSeen: v.optional(v.boolean()),
 	// Added 2026-11-13.

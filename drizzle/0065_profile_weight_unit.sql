@@ -1,0 +1,2 @@
+ALTER TABLE "profiles" ADD COLUMN "weight_unit" text DEFAULT 'kg' NOT NULL;--> statement-breakpoint
+ALTER TABLE "profiles" ADD CONSTRAINT "profiles_weight_unit_valid" CHECK ("profiles"."weight_unit" in ('kg', 'lb'));

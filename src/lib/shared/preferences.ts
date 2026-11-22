@@ -6,6 +6,7 @@ import * as v from 'valibot';
 import { APP_ICONS, DEFAULT_APP_ICON, type AppIconId } from './app-icons.ts';
 import { DEFAULT_LANGUAGE, LANGUAGES, type Language } from './languages.ts';
 import { DEFAULT_PALETTE, PALETTES, type PaletteId } from './themes.ts';
+import { WEIGHT_UNITS, type WeightUnit } from './weight-unit.ts';
 
 export interface Preferences {
 	/** The interface language (shared/languages.ts). */
@@ -16,6 +17,8 @@ export interface Preferences {
 	timeFormat: 'device' | '24' | '12';
 	/** Progress: the weight chart shows readings or the trend. */
 	weightView: 'readings' | 'trend';
+	/** Weights shown and typed in kilograms or pounds; stored in kilograms (shared/weight-unit.ts). */
+	weightUnit: WeightUnit;
 	/** The grey "Speak is off" card was dismissed. */
 	voiceOffSeen: boolean;
 	/** Today's tip about holding entries was dismissed. */
@@ -31,6 +34,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	appIcon: DEFAULT_APP_ICON,
 	timeFormat: 'device',
 	weightView: 'readings',
+	weightUnit: 'kg',
 	voiceOffSeen: false,
 	holdHintSeen: false,
 	maintainOfferDeclinedKg: null
@@ -45,6 +49,7 @@ export const PreferencesInput = v.strictObject({
 	appIcon: v.optional(v.picklist(APP_ICONS.map((i) => i.id))),
 	timeFormat: v.optional(v.picklist(['device', '24', '12'])),
 	weightView: v.optional(v.picklist(['readings', 'trend'])),
+	weightUnit: v.optional(v.picklist(WEIGHT_UNITS)),
 	voiceOffSeen: v.optional(v.boolean()),
 	holdHintSeen: v.optional(v.boolean()),
 	maintainOfferDeclinedKg: v.optional(

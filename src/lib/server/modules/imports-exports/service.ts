@@ -212,6 +212,7 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 						palette: isPalette(profile.palette) ? profile.palette : DEFAULT_PALETTE,
 						timeFormat: profile.timeFormat,
 						weightView: profile.weightView,
+						weightUnit: profile.weightUnit,
 						voiceOffSeen: profile.voiceOffSeen,
 						holdHintSeen: profile.holdHintSeen,
 						maintainOfferDeclinedKg: profile.maintainOfferDeclinedKg

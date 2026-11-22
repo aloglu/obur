@@ -456,6 +456,20 @@
       "when": 1795259968787,
       "tag": "0064_reminder_sends_retry",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1795334755142,
+      "tag": "0065_profile_weight_unit",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1795334755663,
+      "tag": "0066_profile_weight_unit_grant",
+      "breakpoints": true
     }
   ]
 }

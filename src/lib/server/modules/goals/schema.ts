@@ -51,6 +51,10 @@ export const profiles = pgTable(
 		weightView: text('weight_view', { enum: ['readings', 'trend'] })
 			.notNull()
 			.default('readings'),
+		/** The unit weights are shown and typed in; always stored in kilograms (shared/weight-unit.ts). */
+		weightUnit: text('weight_unit', { enum: ['kg', 'lb'] })
+			.notNull()
+			.default('kg'),
 		voiceOffSeen: boolean('voice_off_seen').notNull().default(false),
 		holdHintSeen: boolean('hold_hint_seen').notNull().default(false),
 		/** The goal weight at which the offer to switch to maintenance was declined (shared/goals.ts, maintainOffer). */
@@ -83,6 +87,7 @@ export const profiles = pgTable(
 		),
 		check('profiles_time_format_valid', sql`${t.timeFormat} in ('device', '24', '12')`),
 		check('profiles_weight_view_valid', sql`${t.weightView} in ('readings', 'trend')`),
+		check('profiles_weight_unit_valid', sql`${t.weightUnit} in ('kg', 'lb')`),
 		check(
 			'profiles_app_icon_valid',
 			sql`${t.appIcon} is null or ${t.appIcon} in ('pazar', 'pazar-light', 'sade', 'zerde', 'patlican', 'zeytin', 'disko', 'kaset', 'sinyal')`

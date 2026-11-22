@@ -332,6 +332,8 @@
 	"common_choose": "Seç",
 	"more_mode": "Mod",
 	"units_weight": "Kilo",
+	"units_kg": "Kilogram (kg)",
+	"units_lb": "Libre (lb)",
 	"units_time": "Saat",
 	"time_device": "Bu cihazdaki gibi",
 	"time_24": "24 saat",
