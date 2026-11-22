@@ -40,20 +40,20 @@
 		onlook(index === null ? null : (points[index] ?? null));
 	}
 	// Weights always with one decimal ("83,0 kg"), as the person reads a scale.
-	const kg = (v: number) => fixedDecimal(v, 1);
-	const pace = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${kg(Math.abs(v))}`;
+	const one = (v: number) => fixedDecimal(v, 1);
+	const pace = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${one(Math.abs(v))}`;
 	const readout = $derived.by(() => {
 		if (!current) return '';
 		const day = dayAndMonth(current.date);
 		return mode === 'trend'
 			? m.history_trend_readout({
 					day,
-					trend: kg(current.trend),
+					trend: one(current.trend),
 					pace: pace(current.pacePerWeek),
-					weight: kg(current.weight),
+					weight: one(current.weight),
 					unit
 				})
-			: m.history_reading_readout({ day, weight: kg(current.weight), unit });
+			: m.history_reading_readout({ day, weight: one(current.weight), unit });
 	});
 	const summary = $derived.by(() => {
 		if (!data.length) return '';
@@ -62,15 +62,15 @@
 		return mode === 'trend'
 			? m.history_trend_summary({
 					...ends,
-					first: kg(first.trend),
-					last: kg(last.trend),
+					first: one(first.trend),
+					last: one(last.trend),
 					pace: pace(last.pacePerWeek),
 					unit
 				})
 			: m.history_weight_summary({
 					...ends,
-					first: kg(first.weight),
-					last: kg(last.weight),
+					first: one(first.weight),
+					last: one(last.weight),
 					unit
 				});
 	});

@@ -45,7 +45,7 @@
 	// Weights in the person's unit, always with one decimal ("83,0 kg"), as the person reads a scale.
 	const unit = $derived(weightUnit());
 	const weight = $derived(weightIn(history.weight, unit));
-	const kg = (v: number) => fixedDecimal(v, 1);
+	const one = (v: number) => fixedDecimal(v, 1);
 	const signed = (v: number, f: (n: number) => string) =>
 		`${v > 0 ? '+' : v < 0 ? '−' : '±'}${f(Math.abs(v))}`;
 	const within = $derived(
@@ -85,7 +85,7 @@
 	let lookedAt = $state<WeightPoint | null>(null);
 	const weightValue = $derived.by(() => {
 		const point = lookedAt ?? last;
-		return point ? kg(view === 'trend' ? point.trend : point.weight) : '';
+		return point ? one(view === 'trend' ? point.trend : point.weight) : '';
 	});
 	const weightSub = $derived.by(() => {
 		if (lookedAt) {
@@ -94,9 +94,9 @@
 		}
 		if (!first || !last) return '';
 		if (view === 'trend')
-			return `${m.history_pace({ pace: signed(last.pacePerWeek, kg), unit })} ${m.history_a_week()}`;
+			return `${m.history_pace({ pace: signed(last.pacePerWeek, one), unit })} ${m.history_a_week()}`;
 		if (readingChange === null || points.length < 2) return '';
-		return `${signed(readingChange, kg)} ${unit} ${m.history_since({ date: shortDate(first.date) })}`;
+		return `${signed(readingChange, one)} ${unit} ${m.history_since({ date: shortDate(first.date) })}`;
 	});
 
 	let lookedBar = $state<CalorieBar | null>(null);
@@ -192,19 +192,19 @@
 	{@const current = v === 'trend' ? last!.trend : last!.weight}
 	{#if weight.goalKg !== null && current > weight.goalKg}
 		<div class={row}>
-			<span>{m.history_to_goal({ goal: kg(weight.goalKg), unit })}</span>
-			<b class={value}>{kg(current - weight.goalKg)} {unit}</b>
+			<span>{m.history_to_goal({ goal: one(weight.goalKg), unit })}</span>
+			<b class={value}>{one(current - weight.goalKg)} {unit}</b>
 		</div>
 	{/if}
 	{#if v === 'trend' && trendChange !== null}
 		<div class={row}>
 			<span>{m.history_change_in({ within })}</span>
-			<b class={value}>{signed(trendChange, kg)} {unit}</b>
+			<b class={value}>{signed(trendChange, one)} {unit}</b>
 		</div>
 	{:else if v === 'readings' && readingChange !== null && readingDays >= 7}
 		<div class={row}>
 			<span>{m.history_per_week()}</span>
-			<b class={value}>{signed(readingChange / (readingDays / 7), kg)} {unit}</b>
+			<b class={value}>{signed(readingChange / (readingDays / 7), one)} {unit}</b>
 		</div>
 	{/if}
 	<div class={row}>
@@ -213,7 +213,7 @@
 	{#if v === 'readings'}
 		<div class={row}>
 			<span>{m.history_lowest()}</span>
-			<b class={value}>{kg(Math.min(...points.map((p) => p.weight)))} {unit}</b>
+			<b class={value}>{one(Math.min(...points.map((p) => p.weight)))} {unit}</b>
 		</div>
 	{/if}
 {/snippet}

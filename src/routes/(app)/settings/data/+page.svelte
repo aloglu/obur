@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
+	import { weightUnit as personUnit } from '#lib/client/weight-unit.ts';
 	import { accountHeaders, wrongAccount } from '#lib/client/account.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -119,7 +120,8 @@
 	let file = $state<File | null>(null);
 	let summary = $state<Summary | null>(null);
 	// LoseIt imports: what the export cannot say for itself.
-	let weightUnit = $state<'kg' | 'lb'>('kg');
+	// The export has no unit column; the person's own unit is the first guess.
+	let weightUnit = $state<'kg' | 'lb'>(personUnit());
 	let trashMissing = $state(false);
 	// Foods the person already has are used instead of a copy unless they keep separate copies; the count from the
 	// preview that used them stays shown while the switch is on.

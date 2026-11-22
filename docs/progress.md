@@ -51,7 +51,9 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
 - Pounds, step 4: Goal (goal weight, pace), Settings' pace and setup (weight, goal weight, pace chips) in the person's
   unit. Paces for pounds are 0.5, 1, 1.5 and 2 lb a week (my choice; stored in kg, `requestedRateKgPerWeek` keeps the
   exact value, the 2-decimal rate column rounds). Height stays in cm. Goals and pounds e2e pass.
-  Next: help text and docs, then the achievements once the owner's picks are in. Open: setup has no kg/lb switch of
+- Pounds, step 5: help answers give pound figures beside kilos (English; Turkish unchanged), README, design and ui.md
+  describe the setting, and the LoseIt import's unit starts at the person's own. Data and pounds e2e pass.
+  Next: the achievements once the owner's picks are in. Open: setup has no kg/lb switch of
   its own (a new person who uses pounds sets Units first) — a screen choice for the owner, by screenshot.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and

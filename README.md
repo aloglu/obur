@@ -7,7 +7,7 @@ your server unless someone chooses to use their own OpenAI or OpenRouter key for
 address you put in front of it (for example a Cloudflare Tunnel) carries everyone's traffic. obur contacts
 outside services only for what you turn on: an off-site copy of the encrypted backups, reminders (through the
 phone's push service, with a generic message), and a daily check for new versions (GitHub's public release list).
-Weights are in kilograms for now.
+Weights in kilograms or pounds, chosen by each person.
 
 **Install:** [`docs/install/`](docs/install/README.md). Installing with an AI assistant? Point it at
 [`docs/install/for-ai-agents.md`](docs/install/for-ai-agents.md).
