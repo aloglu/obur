@@ -96,6 +96,31 @@ test('logging, correcting, moving and deleting an entry', async ({ page }, testI
 	await expect(meal(page, 'Dinner').getByText('2 × slice (26 g)')).toBeVisible();
 });
 
+test('a food that can’t be opened says so in the sheet, never “Working…” for good (G15)', async ({
+	page,
+	context
+}, testInfo) => {
+	const tag = testInfo.project.name;
+	await signedInAs(page, 'Deniz');
+	await createFood(page, bread(`${tag} gone`));
+	await page.goto('/');
+	await openLogFor(page, 'Lunch');
+	await page.getByRole('searchbox').fill(`untad ${tag} gone`);
+	const result = page.getByRole('button', {
+		name: new RegExp(`Untad Premium Light Ekmek ${tag} gone`)
+	});
+	await expect(result).toBeVisible();
+	// The food's own details can't arrive: the connection is gone.
+	await context.setOffline(true);
+	await result.click();
+	const sheet = page.getByRole('dialog');
+	await expect(sheet).toContainText(
+		"This food couldn't be opened. Check the connection and try again."
+	);
+	await expect(sheet).not.toContainText('Working…');
+	await context.setOffline(false);
+});
+
 test('a quick add records calories only and makes totals partial', async ({ page }) => {
 	await signedInAs(page, 'Mehmet');
 	await page.goto('/');

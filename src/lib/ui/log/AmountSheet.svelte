@@ -54,10 +54,17 @@
 	const lateNight = $derived(day === today && isLateNight(new Date(), deviceZone()));
 
 	onMount(async () => {
-		[food, measures] = await Promise.all([
-			api<FoodDetail>('GET', `/api/v1/foods/${foodId}`),
-			householdMeasures()
-		]);
+		try {
+			[food, measures] = await Promise.all([
+				api<FoodDetail>('GET', `/api/v1/foods/${foodId}`),
+				householdMeasures()
+			]);
+		} catch (e) {
+			// Said in the sheet instead of "Working…" for good (2026-11-22 Gemini audit, G15).
+			problem =
+				e instanceof ApiError && e.status === 404 ? m.amount_food_gone() : m.amount_load_failed();
+			return;
+		}
 		const first = unitOptions(food, measures)[0];
 		optionKey = first?.key ?? '';
 		amountText = first ? formatDecimal(first.defaultAmount, 2) : '';
@@ -137,7 +144,9 @@
 			<h2 class="text-[1.3125rem] font-[750]">{m.amount_title()}</h2>
 		{/if}
 	{/snippet}
-	{#if food}
+	{#if !food && problem}
+		<Notice>{problem}</Notice>
+	{:else if food}
 		<form class="flex flex-col gap-4" onsubmit={save}>
 			<div class="flex flex-col gap-1.5">
 				<AmountField

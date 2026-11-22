@@ -300,6 +300,8 @@
 	"amount_invalid": "1,5 gibi bir miktar gir",
 	"amount_late_night": "Gece yarısını geçti. Dünü mü kastettin?",
 	"amount_conversion_unknown": "Bu yiyeceğin o birim için ağırlığı ya da hacmi yok. Başka bir birim seç ya da yiyeceğe bir porsiyon ekle.",
+	"amount_load_failed": "Bu yiyecek açılamadı. Bağlantıyı kontrol edip yeniden dene.",
+	"amount_food_gone": "Bu yiyecek artık yok.",
 	"amount_food_changed": "Bu yiyecek az önce başka bir cihazda değiştirildi. Değerlerine bak ve yeniden kaydet.",
 	"amount_unknown_short": "?",
 	"amount_carbs_unstated": "Karbonhidrat: kaynak lifin dahil olup olmadığını belirtmemiş.",
