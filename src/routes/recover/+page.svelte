@@ -2,7 +2,6 @@
 	import KeyRound from '@lucide/svelte/icons/key-round';
 	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
-	import { goto, invalidateAll } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
 	import {
@@ -70,9 +69,10 @@
 		}
 	}
 
-	async function finish() {
-		await invalidateAll();
-		await goto(resolve('/(app)'));
+	function finish() {
+		// One full load of Today, as after signing in: refreshing this page's data first brought the account's look,
+		// and a chosen app icon reloaded the page in place, back onto this page (2026-11-22 Gemini audit, G16).
+		location.assign(resolve('/(app)'));
 	}
 </script>
 

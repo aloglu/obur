@@ -225,8 +225,16 @@ test('an invited member joins with their own passkey', async ({ browser }) => {
 });
 
 test('a lost phone is replaced with a recovery code, and the old passkey stops working', async () => {
-	const { page } = admin;
+	const { page, context } = admin;
+	// A chosen app icon, on a browser that has never seen the account: the icon arriving after recovery reloaded the
+	// page in place, back onto the recovery page (2026-11-22 Gemini audit, G16).
+	const origin = new URL(page.url()).origin;
+	await page.request.patch('/api/v1/profile/preferences', {
+		headers: { origin },
+		data: { appIcon: 'sade' }
+	});
 	await signOut(page);
+	await context.clearCookies();
 	const lost = await admin.credentials(phone);
 	await admin.removeAuthenticator(phone);
 	const newPhone = await admin.addAuthenticator();
@@ -240,7 +248,17 @@ test('a lost phone is replaced with a recovery code, and the old passkey stops w
 	await expect(page).toHaveURL(/\/recover$/);
 	await page.getByRole('button', { name: 'Create new passkey' }).click();
 	await saveCodes(page);
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await page.waitForTimeout(500); // a reload in place would show the recovery page again by now
+	await expect(page).not.toHaveURL(/\/recover/);
 	await expectSignedIn(page, ADMIN);
+	// Signed in already: the recovery page goes straight to Today.
+	await page.goto('/recover');
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await page.request.patch('/api/v1/profile/preferences', {
+		headers: { origin },
+		data: { appIcon: 'pazar' }
+	});
 
 	// The same code cannot be used twice.
 	await signOut(page);

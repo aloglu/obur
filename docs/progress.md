@@ -141,6 +141,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   G31 the update look-up needs an admin session only (it needed a passkey check under 10 min old, so "Update
   available" rarely showed); the switch asks for a passkey; next-page links must keep https. Updates e2e passes.
   G15 the amount sheet says when its food can't be opened (no connection, or deleted) instead of "Working…" for good.
+  G16 recovery ends with one full load of Today (a chosen app icon reloaded it onto /recover); /recover sends a
+  signed-in person to Today. Auth journey e2e (fails on the old code) passes.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
