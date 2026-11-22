@@ -58,7 +58,7 @@ for (const theme of ['light', 'dark'] as const) {
 			{ name: 'obur_zone', value: ZONE, url: e2eEnv.PUBLIC_ORIGIN }
 		]);
 		const today = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
-		await apiAs(page, 'PUT', '/api/v1/profile', {
+		await apiAs(page, 'PATCH', '/api/v1/profile/details', {
 			heightCm: 178,
 			birthDate: '1992-04-12',
 			sex: 'male'

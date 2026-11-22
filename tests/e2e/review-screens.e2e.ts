@@ -35,7 +35,7 @@ for (const theme of ['light', 'dark'] as const) {
 		const today = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
 
 		// Example data: a calculated budget, foods, a day of entries, water, weigh-ins, activity, a saved meal.
-		await apiAs(page, 'PUT', '/api/v1/profile', {
+		await apiAs(page, 'PATCH', '/api/v1/profile/details', {
 			heightCm: 178,
 			birthDate: '1992-04-12',
 			sex: 'male'
