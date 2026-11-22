@@ -6,7 +6,8 @@ import { APP_ICONS } from '../../../shared/app-icons.ts';
 import { PALETTES } from '../../../shared/themes.ts';
 import { LANGUAGES } from '../../../shared/languages.ts';
 import { createHash } from 'node:crypto';
-import { strFromU8, strToU8, unzipSync, zipSync, type Unzipped } from 'fflate';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { unzipLimited, type Unpacked } from './unzip.ts';
 import * as v from 'valibot';
 import { DateString, Zone } from '../../../shared/diary-input.ts';
 import { MEALS } from '../../../shared/diary-types.ts';
@@ -601,12 +602,12 @@ export function fitsImport(bytes: Uint8Array): boolean {
 /** Reads and validates an archive completely; throws ArchiveError without partial results. */
 export function readArchive(bytes: Uint8Array): { manifest: Manifest; data: PortableData } {
 	if (bytes.length > LIMITS.archiveBytes) throw new ArchiveError('too_large');
-	let unpacked: Unzipped;
+	let unpacked: Unpacked;
 	let total = 0;
 	let count = 0;
 	try {
-		unpacked = unzipSync(bytes, {
-			// Checked against the declared sizes before anything is decompressed.
+		unzipSync(bytes, {
+			// The archive's list and declared sizes, read before anything is decompressed.
 			filter: (file) => {
 				if (file.name.endsWith('/')) return false;
 				if (!ALLOWED.has(file.name)) throw new ArchiveError('unexpected_file', file.name);
@@ -614,16 +615,17 @@ export function readArchive(bytes: Uint8Array): { manifest: Manifest; data: Port
 				total += file.originalSize;
 				if (count > LIMITS.files || total > LIMITS.unpackedBytes)
 					throw new ArchiveError('too_large');
-				return true;
+				return false;
 			}
 		});
+		// The declared sizes could understate: the real ones are counted while unpacking (unzip.ts).
+		const read = unzipLimited(bytes, (name) => ALLOWED.has(name), LIMITS.unpackedBytes);
+		if (read === 'too_large') throw new ArchiveError('too_large');
+		unpacked = read;
 	} catch (e) {
 		if (e instanceof ArchiveError) throw e;
 		throw new ArchiveError('not_an_archive');
 	}
-	// The declared sizes could understate; check the real ones too.
-	const real = Object.values(unpacked).reduce((n, f) => n + f.length, 0);
-	if (real > LIMITS.unpackedBytes) throw new ArchiveError('too_large');
 
 	const parse = (path: string): unknown => {
 		const file = unpacked[path];

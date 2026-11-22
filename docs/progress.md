@@ -192,6 +192,9 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   account deletion clear a toast. Unit, database and related e2e pass.
   G08 request bodies are read with a running size check (`readBody` in server/http.ts): JSON 64 KB, sign-out 4 KB,
   audio, photos and archives at their own limits; a chunked body without a length no longer reaches 21 MB first.
+  G07 import archives are unpacked in 16 KB pieces with the real size counted (`imports-exports/unzip.ts`): a file
+  that declares one byte and unpacks to gigabytes stops at the limit (400 MB test: under 0.3 s instead of the whole
+  decompression). Vitest 1,259 and database 294 pass.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

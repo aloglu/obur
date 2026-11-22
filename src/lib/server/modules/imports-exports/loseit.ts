@@ -2,6 +2,7 @@
 // recognised by its exact headers; anything else stops with a clear reason rather than being guessed. Values are kept
 // as LoseIt stated them: "n/a" is unknown (never zero), deleted rows are left out, a diary row keeps its own totals.
 import { strFromU8, unzipSync } from 'fflate';
+import { unzipLimited } from './unzip.ts';
 import type { EntryNutrients } from '../../../shared/diary-types.ts';
 import type { NutrientCode } from '../../../shared/nutrients.ts';
 
@@ -386,14 +387,18 @@ export function readLoseItArchive(bytes: Uint8Array): LoseItData {
 	let total = 0;
 	let unpacked: Record<string, Uint8Array>;
 	try {
-		unpacked = unzipSync(bytes, {
+		unzipSync(bytes, {
+			// The declared sizes first, before anything is decompressed.
 			filter: (file) => {
-				const wanted = file.name in HEADERS;
-				if (wanted) total += file.originalSize;
+				if (file.name in HEADERS) total += file.originalSize;
 				if (total > LOSEIT_LIMITS.unpackedBytes) throw new LoseItError('too_large');
-				return wanted;
+				return false;
 			}
 		});
+		// Then the real ones, counted while unpacking (unzip.ts; 2026-11-22 Gemini audit, G07).
+		const read = unzipLimited(bytes, (name) => name in HEADERS, LOSEIT_LIMITS.unpackedBytes);
+		if (read === 'too_large') throw new LoseItError('too_large');
+		unpacked = read;
 	} catch (e) {
 		if (e instanceof LoseItError) throw e;
 		throw new LoseItError('not_loseit');
