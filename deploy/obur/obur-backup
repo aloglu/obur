@@ -292,9 +292,11 @@ archive_status() {
 
 # A backup of type $1 to every repository, or with "local" after it only to the local one, as if no off-site store
 # were configured (the backup before an upgrade). "scheduled" marks the scheduler's own, which it retries on failure;
-# "retry" with repository numbers after it backs up only to those.
+# "retry" with repository numbers after it backs up only to those. Succeeds when every repository it tried took the
+# backup: an earlier failure of one it did not try never fails it (2026-11-22 audit, A02: a recorded off-site failure
+# kept a finished restore closed). Each repository's own last result is kept in .copies, for the admin page.
 backup() {
-	local type=$1 ok=true repo results='{}' started targets run=pgbackrest scheduled=false
+	local type=$1 ok=true repo results='{}' tried='{}' started targets run=pgbackrest scheduled=false
 	targets=$(repos)
 	case ${2:-} in
 	local)
@@ -315,6 +317,7 @@ backup() {
 		status --arg at "$started" --argjson s "$scheduled" \
 			--arg nightly "$([[ ${2:-} == scheduled ]] && echo yes)" \
 			'.lastBackup = {at: $at, type: "none", ok: false, repos: {"1": false}, scheduled: $s}
+			| .copies = ((.copies // {}) + {"1": {at: $at, ok: false}})
 			| if $nightly == "yes" then .lastScheduledBackupAt = $at else . end'
 		return 1
 	fi
@@ -333,18 +336,23 @@ backup() {
 			if [[ $repo == 2 ]]; then rm -f "$QUEUE_DIR/gap"; fi
 			if [[ $repo == 2 && $repo_type == full ]]; then rm -f "$OFFSITE_FULL_NEEDED"; fi
 			results=$(jq --arg r "$repo" '. + {($r): true}' <<<"$results")
+			tried=$(jq --arg r "$repo" '. + {($r): true}' <<<"$tried")
 		else
 			ok=false
 			results=$(jq --arg r "$repo" '. + {($r): false}' <<<"$results")
+			tried=$(jq --arg r "$repo" '. + {($r): false}' <<<"$tried")
 			log "backup to repository $repo failed"
 		fi
 	done
-	if [[ $(jq '[.[]] | all' <<<"$results") != true ]]; then ok=false; fi
-	status --arg at "$started" --arg type "$type" --argjson ok "$ok" --argjson repos "$results" \
-		--argjson s "$scheduled" \
+	# The shown result covers every repository (one not tried keeps its earlier result); success is the local copy's.
+	local all_ok=true
+	if [[ $(jq '[.[]] | all' <<<"$results") != true ]]; then all_ok=false; fi
+	status --arg at "$started" --arg type "$type" --argjson ok "$all_ok" --argjson repos "$results" \
+		--argjson tried "$tried" --argjson s "$scheduled" \
 		--arg nightly "$([[ ${2:-} == scheduled ]] && echo yes)" \
 		'.lastBackup = {at: $at, type: $type, ok: $ok, repos: $repos, scheduled: $s}
-		| if $ok then .lastSuccessfulBackupAt = $at else . end
+		| .copies = ((.copies // {}) + ($tried | with_entries(.value = {at: $at, ok: .value})))
+		| if $tried["1"] == true then .lastSuccessfulBackupAt = $at else . end
 		| if $nightly == "yes" then .lastScheduledBackupAt = $at else . end'
 	archive_status
 	queue_status || true
@@ -437,7 +445,7 @@ restore_check() {
 	(
 		flock 6
 		# A restore holds the lock while it writes the database; one that is pending leaves nothing to check.
-		if [[ -f $STATUS_DIR/restore-pending ]]; then
+		if [[ -f $STATUS_DIR/restore.json ]]; then
 			log "no restore check: a restore is in progress"
 			exit 1
 		fi
@@ -474,7 +482,7 @@ scheduler() {
 	local retries=0
 	while true; do
 		# A restored database waits for `obur restore finish`, which backs it up itself once sessions are cleared.
-		if [[ -f $STATUS_DIR/restore-pending ]]; then
+		if [[ -f $STATUS_DIR/restore.json ]]; then
 			sleep "$TICK_SECONDS"
 			continue
 		fi

@@ -2,8 +2,10 @@
 # The obur container's main process (under tini): PostgreSQL, the backup scheduler, the web app and the worker, each
 # as its own user. Start-up applies upgrades (with a backup first when there is history to protect), and a stop shuts
 # everything down in order. Anything that dies unexpectedly stops the container, so Docker's restart policy restarts
-# it whole. `obur restore start` asks for a hold (everything stopped) through $OBUR_RUN/hold; while a restore is
-# pending (the mark in /data/status) only the database and the web app's "being restored" page run.
+# it whole. `obur restore start` asks for a hold (everything stopped) through $OBUR_RUN/hold. The restore's own state
+# (env.sh, RESTORE_STATE) decides the rest: while it is restored or finishing, only the database and the web app's
+# "being restored" page run; a restore that stopped before that (also across a restart) keeps everything stopped
+# until `obur restore start` or `obur restore cancel`, so a half-written database folder is never started.
 set -euo pipefail
 # shellcheck source=deploy/obur/env.sh
 . /usr/local/lib/obur/env.sh
@@ -30,6 +32,7 @@ chmod a+x /data
 install -d -o postgres -g postgres -m 700 /data/postgres /data/backups /data/offsite-queue
 install -d -o postgres -g postgres -m 755 "$OBUR_STATUS_DIR"
 chown postgres:postgres /data/backups
+restore_migrate_marks
 
 PG_ARGS=(postgres
 	-c listen_addresses=127.0.0.1
@@ -86,8 +89,8 @@ fatal() {
 # Why obur must not create a new, empty database here, if it must not (docs/restore.md): it waits for a restore.
 needs_restore() {
 	[[ ! -s $PGDATA/PG_VERSION && ${OBUR_ALLOW_NEW_DATABASE:-} != 1 ]] || return 1
-	if [[ -f $OBUR_STATUS_DIR/restore-pending ]]; then
-		echo "a restore is pending but the database folder is empty: run 'obur restore start' again"
+	if [[ -n $(restore_step) ]]; then
+		echo "a restore is pending but the database folder is empty: run 'obur restore cancel', then 'obur restore start'"
 	elif [[ -f /data/backups/backup/obur/backup.info ]]; then
 		echo "the database folder is empty but backups exist: restore them with 'obur restore start' (docs/restore.md), or set OBUR_ALLOW_NEW_DATABASE=1 to start a new database"
 	elif [[ $offsite == yes ]]; then
@@ -230,6 +233,15 @@ while :; do
 			migrated=0
 		fi
 		touch "$OBUR_RUN/held"
+	elif [[ $(restore_step) =~ ^(preparing|moved|restoring|cancelling)$ ]]; then
+		# A restore command stopped part-way (or the container restarted under it): nothing may run on that folder.
+		if [[ -n $pg_pid$web_pid$worker_pid$sched_pid ]]; then
+			stop_all
+			migrated=0
+		fi
+		[[ -f $OBUR_RUN/held ]] ||
+			log "waiting: a restore stopped at '$(restore_step)': run 'obur restore start' to try it again, or 'obur restore cancel' to go back"
+		touch "$OBUR_RUN/held"
 	elif [[ -z $pg_pid ]] && look_offsite && reason=$(needs_restore); then
 		# Nothing runs; `obur restore start` can begin straight away.
 		[[ -f $OBUR_RUN/held ]] || log "waiting: $reason"
@@ -242,7 +254,7 @@ while :; do
 		fi
 		alive "$pg_pid" || fatal "PostgreSQL stopped unexpectedly"
 		alive "$sched_pid" || start_scheduler
-		if [[ -f $OBUR_STATUS_DIR/restore-pending ]]; then
+		if [[ $(restore_step) =~ ^(restored|finishing)$ ]]; then
 			# Only the page that says a restore is in progress, until `obur restore finish`.
 			if [[ -n $worker_pid ]]; then
 				stop_proc "$worker_pid" worker

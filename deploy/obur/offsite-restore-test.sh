@@ -72,7 +72,7 @@ out=$(docker exec "$name" obur restore start --repo=2 2>&1) || fail "restore sta
 out=$(docker exec "$name" obur restore finish --none 2>&1) || fail "restore finish: $out"
 ready "not ready after the restore"
 [[ $(sql 'select note from restore_marker') == kept ]] || fail "the restored data is missing"
-[[ -z $(docker exec "$name" ls /data/status/restore-pending 2>/dev/null) ]] || fail "the restore is still pending"
+[[ -z $(docker exec "$name" ls /data/status/restore.json 2>/dev/null) ]] || fail "the restore is still pending"
 [[ $(docker exec "$name" obur backup info) == *'full backup'* ]] || fail "no local backup after the restore"
 out=$(docker exec "$name" obur backup now 2>&1) || fail "a backup after the restore: $out"
 [[ $(status '.lastBackup.repos') == '{"1":true,"2":true}' ]] || fail "the backup after the restore: $(status '.lastBackup')"

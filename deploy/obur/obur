@@ -23,14 +23,6 @@ supervised() {
 		obur_fail "obur is not running in this container"
 }
 
-# Where `restore start` moved the database it replaced, kept in /data so a restart doesn't lose it.
-ASIDE_NOTE=$OBUR_STATUS_DIR/restore-aside
-
-# A restore that completed and waits for `restore finish` (a mark without restoredAt is a failed attempt).
-restore_completed() {
-	jq -e '.restoredAt' "$OBUR_STATUS_DIR/restore-pending" >/dev/null 2>&1
-}
-
 hold_obur() {
 	touch "$OBUR_RUN/hold"
 	for _ in $(seq 120); do
@@ -41,62 +33,70 @@ hold_obur() {
 }
 
 # One restore command at a time: a second `start` or a `cancel` while one is still restoring would remove the
-# database it is writing (2026-11-20 audit). Holding the lock also tells a running command from an interrupted one:
-# a mark without restoredAt found while holding it is a failed or interrupted attempt. Held until this command ends.
+# database it is writing (2026-11-20 audit). Held until this command ends. Every command then reads the one state
+# (env.sh, RESTORE_STATE) and acts only on the steps it is for.
 restore_lock() {
 	exec 9>"$OBUR_RUN/restore.lock"
 	flock -n 9 || obur_fail "another 'obur restore' command is still running; wait for it to end, then try again"
+	restore_migrate_marks
 }
 
-move_aside() {
-	mv "$PGDATA" "$1"
-	sync /data
-	echo "obur: the current database was moved aside to $1 (kept until you delete it)"
-}
-
-restore_start() {
-	supervised
-	restore_lock
-	local retry=0
-	if [[ -f $OBUR_STATUS_DIR/restore-pending ]]; then
-		restore_completed && obur_fail "a restore is already pending: finish it with 'obur restore finish', or put the old database back with 'obur restore cancel'"
-		retry=1
-	elif [[ -f $ASIDE_NOTE ]]; then
-		# An attempt that stopped before it began restoring: the database it replaced is aside already.
-		retry=1
-	fi
-	# A running restore check reads the live database: stopping it would record a failed check that is not one.
-	gosu postgres obur-backup wait-restore-check
+stop_for_restore() {
 	echo "obur: stopping obur for the restore ..."
 	hold_obur || {
 		rm -f "$OBUR_RUN/hold"
 		obur_fail "obur did not stop within two minutes; nothing was changed"
 	}
-	local aside
-	aside=$(cat "$ASIDE_NOTE" 2>/dev/null || true)
-	if ((retry)) && [[ -n $aside && ! -d $aside && -d $PGDATA ]]; then
-		# Stopped after it noted where the database goes but before the move: the database is still in place.
-		echo "obur: an earlier restore stopped before it began; starting it again"
-		move_aside "$aside"
-	elif ((retry)); then
-		# The database folder holds only what the failed attempt left; the one it replaced is still aside.
-		echo "obur: an earlier restore did not complete; starting it again"
-		rm -rf "$PGDATA"
-	elif [[ -d $PGDATA ]]; then
-		aside=/data/postgres-before-restore-$(date +%Y%m%d-%H%M%S)
-		# The note first, on disk before the move: an interruption at any point leaves the database findable, in its
-		# place or at the noted path (2026-11-21 audit, A04). A rename within /data is all or nothing.
-		echo "$aside" >"$ASIDE_NOTE.new"
-		sync "$ASIDE_NOTE.new"
-		mv "$ASIDE_NOTE.new" "$ASIDE_NOTE"
-		sync "$OBUR_STATUS_DIR"
-		move_aside "$aside"
+}
+
+restore_start() {
+	supervised
+	restore_lock
+	local step aside
+	step=$(restore_step)
+	case $step in
+	restored) obur_fail "a restore is already pending: finish it with 'obur restore finish', or put the old database back with 'obur restore cancel'" ;;
+	finishing) obur_fail "a restore is being finished: run 'obur restore finish' again to complete it" ;;
+	cancelling) obur_fail "a restore is being cancelled: run 'obur restore cancel' again to complete it" ;;
+	esac
+	# A running restore check reads the live database: stopping it would record a failed check that is not one.
+	gosu postgres obur-backup wait-restore-check
+	stop_for_restore
+	if [[ -z $step ]]; then
+		# Where the current database goes, on disk before it moves; none when the folder holds no database.
+		aside=''
+		[[ -d $PGDATA ]] && aside=/data/postgres-before-restore-$(date +%Y%m%d-%H%M%S)
+		restore_set preparing --arg aside "$aside" '. + {aside: $aside}'
+		step=preparing
+	else
+		echo "obur: an earlier restore did not complete (it stopped at '$step'); starting it again"
 	fi
+	aside=$(restore_field aside)
+	checkpoint start-prepared
+	if [[ $step == preparing ]]; then
+		# A rename within /data is all or nothing: the database is either still in place or wholly at `aside`.
+		if [[ -n $aside && ! -d $aside ]]; then
+			[[ -d $PGDATA ]] || obur_fail "the database to move aside is not at $PGDATA; nothing was changed"
+			mv "$PGDATA" "$aside"
+			sync /data
+		fi
+		[[ -n $aside ]] && echo "obur: the current database was moved aside to $aside (kept until you delete it)"
+		checkpoint start-moved-unrecorded
+		restore_set moved
+		step=moved
+	fi
+	checkpoint start-moved
+	# The database folder now holds at most what an earlier attempt restored: the database it replaced is at `aside`.
+	restore_set restoring
+	rm -rf "$PGDATA"
+	checkpoint start-cleared
 	if ! obur-restore start "$@"; then
 		echo "obur: the restore failed; obur stays stopped. Fix the cause and run 'obur restore start' again," >&2
 		echo "obur: or go back to how it was with 'obur restore cancel'." >&2
 		exit 1
 	fi
+	checkpoint start-restored-unrecorded
+	restore_set restored --arg options "$*" '. + {options: $options}'
 	rm -f "$OBUR_RUN/hold"
 	echo "obur: restored. obur now says it is being restored until you run:"
 	echo "      obur restore finish <every entry from Server → Backups → Deleted accounts>   (or --none if that list is empty)"
@@ -107,7 +107,12 @@ restore_finish() {
 	# Checked before any waiting (obur-restore checks it again).
 	[[ $# -gt 0 ]] || obur_fail "pass every entry from Server → Backups → Deleted accounts, or --none if that list is empty (docs/restore.md)"
 	restore_lock
-	[[ -f $OBUR_STATUS_DIR/restore-pending ]] || obur_fail "no restore is pending"
+	case $(restore_step) in
+	restored | finishing) ;;
+	'') obur_fail "no restore is pending" ;;
+	cancelling) obur_fail "a restore is being cancelled: run 'obur restore cancel' again to complete it" ;;
+	*) obur_fail "the restore did not complete (it stopped at '$(restore_step)'): run 'obur restore start' again, or 'obur restore cancel'" ;;
+	esac
 	for _ in $(seq 120); do
 		pg_isready -q -h "$OBUR_SOCKET" -U obur_admin -d obur && break
 		sleep 1
@@ -122,33 +127,57 @@ restore_finish() {
 		sleep 1
 	done
 	[[ $recovering == f ]] || obur_fail "the restored database is still replaying after 10 minutes; run 'obur restore finish' again later"
+	# From here the restored database is the one kept: cancel is refused, and an interrupted finish is run again.
+	restore_set finishing
+	checkpoint finish-started
 	obur-restore finish "$@"
-	rm -f "$ASIDE_NOTE" "$OBUR_RUN/aside"
+	checkpoint finish-done-unrecorded
+	local aside
+	aside=$(restore_field aside)
+	restore_clear
 	echo "obur: obur reopens in a few seconds. Then check Server → Backups, and run: obur backup restore-check"
+	[[ -z $aside || ! -d $aside ]] || echo "obur: the database from before the restore stays at $aside until you delete it"
 }
 
 restore_cancel() {
 	supervised
 	restore_lock
-	[[ -f $OBUR_STATUS_DIR/restore-pending || -f $ASIDE_NOTE || -f $OBUR_RUN/aside ]] ||
-		obur_fail "no restore is pending"
-	local aside
-	# $OBUR_RUN/aside: where versions before 1.0.0 noted it.
-	aside=$(cat "$ASIDE_NOTE" 2>/dev/null || cat "$OBUR_RUN/aside" 2>/dev/null || true)
-	hold_obur || obur_fail "obur did not stop within two minutes"
+	local step aside
+	step=$(restore_step)
+	case $step in
+	'') obur_fail "no restore is pending" ;;
+	finishing) obur_fail "the restore is being finished, so the restored database is the one kept: run 'obur restore finish' again to complete it" ;;
+	esac
+	aside=$(restore_field aside)
+	stop_for_restore
+	if [[ $step == preparing && ( -z $aside || ! -d $aside ) ]]; then
+		# Stopped before the move: the database never left its place.
+		restore_clear
+		rm -f "$OBUR_RUN/hold"
+		echo "obur: the restore stopped before it moved the database, so it is still in place; obur starts again."
+		return
+	fi
+	restore_set cancelling
+	checkpoint cancel-started
 	if [[ -n $aside && -d $aside ]]; then
 		rm -rf "$PGDATA"
+		checkpoint cancel-cleared
 		mv "$aside" "$PGDATA"
+		sync /data
+		checkpoint cancel-back-unrecorded
+		restore_clear
 		echo "obur: the database from before the restore is back; obur starts again."
 	elif [[ -n $aside ]]; then
-		# Noted but never moved (the restore stopped before the move): the database never left its place.
-		echo "obur: the restore stopped before it moved the database, so it is still in place; obur starts again."
+		# Put back by an earlier cancel that stopped before it could say so.
+		restore_clear
+		echo "obur: the database from before the restore is back; obur starts again."
 	else
 		rm -rf "$PGDATA"
+		restore_clear
 		# Nothing was moved aside: there was no database before the restore.
 		echo "obur: the restore is cancelled. There was no database before it, so obur is back to how it was then."
 	fi
-	rm -f "$OBUR_STATUS_DIR/restore-pending" "$ASIDE_NOTE" "$OBUR_RUN/aside" "$OBUR_RUN/hold"
+	rm -f "$OBUR_RUN/hold"
 }
 
 cmd=${1:-}

@@ -60,6 +60,11 @@ their deletions are applied again after every restore.
    stopped: fix the cause and run it again (what the failed attempt left is cleared first), or run
    `obur restore cancel` to go back to how it was: the old database, or none if there was none.
 
+   If a restore command is interrupted (the container stops, the connection drops), nothing is lost: obur records
+   each step on disk before it takes it, and stays stopped after a restart, saying "waiting: a restore stopped at
+   …". Run the same command again to complete it, or `obur restore cancel` to go back. Once `finish` has begun, the
+   restored database is the one kept: cancel is refused, and an interrupted finish is completed by running it again.
+
 3. **Finish.** Pass every entry from the deleted-accounts list, as `<ID>`, optionally followed by `@<date>`. If the
    list is empty, pass `--none`: finish refuses to run with neither, so a forgotten list never brings a deleted
    account back. (Lists copied before 2026-11-17 may mark some entries `:shared`; pass them as they are.)

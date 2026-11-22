@@ -117,13 +117,17 @@ logs=$(docker logs "$name" 2>&1)
 grep -q 'retrying the failed backup to repository 2 (attempt 1 of 3)' <<<"$logs" ||
 	fail "the retry was not logged, or retried more than the off-site repository"
 
-echo "a restore finishes while the store is away"
+echo "a restore finishes while the store is away, also after an off-site backup already failed (2026-11-22 audit, A02)"
 docker exec "$name" chmod 000 /offsite
+# The last backup's off-site copy failed, and the store stays away through the restore.
+out=$(docker exec "$name" obur backup now 2>&1) && fail "a backup with the store away succeeded"
+[[ $(status '.lastBackup.repos') == '{"1":true,"2":false}' ]] || fail "the off-site failure was not recorded"
+[[ $(status '[.copies["1"].ok, .copies["2"].ok]') == '[true,false]' ]] || fail "each copy's own result"
 out=$(docker exec "$name" obur restore start 2>&1) || fail "restore start: $out"
 out=$(docker exec "$name" obur restore finish --none 2>&1) || fail "restore finish with the store away: $out"
 [[ $out == *'next nightly backup'* ]] || fail "restore finish did not say the off-site copy waits: $out"
 docker exec "$name" test -f /data/status/offsite-full-needed || fail "the off-site full backup is not remembered"
-docker exec "$name" test ! -f /data/status/restore-pending || fail "obur stayed closed after the restore"
+docker exec "$name" test ! -f /data/status/restore.json || fail "obur stayed closed after the restore"
 [[ $(status '.lastBackup.repos["1"]') == true ]] || fail "no local full backup after the restore"
 docker exec "$name" chmod 700 /offsite
 yesterday=$(date -u -d yesterday +%Y-%m-%dT%H:%M:%SZ)

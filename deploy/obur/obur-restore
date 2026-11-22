@@ -5,22 +5,29 @@
 #   obur-restore start [pgBackRest restore options]
 #       With PostgreSQL stopped and an empty data folder: restores the latest backup and all archived WAL (or a point
 #       in time with --type=time --target="2026-10-29 21:00:00+03"; use --repo=2 to restore from the off-site copy).
-#       Leaves a restore-pending mark, so the web app answers "restore in progress" until the restore is finished.
-#       Run through `obur restore start`, which stops obur and moves the old database aside first.
 #
 #   obur-restore finish --none | <account ID>[@<deletion date>] ...
 #       With the restored database running: signs everyone out, cancels recovery links, unused invites and setup
-#       links, deletes again each account from the admin's off-server deletion list (with its foods), takes a full backup of the new history (locally; the off-site copy too when it can be
-#       reached, otherwise with the next nightly backup), and removes the mark.
-#       Run through `obur restore finish <IDs from the list>`.
+#       links, deletes again each account from the admin's off-server deletion list (with its foods), and takes a full
+#       backup of the new history (locally; the off-site copy too when it can be reached, otherwise with the next
+#       nightly backup). Safe to run again after an interruption: each part does nothing the second time.
+#
+# Run both through `obur restore start|finish`, which keeps the restore's state (env.sh, RESTORE_STATE): the web app
+# answers "restore in progress" until the restore is finished.
 set -euo pipefail
 
 STATUS_DIR=${OBUR_STATUS_DIR:-/var/lib/obur-status}
-MARK=$STATUS_DIR/restore-pending
 PGDATA=${PGBACKREST_PG1_PATH:-/var/lib/postgresql/18/docker}
 UUID='[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 
 say() { printf 'obur-restore: %s\n' "$*"; }
+# The interruption test's stopping points (as in env.sh).
+checkpoint() {
+	if [[ ${OBUR_TEST_INTERRUPT:-} == "$1" ]]; then
+		say "(test) stopped at $1" >&2
+		exit 99
+	fi
+}
 fail() {
 	say "$*" >&2
 	exit 1
@@ -36,13 +43,9 @@ start() {
 	if [[ -n $(ls -A "$PGDATA" 2>/dev/null) ]]; then
 		fail "$PGDATA is not empty; use obur restore start, which moves it aside"
 	fi
-	jq -n --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg options "$*" '{startedAt: $at, options: $options}' >"$MARK"
 	say "restoring into $PGDATA ..."
 	# Waits while the weekly restore check runs; none starts until this restore ends.
 	obur-backup restore "$@"
-	# Only a restore that completed says so: a mark without it is a failed attempt, which may be retried or cancelled.
-	jq --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {restoredAt: $at}' "$MARK" >"$MARK.new"
-	mv "$MARK.new" "$MARK"
 	say "restored"
 }
 
@@ -59,7 +62,6 @@ deletions_given() {
 finish() {
 	deletions_given "$@"
 	[[ ${1:-} == --none ]] && shift
-	[[ -f $MARK ]] || fail "no restore is pending"
 	local sql=(psql -X -q -v ON_ERROR_STOP=1 -h /var/run/postgresql -U "${PGBACKREST_PG1_USER:-postgres}" -d "${POSTGRES_DB:-obur}")
 	local statements="begin;
 delete from sessions;
@@ -89,10 +91,10 @@ select app_reapply_deletion('$id', $at);"
 commit;"
 	"${sql[@]}" <<<"$statements"
 	say "signed everyone out, cancelled pending links and invites, reapplied $# deletion(s)"
+	checkpoint finish-signed-out
 	# A restore starts a new history (timeline); back it up in full before reopening. Only the local backup must
 	# succeed: an unreachable off-site store must not keep obur closed (it is backed up in full when it answers).
 	obur-backup full-local
-	rm -f "$MARK"
 	say "done"
 }
 

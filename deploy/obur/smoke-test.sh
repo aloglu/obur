@@ -99,7 +99,7 @@ ready_again() {
 # audit). A backup set that doesn't exist makes pgBackRest fail.
 docker exec "$name" obur restore start --set=does-not-exist >/dev/null 2>&1 && fail "a restore of no backup worked"
 out=$(docker exec "$name" obur restore start --set=does-not-exist 2>&1) && fail "the second bad restore worked"
-[[ $out == *'did not complete; starting it again'* ]] || fail "a failed restore could not be retried: $out"
+[[ $out == *'did not complete'*'starting it again'* ]] || fail "a failed restore could not be retried: $out"
 # While another restore command runs, start and cancel are refused and change nothing (2026-11-20 audit).
 docker exec -d "$name" flock /run/obur/restore.lock sleep 10
 sleep 1

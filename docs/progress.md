@@ -116,6 +116,17 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   "recent upgrade test passed (rc.7 → rc.8)", and published the images and the release at 14:21 UTC; 45030141749
   passed every test too, pushed the same images again and failed only at the release record ("already exists").
   1.0.0-rc.8 is published. Next: the owner updates and goes through the checklist (D04 on the iPhone first).
+- Codex rc.8 audit (2026-11-22, `~/Documents/Obur-1.0-Audit-Codex.md`, A01–A12; all verified real). Cause found
+  for the repeats: a restore's state was spread over several marker files changed by three scripts as two users, so
+  each audit patched one more interruption path (ten restore fixes since 2026-11-14). Owner chose the structural fix.
+  Done: one state file `/data/status/restore.json` with steps (preparing, moved, restoring, restored, finishing,
+  cancelling), written safely before each action; only `obur restore` changes it; cancel refused from finishing on
+  (A01); obur-init keeps everything stopped at an unfinished step, also after a restart; older marks converted;
+  `restore-interrupt-test.sh` stops every command at every step (19 rounds, 2 min 40 s) and is in the release
+  workflow. A backup run succeeds when the repositories it tried took it; per-repository results in `.copies` (A02;
+  off-site test now starts the restore with a recorded off-site failure). Image tests: interruption, smoke, off-site,
+  off-site restore, upgrade from beta.19 and from rc.8 all passed. Next: A03–A10 and A12 one commit each; A11 waits
+  for the owner's choice; then a re-audit against the Codex report.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

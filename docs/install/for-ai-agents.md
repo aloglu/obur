@@ -123,6 +123,10 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
   `/data/offsite-queue` (limit `OBUR_OFFSITE_QUEUE_MAX_MB`, default 1024) and are sent when it answers ("the off-site
   store is back: N waiting WAL file(s) sent"). Check the `OBUR_OFFSITE_*` values and the server's connection. After
   "the off-site store has been away too long", run `docker exec obur obur backup now` once it is reachable.
+- **"waiting: a restore stopped at '<step>'"** (log): a restore command was interrupted. Nothing is lost and nothing
+  runs on the half-restored folder. Ask the person whether to complete it (`obur restore start` again, with the same
+  options) or go back (`obur restore cancel`). At step `finishing`, only `obur restore finish` (with the same list)
+  is allowed.
 - **"the weekly restore check is running; waiting for it to end"** (from `obur restore start`): normal; the restore
   continues by itself when the check ends. Do not interrupt it. After an hour it gives up and says so; run it again.
 - **"the off-site repository could not be set up … is or was the repo encrypted?":** the bucket folder holds another

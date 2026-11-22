@@ -89,3 +89,74 @@ obur_node() {
 obur_psql() {
 	gosu postgres psql -X -q -t -A -v ON_ERROR_STOP=1 -h "$OBUR_SOCKET" -U obur_admin -d obur "$@"
 }
+
+# A restore's state: one file, one step at a time (2026-11-22 audit, A01: the state had been spread over several
+# files, and each audit found another interruption that left them disagreeing). Only `obur restore …` changes it;
+# obur-init, the backup tool and the web app only read it. No file: no restore. The steps, in order:
+#   preparing   obur is stopped; `aside` names where the current database goes ("" when there is none)
+#   moved       the database is at `aside` (or there was none): the database folder holds nothing to keep
+#   restoring   pgBackRest writes the database folder
+#   restored    the restored database runs; the app says "being restored" until `restore finish`
+#   finishing   sign-outs, deletions and the new backup: from here the restored database is the one kept
+#   cancelling  the database from before is being put back
+# Each step is on disk before what it names begins, so an interruption anywhere leaves a step that says what to do.
+RESTORE_STATE=$OBUR_STATUS_DIR/restore.json
+
+restore_step() { jq -r '.step // ""' "$RESTORE_STATE" 2>/dev/null || true; }
+restore_field() { jq -r --arg f "$1" '.[$f] // ""' "$RESTORE_STATE" 2>/dev/null || true; }
+
+# Moves to step $1, keeping the other fields; more jq arguments and a filter may follow (`--arg k v '. + {k: $k}'`).
+restore_set() {
+	local step=$1 filter='.'
+	shift
+	if (($#)); then
+		filter=${*: -1}
+		set -- "${@:1:$#-1}"
+	else
+		set --
+	fi
+	local current='{}'
+	[[ -s $RESTORE_STATE ]] && current=$(cat "$RESTORE_STATE")
+	jq --arg step "$step" --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$@" \
+		"($filter) + {step: \$step, (\$step + \"At\"): \$at}" <<<"$current" >"$RESTORE_STATE.new"
+	chmod 644 "$RESTORE_STATE.new"
+	sync "$RESTORE_STATE.new"
+	mv "$RESTORE_STATE.new" "$RESTORE_STATE"
+	sync "$OBUR_STATUS_DIR"
+}
+
+restore_clear() {
+	rm -f "$RESTORE_STATE"
+	sync "$OBUR_STATUS_DIR"
+}
+
+# Versions before 1.0.0-rc.9 kept the state in several files: an unfinished restore from one of them goes on in the
+# one file. restore-pending with restoredAt was a finished copy; without it, an attempt that did not complete.
+restore_migrate_marks() {
+	local pending=$OBUR_STATUS_DIR/restore-pending note=$OBUR_STATUS_DIR/restore-aside old_note=$OBUR_RUN/aside
+	[[ -f $pending || -f $note || -f $old_note ]] || return 0
+	if [[ ! -f $RESTORE_STATE ]]; then
+		local aside step
+		aside=$(cat "$note" 2>/dev/null || cat "$old_note" 2>/dev/null || true)
+		if [[ -f $pending ]] && jq -e '.restoredAt' "$pending" >/dev/null 2>&1; then
+			step=restored
+		elif [[ -f $pending ]]; then
+			step=restoring
+		elif [[ -n $aside && -d $aside ]]; then
+			step=moved
+		else
+			step=preparing
+		fi
+		restore_set "$step" --arg aside "$aside" '. + {aside: $aside}'
+	fi
+	rm -f "$pending" "$note" "$old_note"
+}
+
+# For the interruption test (deploy/obur/restore-interrupt-test.sh): a command run with OBUR_TEST_INTERRUPT=<point>
+# stops there, as if the process had been killed. It only ever stops a command early.
+checkpoint() {
+	if [[ ${OBUR_TEST_INTERRUPT:-} == "$1" ]]; then
+		printf 'obur: (test) stopped at %s\n' "$1" >&2
+		exit 99
+	fi
+}

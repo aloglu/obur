@@ -1,7 +1,8 @@
 # Tests and publishes obur's three images to GitHub's registry when a version is tagged (v1.0.0), as
 # ghcr.io/aloglu/obur, obur-speech and obur-labels with the version and `latest`, then a GitHub release for it.
 # Nothing is published unless the checks, the browser tests and every image's tests pass (obur: smoke, off-site
-# outage and restore, upgrade and restore from beta.19 and from the last release; add-ons: one input each), and then all three together. A test release
+# outage and restore, restore interrupted at every step, upgrade and restore from beta.19 and from the last release;
+# add-ons: one input each), and then all three together. A test release
 # (v1.0.0-beta.1) is published under its own version only, never as `latest`. Pushes to branches run nothing. Run it
 # by hand (Actions → Release → Run workflow), on a branch or a tag, to build and test without publishing.
 name: Release
@@ -135,6 +136,10 @@ jobs:
       - name: Off-site restore on a new server test
         if: matrix.image == 'obur'
         run: deploy/obur/offsite-restore-test.sh obur:test
+      # Every restore command stopped at every step, then the next command: nothing may be lost (audit A01, 2026-11-22).
+      - name: Restore interruption test
+        if: matrix.image == 'obur'
+        run: deploy/obur/restore-interrupt-test.sh obur:test
       # Real data from an older release updated by this image, then that release's backup restored (with its replay
       # held paused) and a deletion list reapplied. beta.19 is the last version before foods became private.
       - name: Upgrade and restore test
