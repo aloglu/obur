@@ -26,7 +26,7 @@ Read the whole page before acting. When this page and a guide disagree, follow t
   firewall). Only an HTTPS reverse proxy or tunnel should face the internet.
 - **Edit the database directly** (`psql`), or run anything inside the container other than the `obur` commands below.
 - **Turn on remote AI models for people, or enter API keys for them.** Each person does that themselves in the app
-  (More → Speak and Scan), after agreeing to what is sent. Never put a key in a file or a command.
+  (More → Settings → Speak and Scan), after agreeing to what is sent. Never put a key in a file or a command.
 
 Don't print secrets back to the person or into logs: the passphrase, `.env` contents, `/data/secrets`, API keys,
 or setup and recovery links in places other people can read.

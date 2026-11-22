@@ -3,6 +3,7 @@
 	import Link from '@lucide/svelte/icons/link';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { api } from '#lib/client/api.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -103,7 +104,7 @@
 					<span
 						aria-hidden="true"
 						class="grid size-10 place-items-center rounded-small bg-soft font-display text-[1.0625rem] font-extrabold text-accent"
-						>{member.displayName.trim().slice(0, 1).toLocaleUpperCase('tr')}</span
+						>{member.displayName.trim().slice(0, 1).toLocaleUpperCase(getLocale())}</span
 					>
 					<span class="min-w-0">
 						<span class="flex flex-wrap items-center gap-1.5">

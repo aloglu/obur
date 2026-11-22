@@ -80,7 +80,7 @@ Once the first account exists, the log says "the setup link in this log no longe
 If you left them out, in the `obur` folder: put the `obur-speech` and `obur-labels` sections back into `compose.yaml`
 (download it again as in Step 2, or copy them from
 [`deploy/compose.yaml`](https://github.com/aloglu/obur/blob/main/deploy/compose.yaml)), delete the empty
-`SPEECH_URL=` and `LABELS_URL=` lines from `.env`, then run `docker compose up -d`. Your data stays where it is. More →
+`SPEECH_URL=` and `LABELS_URL=` lines from `.env`, then run `docker compose up -d`. Your data stays where it is. More → Settings →
 Speak and Scan then offers **On this server** again.
 
 ## Everyday commands

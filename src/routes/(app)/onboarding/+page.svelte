@@ -452,13 +452,13 @@
 							></i>
 						</div>
 						<div class="relative h-4 text-[0.71875rem] text-muted tabular-nums" aria-hidden="true">
-							{#each [[15, '15'], [18.5, '18,5'], [25, '25'], [30, '30'], [40, '40']] as const as [at, text] (at)}
+							{#each [15, 18.5, 25, 30, 40] as at (at)}
 								<span
 									class={[
 										'absolute',
 										at === 15 ? '' : at === 40 ? '-translate-x-full' : '-translate-x-1/2'
 									]}
-									style:left="{((at - 15) / 25) * 100}%">{text}</span
+									style:left="{((at - 15) / 25) * 100}%">{formatDecimal(at, 1)}</span
 								>
 							{/each}
 						</div>
@@ -625,7 +625,7 @@
 		}
 	}
 	.bmi-bar {
-		/* Under 18,5 and over 25 in the track colour, the healthy range tinted. */
+		/* Under 18.5 and over 25 in the track colour, the healthy range tinted. */
 		background: linear-gradient(
 			90deg,
 			var(--track) 0 14%,
