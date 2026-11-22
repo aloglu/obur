@@ -109,8 +109,13 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   ran, then restores that release's backup (a weigh-in made after it disappears), finishes the restore and checks
   again. From rc.7 to the current image: passed. The release workflow runs it from the newest earlier published
   release (GitHub's release list), next to the beta.19 test. Owner (2026-11-22): rc.8 should have had it. The first rc.8 run was cancelled before
-  publishing anything, its tag deleted, and `v1.0.0-rc.8` tagged again on this commit, so its run includes the test
-  (from rc.7).
+  publishing anything, its tag deleted, and `v1.0.0-rc.8` tagged again, so its run includes the test (from rc.7). That
+  run failed in the new test only: it asked for the sign-in page as soon as "ready" was logged, which is when the
+  app starts, not when it answers; the test now waits up to 60 s (`c131094`). The tag was moved to `c131094` (owner's
+  go). Two runs started for it (the tag was moved twice within a minute): 45030099392 passed every test, including
+  "recent upgrade test passed (rc.7 → rc.8)", and published the images and the release at 14:21 UTC; 45030141749
+  passed every test too, pushed the same images again and failed only at the release record ("already exists").
+  1.0.0-rc.8 is published. Next: the owner updates and goes through the checklist (D04 on the iPhone first).
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
