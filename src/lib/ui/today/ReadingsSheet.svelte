@@ -10,6 +10,8 @@
 	import type { BodyReading } from '#lib/shared/body-types.ts';
 	import { dayTitle, kcal } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+	import { toKg, typedKg, weightNumber } from '#lib/shared/weight-unit.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 
@@ -35,13 +37,21 @@
 	let budget = $state<Budget>(null);
 	let noMore = $state(false);
 
-	const unit = $derived(kind === 'weight' ? 'kg' : 'ml');
-	const show = (value: number) => formatDecimal(value, kind === 'weight' ? 2 : 0);
+	// Weights in the person's unit (stored in kilograms), water in millilitres.
+	const unit = $derived(kind === 'weight' ? weightUnit() : 'ml');
+	const show = (value: number) =>
+		kind === 'weight' ? weightNumber(value, weightUnit()) : formatDecimal(value, 0);
 	const time = (iso: string) => clockTime(iso, page.data.timeFormat ?? 'device');
-	const value = $derived(parseDecimal(text));
+	const typed = $derived(parseDecimal(text));
+	/** What is saved: kilograms for a weight. */
+	const value = $derived(
+		typed === undefined ? undefined : kind === 'weight' ? typedKg(typed, weightUnit()) : typed
+	);
 	// The same ranges as the database: weight under 700 kg, water up to 10 litres.
 	const valid = $derived(
-		value !== undefined && value > 0 && (kind === 'weight' ? value < 700 : value <= 10_000)
+		typed !== undefined &&
+			typed > 0 &&
+			(kind === 'weight' ? toKg(typed, weightUnit()) < 700 : typed <= 10_000)
 	);
 
 	async function run(action: () => Promise<void>) {

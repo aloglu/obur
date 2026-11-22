@@ -1,6 +1,6 @@
 <script lang="ts">
-	// New weigh-in, opening in place like Other amount (docs/ui.md, "Inline fields"): a button that turns into a kg
-	// field with a round check. Saved at once (it says so when it can't be); the toast offers Undo and says when a calculated
+	// New weigh-in, opening in place like Other amount (docs/ui.md, "Inline fields"): a button that turns into a weight
+	// field in the person's unit (kg or lb), with a round check. Saved at once (it says so when it can't be); the toast offers Undo and says when a calculated
 	// budget moved. Used on Today's Weight card and on an empty Progress.
 	import Check from '@lucide/svelte/icons/check';
 	import { m } from '#lib/paraglide/messages.js';
@@ -9,7 +9,9 @@
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { kcal } from '#lib/shared/format.ts';
-	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+	import { parseDecimal } from '#lib/shared/numbers.ts';
+	import { toKg, typedKg, weightText } from '#lib/shared/weight-unit.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 
 	interface Props {
 		/** The day the weigh-in is for. */
@@ -34,9 +36,12 @@
 		if (!open) text = '';
 	});
 
-	const show = (kg: number) => formatDecimal(kg, 2);
-	const kg = $derived(parseDecimal(text));
-	const invalid = $derived(text.trim() !== '' && (kg === undefined || kg <= 0 || kg >= 700));
+	const unit = $derived(weightUnit());
+	const typed = $derived(parseDecimal(text));
+	const kg = $derived(typed === undefined ? undefined : typedKg(typed, unit));
+	const invalid = $derived(
+		text.trim() !== '' && (typed === undefined || typed <= 0 || toKg(typed, unit) >= 700)
+	);
 
 	type BudgetChange = { beforeKcal: number; afterKcal: number } | null;
 	const budgetDetail = (b: BudgetChange | undefined) =>
@@ -54,7 +59,7 @@
 			inlineField.open = null;
 			await onchange();
 			showToast({
-				message: m.toast_weight({ kg: show(value) }),
+				message: m.toast_weight({ weight: weightText(value, unit) }),
 				detail: budgetDetail(r.budget),
 				undo: async () => {
 					await api('POST', `/api/v1/body/weight/${r.id}?action=delete`, {});
@@ -102,7 +107,7 @@
 				}}
 				class="w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold tabular-nums outline-none placeholder:font-medium placeholder:text-muted"
 			/>
-			<span class="shrink-0 px-1 text-[0.875rem] font-[650] text-muted">kg</span>
+			<span class="shrink-0 px-1 text-[0.875rem] font-[650] text-muted">{unit}</span>
 			<button
 				type="submit"
 				disabled={busy || invalid}

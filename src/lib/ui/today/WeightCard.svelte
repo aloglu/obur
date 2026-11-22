@@ -7,6 +7,8 @@
 	import type { BodyReading } from '#lib/shared/body-types.ts';
 	import { weekdayShort } from '#lib/shared/format.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import { fromKg, weightNumber } from '#lib/shared/weight-unit.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 	import Roll from '../Roll.svelte';
 	import ReadingsSheet from './ReadingsSheet.svelte';
 	import WeighIn from './WeighIn.svelte';
@@ -25,11 +27,15 @@
 
 	const latest = $derived(recent[0] ?? null);
 	const previous = $derived(recent[1] ?? null);
+	const unit = $derived(weightUnit());
+	// The change in the person's unit, to a tenth.
 	const change = $derived(
-		latest && previous ? Math.round((latest.value - previous.value) * 10) / 10 : null
+		latest && previous
+			? Math.round((fromKg(latest.value, unit) - fromKg(previous.value, unit)) * 10) / 10
+			: null
 	);
 	const spark = $derived(recent.map((r) => r.value).toReversed());
-	const show = (kg: number) => formatDecimal(kg, 2);
+	const show = (kg: number) => weightNumber(kg, unit);
 
 	const PAGE = 20;
 	const history_page = (after?: BodyReading) =>
@@ -74,7 +80,8 @@
 				class="font-display text-[1.625rem] leading-[1.1] font-[750] tracking-[-0.02em] tabular-nums"
 			>
 				<Roll value={show(latest.value)} />
-				<small class="font-sans text-[0.8125rem] font-semibold tracking-normal text-muted">kg</small
+				<small class="font-sans text-[0.8125rem] font-semibold tracking-normal text-muted"
+					>{unit}</small
 				>
 			</p>
 		{:else}
@@ -93,7 +100,7 @@
 				{m.weight_same_as({ day: weekdayShort(previous.localDate) })}
 			{:else}
 				<b class={['font-semibold tabular-nums', change! < 0 ? 'text-good' : 'text-text']}
-					>{change! < 0 ? '−' : '+'}{formatDecimal(Math.abs(change!), 1)} kg</b
+					>{change! < 0 ? '−' : '+'}{formatDecimal(Math.abs(change!), 1)} {unit}</b
 				>
 				{m.weight_since({ day: weekdayShort(previous.localDate) })}
 			{/if}

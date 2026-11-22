@@ -28,6 +28,8 @@
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
 	import { dayTitle, kcal, mealName, mealShortName, mealNameTo } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+	import { toKg, typedKg, weightNumber } from '#lib/shared/weight-unit.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 	import { basisFactor, scaleNutrients, type Unit } from '#lib/shared/quantity.ts';
 	import {
 		unitChoices,
@@ -83,7 +85,7 @@
 		  }
 		| { kind: 'quick'; id: string; kcalText: string; description: string; open: boolean }
 		| { kind: 'water'; id: string; mlText: string; open: boolean }
-		| { kind: 'weight'; id: string; kgText: string; open: boolean }
+		| { kind: 'weight'; id: string; readingText: string; open: boolean }
 		| { kind: 'activity'; id: string; kcalText: string; note: string; open: boolean };
 
 	const num = (n: number | null) => (n === null ? '' : formatDecimal(n, 2));
@@ -140,7 +142,8 @@
 				case 'water':
 					return { kind: 'water', id, mlText: num(i.ml), open: false };
 				case 'weight':
-					return { kind: 'weight', id, kgText: num(i.kg), open: false };
+					// Shown and edited in the person's unit; saved in kilograms.
+					return { kind: 'weight', id, readingText: weightNumber(i.kg, weightUnit()), open: false };
 				case 'activity':
 					return { kind: 'activity', id, kcalText: num(i.kcal), note: i.note ?? '', open: false };
 			}
@@ -184,7 +187,7 @@
 				: c.kind === 'water'
 					? `water:${c.mlText}`
 					: c.kind === 'weight'
-						? `weight:${c.kgText}`
+						? `weight:${c.readingText}`
 						: `activity:${c.kcalText}:${c.note}`;
 	function keepUnchanged(next: Card[]): Card[] {
 		const old = [...cards];
@@ -273,7 +276,7 @@
 				: c.kind === 'water'
 					? positive(c.mlText, 10_000) !== undefined
 					: c.kind === 'weight'
-						? positive(c.kgText, 699) !== undefined
+						? positive(c.readingText, 699 / toKg(1, weightUnit())) !== undefined
 						: positive(c.kcalText, 10_000) !== undefined;
 	const notFound = (c: Card) => c.kind === 'food' && !c.food && !c.unsure;
 	const unsure = (c: Card) => c.kind === 'food' && c.unsure;
@@ -305,7 +308,7 @@
 		if (c.kind === 'quick')
 			return c.description ? `${c.description} · ${mealName(meal)}` : mealName(meal);
 		if (c.kind === 'water') return `${c.mlText} ml`;
-		if (c.kind === 'weight') return `${c.kgText} kg`;
+		if (c.kind === 'weight') return `${c.readingText} ${weightUnit()}`;
 		return c.note || m.entry_kind_activity();
 	}
 	const per = (r: FoodSearchResult) =>
@@ -407,7 +410,7 @@
 			kind === 'water'
 				? parseDecimal(c.mlText)
 				: kind === 'weight'
-					? parseDecimal(c.kgText)
+					? typedKg(parseDecimal(c.readingText)!, weightUnit())
 					: Math.round(parseDecimal(c.kcalText)!);
 		await api('POST', `/api/v1/body/${kind}`, {
 			id: c.id,
@@ -671,8 +674,8 @@
 									{:else if card.kind === 'weight'}
 										<TextField
 											id="kg-{card.id}"
-											label={m.entry_kg()}
-											bind:value={card.kgText}
+											label={m.entry_weight({ unit: weightUnit() })}
+											bind:value={card.readingText}
 											inputmode="decimal"
 										/>
 									{:else if card.kind === 'activity'}

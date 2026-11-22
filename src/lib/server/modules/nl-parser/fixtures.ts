@@ -55,10 +55,13 @@ export const DEV_CASES: [string, ParseResult][] = [
 		'Önceki gün öğle yemeğinde 120 gram bulgur pilavı yedim',
 		{ daysAgo: 2, meal: 'lunch', items: [food('bulgur pilavı', 120, g)] }
 	],
-	['Bugün 79,6 kiloydum', { daysAgo: 0, meal: null, items: [{ kind: 'weight', kg: 79.6 }] }],
+	[
+		'Bugün 79,6 kiloydum',
+		{ daysAgo: 0, meal: null, items: [{ kind: 'weight', value: 79.6, unit: 'kg' }] }
+	],
 	[
 		'Geçen pazartesi 80,2 kiloydum',
-		{ daysAgo: 4, meal: null, items: [{ kind: 'weight', kg: 80.2 }] }
+		{ daysAgo: 4, meal: null, items: [{ kind: 'weight', value: 80.2, unit: 'kg' }] }
 	],
 	[
 		'Üç bardak su içtim',
@@ -190,10 +193,13 @@ export const DEV_CASES: [string, ParseResult][] = [
 		'Dün iki adet yumurta tükettim',
 		{ daysAgo: 1, meal: null, items: [food('yumurta', 2, count('piece'))] }
 	],
-	['Bugün 95,5 kilo geldim', { daysAgo: 0, meal: null, items: [{ kind: 'weight', kg: 95.5 }] }],
+	[
+		'Bugün 95,5 kilo geldim',
+		{ daysAgo: 0, meal: null, items: [{ kind: 'weight', value: 95.5, unit: 'kg' }] }
+	],
 	[
 		'Sabah tartıda 91 kilo çıktım',
-		{ daysAgo: null, meal: 'breakfast', items: [{ kind: 'weight', kg: 91 }] }
+		{ daysAgo: null, meal: 'breakfast', items: [{ kind: 'weight', value: 91, unit: 'kg' }] }
 	],
 	[
 		'Just now I had a quarter of a pizza',
@@ -237,7 +243,10 @@ export const DEV_CASES: [string, ParseResult][] = [
 		'A glass of water',
 		{ daysAgo: null, meal: null, items: [{ kind: 'water', amount: 1, unit: count('glass') }] }
 	],
-	['I weighed 81.3 kilos today', { daysAgo: 0, meal: null, items: [{ kind: 'weight', kg: 81.3 }] }],
+	[
+		'I weighed 81.3 kilos today',
+		{ daysAgo: 0, meal: null, items: [{ kind: 'weight', value: 81.3, unit: 'kg' }] }
+	],
 	[
 		'I burned 600 calories cycling three days ago',
 		{ daysAgo: 3, meal: null, items: [{ kind: 'activity', kcal: 600, note: 'cycling' }] }

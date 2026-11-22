@@ -42,7 +42,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   Settings' summary, in export and import (older archives keep kg), `shared/weight-unit.ts` (stored kg, shown/typed in
   the unit; pounds with one decimal so a typed value shows again as typed) and `client/weight-unit.ts`. Nothing shows
   pounds yet. Review page for the achievement screens published (URL in my memory notes; collection `picks`).
-  Pending the owner's picks. Next: weights on Today, the weigh-in, readings, Journal; then Progress; then Goal and setup.
+  Pending the owner's picks.
+- Pounds, step 2: Today's weight card and weigh-in, the weigh-in list, the Journal's day and highlights, and typed or
+  spoken weigh-ins (the parser keeps the unit said: "180 lb" → lb, "80 kilos" → kg, none → the person's unit) show and
+  take the person's unit. `tests/e2e/pounds.e2e.ts`. Vitest 1,225; body, typed-entry, journal, diary, speak e2e pass.
+  Next: Progress (weight chart, history, marks), then Goal, setup, Profile and the maintain offer.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

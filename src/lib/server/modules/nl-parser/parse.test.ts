@@ -19,6 +19,17 @@ describe('parseEntry: edges', () => {
 		expect(parseEntry('kiloydum', TODAY_WEEKDAY).items).toEqual([]);
 	});
 
+	it("keeps the unit said with a weigh-in, or none for the person's own", () => {
+		const weight = (text: string) => parseEntry(text, TODAY_WEEKDAY).items;
+		expect(weight('I weighed 180 lb today')).toEqual([{ kind: 'weight', value: 180, unit: 'lb' }]);
+		expect(weight('weight 185.2 pounds')).toEqual([{ kind: 'weight', value: 185.2, unit: 'lb' }]);
+		expect(weight('weighed 180lbs')).toEqual([{ kind: 'weight', value: 180, unit: 'lb' }]);
+		expect(weight('weight 82.4 kg')).toEqual([{ kind: 'weight', value: 82.4, unit: 'kg' }]);
+		expect(weight('I weighed 180 this morning')).toEqual([
+			{ kind: 'weight', value: 180, unit: null }
+		]);
+	});
+
 	it('reads "last <weekday>" as the most recent past one, never today', () => {
 		expect(parseEntry('geçen cuma 80 kiloydum', 5).daysAgo).toBe(7);
 		expect(parseEntry('last saturday 80 kilos weighed', 5).daysAgo).toBe(6);

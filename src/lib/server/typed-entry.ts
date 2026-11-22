@@ -10,6 +10,8 @@ import { addDays, localDate } from '#lib/shared/diary-rules.ts';
 import type { EntryItem, ParsedEntry, SaidUnit } from '#lib/shared/entry-types.ts';
 import { catalog } from './catalog.ts';
 import { diary } from './diary.ts';
+import { goals } from './goals.ts';
+import { toKg } from '#lib/shared/weight-unit.ts';
 
 const said = (u: ParsedUnit | null): SaidUnit => (!u ? null : u.kind === 'count' ? u.word : u.kind);
 
@@ -92,6 +94,10 @@ export async function understandEntry(
 							? p.amount * glass.ml
 							: null;
 			items.push({ kind: 'water', ml, amount: p.amount, said: said(p.unit) });
+		} else if (p.kind === 'weight') {
+			// No unit said: the person's own (Units). Kilograms either way, as stored.
+			const unit = p.unit ?? (await goals.preferences(userId)).preferences.weightUnit;
+			items.push({ kind: 'weight', kg: toKg(p.value, unit) });
 		} else items.push(p);
 	}
 	return { heard: text, date, meal: parsed.meal, items };

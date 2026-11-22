@@ -27,7 +27,8 @@ export type Proposal =
 	/** Calories only, as stated. */
 	| { kind: 'quick'; kcal: number; description: string | null }
 	| { kind: 'water'; amount: number | null; unit: ParsedUnit | null }
-	| { kind: 'weight'; kg: number }
+	/** A weigh-in in the unit said ("80 kilos", "180 lb"); null when none was said, for the person's own unit. */
+	| { kind: 'weight'; value: number; unit: 'kg' | 'lb' | null }
 	| { kind: 'activity'; kcal: number; note: string | null };
 
 export interface ParseResult {
@@ -552,6 +553,9 @@ function mealAt(tokens: Token[], i: number): { meal: Meal; used: number; weak?: 
 
 const WEIGHT_WORD =
 	/^(kilo(ydum|yum|dum|yduk|m|mu|yu)|tartildim|weighed|weigh|weight|weighing|tarti(da|ya)?)$/;
+/** "kg", "kilos", "kiloydum": kilograms. In Turkish "kilo" beside a number is always kilograms. */
+const KILO_WORD = /^(kg|kgs|kilo\w*|kilogram\w*)$/;
+const POUND_WORD = /^(lb|lbs|pound|pounds)$/;
 const BURN_WORD = /^(yaktim|yaktik|yakmisim|burned|burnt|burn|burning)$/;
 const WATER_WORDS = new Set(['su', 'suyu', 'water']);
 
@@ -672,7 +676,12 @@ export function parseEntry(text: string, todayWeekday: number): ParseResult {
 	);
 	if (weighIn) {
 		const value = rest.find((t) => t.n !== undefined)?.n;
-		return value === undefined ? empty : { ...ctx, items: [{ kind: 'weight', kg: value }] };
+		const unit = rest.some((t) => POUND_WORD.test(t.f))
+			? 'lb'
+			: rest.some((t) => KILO_WORD.test(t.f))
+				? 'kg'
+				: null;
+		return value === undefined ? empty : { ...ctx, items: [{ kind: 'weight', value, unit }] };
 	}
 	// Activity: "450 kalori yaktım", "I burned 450 calories walking".
 	if (rest.some((t) => BURN_WORD.test(t.f))) {

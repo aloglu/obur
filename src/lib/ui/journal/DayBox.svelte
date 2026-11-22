@@ -7,7 +7,8 @@
 	import { dayHref } from '#lib/client/links.ts';
 	import type { CalendarDay } from '#lib/shared/calendar.ts';
 	import { dayBoxTitle, kcal } from '#lib/shared/format.ts';
-	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import { weightText } from '#lib/shared/weight-unit.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 	import Roll from '../Roll.svelte';
 
 	interface Props {
@@ -84,7 +85,7 @@
 			>
 				<dt class="label">{m.weight_title()}</dt>
 				<dd class="value">
-					{#if weight !== null}<Roll value={`${formatDecimal(weight, 2)} kg`} />{:else}<span
+					{#if weight !== null}<Roll value={weightText(weight, weightUnit())} />{:else}<span
 							class="text-muted">–</span
 						>{/if}
 				</dd>

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { fixedDecimal } from '#lib/shared/numbers.ts';
+	import { weightFixed } from '#lib/shared/weight-unit.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 	// docs/ui.md, "Achievements, Journal and Help": the month's weeks, newest first, each a summary line and only the
 	// moments that mattered. Achievements show as small versions of their badges and open the badge page; other
 	// highlights sit in neutral circles.
@@ -16,7 +17,8 @@
 	let { weeks, monthName, current }: { weeks: JournalWeek[]; monthName: string; current: boolean } =
 		$props();
 
-	const kg = (v: number) => fixedDecimal(v, 1);
+	// Weights and changes in the person's unit.
+	const kg = (v: number) => weightFixed(v, weightUnit());
 	const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${kg(Math.abs(v))}`;
 	const day = (date: string) => shortDay(date);
 	// "26–31 Oct", or "1 Oct" for a week of one day.
@@ -28,7 +30,7 @@
 	function title(e: JournalEvent): string {
 		switch (e.kind) {
 			case 'lowest':
-				return m.journal_lowest({ kg: kg(e.kg) });
+				return m.journal_lowest({ weight: `${kg(e.kg)} ${weightUnit()}` });
 			case 'budget':
 				if (e.to === null) return m.journal_budget_off();
 				return e.from === null
@@ -72,7 +74,7 @@
 						class={[
 							'text-[0.875rem] font-[650] whitespace-nowrap tabular-nums',
 							w.weightChange < 0 ? 'text-good' : 'text-muted'
-						]}>{signed(w.weightChange)} kg</span
+						]}>{signed(w.weightChange)} {weightUnit()}</span
 					>
 				{/if}
 			</div>
