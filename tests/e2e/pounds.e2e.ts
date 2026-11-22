@@ -100,10 +100,16 @@ test('Progress shows the weight, its change and the goal in pounds', async ({ pa
 
 test('setup and the Goal page take weights and paces in pounds', async ({ page }, testInfo) => {
 	await signedInAs(page, `Setup lb ${testInfo.project.name}`);
-	await usePounds(page);
 	await page.goto('/onboarding');
 	await page.getByLabel('Height').fill('180');
-	await page.getByLabel('Weight').fill('176.4'); // 80.01 kg
+	await page.getByLabel('Weight', { exact: true }).fill('80');
+	// Setup's own choice: the typed weight follows, and the account keeps it.
+	const saved = page.waitForResponse(
+		(r) => r.url().includes('/api/v1/profile/preferences') && r.request().method() === 'PATCH'
+	);
+	await page.getByRole('radio', { name: 'Pounds (lb)' }).click();
+	await saved;
+	await expect(page.getByLabel('Weight', { exact: true })).toHaveValue('176.4'); // 80.01 kg
 	await page.getByLabel('Birth date').fill(`${new Date().getFullYear() - 30}-01-01`);
 	await page.getByRole('radio', { name: 'Male', exact: true }).click();
 	await page.getByRole('button', { name: 'See my estimate' }).click();
@@ -117,6 +123,8 @@ test('setup and the Goal page take weights and paces in pounds', async ({ page }
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 	await expect(page.getByRole('region', { name: 'Weight' })).toContainText('176.4 lb');
 
+	await page.goto('/more/units');
+	await expect(page.getByRole('button', { name: 'Weight: Pounds (lb)' })).toBeVisible();
 	await page.goto('/more/goal');
 	await expect(page.getByRole('button', { name: /^Goal weight/ })).toContainText('175 lb');
 	await expect(page.getByRole('button', { name: /^Pace:/ })).toContainText('Brisk · 1 lb a week');

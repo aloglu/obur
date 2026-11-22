@@ -712,6 +712,7 @@
 	"history_empty_nutrients": "Your split shows once a day is logged.",
 	"onb_height": "Height",
 	"onb_weight": "Weight",
+	"onb_weight_unit": "Weight unit",
 	"onb_birth": "Birth date",
 	"onb_sex": "Sex used by the formula",
 	"onb_female": "Female",

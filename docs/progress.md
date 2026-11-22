@@ -65,10 +65,15 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   from beta.19 runs 0065-0067 and starts, then its restore step fails: "unable to acquire lock
   obur-restore-1.lock". Pre-existing (the image of 4d89fec fails the same way): today is Sunday, the weekly restore
   check starts with the container and holds the restore lock when the test (or an operator) runs `obur restore start`.
-  **For the owner to decide:** a restore started during the weekly check fails with that bare pgBackRest message.
-  Next: the owner's answer on the restore-check collision; rc.8 only when the owner asks.
-  Open: setup has no kg/lb switch of its own — a screen choice for the owner, by screenshot. Open: setup has no kg/lb switch of
-  its own (a new person who uses pounds sets Units first) — a screen choice for the owner, by screenshot.
+  Owner chose (2026-11-22): the restore waits. Fixed: a restore check holds `data/.restore-check.lock` from start to
+  end and starts no check while a restore is pending; `obur restore start` waits for a running check before it stops
+  obur ("the weekly restore check is running; waiting …"), and `obur-backup restore` holds the lock through
+  pgBackRest's restore. The upgrade test now starts a check by hand right before `restore start` and checks that it
+  waited and that the check passed, on any day. Upgrade test (from beta.19) and smoke test pass.
+- Setup's own kg/lb choice (owner, 2026-11-22: needed): "Weight unit" (Kilograms / Pounds) at the top of step 1, saved
+  for the account like Units; the typed weight, goal weight and pace move to the other unit with it ("80" kg becomes
+  "176.4" lb; 0.5 kg a week becomes 1 lb). Pounds and goals e2e pass. Height stays in centimetres.
+  Next: screenshots of the choice for the owner; then whatever else they want before rc.8 (owner: no tag yet).
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

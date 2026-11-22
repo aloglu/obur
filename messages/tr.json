@@ -712,6 +712,7 @@
 	"history_empty_nutrients": "Dağılımın, bir gün kaydedildiğinde görünür.",
 	"onb_height": "Boy",
 	"onb_weight": "Kilo",
+	"onb_weight_unit": "Kilo birimi",
 	"onb_birth": "Doğum tarihi",
 	"onb_sex": "Formülün kullandığı cinsiyet",
 	"onb_female": "Kadın",

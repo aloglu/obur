@@ -11,7 +11,7 @@
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
-	import { deviceZone } from '#lib/client/prefs.ts';
+	import { deviceZone, savePreferences } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { kcal } from '#lib/shared/format.ts';
 	import {
@@ -27,7 +27,7 @@
 		type Sex
 	} from '#lib/shared/goals.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
-	import { typedKg, weightNumber } from '#lib/shared/weight-unit.ts';
+	import { toKg, typedKg, weightNumber, type WeightUnit } from '#lib/shared/weight-unit.ts';
 	import { weightUnit } from '#lib/client/weight-unit.ts';
 	import { paceAmount, paces } from '#lib/ui/goal-pace.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -52,8 +52,8 @@
 	}
 
 	let height = $state(num(start.profile?.heightCm));
-	// Weights in the person's unit (Units), kept in kilograms.
-	const unit = $derived(weightUnit());
+	// Weights in the person's unit (Units, or the choice here, which saves it), kept in kilograms.
+	let unit = $state<WeightUnit>(weightUnit());
 	let weight = $state(
 		start.latestWeight ? weightNumber(start.latestWeight.value, weightUnit()) : ''
 	);
@@ -66,11 +66,37 @@
 	let ownOpen = $state(false);
 	let fixedBase = $state('');
 	let goalWeight = $state('');
-	let rate = $state(String(paces(weightUnit())[2]));
+	let rate = $state(String(paces(untrack(() => unit))[2]));
 	let floorText = $state('');
 	let manualKcal = $state('');
 	let busy = $state(false);
 	let problem = $state('');
+
+	/** A typed weight in the other unit ("80" kg becomes "176.4" lb); text that isn't a number stays. */
+	function convert(text: string, from: WeightUnit, to: WeightUnit) {
+		const typed = parseDecimal(text);
+		return typed === undefined || typed === null ? text : weightNumber(toKg(typed, from), to);
+	}
+	function switchUnit(from: WeightUnit, to: WeightUnit) {
+		weight = convert(weight, from, to);
+		goalWeight = convert(goalWeight, from, to);
+		// The same place in the other unit's paces ("0.5 kg" is "1 lb").
+		const at = paces(from).findIndex((p) => String(p) === rate);
+		if (at >= 0) rate = String(paces(to)[at]);
+	}
+	// Changed at once; saved for the account, like the Units page. A failed save puts the unit back.
+	async function changeUnit(next: WeightUnit) {
+		const before: WeightUnit = next === 'kg' ? 'lb' : 'kg';
+		switchUnit(before, next);
+		try {
+			await savePreferences({ weightUnit: next });
+			await invalidateAll();
+		} catch {
+			unit = before;
+			switchUnit(next, before);
+			showToast({ message: m.settings_save_failed() });
+		}
+	}
 
 	const h = $derived(parseDecimal(height));
 	const typedWeight = $derived(parseDecimal(weight));
@@ -221,6 +247,15 @@
 			{#if step === 1}
 				<form class="flex flex-col gap-3" onsubmit={saveDetails}>
 					<div class={card}>
+						<Chips
+							label={m.onb_weight_unit()}
+							bind:value={unit}
+							onchange={changeUnit}
+							options={[
+								{ value: 'kg', label: m.units_kg() },
+								{ value: 'lb', label: m.units_lb() }
+							]}
+						/>
 						<div class="grid grid-cols-2 gap-3">
 							<UnitField label={m.onb_height()} unit="cm" bind:value={height} inputmode="decimal" />
 							<UnitField label={m.onb_weight()} {unit} bind:value={weight} inputmode="decimal" />

@@ -18,7 +18,7 @@ async function expectBreakdown(page: Page, base: number, activity: number, goal:
 async function fillDetails(page: Page, birthDate: string) {
 	await page.goto('/onboarding');
 	await page.getByLabel('Height').fill('180');
-	await page.getByLabel('Weight').fill('80');
+	await page.getByLabel('Weight', { exact: true }).fill('80');
 	await page.getByLabel('Birth date').fill(birthDate);
 	await page.getByRole('radio', { name: 'Male', exact: true }).click();
 	await page.getByRole('button', { name: 'See my estimate' }).click();
