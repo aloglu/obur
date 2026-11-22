@@ -104,6 +104,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   and `.env.example` now say Server → Backups. `~/Documents/obur-rc-test-checklist.md` has "New in 1.0.0-rc.8".
   Next: the release workflow publishes; the owner updates and goes through the checklist (D04 date field on the
   iPhone).
+- Audit D07 (owner, 2026-11-22): `deploy/obur/upgrade-recent-test.sh` upgrades people, a profile, weigh-ins, water,
+  a private food and a diary entry from the last release, checks a fingerprint of every record and that migrations
+  ran, then restores that release's backup (a weigh-in made after it disappears), finishes the restore and checks
+  again. From rc.7 to the current image: passed. The release workflow runs it from the newest earlier published
+  release (GitHub's release list), next to the beta.19 test. Takes effect from the next tag.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

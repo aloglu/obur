@@ -1,7 +1,7 @@
 # Tests and publishes obur's three images to GitHub's registry when a version is tagged (v1.0.0), as
 # ghcr.io/aloglu/obur, obur-speech and obur-labels with the version and `latest`, then a GitHub release for it.
 # Nothing is published unless the checks, the browser tests and every image's tests pass (obur: smoke, off-site
-# outage and restore, upgrade and restore; add-ons: one input each), and then all three together. A test release
+# outage and restore, upgrade and restore from beta.19 and from the last release; add-ons: one input each), and then all three together. A test release
 # (v1.0.0-beta.1) is published under its own version only, never as `latest`. Pushes to branches run nothing. Run it
 # by hand (Actions → Release → Run workflow), on a branch or a tag, to build and test without publishing.
 name: Release
@@ -140,6 +140,18 @@ jobs:
       - name: Upgrade and restore test
         if: matrix.image == 'obur'
         run: deploy/obur/upgrade-test.sh ghcr.io/${{ github.repository_owner }}/obur:1.0.0-beta.19 obur:test
+      # The most common upgrade: from the newest published release before this one, over real data, then that
+      # release's backup restored (audit D07, 2026-11-22). Releases are published only after every test passed, so
+      # each one has its image.
+      - name: Upgrade from the last release test
+        if: matrix.image == 'obur'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          previous=$(gh api "repos/${{ github.repository }}/releases" --jq \
+            '[.[] | select(.draft | not) | .tag_name | select(. != "${{ github.ref_name }}")][0]')
+          [[ -n $previous ]] || { echo "no earlier release"; exit 1; }
+          deploy/obur/upgrade-recent-test.sh "ghcr.io/${{ github.repository_owner }}/obur:${previous#v}" obur:test
       - name: Add-on test
         if: matrix.addon
         run: deploy/addon-test.sh ${{ matrix.image }}:test ${{ matrix.addon }}
