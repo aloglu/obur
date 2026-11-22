@@ -27,7 +27,7 @@ test('a typed sentence becomes items to confirm, logged together and undone toge
 	await expect(bread).toContainText('2 dilim (30 g) · Breakfast');
 	await bread.getByRole('button', { name: /^Edit / }).click();
 	await expect(bread.getByRole('button', { name: /^Unit: dilim \(30 g\)/ })).toBeVisible();
-	await expect(sheet.getByRole('region', { name: 'Water' }).getByLabel('Millilitres')).toHaveValue(
+	await expect(sheet.getByRole('region', { name: 'Water' }).getByLabel('Water (ml)')).toHaveValue(
 		'400'
 	);
 	await expect(sheet.getByRole('radio', { name: 'Breakfast' })).toBeChecked();

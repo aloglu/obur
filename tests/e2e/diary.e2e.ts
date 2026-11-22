@@ -264,7 +264,7 @@ test('Settings sits under More and shows its values; old links still arrive ther
 	await choose(page, /^Time:/, '12-hour');
 	await expect(page.getByRole('button', { name: 'Time: 12-hour' })).toBeVisible();
 	await page.getByRole('link', { name: 'Settings', exact: true }).first().click();
-	await expect(page.getByRole('link', { name: /Units.*kg · 12-hour/ })).toBeVisible();
+	await expect(page.getByRole('link', { name: /Units.*Metric · 12-hour/ })).toBeVisible();
 });
 
 test('an open sheet holds the page behind it still, and puts it back', async ({
