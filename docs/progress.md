@@ -125,8 +125,13 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   `restore-interrupt-test.sh` stops every command at every step (19 rounds, 2 min 40 s) and is in the release
   workflow. A backup run succeeds when the repositories it tried took it; per-repository results in `.copies` (A02;
   off-site test now starts the restore with a recorded off-site failure). Image tests: interruption, smoke, off-site,
-  off-site restore, upgrade from beta.19 and from rc.8 all passed. Next: A03–A10 and A12 one commit each; A11 waits
-  for the owner's choice; then a re-audit against the Codex report.
+  off-site restore, upgrade from beta.19 and from rc.8 all passed. Then, one commit each: A03 status readable by the web app on a
+  fresh install (smoke test reads it as that user; rc.8 reproduced it); A04 imports fill a settings-only profile; A07
+  setup saves a weigh-in only for a typed weight (text compare: an input-event flag missed early typing on WebKit),
+  one ID per reading; A08 optional fields checked; A05 fl oz converted from the written value; A06 unstorable LoseIt
+  rows left out in the preview with a warning; A09 publication serialized, latest never moves back, release record
+  made once; A10 x86-64 named in the guides and release notes; A12 the deleted-accounts list is kept for good. Open:
+  A11 (speech image GPL source) waits for the owner's choice; then a re-audit against the Codex report.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
