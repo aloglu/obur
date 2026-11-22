@@ -52,6 +52,17 @@ type Kind = 'food' | 'diary' | 'weight' | 'water' | 'activity' | 'target';
  * budget for is under 100 cm or over 100 in, so a height under 100 is read as inches (audit D02).
  */
 const INCHES_BELOW = 100;
+
+/** A LoseIt weight in kilograms as stored (two decimals), and whether the database takes it (under 700 kg). */
+const weightKg = (value: number, o: LoseItOptions) =>
+	Math.round((o.weightUnit === 'lb' ? value * KG_PER_LB : value) * 100) / 100;
+const usableWeight = (value: number, o: LoseItOptions) => {
+	const kg = weightKg(value, o);
+	return kg > 0 && kg < 700;
+};
+/** A day's water in millilitres as stored: fluid ounces from the value as written, millilitres as always. */
+const waterMl = (w: { ml: number; value: number }, o: LoseItOptions) =>
+	o.waterUnit === 'floz' ? toMl(w.value, 'floz') : w.ml;
 const heightCm = (h: number): number =>
 	h < INCHES_BELOW ? inchesToCm(h) : Math.round(h * 10) / 10;
 export interface LoseItCounts {
@@ -68,6 +79,8 @@ export type LoseItWarning =
 	| 'budgets_after_own_target'
 	| 'profile_kept'
 	| 'height_in_inches'
+	| 'rows_left_out'
+	| 'water_capped'
 	| 'height_out_of_range';
 
 export interface LoseItSummary {
@@ -362,10 +375,25 @@ export async function planLoseIt(
 		water: occurrences(data.water.map((w) => `${w.date}:${w.ml}`)),
 		activity: identities(data.activity, (a) => a.fingerprint)
 	};
+	// Rows that can't be stored as written are left out here, so the preview counts only what the import writes
+	// (2026-11-22 audit, A06: a weight over the limit once failed the whole import after a clean preview).
+	const leaveOut = (kind: 'weight' | 'water' | 'activity') => {
+		counts[kind].skipped++;
+		warnings.add('rows_left_out');
+	};
 	ids.entries.forEach((id) => decide('diary', id));
-	ids.weights.forEach((id) => decide('weight', id));
-	ids.water.forEach((id) => decide('water', id));
-	ids.activity.forEach((id) => decide('activity', id));
+	ids.weights.forEach((id, i) =>
+		usableWeight(data.weights[i].value, options) ? decide('weight', id) : leaveOut('weight')
+	);
+	ids.water.forEach((id, i) => {
+		const ml = waterMl(data.water[i], options);
+		if (ml <= 0) return leaveOut('water');
+		if (ml > 10_000) warnings.add('water_capped');
+		decide('water', id);
+	});
+	ids.activity.forEach((id, i) =>
+		data.activity[i].kcal <= 10_000 ? decide('activity', id) : leaveOut('activity')
+	);
 
 	const span = (rows: { date: string }[]) => {
 		const dates = rows.map((r) => r.date).sort();
@@ -503,7 +531,7 @@ export async function planLoseIt(
 					(first, w) => (!first || w.date < first.date ? w : first),
 					null
 				)?.value ?? null,
-			mostWater: data.water.length ? Math.max(...data.water.map((w) => w.ml)) : null,
+			mostWater: data.water.length ? Math.max(...data.water.map((w) => w.value)) : null,
 			reconciliation: { days: data.days.length, mismatched },
 			matchedFoods: matched.size,
 			warnings: [...warnings],
@@ -647,21 +675,19 @@ export async function writeLoseIt(
 		const id = p.create.weight.get(p.ids.weights[i]);
 		if (!id) return [];
 		remember('weight', p.ids.weights[i], id);
-		const kg = options.weightUnit === 'lb' ? w.value * KG_PER_LB : w.value;
-		return [{ ...reading(id, w.date), kg: Math.round(kg * 100) / 100 }];
+		return [{ ...reading(id, w.date), kg: weightKg(w.value, options) }];
 	});
 	await chunked(weightRows, (c) => tx.insert(weightEntries).values(c));
 	const waterRows = data.water.flatMap((w, i) => {
 		const id = p.create.water.get(p.ids.water[i]);
 		if (!id) return [];
 		remember('water', p.ids.water[i], id);
-		const ml = options.waterUnit === 'floz' ? toMl(w.ml, 'floz') : w.ml;
-		return [{ ...reading(id, w.date), ml: Math.min(ml, 10_000) }];
+		return [{ ...reading(id, w.date), ml: Math.min(waterMl(w, options), 10_000) }];
 	});
 	await chunked(waterRows, (c) => tx.insert(waterEntries).values(c));
 	const activityRows = data.activity.flatMap((a, i) => {
 		const id = p.create.activity.get(p.ids.activity[i]);
-		if (!id || a.kcal > 10_000) return [];
+		if (!id) return [];
 		remember('activity', p.ids.activity[i], id);
 		return [
 			{

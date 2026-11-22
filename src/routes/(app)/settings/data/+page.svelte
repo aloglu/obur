@@ -87,6 +87,8 @@
 		budgets_after_own_target: m.data_warn_budgets_after_own_target,
 		height_out_of_range: m.data_warn_height_out_of_range,
 		height_in_inches: m.data_warn_height_in_inches,
+		rows_left_out: m.data_warn_rows_left_out,
+		water_capped: m.data_warn_water_capped,
 		reconciliation_mismatch: m.data_warn_reconciliation_mismatch
 	};
 	// Shown through their own controls instead.

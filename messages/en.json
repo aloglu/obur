@@ -943,6 +943,8 @@
 	"data_import_water_unit": "Water in this file",
 	"data_most_water": "Most in a day: {value} {unit}",
 	"data_warn_height_in_inches": "The height in this export is in inches. It's changed to centimetres for your profile.",
+	"data_warn_rows_left_out": "Some weigh-ins or activities in this file can't be stored (a weight of 700 kg or more, or over 10,000 kcal of activity in a day), so they are left out. Check the weight unit above.",
+	"data_warn_water_capped": "Some days have more than 10 litres of water; they are stored as 10 litres. Check the water unit above.",
 	"data_warn_budgets_after_own_target": "LoseIt budgets from the day you set a target in obur are left out; obur's target applies from then on.",
 	"data_warn_height_out_of_range": "The height in this export isn't in centimetres, so it's left out of your profile.",
 	"data_warn_reconciliation_mismatch": "Some days don't add up to LoseIt's totals. Check them after importing.",

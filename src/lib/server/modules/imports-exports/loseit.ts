@@ -80,7 +80,11 @@ export interface LoseItData {
 	deletedEntries: number;
 	foods: LoseItFood[];
 	weights: { date: string; value: number; fingerprint: string }[];
-	water: { date: string; ml: number }[];
+	/**
+	 * Daily water: `value` as written (no unit in the file; the import says which), `ml` that value rounded to whole
+	 * millilitres, which is also how imports have always identified the row.
+	 */
+	water: { date: string; ml: number; value: number }[];
 	/** Calories LoseIt credited for activity (positive), recorded but never counted toward the budget. */
 	activity: { date: string; name: string; kcal: number; fingerprint: string }[];
 	days: { date: string; foodKcal: number; budgetKcal: number | null }[];
@@ -299,11 +303,19 @@ export function readLoseItFiles(files: Record<string, string>): LoseItData {
 	});
 
 	const water = table(files, 'water-intake.csv').flatMap(({ row, get }) => {
-		const ml = number(get('Value'));
-		if (ml === null || Number.isNaN(ml) || ml < 0) bad('water-intake.csv', row, 'value');
-		// Daily totals; float noise such as 1999.99 is rounded to the millilitre.
-		const rounded = Math.round(ml!);
-		return rounded > 0 ? [{ date: date('water-intake.csv', row, get('Date')), ml: rounded }] : [];
+		const value = number(get('Value'));
+		if (value === null || Number.isNaN(value) || value < 0) bad('water-intake.csv', row, 'value');
+		// Daily totals; float noise such as 1999.99 is rounded to the millilitre. Fluid ounces are converted from the
+		// value as written, never from that rounding (2026-11-22 audit, A05: 8.5 fl oz became 9).
+		return value! > 0
+			? [
+					{
+						date: date('water-intake.csv', row, get('Date')),
+						ml: Math.round(value!),
+						value: value!
+					}
+				]
+			: [];
 	});
 
 	const activity = table(files, 'exercise-logs.csv').flatMap(({ row, get }) => {

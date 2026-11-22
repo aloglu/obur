@@ -943,6 +943,8 @@
 	"data_import_water_unit": "Bu dosyadaki su",
 	"data_most_water": "Bir günde en çok: {value} {unit}",
 	"data_warn_height_in_inches": "Bu dışa aktarımdaki boy inç cinsinden. Profilin için santimetreye çevrildi.",
+	"data_warn_rows_left_out": "Bu dosyadaki bazı tartılar ya da aktiviteler saklanamıyor (700 kg ve üstü bir kilo ya da bir günde 10.000 kcal'den fazla aktivite), bu yüzden alınmadı. Yukarıdaki kilo birimini kontrol et.",
+	"data_warn_water_capped": "Bazı günlerde 10 litreden fazla su var; bunlar 10 litre olarak saklanır. Yukarıdaki su birimini kontrol et.",
 	"data_warn_budgets_after_own_target": "obur'da hedef belirlediğin günden sonraki LoseIt bütçeleri alınmadı; o günden sonra obur'un hedefi geçerli.",
 	"data_warn_height_out_of_range": "Bu dışa aktarımdaki boy santimetre değil, bu yüzden profiline alınmadı.",
 	"data_warn_reconciliation_mismatch": "Bazı günler LoseIt'in toplamlarını tutmuyor. İçe aktardıktan sonra onları kontrol et.",

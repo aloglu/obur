@@ -291,6 +291,30 @@ describe('LoseIt import', () => {
 		expect(metric.warnings).not.toContain('height_in_inches');
 	});
 
+	it('converts fluid ounces from the value as written, and leaves out rows it cannot store (2026-11-22 audit, A05, A06)', async () => {
+		const odd = {
+			...files,
+			'water-intake.csv':
+				'Date,Value,Secondary Value,Last Updated\n' +
+				'1/5/2026,8.5,-1.0,2026-01-05T22:00:00+0300\n1/6/2026,0.4,-1.0,2026-01-06T22:00:00+0300\n',
+			'weights.csv':
+				files['weights.csv'].trimEnd() + '\n1/7/2026,701.0,2026-01-07T08:00:00+0300,false\n'
+		};
+		const o: LoseItOptions = { ...options, waterUnit: 'floz' };
+		const preview = await portability.previewLoseIt(MEHMET, zip(odd), o);
+		expect(preview.counts.weight.skipped).toBe(1);
+		expect(preview.warnings).toContain('rows_left_out');
+		expect(preview.counts.water.new).toBe(2);
+		// The import writes what the preview counted: no failure on the 701 kg row.
+		await applyLoseIt(MEHMET, zip(odd), o);
+		const water =
+			await admin`select ml::float as ml from water_entries where user_id = ${MEHMET} order by local_date`;
+		expect(water.map((w) => w.ml)).toEqual([251.4, 11.8]);
+		const [{ n }] =
+			await admin`select count(*)::int as n from weight_entries where user_id = ${MEHMET} and kg >= 700`;
+		expect(n).toBe(0);
+	});
+
 	it('remembers what was imported from LoseIt after a move to another installation by export and import', async () => {
 		await applyLoseIt(MEHMET, zip(), options);
 		const archive = await portability.exportArchive(MEHMET);
