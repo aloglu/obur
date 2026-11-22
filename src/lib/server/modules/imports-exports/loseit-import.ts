@@ -25,7 +25,7 @@ import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
 import { activityEntries, waterEntries, weightEntries } from '../body/index.ts';
 import { foodNutrients, foods } from '../catalog/index.ts';
 import { dayCompletions, diaryEntries } from '../diary/index.ts';
-import { goalVersions, profiles } from '../goals/index.ts';
+import { goalVersions, hasProfileDetails, profiles } from '../goals/index.ts';
 import type { LoseItData, LoseItEntry, LoseItUnit } from './loseit.ts';
 import { importFiles, importIdentities } from './schema.ts';
 
@@ -465,12 +465,10 @@ export async function planLoseIt(
 		skipped: 0
 	};
 
-	const [profile] = await tx
-		.select({ userId: profiles.userId })
-		.from(profiles)
-		.where(eq(profiles.userId, userId));
+	const [profile] = await tx.select().from(profiles).where(eq(profiles.userId, userId));
 	const hasProfileData = !!(data.profile.birthDate || data.profile.sex || data.profile.height);
-	const importProfile = hasProfileData && !profile;
+	// A row with settings only (a new account's first page saves them) has no details to keep (2026-11-22 audit, A04).
+	const importProfile = hasProfileData && !hasProfileDetails(profile);
 	if (hasProfileData) {
 		if (importProfile) counts.profile.new = 1;
 		else {
@@ -700,12 +698,15 @@ export async function writeLoseIt(
 	);
 	if (p.importProfile) {
 		const h = data.profile.height === null ? null : heightCm(data.profile.height);
-		await tx.insert(profiles).values({
-			userId,
+		const details = {
 			birthDate: data.profile.birthDate,
 			sex: data.profile.sex,
 			heightCm: h !== null && h >= 50 && h <= 260 ? h : null
-		});
+		};
+		await tx
+			.insert(profiles)
+			.values({ userId, ...details })
+			.onConflictDoUpdate({ target: profiles.userId, set: details });
 	}
 
 	if (options.trashMissing) {

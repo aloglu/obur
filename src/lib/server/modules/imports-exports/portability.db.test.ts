@@ -848,6 +848,30 @@ describe('import', () => {
 		expect((await goals.targetFor(ZEYNEP, '2026-10-05'))?.baseBurnKcal).toBe(1900);
 	});
 
+	it('imports the profile into a new account whose first page only saved settings (2026-11-22 audit, A04)', async () => {
+		await goals.saveProfile(MEHMET, { heightCm: 178, birthDate: '1990-05-01', sex: 'male' });
+		await goals.savePreferences(MEHMET, { palette: 'kaset', weightUnit: 'lb' });
+		const archive = fromElsewhere(await portability.exportArchive(MEHMET));
+		// A new account on a phone in the US: its first page saved start units, which makes a profile row.
+		await goals.savePreferences(ZEYNEP, { weightUnit: 'lb', lengthUnit: 'in', waterUnit: 'floz' });
+		const preview = await portability.previewImport(ZEYNEP, archive);
+		expect(preview.counts.profile).toMatchObject({ new: 1 });
+		expect(preview.warnings).not.toContain('profile_kept');
+		await applyImport(ZEYNEP, archive);
+		expect(await goals.profile(ZEYNEP)).toMatchObject({
+			heightCm: 178,
+			birthDate: '1990-05-01',
+			sex: 'male'
+		});
+		// The archive's own settings, not the generated ones.
+		expect((await goals.preferences(ZEYNEP)).preferences).toMatchObject({
+			palette: 'kaset',
+			weightUnit: 'lb',
+			lengthUnit: 'cm',
+			waterUnit: 'ml'
+		});
+	});
+
 	it('links to a built-in food on the same installation instead of copying it', async () => {
 		const { ekmek } = await buildHistory();
 		const archive = await portability.exportArchive(MEHMET);

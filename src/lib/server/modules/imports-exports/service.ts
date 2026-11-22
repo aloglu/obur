@@ -31,7 +31,7 @@ import {
 	savedMealItems,
 	savedMeals
 } from '../diary/index.ts';
-import { goalVersions, profiles } from '../goals/index.ts';
+import { goalVersions, hasProfileDetails, profiles } from '../goals/index.ts';
 import { reminderSettings } from '../reminders/index.ts';
 import { modelChoices } from '../remote-models/index.ts';
 import { sha256, type PortableData } from './archive.ts';
@@ -769,7 +769,9 @@ async function plan(
 	const incoming = data.account.profile;
 	let importProfile = false;
 	if (incoming) {
-		if (!currentProfile) {
+		// A profile row with no details only holds settings made for a new account (its first page saves the
+		// browser's and the place's choices): an archive's own profile replaces it (2026-11-22 audit, A04).
+		if (!hasProfileDetails(currentProfile)) {
 			importProfile = true;
 			counts.profile.new = 1;
 		} else {
@@ -1112,13 +1114,17 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 		// "Log it after saving" (scanLogAfter) is in older archives; Scan no longer has it (owner, 2026-11-09).
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { scanLogAfter, ...profile } = data.account.profile;
-		// Settings that came with the archive count as saved, so a browser's own choices don't replace them.
-		await tx.insert(profiles).values({
-			userId,
+		// Settings that came with the archive count as saved, so a browser's own choices don't replace them. A row
+		// holding only a new account's settings is replaced (A04).
+		const values = {
 			...profile,
 			preferencesSavedAt: profile.themeMode !== undefined ? now : null,
 			updatedAt: now
-		});
+		};
+		await tx
+			.insert(profiles)
+			.values({ userId, ...values })
+			.onConflictDoUpdate({ target: profiles.userId, set: values });
 	}
 	const mc = data.account.modelChoices;
 	if (p.importModelChoices && mc) {

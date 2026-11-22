@@ -251,6 +251,24 @@ describe('LoseIt import', () => {
 		expect((await portability.previewLoseIt(MEHMET, zip(later), options)).counts.water.new).toBe(0);
 	});
 
+	it('imports the LoseIt profile into a new account whose first page only saved settings (2026-11-22 audit, A04)', async () => {
+		await goals.savePreferences(MEHMET, { weightUnit: 'lb', lengthUnit: 'in', waterUnit: 'floz' });
+		const preview = await portability.previewLoseIt(MEHMET, zip(), options);
+		expect(preview.counts.profile).toMatchObject({ new: 1 });
+		expect(preview.warnings).not.toContain('profile_kept');
+		await applyLoseIt(MEHMET, zip(), options);
+		expect(await goals.profile(MEHMET)).toMatchObject({
+			heightCm: 178,
+			sex: 'male',
+			birthDate: '1990-04-15'
+		});
+		expect((await goals.preferences(MEHMET)).preferences.weightUnit).toBe('lb');
+		// Details the person entered are kept, as before.
+		await goals.saveProfile(ZEYNEP, { heightCm: 165, birthDate: '1995-01-01', sex: 'female' });
+		const other = await portability.previewLoseIt(ZEYNEP, zip(), options);
+		expect(other.warnings).toContain('profile_kept');
+	});
+
 	it('reads a pounds account: height in inches, water in US fluid ounces (2026-11-22 audit, D02)', async () => {
 		const us = {
 			...files,
