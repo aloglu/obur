@@ -16,5 +16,6 @@ describe('nextPage', () => {
 		expect(nextPage('<https://api.github.com/x?page=1>; rel="prev"', first)).toBeNull();
 		expect(nextPage(null, first)).toBeNull();
 		expect(nextPage('<https://evil.example/tags?page=2>; rel="next"', first)).toBeNull();
+		expect(nextPage('<http://api.github.com/x?page=2>; rel="next"', first)).toBeNull();
 	});
 });

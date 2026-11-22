@@ -2,17 +2,20 @@ import { error, json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { auth } from '#lib/server/auth.ts';
 import { readJson, respond } from '#lib/server/http.ts';
+import { AuthError } from '#lib/server/modules/auth/index.ts';
 import { updates } from '#lib/server/updates.ts';
 import type { RequestHandler } from './$types';
 
 /**
  * GET /api/v1/admin/update-check: what an admin sees, asking GitHub first when the stored answer is over a day
- * old and the check is on. More calls it after opening, so the page itself never waits for GitHub.
+ * old and the check is on. More calls it after opening, so the page itself never waits for GitHub. Any admin
+ * session: it only reads published version numbers, and asking for a passkey moments old here meant the notice showed
+ * only in the first ten minutes after signing in (2026-11-22 Gemini audit, G31).
  */
 export const GET: RequestHandler = ({ locals }) =>
 	respond(async () => {
 		const session = locals.session!;
-		auth.requireAdmin(session);
+		if (session.kind !== 'normal' || session.role !== 'admin') throw new AuthError('forbidden');
 		return json({ updates: await updates.status(session.userId, true) });
 	});
 

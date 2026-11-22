@@ -138,6 +138,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   holds Intel MKL (not open source), so publishing FFmpeg sources (option 1) is not enough; PyAV goes.
   Done: G04 achievement "seen" keys checked by the database's own rule (pounds and firsts with "_" were refused).
   G05 label sodium stays in mg (g → ×1000); salt in mg → g as before; tests fail on the old code.
+  G31 the update look-up needs an admin session only (it needed a passkey check under 10 min old, so "Update
+  available" rarely showed); the switch asks for a passkey; next-page links must keep https. Updates e2e passes.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

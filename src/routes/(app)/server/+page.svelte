@@ -32,9 +32,10 @@
 	async function saveUpdateCheck(on: boolean) {
 		checking = true;
 		try {
-			({ updates } = await api<{ updates: UpdateStatus }>('PUT', '/api/v1/admin/update-check', {
-				on
-			}));
+			// An admin setting: the server asks for a passkey moments old (as for the other admin settings).
+			({ updates } = await withRecentAuth(() =>
+				api<{ updates: UpdateStatus }>('PUT', '/api/v1/admin/update-check', { on })
+			));
 		} catch {
 			updateCheck = !on;
 			showToast({ message: m.settings_save_failed() });

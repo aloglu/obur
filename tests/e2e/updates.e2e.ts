@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { SPEECH_STUB } from '../../playwright.config.ts';
-import { signedInAs } from './fixtures.ts';
+import { signedInAgain, signedInAs, staleSessions } from './fixtures.ts';
 
 const current: string = JSON.parse(readFileSync('package.json', 'utf8')).version;
 const publish = (status: number, names: string[]) =>
@@ -19,7 +19,7 @@ test('an admin turns the check for new versions on, sees a newer one, and turns 
 	page
 }, testInfo) => {
 	test.skip(testInfo.project.name !== 'desktop-chromium', 'one installation-wide switch');
-	await signedInAs(page, 'Sürüm Yöneticisi', 'admin');
+	const adminId = await signedInAs(page, 'Sürüm Yöneticisi', 'admin');
 	const before = await requests();
 	await page.goto('/server');
 	const check = page.getByRole('switch', { name: 'Check for new versions' });
@@ -45,6 +45,15 @@ test('an admin turns the check for new versions on, sees a newer one, and turns 
 	await page.goto('/server');
 	await expect(notice).toBeVisible();
 	expect(await requests()).toBe(before + 1);
+	// More's look-up works without a passkey check moments ago: it only reads version numbers (G31; before, it was
+	// refused ten minutes after signing in, so the notice rarely appeared).
+	await staleSessions(adminId);
+	const lookup = await page.request.get('/api/v1/admin/update-check');
+	expect(lookup.status()).toBe(200);
+	expect((await lookup.json()).updates.latest).toBe('99.0.0');
+	// Turning the check off is an admin setting and needs one: a fresh session for the rest.
+	await signedInAgain(page, adminId);
+	await page.reload();
 
 	await check.click();
 	await expect(notice).toHaveCount(0);

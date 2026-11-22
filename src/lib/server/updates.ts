@@ -14,12 +14,12 @@ const SOURCE = UPDATES_TEST_URL
 /** GitHub lists 100 releases a page; a few pages are plenty, and the next page is only ever GitHub's own address. */
 const MAX_PAGES = 5;
 
-/** The page after this one, from GitHub's Link header, when it is on the same host. */
+/** The page after this one, from GitHub's Link header, when it is on the same origin (https stays https). */
 export function nextPage(link: string | null, current: string): string | null {
 	const next = link?.match(/<([^>]+)>;\s*rel="next"/)?.[1];
 	if (!next) return null;
 	try {
-		return new URL(next).host === new URL(current).host ? next : null;
+		return new URL(next).origin === new URL(current).origin ? next : null;
 	} catch {
 		return null;
 	}
