@@ -179,6 +179,10 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   label (compared line by line). `labels/THIRD-PARTY-NOTICES.md` (in the image at /app) covers the models
   (Apache-2.0), FFmpeg in OpenCV and GEOS in Shapely (LGPL-2.1+, with source pointers) and the rest. All three
   Dockerfiles get OCI source/licence labels (speech's with A11). Add-on test passes.
+  G29 (rest): Speak ignores an answer that arrives after the sheet closed; the service worker clears its time limit
+  and catches a late failure; Foods, archive lists and turning reminders on say when the connection fails instead
+  of leaving the error unhandled; recovery codes: a refused clipboard is caught and the download address stays
+  valid for Safari. Related e2e pass.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

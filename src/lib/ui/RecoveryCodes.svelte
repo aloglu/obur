@@ -12,8 +12,12 @@
 	let copied = $state(false);
 
 	async function copy() {
-		await navigator.clipboard.writeText(codes.join('\n'));
-		copied = true;
+		try {
+			await navigator.clipboard.writeText(codes.join('\n'));
+			copied = true;
+		} catch {
+			// The browser refused the clipboard: the codes stay on screen and Download still works (G29).
+		}
 	}
 
 	function download() {
@@ -22,7 +26,8 @@
 		a.href = URL.createObjectURL(blob);
 		a.download = 'obur-recovery-codes.txt';
 		a.click();
-		URL.revokeObjectURL(a.href);
+		// Safari starts the download after the click returns: the address must still work then (G29).
+		setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
 	}
 </script>
 

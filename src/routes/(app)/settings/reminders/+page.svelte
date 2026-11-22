@@ -82,6 +82,9 @@
 		try {
 			device = await startReminders(pushKey);
 			if (device === 'on') save();
+		} catch {
+			// The browser's push service or the server refused: said, not left unhandled (G29).
+			showToast({ message: m.reminders_save_failed() });
 		} finally {
 			busy = false;
 		}

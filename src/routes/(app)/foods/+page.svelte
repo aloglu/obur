@@ -7,6 +7,7 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
+	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
 	import PageHead from '#lib/ui/PageHead.svelte';
@@ -47,6 +48,9 @@
 			);
 			own.push(...page.foods.filter((f) => !own.some((o) => o.id === f.id)));
 			more = page.more;
+		} catch {
+			// No connection: said, and the button stays for another try (2026-11-22 Gemini audit, G29).
+			showToast({ message: m.no_connection_line() });
 		} finally {
 			loading = false;
 		}
@@ -66,15 +70,20 @@
 			return;
 		}
 		timer = setTimeout(async () => {
-			const found = await api<{ results: FoodSearchResult[] }>(
-				'GET',
-				`/api/v1/foods?q=${encodeURIComponent(q)}`
-			);
-			if (q === query.trim()) {
-				results = found.results;
-				searched = true;
+			try {
+				const found = await api<{ results: FoodSearchResult[] }>(
+					'GET',
+					`/api/v1/foods?q=${encodeURIComponent(q)}`
+				);
+				if (q === query.trim()) {
+					results = found.results;
+					searched = true;
+				}
+			} catch {
+				// No connection: the list stays as it was; typing again tries again.
 			}
 		}, 200);
+		return () => clearTimeout(timer);
 	});
 
 	const per = (r: FoodSearchResult) =>

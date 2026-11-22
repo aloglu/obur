@@ -59,7 +59,14 @@
 
 	async function reload() {
 		const q = query.trim();
-		const page = await fetchPage(0, q);
+		let page: ArchivePage;
+		try {
+			page = await fetchPage(0, q);
+		} catch {
+			// No connection: the list stays as it was (2026-11-22 Gemini audit, G29).
+			showToast({ message: m.no_connection_line() });
+			return;
+		}
 		if (q !== query.trim()) return;
 		items = page.items;
 		total = page.total;
@@ -90,6 +97,8 @@
 			more = page.more;
 			total = page.total;
 			if (everything) for (const i of page.items) selected.add(i.id);
+		} catch {
+			showToast({ message: m.no_connection_line() });
 		} finally {
 			loading = false;
 		}

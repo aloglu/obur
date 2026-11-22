@@ -188,6 +188,8 @@
 				entry?: ParsedEntry;
 				error?: string;
 			};
+			// Closed while it was being read: nothing opens behind the person's back (2026-11-22 Gemini audit, G29).
+			if (closed) return;
 			if (response.ok && body.entry) return onheard(body.entry);
 			if (wrongAccount(body.error ?? '', response.status)) return;
 			if (source !== 'server' && !viaServer && REMOTE_ERRORS.includes(body.error ?? '')) {

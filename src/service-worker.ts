@@ -209,10 +209,16 @@ async function write(request: Request): Promise<Response> {
 /** The network's answer, or a rejection after the time limit (which also starts the hold). */
 async function fromNetwork(request: Request): Promise<Response> {
 	const limit = unreachable() ? HELD_TIMEOUT_MS : NETWORK_TIMEOUT_MS;
+	let timer: ReturnType<typeof setTimeout> | undefined;
 	try {
+		const pending = fetch(request);
+		// A late failure after the time limit is already answered; it must not surface as unhandled (G29).
+		pending.catch(() => {});
 		const response = await Promise.race([
-			fetch(request),
-			new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), limit))
+			pending,
+			new Promise<never>((_, reject) => {
+				timer = setTimeout(() => reject(new Error('timeout')), limit);
+			})
 		]);
 		unreachableUntil = 0;
 		notSignedIn(response);
@@ -220,6 +226,8 @@ async function fromNetwork(request: Request): Promise<Response> {
 	} catch (e) {
 		failed();
 		throw e;
+	} finally {
+		clearTimeout(timer);
 	}
 }
 
