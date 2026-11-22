@@ -22,7 +22,7 @@ services:
       - ${OBUR_DATA_DIR:-./data}:/data
       # The encrypted backups: inside the data folder unless OBUR_BACKUP_DIR puts them elsewhere (another disk is
       # better: a failing disk then takes only one of the two).
-      - ${OBUR_BACKUP_DIR:-./data/backups}:/data/backups
+      - ${OBUR_BACKUP_DIR:-${OBUR_DATA_DIR:-./data}/backups}:/data/backups
     shm_size: 256mb
     # Room for the database to shut down cleanly.
     stop_grace_period: 60s

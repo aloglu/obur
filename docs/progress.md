@@ -153,6 +153,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   breastfeeding or under 18); details are saved only through `PATCH /api/v1/profile/details`.
   G17 the AI agents' guide no longer says "never copy" the secrets file; it says to keep one copy off the server and
   put it back before a restore's first start, as docs/restore.md says.
+  G09 compose: the backups default to `OBUR_DATA_DIR/backups` (they went to `./data/backups` beside compose.yaml,
+  on Unraid the USB boot drive); checked with `docker compose config`.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
