@@ -21,7 +21,7 @@
 <div class="flex min-w-0 flex-col gap-1.5">
 	<label for={fieldId} class="text-[0.8125rem] font-[650] text-muted">{label}</label>
 	<span
-		class="flex min-h-12 items-center gap-1 rounded-input border border-line bg-surface2 px-3.5 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-accent has-aria-invalid:border-bad"
+		class="flex min-h-12 items-center gap-1 rounded-input border border-line bg-surface2 px-3.5 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-accent not-focus-within:has-aria-invalid:border-bad"
 	>
 		<input
 			id={fieldId}

@@ -190,6 +190,12 @@
 	);
 	const expecting = $derived(sex === 'female' && pregnant);
 	const nursing = $derived(sex === 'female' && breastfeeding);
+	// Typed but not usable ("5 ft 12 in", "8o"): the field turns red, so a disabled button is never a puzzle (audit D03).
+	const heightTyped = $derived(
+		lUnit === 'cm' ? height.trim() !== '' : heightFt.trim() !== '' || heightIn.trim() !== ''
+	);
+	const heightBad = $derived(heightTyped && !(h && h >= 50 && h <= 260));
+	const weightBad = $derived(weight.trim() !== '' && !(w && w > 20 && w < 700));
 	const detailsValid = $derived(
 		!!h &&
 			h >= 50 &&
@@ -338,6 +344,7 @@
 									label={m.onb_height()}
 									bind:feet={heightFt}
 									bind:inches={heightIn}
+									invalid={heightBad}
 									choice={heightChoice}
 								/>
 							{:else}
@@ -346,6 +353,7 @@
 									unit="cm"
 									bind:value={height}
 									inputmode="decimal"
+									aria-invalid={heightBad || undefined}
 									choice={heightChoice}
 								/>
 							{/if}
@@ -354,6 +362,7 @@
 								{unit}
 								bind:value={weight}
 								inputmode="decimal"
+								aria-invalid={weightBad || undefined}
 								choice={weightChoice}
 							/>
 						</div>

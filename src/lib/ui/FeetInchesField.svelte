@@ -1,6 +1,7 @@
 <script lang="ts">
 	// A height in feet and inches: one field with two numbers, so it takes the place of UnitField's "cm" field
 	// (docs/ui.md, "Budget setup"). Each number has its own name for screen readers ("Height, feet").
+	import { m } from '#lib/paraglide/messages.js';
 	import type { UnitChoice } from './unit-choice.ts';
 	import UnitSwitch from './UnitSwitch.svelte';
 
@@ -28,7 +29,8 @@
 	<span
 		class={[
 			'flex min-h-12 items-center gap-1 rounded-input border bg-surface2 px-3.5 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-accent',
-			invalid ? 'border-bad' : 'border-line'
+			// Red once the person has left the field, never while typing.
+			invalid ? 'border-line not-focus-within:border-bad' : 'border-line'
 		]}
 	>
 		<input
@@ -36,7 +38,7 @@
 			bind:value={feet}
 			inputmode="numeric"
 			autocomplete="off"
-			aria-label="{label}, ft"
+			aria-label={m.field_feet({ field: label })}
 			aria-invalid={invalid || undefined}
 			class="h-11.5 w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold text-text outline-none placeholder:font-medium placeholder:text-muted"
 		/>
@@ -46,7 +48,7 @@
 			bind:value={inches}
 			inputmode="decimal"
 			autocomplete="off"
-			aria-label="{label}, in"
+			aria-label={m.field_inches({ field: label })}
 			aria-invalid={invalid || undefined}
 			class="ml-2 h-11.5 w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold text-text outline-none placeholder:font-medium placeholder:text-muted"
 		/>

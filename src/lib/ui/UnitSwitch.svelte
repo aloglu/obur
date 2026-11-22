@@ -3,6 +3,7 @@
 	// small up-down mark so it reads as a control). The unit in the text colour: orange on the field is 4.37:1, under
 	// AA for its size; the mark is orange (3:1 is enough for a mark).
 	import ChevronsUpDown from '@lucide/svelte/icons/chevrons-up-down';
+	import { m } from '#lib/paraglide/messages.js';
 	import { otherUnit, type UnitChoice } from './unit-choice.ts';
 
 	let { choice, text }: { choice: UnitChoice; text: string } = $props();
@@ -12,7 +13,7 @@
 <button
 	type="button"
 	onclick={() => choice.onchange(otherUnit(choice))}
-	aria-label="{choice.name}: {text}. {next}"
+	aria-label={m.unit_change({ field: choice.name, unit: text, other: next })}
 	class="-mr-2 flex h-10 shrink-0 items-center gap-0.5 rounded-small px-2 text-[0.875rem] font-[650] text-text"
 	>{text}<ChevronsUpDown size={14} aria-hidden="true" class="text-accent" /></button
 >

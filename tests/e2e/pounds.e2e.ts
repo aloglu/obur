@@ -110,12 +110,16 @@ test('setup and the Goal page take weights and paces in pounds', async ({ page }
 	);
 	await page.getByRole('button', { name: /^Height unit: cm/ }).click();
 	await saved;
-	await expect(page.getByLabel('Height, ft')).toHaveValue('5');
-	await expect(page.getByLabel('Height, in')).toHaveValue('10.9'); // 180.1 cm
+	await expect(page.getByLabel('Height, feet')).toHaveValue('5');
+	await expect(page.getByLabel('Height, inches')).toHaveValue('10.9'); // 180.1 cm
 	await expect(page.getByLabel('Waist', { exact: true })).toHaveValue('34');
 	await page.getByRole('button', { name: /^Weight unit: kg/ }).click();
 	await expect(page.getByLabel('Weight', { exact: true })).toHaveValue('176.4'); // 80.01 kg
-	await page.getByLabel('Height, in').fill('10'); // 177.8 cm
+	// A height that can't be used marks the field, with the button still off (audit D03).
+	await page.getByLabel('Height, inches').fill('12');
+	await expect(page.getByLabel('Height, inches')).toHaveAttribute('aria-invalid', 'true');
+	await page.getByLabel('Height, inches').fill('10'); // 177.8 cm
+	await expect(page.getByLabel('Height, inches')).not.toHaveAttribute('aria-invalid', 'true');
 	await page.getByLabel('Birth date').fill(`${new Date().getFullYear() - 30}-01-01`);
 	await page.getByRole('radio', { name: 'Male', exact: true }).click();
 	await page.getByRole('button', { name: 'See my estimate' }).click();
@@ -262,10 +266,10 @@ test.describe('on a UK phone', () => {
 	}, testInfo) => {
 		await signedInAs(page, `Region ${testInfo.project.name}`);
 		await page.goto('/onboarding');
-		await expect(page.getByLabel('Height, ft')).toBeVisible();
+		await expect(page.getByLabel('Height, feet')).toBeVisible();
 		await expect(page.getByRole('button', { name: /^Weight unit: kg/ })).toBeVisible();
-		await page.getByLabel('Height, ft').fill('5');
-		await page.getByLabel('Height, in').fill('11');
+		await page.getByLabel('Height, feet').fill('5');
+		await page.getByLabel('Height, inches').fill('11');
 		await page.getByLabel('Weight', { exact: true }).fill('80');
 		// The birth date is as tall as the other fields and as wide as its row (iOS draws date fields shorter).
 		const box = async (l: import('@playwright/test').Locator) => (await l.boundingBox())!;
