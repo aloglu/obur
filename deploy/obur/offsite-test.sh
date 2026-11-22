@@ -43,7 +43,7 @@ in_repo() { docker exec "$name" bash -c "find $1/archive -name '$2-*' | grep -q 
 
 docker run -d --name "$name" -v "$data:/data" -v "$offsite:/offsite" \
 	-e PUBLIC_ORIGIN=http://localhost:3198 -e OBUR_BACKUP_PASSPHRASE=offsite-test-passphrase \
-	-e PGBACKREST_REPO2_TYPE=posix -e PGBACKREST_REPO2_PATH=/offsite \
+	-e OBUR_OFFSITE_TYPE=posix -e OBUR_OFFSITE_PATH=/offsite \
 	-e OBUR_OFFSITE_QUEUE_MAX_MB=2 -e OBUR_OFFSITE_RETRY_SECONDS=3 \
 	-e OBUR_BACKUP_HOUR=0 -e OBUR_SCHEDULER_SECONDS=3 -e OBUR_BACKUP_RETRY_SECONDS=10 "$image" >/dev/null
 docker exec "$name" chown postgres:postgres /offsite

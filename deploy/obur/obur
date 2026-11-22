@@ -104,8 +104,8 @@ restore_start() {
 
 restore_finish() {
 	supervised
-	# Checked before any waiting (obur-restore checks it again).
-	[[ $# -gt 0 ]] || obur_fail "pass every entry from Server → Backups → Deleted accounts, or --none if that list is empty (docs/restore.md)"
+	# Checked before any waiting and before the restore is marked as finishing (obur-restore checks it again).
+	obur-restore check-deletions "$@" || exit 1
 	restore_lock
 	case $(restore_step) in
 	restored | finishing) ;;

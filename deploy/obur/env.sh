@@ -41,12 +41,12 @@ obur_secrets() {
 	if ! grep -q '^OBUR_SECRETS_KEY=' "$OBUR_SECRETS"; then
 		echo "OBUR_SECRETS_KEY=$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')" >>"$OBUR_SECRETS"
 	fi
-	set -a
+	# Read as plain shell settings, not exported: each process gets only what it needs, passed by name (the
+	# database and the backup tool had every password and key in their environment; 2026-11-22 Gemini audit, G22).
 	# shellcheck source=/dev/null
 	. "$OBUR_SECRETS"
-	set +a
-	export VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-$OBUR_VAPID_PUBLIC_KEY}
-	export VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-$OBUR_VAPID_PRIVATE_KEY}
+	VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-$OBUR_VAPID_PUBLIC_KEY}
+	VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-$OBUR_VAPID_PRIVATE_KEY}
 }
 
 obur_env() {
@@ -71,6 +71,8 @@ obur_env() {
 	export PGBACKREST_REPO1_CIPHER_PASS=$OBUR_BACKUP_PASSPHRASE
 	export PGBACKREST_REPO1_RETENTION_FULL=${OBUR_BACKUP_KEEP_WEEKS:-5}
 	export PGBACKREST_PROCESS_MAX=${OBUR_BACKUP_PROCESSES:-4}
+	obur_backup_times
+	obur_offsite_env
 	obur_secrets
 	local db=127.0.0.1:5432/obur
 	OBUR_ADMIN_URL=postgres://obur_admin:$OBUR_ADMIN_DB_PASSWORD@$db
@@ -79,15 +81,64 @@ obur_env() {
 	OBUR_WORKER_URL=postgres://obur_worker:$OBUR_WORKER_DB_PASSWORD@$db
 }
 
-# Runs an app script as the app's user with only the settings it needs.
+# The nightly backup's hour (0-23; "08" is 8, not an octal error that skipped every nightly backup) and the weekdays
+# (1-7) of the weekly full backup and restore check (2026-11-22 Gemini audit, G24).
+obur_backup_times() {
+	local hour=${OBUR_BACKUP_HOUR:-2} day name
+	[[ $hour =~ ^[0-9]{1,2}$ ]] && ((10#$hour <= 23)) ||
+		obur_fail "OBUR_BACKUP_HOUR must be an hour from 0 to 23, not '$hour'"
+	export OBUR_BACKUP_HOUR=$((10#$hour))
+	for name in OBUR_FULL_BACKUP_DAY OBUR_RESTORE_CHECK_DAY; do
+		day=${!name:-7}
+		[[ $day =~ ^0?[1-7]$ ]] || obur_fail "$name must be a weekday from 1 (Monday) to 7 (Sunday), not '$day'"
+		export "$name=$((10#$day))"
+	done
+}
+
+# The off-site repository, from OBUR_OFFSITE_*, for every process that reaches it: the backup tool, and PostgreSQL
+# itself, whose restore_command after `obur restore start --repo=2` fetches WAL from it (2026-11-22 Gemini audit, G01:
+# only the backup tool had these settings, so a restore from the off-site copy could not replay its history). Only
+# when OBUR_OFFSITE_TYPE is set: pgBackRest refuses empty settings. Type s3 (R2 and other S3-compatible stores) needs
+# all four of endpoint, bucket, key and secret; type posix (a mounted folder, used by the tests) needs a path. A
+# setting given straight as PGBACKREST_REPO2_* is left as it is.
+obur_offsite_env() {
+	[[ -n ${OBUR_OFFSITE_TYPE:-} && -z ${PGBACKREST_REPO2_TYPE:-} ]] || return 0
+	local v
+	case $OBUR_OFFSITE_TYPE in
+	s3)
+		for v in OBUR_OFFSITE_ENDPOINT OBUR_OFFSITE_BUCKET OBUR_OFFSITE_KEY OBUR_OFFSITE_SECRET; do
+			[[ -n ${!v:-} ]] || obur_fail "OBUR_OFFSITE_TYPE is s3 but $v is empty: set it, or remove the OBUR_OFFSITE_* settings"
+		done
+		export PGBACKREST_REPO2_S3_ENDPOINT=$OBUR_OFFSITE_ENDPOINT
+		export PGBACKREST_REPO2_S3_BUCKET=$OBUR_OFFSITE_BUCKET
+		export PGBACKREST_REPO2_S3_REGION=${OBUR_OFFSITE_REGION:-auto}
+		export PGBACKREST_REPO2_S3_KEY=$OBUR_OFFSITE_KEY
+		export PGBACKREST_REPO2_S3_KEY_SECRET=$OBUR_OFFSITE_SECRET
+		export PGBACKREST_REPO2_S3_URI_STYLE=path
+		;;
+	posix)
+		[[ -n ${OBUR_OFFSITE_PATH:-} ]] || obur_fail "OBUR_OFFSITE_TYPE is posix but OBUR_OFFSITE_PATH is empty"
+		;;
+	*) obur_fail "OBUR_OFFSITE_TYPE must be s3, not '$OBUR_OFFSITE_TYPE'" ;;
+	esac
+	export PGBACKREST_REPO2_TYPE=$OBUR_OFFSITE_TYPE
+	export PGBACKREST_REPO2_PATH=${OBUR_OFFSITE_PATH:-/obur}
+	export PGBACKREST_REPO2_CIPHER_TYPE=aes-256-cbc
+	export PGBACKREST_REPO2_CIPHER_PASS=$PGBACKREST_REPO1_CIPHER_PASS
+	export PGBACKREST_REPO2_RETENTION_FULL=${PGBACKREST_REPO1_RETENTION_FULL:-5}
+	export PGBACKREST_REPO2_BUNDLE=y
+	export PGBACKREST_REPO2_BLOCK=y
+}
+
+# Runs an operator script (migrations, jobs, curated foods, setup and recovery links) with only the settings it reads,
+# as its own system user: these hold the schema owner's password, which the web app's user must never be able to read
+# from them while they run (2026-11-22 Gemini audit, G11).
 obur_node() {
 	local script=$1
 	shift
 	(cd /app && env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp TZ="${TZ:-UTC}" NODE_ENV=production \
-		PUBLIC_ORIGIN="$PUBLIC_ORIGIN" WEBAUTHN_RP_ID="$WEBAUTHN_RP_ID" \
-		DATABASE_ADMIN_URL="$OBUR_ADMIN_URL" DATABASE_MIGRATOR_URL="$OBUR_MIGRATOR_URL" \
-		DATABASE_URL="$OBUR_APP_URL" DATABASE_WORKER_URL="$OBUR_WORKER_URL" \
-		gosu node node "scripts/$script" "$@")
+		PUBLIC_ORIGIN="$PUBLIC_ORIGIN" WEBAUTHN_RP_ID="$WEBAUTHN_RP_ID" DATABASE_MIGRATOR_URL="$OBUR_MIGRATOR_URL" \
+		gosu obur-ops node "scripts/$script" "$@")
 }
 
 obur_psql() {

@@ -30,7 +30,7 @@ status() { docker exec "$name" jq -c "$1" /data/status/backup.json 2>/dev/null |
 run() {
 	docker run -d --name "$name" -p 127.0.0.1:3197:3000 -v "$1:/data" -v "$offsite:/offsite" \
 		-e PUBLIC_ORIGIN=http://localhost:3197 -e OBUR_BACKUP_PASSPHRASE=offsite-restore-passphrase \
-		-e PGBACKREST_REPO2_TYPE=posix -e PGBACKREST_REPO2_PATH=/offsite "$image" >/dev/null
+		-e OBUR_OFFSITE_TYPE=posix -e OBUR_OFFSITE_PATH=/offsite "$image" >/dev/null
 }
 ready() {
 	for _ in $(seq 90); do

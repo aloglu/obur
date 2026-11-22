@@ -24,6 +24,7 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& useradd --uid 1000 --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin node \
 	&& useradd --uid 1001 --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin obur-worker \
+	&& useradd --uid 1002 --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin obur-ops \
 	&& install -d -o postgres -g postgres -m 700 /var/lib/pgbackrest /tmp/pgbackrest
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 

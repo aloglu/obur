@@ -99,6 +99,12 @@ for point in start-prepared start-moved-unrecorded start-moved start-cleared sta
 	# shellcheck disable=SC2046
 	out=$(restore start $(RESTORE_ARGS)) || fail "start again after $point: $out"
 	wait_page 503 "not saying 'being restored' after start again ($point)"
+	if [[ $point == start-prepared ]]; then
+		# A mistyped deletion list is refused before the restore is marked as finishing: cancel still works (G23).
+		out=$(restore finish not-an-account-id) && fail "finish ran with a mistyped deletion entry"
+		[[ $out == *'not a deletion entry'* ]] || fail "finish with a mistyped entry: $out"
+		[[ $(step) == restored ]] || fail "a mistyped deletion entry left the step at $(step)"
+	fi
 	out=$(restore finish --none) || fail "finish after start again ($point): $out"
 	expect_restored "start stopped at $point, started again and finished"
 done

@@ -59,8 +59,21 @@ deletions_given() {
 	fi
 }
 
-finish() {
+# Each entry as Server → Backups → Deleted accounts gives it: checked before anything is changed, also by `obur
+# restore finish` before it marks the restore as finishing (2026-11-22 Gemini audit, G23: a typing mistake found
+# only after that left the restore impossible to cancel).
+check_deletions() {
 	deletions_given "$@"
+	[[ ${1:-} == --none ]] && shift
+	local arg
+	for arg in "$@"; do
+		[[ $arg =~ ^($UUID)(:shared)?(@([0-9]{4}-[0-9]{2}-[0-9]{2}))?$ ]] || fail "not a deletion entry: $arg"
+	done
+	return 0
+}
+
+finish() {
+	check_deletions "$@"
 	[[ ${1:-} == --none ]] && shift
 	local sql=(psql -X -q -v ON_ERROR_STOP=1 -h /var/run/postgresql -U "${PGBACKREST_PG1_USER:-postgres}" -d "${POSTGRES_DB:-obur}")
 	local statements="begin;
@@ -107,6 +120,10 @@ finish)
 	shift
 	[[ $(id -u) == 0 ]] && exec gosu postgres "$0" finish "$@"
 	finish "$@"
+	;;
+check-deletions)
+	shift
+	check_deletions "$@"
 	;;
 *)
 	echo "usage: obur-restore start [pgBackRest restore options] | finish --none | <id>[@YYYY-MM-DD] ..." >&2

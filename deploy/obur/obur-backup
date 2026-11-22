@@ -29,7 +29,7 @@ set -euo pipefail
 STATUS_DIR=${OBUR_STATUS_DIR:-/var/lib/obur-status}
 STATUS_FILE=$STATUS_DIR/backup.json
 SOCKET=${PGBACKREST_PG1_SOCKET_PATH:-/var/run/postgresql}
-BACKUP_HOUR=${OBUR_BACKUP_HOUR:-2}
+BACKUP_HOUR=$((10#${OBUR_BACKUP_HOUR:-2}))
 FULL_DAY=${OBUR_FULL_BACKUP_DAY:-7}         # ISO weekday: 7 = Sunday
 CHECK_DAY=${OBUR_RESTORE_CHECK_DAY:-7}
 # Set when the off-site repository still needs a full backup of the current history (a restore finished while the
@@ -49,23 +49,8 @@ QUEUE_MAX_MB=${OBUR_OFFSITE_QUEUE_MAX_MB:-1024}
 CHECK_LOCK=$STATUS_DIR/.restore-check.lock
 PSQL=(psql -X -q -t -A -h "$SOCKET" -U "${PGBACKREST_PG1_USER:-postgres}" -d postgres)
 
-# The off-site repository exists only when configured: pgBackRest refuses empty settings, so they are passed on
-# from OBUR_OFFSITE_* only when OBUR_OFFSITE_TYPE is set.
-if [[ -n ${OBUR_OFFSITE_TYPE:-} ]]; then
-	export PGBACKREST_REPO2_TYPE=$OBUR_OFFSITE_TYPE
-	export PGBACKREST_REPO2_PATH=${OBUR_OFFSITE_PATH:-/obur}
-	export PGBACKREST_REPO2_S3_ENDPOINT=${OBUR_OFFSITE_ENDPOINT:?}
-	export PGBACKREST_REPO2_S3_BUCKET=${OBUR_OFFSITE_BUCKET:?}
-	export PGBACKREST_REPO2_S3_REGION=${OBUR_OFFSITE_REGION:-auto}
-	export PGBACKREST_REPO2_S3_KEY=${OBUR_OFFSITE_KEY:?}
-	export PGBACKREST_REPO2_S3_KEY_SECRET=${OBUR_OFFSITE_SECRET:?}
-	export PGBACKREST_REPO2_S3_URI_STYLE=path
-	export PGBACKREST_REPO2_CIPHER_TYPE=aes-256-cbc
-	export PGBACKREST_REPO2_CIPHER_PASS=$PGBACKREST_REPO1_CIPHER_PASS
-	export PGBACKREST_REPO2_RETENTION_FULL=${PGBACKREST_REPO1_RETENTION_FULL:-5}
-	export PGBACKREST_REPO2_BUNDLE=y
-	export PGBACKREST_REPO2_BLOCK=y
-fi
+# The off-site repository's PGBACKREST_REPO2_* settings come from OBUR_OFFSITE_* in env.sh (obur_env), so that
+# PostgreSQL has them too; every caller (obur-init, obur, PostgreSQL's archive_command) runs after it.
 
 log() { printf '%s obur-backup: %s\n' "$(date -Iseconds)" "$*" >&2; }
 now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
@@ -457,6 +442,15 @@ restore_check() {
 			log "no restore check: a restore is in progress"
 			exit 1
 		fi
+		# A check stopped hard (the container stopping mid-check) leaves its throwaway copy, perhaps still running:
+		# none can run now, under this lock (2026-11-22 Gemini audit, G24).
+		local stale
+		for stale in /tmp/restore-check.*; do
+			[[ -d $stale ]] || continue
+			pg_ctl -D "$stale" -m immediate stop >/dev/null 2>&1 || true
+			rm -rf "$stale"
+			log "removed the copy a stopped restore check left at $stale"
+		done
 		local ok=true
 		restore_check_repo 1 lastRestoreCheck || ok=false
 		if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then

@@ -157,6 +157,17 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   on Unraid the USB boot drive); checked with `docker compose config`.
   G10 obur-backup reads the oldest waiting WAL file with awk, not `head -1` (sort died of SIGPIPE from about 400
   waiting files, and pipefail then failed every drain); checked with 3,000 dummy files.
+  G01 the off-site settings (`OBUR_OFFSITE_*` → `PGBACKREST_REPO2_*`, env.sh `obur_offsite_env`) reach PostgreSQL
+  too, so a restore from the off-site copy can replay its WAL; the off-site tests now use `OBUR_OFFSITE_*` (type
+  posix) instead of the converted settings. An image with the old behaviour fails the off-site restore test
+  ("PostgreSQL did not start"); the fixed one passes. G24 incomplete off-site settings, a backup hour outside 0–23
+  and weekdays outside 1–7 stop obur with a plain message; "08" is 8 (it skipped every nightly backup);
+  `archive_status` survives WAL files archived while it looks; a restore check removes copies a stopped check left.
+  G23 `obur restore finish` checks the deletion entries before marking the restore as finishing (interruption test
+  checks a mistyped entry leaves it cancellable). G22 the secrets file is read without exporting it (no password or
+  key in the database's environment; checked). G11 operator scripts run as their own user `obur-ops` with only the
+  schema owner's URL. Image tests: smoke, off-site, off-site restore, interruption (19 rounds), upgrade from beta.19
+  and from rc.8 passed.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
