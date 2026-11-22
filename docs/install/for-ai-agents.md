@@ -40,7 +40,9 @@ or setup and recovery links in places other people can read.
   and Scan with their own OpenAI or OpenRouter key, if an admin allows it.
 - **The data folder** (`OBUR_DATA_DIR`, default `./data`, mounted at `/data`): `postgres/` (the database),
   `backups/` (encrypted backups; ideally its own disk, `OBUR_BACKUP_DIR`), `status/` (backup health), `secrets/`
-  (passwords and keys obur generated for itself; never copy these anywhere).
+  (passwords and keys obur generated for itself, readable by root only). Never print them or put them in a chat,
+  a log or the repository. The person keeps one copy of `secrets/obur.env` off the server, as `docs/restore.md`
+  says; offer to help with that copy, and let them choose where it goes.
 - **Settings:** `.env` next to `compose.yaml`. Required: `PUBLIC_ORIGIN` (the https address people open, no path) and
   `OBUR_BACKUP_PASSPHRASE`. Strongly advised: `TZ`. Everything else is explained in `deploy/.env.example`.
 
@@ -159,5 +161,6 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
 Stop obur (`docker compose stop`), copy the data folder and backups as root keeping owners and permissions
 (`rsync -a` or `cp -a`; the database files belong to the container's own user), `.env` and `compose.yaml`, keep `PUBLIC_ORIGIN`,
 `WEBAUTHN_RP_ID`, `TZ` and the passphrase the same, start, and run `docker exec obur obur backup restore-check`.
-Without the old data folder, restore from the backups instead (`docs/restore.md`, "New server only"). People's own
-AI keys don't move with a restore onto a new server; they add them again.
+Without the old data folder, restore from the backups instead (`docs/restore.md`, "New server only"), and put the
+person's off-server copy of `secrets/obur.env` in place before the first start: people's own AI keys and devices'
+reminders then keep working. Without that copy, people add their AI keys again and turn reminders on again.
