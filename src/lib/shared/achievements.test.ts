@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+	achievementKey,
 	achievements,
+	FIRSTS,
+	isAchievementKey,
 	nearestKgLevel,
 	nextUp,
 	startWeight,
@@ -206,5 +209,29 @@ describe('firsts and what comes next', () => {
 		]);
 		// Withdrawn with the records behind them.
 		expect(of(achievements(input({ weightAllowed: false })), 'first')).toEqual([]);
+	});
+});
+
+describe('isAchievementKey', () => {
+	it('takes every key the app makes', () => {
+		for (const first of FIRSTS)
+			expect(isAchievementKey(achievementKey({ kind: 'first', level: first }))).toBe(true);
+		for (const level of WEIGHT_LEVELS_LB)
+			expect(isAchievementKey(achievementKey({ kind: 'weight_lb', level }))).toBe(true);
+		expect(isAchievementKey('weight:120')).toBe(true);
+		expect(isAchievementKey('goal:72.5')).toBe(true);
+		expect(isAchievementKey('streak:365')).toBe(true);
+	});
+
+	it('refuses anything else', () => {
+		for (const key of [
+			'first:other',
+			'weight:',
+			'weight:1000',
+			'streak:1.5',
+			'badge:2',
+			'weight_lb:5;'
+		])
+			expect(isAchievementKey(key)).toBe(false);
 	});
 });

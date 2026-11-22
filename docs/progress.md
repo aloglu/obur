@@ -132,6 +132,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   rows left out in the preview with a warning; A09 publication serialized, latest never moves back, release record
   made once; A10 x86-64 named in the guides and release notes; A12 the deleted-accounts list is kept for good. Open:
   A11 (speech image GPL source) waits for the owner's choice; then a re-audit against the Codex report.
+- Gemini rc.8 audit (2026-11-22, `~/Documents/Obur-1.0-Audit-Gemini.md`, G01–G32). Verified; owner's go for every
+  verdict (2026-11-22): fix the confirmed items and the cheap low ones, skip G27 and most of G32, then a phone test
+  page for A11 (option 3: decode the recording; option 3B: record PCM directly). New fact for A11: libctranslate2
+  holds Intel MKL (not open source), so publishing FFmpeg sources (option 1) is not enough; PyAV goes.
+  Done: G04 achievement "seen" keys checked by the database's own rule (pounds and firsts with "_" were refused).
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

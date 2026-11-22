@@ -49,6 +49,14 @@ export type Achievement =
 
 /** One achievement's identity: what is reached once only. */
 export const achievementKey = (a: Pick<Achievement, 'kind' | 'level'>) => `${a.kind}:${a.level}`;
+/**
+ * Whether a string is an achievement's key, by the same rule as the database's `achievements_level` check (the
+ * celebration's "seen" mark sends them; 2026-11-22 Gemini audit, G04: pounds and firsts with "_" were refused).
+ */
+export const isAchievementKey = (key: string): boolean =>
+	/^(weight|weight_lb|goal):[0-9]{1,3}(\.[0-9]{1,2})?$/.test(key) ||
+	/^streak:[0-9]{1,4}$/.test(key) ||
+	(key.startsWith('first:') && (FIRSTS as readonly string[]).includes(key.slice(6)));
 
 export interface AchievementInput {
 	/** Every weigh-in, in date order; a day's last one counts. */
