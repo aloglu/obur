@@ -17,7 +17,7 @@ async function expectBreakdown(page: Page, base: number, activity: number, goal:
 
 async function fillDetails(page: Page, birthDate: string) {
 	await page.goto('/onboarding');
-	await page.getByLabel('Height').fill('180');
+	await page.getByLabel('Height', { exact: true }).fill('180');
 	await page.getByLabel('Weight', { exact: true }).fill('80');
 	await page.getByLabel('Birth date').fill(birthDate);
 	await page.getByRole('radio', { name: 'Male', exact: true }).click();
@@ -96,9 +96,9 @@ test('onboarding calculates a budget; activity and completion update Today', asy
 	await expect(about.getByRole('link', { name: /^Body fat/ })).toContainText('Not set');
 	await expect(page.getByText('Weight comes from your weigh-ins on Today.')).toBeVisible();
 	await about.getByRole('link', { name: /^Height/ }).click();
-	await expect(page.getByLabel('Height')).toHaveValue('180');
+	await expect(page.getByLabel('Height', { exact: true })).toHaveValue('180');
 	// 182 cm and 79 kg: 10·79 + 6.25·182 − 5·30 + 5 = 1,782.5; × 1.2 = 2,139 base.
-	await page.getByLabel('Height').fill('182');
+	await page.getByLabel('Height', { exact: true }).fill('182');
 	await page.getByLabel('Weight', { exact: true }).fill('79');
 	await page.getByRole('button', { name: 'See my estimate' }).click();
 	await expect(page.getByText(/^Step 2 of 3/)).toBeVisible();

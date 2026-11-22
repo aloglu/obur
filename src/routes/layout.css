@@ -154,6 +154,21 @@
 }
 
 /* One checkbox everywhere (docs/ui.md). */
+/* Date fields as tall and wide as the other fields. iOS Safari draws its own date control: it sizes the field to the
+   date's text (shorter, and narrower than the column) and collapses an empty one; without its own look the field takes
+   the classes it is given (owner, 2026-11-22). */
+input[type='date'] {
+	-webkit-appearance: none;
+	appearance: none;
+	display: block;
+	width: 100%;
+	min-width: 0;
+}
+input[type='date']::-webkit-date-and-time-value {
+	min-height: 1.5em;
+	text-align: left;
+}
+
 input[type='checkbox'] {
 	appearance: none;
 	flex: none;

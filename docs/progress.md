@@ -83,6 +83,15 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   e2e pass; Vitest 1,237.
   Full browser suite: 311 passed; 2 tests followed the new texts (fixed), 1 WebKit timeout in an unrelated goals test
   (passed 3 of 3 again). Next: the owner's picks on the review page (setup, Units, water); rc.8 only when asked.
+- Setup units redesigned (owner, 2026-11-22: a UK person must not finish setup and then fix units in Settings). Three
+  designs built; screenshots were too hard to judge, so an interactive demo (phone and desktop) was made; owner picked
+  A: each field's unit is a button (`ui/UnitSwitch.svelte`, `unit-choice.ts`), the Metric/Imperial row removed. New
+  accounts start with the phone region's units (`shared/region-units.ts`, saved on the first page load with the
+  browser's other choices). Date field (owner: "a lot shorter than other fields"): iOS's own date look removed
+  (`layout.css`), and unit fields made 48 px like text fields (they were 50). Tests run with locale "en" (no region);
+  a UK-phone test checks the start units, the field buttons and the date field's size. Accessibility: the unit text
+  in the text colour (orange was 4.37:1). Vitest 1,239; full browser suite 317 passed before the contrast fix
+  (accessibility and pounds pass after it). Not checked on a real iPhone yet: the date field.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

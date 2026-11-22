@@ -2,14 +2,18 @@
 	// A short text field with its unit inside, at the end (docs/ui.md, "Budget setup"). For one fixed unit; when the unit is
 	// a choice, AmountField is the one to use.
 	import type { HTMLInputAttributes } from 'svelte/elements';
+	import type { UnitChoice } from './unit-choice.ts';
+	import UnitSwitch from './UnitSwitch.svelte';
 
 	interface Props extends Omit<HTMLInputAttributes, 'value'> {
 		label: string;
 		unit: string;
 		hint?: string;
 		value: string;
+		/** The unit as a choice (setup). */
+		choice?: UnitChoice;
 	}
-	let { label, unit, hint, value = $bindable(), id, ...rest }: Props = $props();
+	let { label, unit, hint, value = $bindable(), id, choice, ...rest }: Props = $props();
 	const uid = $props.id();
 	const fieldId = $derived(id ?? uid);
 </script>
@@ -24,10 +28,14 @@
 			bind:value
 			autocomplete="off"
 			aria-describedby={hint ? `${fieldId}-hint` : undefined}
-			class="h-12 w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold text-text outline-none placeholder:font-medium placeholder:text-muted"
+			class="h-11.5 w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold text-text outline-none placeholder:font-medium placeholder:text-muted"
 			{...rest}
 		/>
-		<span class="text-[0.875rem] font-[650] text-muted">{unit}</span>
+		{#if choice}
+			<UnitSwitch {choice} text={unit} />
+		{:else}
+			<span class="text-[0.875rem] font-[650] text-muted">{unit}</span>
+		{/if}
 	</span>
 	{#if hint}<p id="{fieldId}-hint" class="text-[0.8125rem] text-muted">{hint}</p>{/if}
 </div>

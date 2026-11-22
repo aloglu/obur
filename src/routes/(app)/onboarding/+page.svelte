@@ -38,6 +38,7 @@
 	} from '#lib/shared/body-units.ts';
 	import { lengthUnit, waterUnit, weightUnit } from '#lib/client/units.ts';
 	import FeetInchesField from '#lib/ui/FeetInchesField.svelte';
+	import type { UnitChoice } from '#lib/ui/unit-choice.ts';
 	import { paceAmount, paces } from '#lib/ui/goal-pace.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Chips from '#lib/ui/Chips.svelte';
@@ -60,8 +61,8 @@
 		scrollTo(0, 0);
 	}
 
-	// Weights, height and waist in the person's units (Units, or Metric / Imperial here, which saves them), kept in
-	// kilograms and centimetres. Water isn't asked here, but Imperial sets it too.
+	// Weights, height and waist in the person's units (Units, or each field's unit button here, which saves them), kept
+	// in kilograms and centimetres.
 	let unit = $state<WeightUnit>(weightUnit());
 	const startLength = lengthUnit();
 	let lUnit = $state<LengthUnit>(startLength);
@@ -93,24 +94,7 @@
 	let problem = $state('');
 
 	type Units = { weight: WeightUnit; length: LengthUnit; water: WaterUnit };
-	const SYSTEMS = {
-		metric: { weight: 'kg', length: 'cm', water: 'ml' },
-		imperial: { weight: 'lb', length: 'in', water: 'floz' }
-	} as const satisfies Record<string, Units>;
-	type System = keyof typeof SYSTEMS;
 	const units = (): Units => ({ weight: unit, length: lUnit, water: wUnit });
-	// A mix set on Units (lb with cm, say) chooses neither.
-	const system = $derived<System | ''>(
-		(Object.keys(SYSTEMS) as System[]).find(
-			(k) => SYSTEMS[k].weight === unit && SYSTEMS[k].length === lUnit && SYSTEMS[k].water === wUnit
-		) ?? ''
-	);
-
-	const systemOptions: { value: System | ''; label: string }[] = [
-		{ value: 'metric', label: m.units_metric() },
-		{ value: 'imperial', label: m.units_imperial() }
-	];
-
 	/** A typed weight in the other unit ("80" kg becomes "176.4" lb); text that isn't a number stays. */
 	function convert(text: string, from: WeightUnit, to: WeightUnit) {
 		const typed = parseDecimal(text);
@@ -142,10 +126,10 @@
 		lUnit = to.length;
 		wUnit = to.water;
 	}
-	// Changed at once; saved for the account, like the Units page. A failed save puts the units back.
-	async function changeSystem(next: System) {
+	/** Some units changed here: what was typed moves with them, and the account keeps them. */
+	async function setUnits(partial: Partial<Units>) {
 		const before = units();
-		const after = SYSTEMS[next];
+		const after = { ...before, ...partial };
 		switchUnits(before, after);
 		try {
 			await savePreferences({
@@ -159,6 +143,35 @@
 			showToast({ message: m.settings_save_failed() });
 		}
 	}
+
+	// Each field's unit is a button that switches it (owner's pick, 2026-11-22: setup suits every mix, such as feet
+	// and inches with kilograms, with no Metric / Imperial row).
+	const weightChoice = $derived<UnitChoice>({
+		options: [
+			{ value: 'kg', label: 'kg' },
+			{ value: 'lb', label: 'lb' }
+		],
+		value: unit,
+		name: m.onb_unit_weight(),
+		onchange: (v) => setUnits({ weight: v as WeightUnit })
+	});
+	const heightChoice = $derived<UnitChoice>({
+		options: [
+			{ value: 'cm', label: 'cm' },
+			{ value: 'in', label: 'ft, in' }
+		],
+		value: lUnit,
+		name: m.onb_unit_height(),
+		onchange: (v) => setUnits({ length: v as LengthUnit })
+	});
+	const waistChoice = $derived<UnitChoice>({
+		...heightChoice,
+		options: [
+			{ value: 'cm', label: 'cm' },
+			{ value: 'in', label: 'in' }
+		],
+		name: m.onb_unit_waist()
+	});
 
 	// Centimetres, from "180" or from 5 ft 10 in (inches may be left empty: 6 ft).
 	const h = $derived.by(() => {
@@ -319,18 +332,13 @@
 			{#if step === 1}
 				<form class="flex flex-col gap-3" onsubmit={saveDetails}>
 					<div class={card}>
-						<Chips
-							label={m.onb_units()}
-							value={system}
-							onchange={(v) => v && changeSystem(v)}
-							options={systemOptions}
-						/>
 						<div class="grid grid-cols-2 gap-3">
 							{#if lUnit === 'in'}
 								<FeetInchesField
 									label={m.onb_height()}
 									bind:feet={heightFt}
 									bind:inches={heightIn}
+									choice={heightChoice}
 								/>
 							{:else}
 								<UnitField
@@ -338,9 +346,16 @@
 									unit="cm"
 									bind:value={height}
 									inputmode="decimal"
+									choice={heightChoice}
 								/>
 							{/if}
-							<UnitField label={m.onb_weight()} {unit} bind:value={weight} inputmode="decimal" />
+							<UnitField
+								label={m.onb_weight()}
+								{unit}
+								bind:value={weight}
+								inputmode="decimal"
+								choice={weightChoice}
+							/>
 						</div>
 						<TextField label={m.onb_birth()} bind:value={birthDate} type="date" max={data.today} />
 						<Chips
@@ -375,6 +390,7 @@
 							<UnitField
 								label={m.onb_waist()}
 								unit={lUnit === 'in' ? 'in' : 'cm'}
+								choice={waistChoice}
 								bind:value={waist}
 								inputmode="decimal"
 								placeholder={m.onb_optional()}

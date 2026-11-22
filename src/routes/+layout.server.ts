@@ -3,10 +3,11 @@ import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '#lib/shared/preferences.ts';
 import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, usable, type Language } from '#lib/shared/languages.ts';
 import { config } from '#lib/server/config.ts';
+import { regionUnits } from '#lib/shared/region-units.ts';
 import { getLocale } from '#lib/paraglide/runtime.js';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ locals, depends, cookies }) => {
+export const load: LayoutServerLoad = async ({ locals, depends, cookies, request }) => {
 	// Asked for again after every page change (the app layout, ACCOUNT_DATA), so a setting changed on another device
 	// arrives without a reload, and the Home Screen icon link in the page's head is always the account's (docs/ui.md,
 	// "App icon"). After, not during: a page never waits for this before it opens.
@@ -20,7 +21,9 @@ export const load: LayoutServerLoad = async ({ locals, depends, cookies }) => {
 		themeMode: locals.theme ?? 'system',
 		palette: locals.palette,
 		appIcon: locals.appIcon,
-		timeFormat: locals.timeFormat
+		timeFormat: locals.timeFormat,
+		// The phone's region: a new account starts with its units (shared/region-units.ts).
+		...regionUnits(request.headers.get('accept-language'))
 	};
 	let preferences = device;
 	if (s?.kind === 'normal') {
@@ -37,7 +40,10 @@ export const load: LayoutServerLoad = async ({ locals, depends, cookies }) => {
 						themeMode: device.themeMode,
 						palette: device.palette,
 						appIcon: device.appIcon,
-						timeFormat: device.timeFormat
+						timeFormat: device.timeFormat,
+						weightUnit: device.weightUnit,
+						lengthUnit: device.lengthUnit,
+						waterUnit: device.waterUnit
 					})
 				: stored.preferences;
 		// The page's head and <html> are written after this load, from these.

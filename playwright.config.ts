@@ -95,7 +95,11 @@ export default defineConfig({
 			}
 		}
 	],
-	use: { baseURL: `http://localhost:${PORT}` },
+	use: {
+		baseURL: `http://localhost:${PORT}`,
+		// English with no region, so new accounts start metric (shared/region-units.ts); dates and times format as en-US.
+		locale: 'en'
+	},
 	projects: [
 		// The passkey journey starts with first-admin setup, which needs an empty database, so it runs first.
 		// Chromium only: WebKit has no supported virtual authenticator.

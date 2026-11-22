@@ -101,20 +101,20 @@ test('Progress shows the weight, its change and the goal in pounds', async ({ pa
 test('setup and the Goal page take weights and paces in pounds', async ({ page }, testInfo) => {
 	await signedInAs(page, `Setup lb ${testInfo.project.name}`);
 	await page.goto('/onboarding');
-	await expect(page.getByRole('radio', { name: 'Metric' })).toHaveAttribute('aria-checked', 'true');
-	await page.getByLabel('Height').fill('180');
+	await page.getByLabel('Height', { exact: true }).fill('180');
 	await page.getByLabel('Weight', { exact: true }).fill('80');
-	await page.getByLabel('Waist').fill('86.4');
-	// Setup's own choice: what was typed follows, and the account keeps the units.
+	await page.getByLabel('Waist', { exact: true }).fill('86.4');
+	// Each field's unit is a button: what was typed follows, and the account keeps the units.
 	const saved = page.waitForResponse(
 		(r) => r.url().includes('/api/v1/profile/preferences') && r.request().method() === 'PATCH'
 	);
-	await page.getByRole('radio', { name: 'Imperial' }).click();
+	await page.getByRole('button', { name: /^Height unit: cm/ }).click();
 	await saved;
-	await expect(page.getByLabel('Weight', { exact: true })).toHaveValue('176.4'); // 80.01 kg
 	await expect(page.getByLabel('Height, ft')).toHaveValue('5');
 	await expect(page.getByLabel('Height, in')).toHaveValue('10.9'); // 180.1 cm
-	await expect(page.getByLabel('Waist')).toHaveValue('34');
+	await expect(page.getByLabel('Waist', { exact: true })).toHaveValue('34');
+	await page.getByRole('button', { name: /^Weight unit: kg/ }).click();
+	await expect(page.getByLabel('Weight', { exact: true })).toHaveValue('176.4'); // 80.01 kg
 	await page.getByLabel('Height, in').fill('10'); // 177.8 cm
 	await page.getByLabel('Birth date').fill(`${new Date().getFullYear() - 30}-01-01`);
 	await page.getByRole('radio', { name: 'Male', exact: true }).click();
@@ -134,7 +134,7 @@ test('setup and the Goal page take weights and paces in pounds', async ({ page }
 	await expect(
 		page.getByRole('button', { name: 'Height and waist: Feet and inches (ft, in)' })
 	).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Water: US fluid ounces (fl oz)' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Water: Millilitres (ml)' })).toBeVisible();
 	await page.goto('/profile');
 	await expect(page.getByText('5 ft 10 in')).toBeVisible();
 	await page.goto('/more/goal');
@@ -251,4 +251,46 @@ test('water in US fluid ounces: added, typed and listed in ounces, stored in mil
 	await page.waitForLoadState('networkidle');
 	await page.goto('/');
 	await expect(page.getByRole('region', { name: 'Water' })).toContainText('1210 ml');
+});
+
+test.describe('on a UK phone', () => {
+	// Feet and inches with kilograms.
+	test.use({ locale: 'en-GB' });
+
+	test('a new account starts with its phone region units; each setup field switches its own', async ({
+		page
+	}, testInfo) => {
+		await signedInAs(page, `Region ${testInfo.project.name}`);
+		await page.goto('/onboarding');
+		await expect(page.getByLabel('Height, ft')).toBeVisible();
+		await expect(page.getByRole('button', { name: /^Weight unit: kg/ })).toBeVisible();
+		await page.getByLabel('Height, ft').fill('5');
+		await page.getByLabel('Height, in').fill('11');
+		await page.getByLabel('Weight', { exact: true }).fill('80');
+		// The birth date is as tall as the other fields and as wide as its row (iOS draws date fields shorter).
+		const box = async (l: import('@playwright/test').Locator) => (await l.boundingBox())!;
+		const date = await box(page.getByLabel('Birth date'));
+		const weightBox = await box(page.getByLabel('Weight', { exact: true }).locator('..'));
+		const sexRow = await box(page.getByRole('radiogroup', { name: 'Sex used by the formula' }));
+		expect(Math.round(date.height)).toBe(Math.round(weightBox.height));
+		expect(Math.round(date.width)).toBe(Math.round(sexRow.width));
+		// Height in centimetres instead: the waist follows (one setting), the weight stays.
+		const saved = page.waitForResponse(
+			(r) => r.url().includes('/api/v1/profile/preferences') && r.request().method() === 'PATCH'
+		);
+		await page.getByRole('button', { name: /^Height unit: in/ }).click();
+		await saved;
+		await expect(page.getByLabel('Height', { exact: true })).toHaveValue('180.3');
+		await expect(page.getByRole('button', { name: /^Waist unit: cm/ })).toBeVisible();
+		await expect(page.getByLabel('Weight', { exact: true })).toHaveValue('80');
+		await page.getByRole('button', { name: /^Weight unit: kg/ }).click();
+		await expect(page.getByLabel('Weight', { exact: true })).toHaveValue('176.4');
+		await page.waitForLoadState('networkidle');
+		await page.goto('/more/units');
+		await expect(page.getByRole('button', { name: 'Weight: Pounds (lb)' })).toBeVisible();
+		await expect(
+			page.getByRole('button', { name: 'Height and waist: Centimetres (cm)' })
+		).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Water: Millilitres (ml)' })).toBeVisible();
+	});
 });
