@@ -23,5 +23,6 @@ Licence: MIT. The food icons and achievement pictures are from [OpenMoji](https:
 ([`static/icons/food/LICENSE.txt`](static/icons/food/LICENSE.txt),
 [`static/icons/achievements/LICENSE.txt`](static/icons/achievements/LICENSE.txt)). The fonts (Inter, Bricolage
 Grotesque) are under the SIL Open Font License 1.1. Every bundled package's licence is listed at
-`/third-party-notices.txt` on a running obur (written by `npm run build`). The optional speech image (`obur-speech`) also contains FFmpeg, x264
+`/third-party-notices.txt` on a running obur (written by `npm run build`). The optional label image (`obur-labels`) lists its
+parts, among them LGPL libraries in OpenCV and Shapely, in [`labels/THIRD-PARTY-NOTICES.md`](labels/THIRD-PARTY-NOTICES.md). The optional speech image (`obur-speech`) also contains FFmpeg, x264
 and x265, which are GPL licensed: see [`speech/THIRD-PARTY-NOTICES.md`](speech/THIRD-PARTY-NOTICES.md).

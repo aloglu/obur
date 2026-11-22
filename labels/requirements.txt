@@ -1,4 +1,16 @@
-# Pinned as measured in Phase 0 (docs/feasibility.md, spikes/ocr/requirements.lock).
-rapidocr==3.9.2
+# Pinned as measured in Phase 0 (docs/feasibility.md, spikes/ocr/requirements.lock). RapidOCR itself is installed
+# after these without its own requirements (Dockerfile): it names the full OpenCV with its Qt and video parts, which
+# nothing here uses; these are its requirements with OpenCV's headless build in its place (2026-11-22 Gemini audit,
+# G12; the same OpenCV version).
 onnxruntime==1.31.0
 pillow==13.0.0
+opencv-python-headless==5.0.0.93
+numpy
+pyclipper
+six
+shapely
+PyYAML
+tqdm
+omegaconf
+requests
+colorlog

@@ -174,6 +174,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   Paraglide (48 packages). More's credit links OpenMoji, CC BY-SA 4.0, says the dark-mode outlines are recoloured,
   and links "Other licences". The food icons' LICENSE.txt names the dark copies. The image keeps obur's LICENSE and
   Node.js's. Unit, help/app-shell/accessibility e2e, image build and smoke test pass.
+  G12 obur-labels uses OpenCV's headless build (same version 5.0.0.93; RapidOCR installed without its own
+  requirements, which name the full build): no Qt, no libgl1/libglib, 350 MB smaller, the same OCR output on a test
+  label (compared line by line). `labels/THIRD-PARTY-NOTICES.md` (in the image at /app) covers the models
+  (Apache-2.0), FFmpeg in OpenCV and GEOS in Shapely (LGPL-2.1+, with source pointers) and the rest. All three
+  Dockerfiles get OCI source/licence labels (speech's with A11). Add-on test passes.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
