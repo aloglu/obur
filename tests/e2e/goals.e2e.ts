@@ -247,7 +247,7 @@ test('first day: the welcome offers a budget once, and "Just log" leaves no ment
 	const welcome = page.getByRole('region', { name: /^Welcome, Selin/ });
 	await expect(welcome).toBeVisible();
 	await welcome.getByRole('button', { name: 'Just log' }).click();
-	await expect(page.getByRole('status')).toContainText('Set one up any time in More → Profile');
+	await expect(page.getByRole('status')).toContainText('Set one up any time in More → Settings → Profile');
 	await expect(welcome).toBeHidden();
 	await page.reload();
 	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();

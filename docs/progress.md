@@ -203,6 +203,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   headless Chromium with a fake microphone. An artifact page cannot use the microphone, so it needs an HTTPS host
   for the owner's iPhone (owner to choose). Next: the owner's results decide A or B; then the add-on reads WAV only
   and PyAV goes.
+- Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
+  one test still expecting the old "More → Profile" text (fixed; it passes).
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
