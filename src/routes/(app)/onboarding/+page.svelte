@@ -387,7 +387,9 @@
 				<div class={estimate}>
 					<p class={label}>{m.onb_budget_label()}</p>
 					<p>
-						<span class={big}><Roll value={kcal(preview)} /></span><span class={unitClass}>kcal</span>
+						<span class={big}><Roll value={kcal(preview)} /></span><span class={unitClass}
+							>kcal</span
+						>
 					</p>
 					<div class="flex flex-col text-[0.875rem] tabular-nums">
 						<div class={eqnRow}><span>{m.onb_base_label()}</span><span>{kcal(base)}</span></div>
