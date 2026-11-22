@@ -85,7 +85,13 @@ ready
 [[ $(records) == "$before" ]] || fail "records changed in the upgrade"
 upgraded=$(migrations)
 ((upgraded >= older_migrations)) || fail "migrations: $older_migrations before, $upgraded after"
-code=$(docker exec "$name" node -e "fetch('http://127.0.0.1:3000/login').then((r) => console.log(r.status), () => console.log('none'))")
+# "ready" is logged when the web app is started, not when it answers: ask until it does.
+code=none
+for _ in $(seq 60); do
+	code=$(docker exec "$name" node -e "fetch('http://127.0.0.1:3000/login').then((r) => console.log(r.status), () => console.log('none'))")
+	[[ $code == 200 ]] && break
+	sleep 1
+done
 [[ $code == 200 ]] || fail "the sign-in page after the upgrade: $code"
 # Made with the new version, after the backup: the restore must take it away.
 sql "insert into weight_entries (id, user_id, local_date, zone, kg)
