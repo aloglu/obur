@@ -19,6 +19,8 @@ import {
 } from '../../../shared/nutrients.ts';
 import { matchKey, sameFood, type MatchableFood } from '../../../shared/food-match.ts';
 import { KG_PER_LB } from '../../../shared/weight-convert.ts';
+import { inchesToCm } from '../../../shared/length-convert.ts';
+import { toMl } from '../../../shared/water-convert.ts';
 import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
 import { activityEntries, waterEntries, weightEntries } from '../body/index.ts';
 import { foodNutrients, foods } from '../catalog/index.ts';
@@ -35,6 +37,8 @@ export interface LoseItOptions {
 	zone: string;
 	/** LoseIt's weights have no unit column. */
 	weightUnit: 'kg' | 'lb';
+	/** Nor its water: millilitres or US fluid ounces (absent: millilitres; audit D02). */
+	waterUnit?: 'ml' | 'floz';
 	/** Move entries imported earlier but missing from this export to the trash. */
 	trashMissing: boolean;
 	/** Add every food, even one the person already has ("Already in your foods" is skipped). */
@@ -42,6 +46,14 @@ export interface LoseItOptions {
 }
 
 type Kind = 'food' | 'diary' | 'weight' | 'water' | 'activity' | 'target';
+
+/**
+ * LoseIt's profile height, in centimetres. An export from a pounds account may give inches; nobody this app sets a
+ * budget for is under 100 cm or over 100 in, so a height under 100 is read as inches (audit D02).
+ */
+const INCHES_BELOW = 100;
+const heightCm = (h: number): number =>
+	h < INCHES_BELOW ? inchesToCm(h) : Math.round(h * 10) / 10;
 export interface LoseItCounts {
 	new: number;
 	unchanged: number;
@@ -55,6 +67,7 @@ export type LoseItWarning =
 	| 'reconciliation_mismatch'
 	| 'budgets_after_own_target'
 	| 'profile_kept'
+	| 'height_in_inches'
 	| 'height_out_of_range';
 
 export interface LoseItSummary {
@@ -65,6 +78,8 @@ export interface LoseItSummary {
 	deletedInLoseIt: number;
 	/** The earliest weigh-in as written in the file (it has no unit), so the person can tell which unit it is in. */
 	firstWeight: number | null;
+	/** The most water in a day as written in the file (no unit either): 2500 is millilitres, 64 fluid ounces. */
+	mostWater: number | null;
 	/** Days whose imported entries do not add up to LoseIt's own daily food total (should be none). */
 	reconciliation: { days: number; mismatched: string[] };
 	/** Foods the person already had, used instead of adding a copy (unless keepCopies). */
@@ -463,12 +478,11 @@ export async function planLoseIt(
 			warnings.add('profile_kept');
 		}
 	}
-	if (
-		importProfile &&
-		data.profile.height !== null &&
-		(data.profile.height < 50 || data.profile.height > 260)
-	)
-		warnings.add('height_out_of_range');
+	if (importProfile && data.profile.height !== null) {
+		const cm = heightCm(data.profile.height);
+		if (data.profile.height < INCHES_BELOW) warnings.add('height_in_inches');
+		if (cm < 50 || cm > 260) warnings.add('height_out_of_range');
+	}
 
 	// Reconciliation: imported rows against LoseIt's own daily food totals.
 	const sums = new Map<string, number>();
@@ -491,6 +505,7 @@ export async function planLoseIt(
 					(first, w) => (!first || w.date < first.date ? w : first),
 					null
 				)?.value ?? null,
+			mostWater: data.water.length ? Math.max(...data.water.map((w) => w.ml)) : null,
 			reconciliation: { days: data.days.length, mismatched },
 			matchedFoods: matched.size,
 			warnings: [...warnings],
@@ -642,7 +657,8 @@ export async function writeLoseIt(
 		const id = p.create.water.get(p.ids.water[i]);
 		if (!id) return [];
 		remember('water', p.ids.water[i], id);
-		return [{ ...reading(id, w.date), ml: Math.min(w.ml, 10_000) }];
+		const ml = options.waterUnit === 'floz' ? toMl(w.ml, 'floz') : w.ml;
+		return [{ ...reading(id, w.date), ml: Math.min(ml, 10_000) }];
 	});
 	await chunked(waterRows, (c) => tx.insert(waterEntries).values(c));
 	const activityRows = data.activity.flatMap((a, i) => {
@@ -683,12 +699,12 @@ export async function writeLoseIt(
 			.values(c.map((d) => ({ userId, localDate: d, source: 'loseit' as const })))
 	);
 	if (p.importProfile) {
-		const h = data.profile.height;
+		const h = data.profile.height === null ? null : heightCm(data.profile.height);
 		await tx.insert(profiles).values({
 			userId,
 			birthDate: data.profile.birthDate,
 			sex: data.profile.sex,
-			heightCm: h !== null && h >= 50 && h <= 260 ? Math.round(h * 10) / 10 : null
+			heightCm: h !== null && h >= 50 && h <= 260 ? h : null
 		});
 	}
 

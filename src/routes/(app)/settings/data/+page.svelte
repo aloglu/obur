@@ -6,7 +6,8 @@
 	import { onMount } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
-	import { weightUnit as personUnit } from '#lib/client/weight-unit.ts';
+	import { waterUnit as personWaterUnit, weightUnit as personUnit } from '#lib/client/units.ts';
+	import { waterSymbol, type WaterUnit } from '#lib/shared/body-units.ts';
 	import { accountHeaders, wrongAccount } from '#lib/client/account.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -42,6 +43,7 @@
 		warnings: string[];
 		deletedInLoseIt?: number;
 		firstWeight?: number | null;
+		mostWater?: number | null;
 		reconciliation?: { days: number; mismatched: string[] };
 		/** LoseIt foods the person already has, used instead of a copy. */
 		matchedFoods?: number;
@@ -84,6 +86,7 @@
 		purged_skipped: m.data_warn_purged_skipped,
 		budgets_after_own_target: m.data_warn_budgets_after_own_target,
 		height_out_of_range: m.data_warn_height_out_of_range,
+		height_in_inches: m.data_warn_height_in_inches,
 		reconciliation_mismatch: m.data_warn_reconciliation_mismatch
 	};
 	// Shown through their own controls instead.
@@ -122,6 +125,7 @@
 	// LoseIt imports: what the export cannot say for itself.
 	// The export has no unit column; the person's own unit is the first guess.
 	let weightUnit = $state<'kg' | 'lb'>(personUnit());
+	let waterUnit = $state<WaterUnit>(personWaterUnit());
 	let trashMissing = $state(false);
 	// Foods the person already has are used instead of a copy unless they keep separate copies; the count from the
 	// preview that used them stays shown while the switch is on.
@@ -238,6 +242,7 @@
 		const params = new URLSearchParams({
 			zone: deviceZone(),
 			weightUnit,
+			waterUnit,
 			trashMissing: trashMissing ? '1' : '0',
 			keepCopies: keepCopies ? '1' : '0'
 		});
@@ -466,6 +471,31 @@
 									/>
 								</div>
 							</div>
+							{#if summary.mostWater != null}
+								<div class="flex min-h-[60px] items-center justify-between gap-3 py-1.5">
+									<span class="min-w-0 text-[0.9375rem] font-semibold">
+										{m.data_import_water_unit()}
+										<small class="block text-[0.8125rem] font-normal text-muted"
+											>{m.data_most_water({
+												value: formatDecimal(summary.mostWater, 1),
+												unit: waterSymbol(waterUnit)
+											})}</small
+										>
+									</span>
+									<div class="w-[116px] shrink-0">
+										<Chips
+											label={m.data_import_water_unit()}
+											hideLabel
+											bind:value={waterUnit}
+											onchange={preview}
+											options={[
+												{ value: 'ml', label: 'ml' },
+												{ value: 'floz', label: 'fl oz' }
+											]}
+										/>
+									</div>
+								</div>
+							{/if}
 							{#if matched > 0}
 								<Switch
 									label={m.data_import_keep_copies()}

@@ -251,6 +251,28 @@ describe('LoseIt import', () => {
 		expect((await portability.previewLoseIt(MEHMET, zip(later), options)).counts.water.new).toBe(0);
 	});
 
+	it('reads a pounds account: height in inches, water in US fluid ounces (2026-11-22 audit, D02)', async () => {
+		const us = {
+			...files,
+			'profile.csv': files['profile.csv'].replace('Height,178.0', 'Height,70.0'),
+			'water-intake.csv':
+				'Date,Value,Secondary Value,Last Updated\n1/5/2026,64.0,-1.0,2026-01-05T22:00:00+0300\n'
+		};
+		const o: LoseItOptions = { ...options, weightUnit: 'lb', waterUnit: 'floz' };
+		const preview = await portability.previewLoseIt(MEHMET, zip(us), o);
+		expect(preview.warnings).toContain('height_in_inches');
+		expect(preview.warnings).not.toContain('height_out_of_range');
+		expect(preview.mostWater).toBe(64);
+		await applyLoseIt(MEHMET, zip(us), o);
+		expect((await goals.profile(MEHMET))?.heightCm).toBe(177.8);
+		const [{ ml }] =
+			await admin`select ml::float as ml from water_entries where user_id = ${MEHMET}`;
+		expect(ml).toBe(1892.7);
+		// A metric export's height is untouched, with no note.
+		const metric = await portability.previewLoseIt(ZEYNEP, zip(), options);
+		expect(metric.warnings).not.toContain('height_in_inches');
+	});
+
 	it('remembers what was imported from LoseIt after a move to another installation by export and import', async () => {
 		await applyLoseIt(MEHMET, zip(), options);
 		const archive = await portability.exportArchive(MEHMET);
