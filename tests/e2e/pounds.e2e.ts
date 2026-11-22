@@ -201,3 +201,55 @@ test('weight achievements come every 5 lb, with pound words where kilo words wou
 	await page.waitForTimeout(500);
 	await expect(page.getByRole('button', { name: /kg lost\./ })).toHaveCount(0);
 });
+
+test('water in US fluid ounces: added, typed and listed in ounces, stored in millilitres', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Fluid ${testInfo.project.name}`);
+	await page.goto('/more/units');
+	const saved = page.waitForResponse(
+		(r) => r.url().includes('/api/v1/profile/preferences') && r.request().method() === 'PATCH'
+	);
+	await choose(page, 'Water', 'US fluid ounces (fl oz)');
+	await saved;
+	await page.waitForLoadState('networkidle');
+	await page.getByRole('link', { name: 'Settings', exact: true }).first().click();
+	await expect(page.getByRole('link', { name: /Units.*kg · cm · fl oz · / })).toBeVisible();
+
+	await page.goto('/');
+	const water = page.getByRole('region', { name: 'Water' });
+	await expect(water).toContainText('0 fl oz');
+	await water.getByRole('button', { name: 'Add 8 fl oz of water' }).click();
+	await expect(page.getByRole('status')).toContainText('Added 8 fl oz of water');
+	await expect(water).toContainText('8 fl oz');
+	await water.getByRole('button', { name: 'Other amount' }).click();
+	await water.getByLabel('Amount of water').fill('400');
+	await water.getByRole('button', { name: 'Add water' }).click();
+	await expect(water).toContainText('up to 338 fl oz');
+	await water.getByLabel('Amount of water').fill('16.9');
+	await water.getByRole('button', { name: 'Add water' }).click();
+	await expect(water).toContainText('25 fl oz'); // 24.9
+	await water.getByRole('button', { name: 'Edit or delete water' }).click();
+	await expect(page.getByRole('dialog')).toContainText('16.9 fl oz');
+	await page.keyboard.press('Escape');
+
+	// Typed: a bare "oz" of water is fluid ounces.
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Type it' }).click();
+	const typed = page.getByRole('dialog', { name: 'Type what you ate' });
+	await typed.getByLabel('You typed').fill('16 oz of water');
+	await expect(typed).toContainText('16 fl oz');
+	await typed.getByRole('button', { name: /^Log/ }).click();
+	await expect(page.getByRole('status')).toContainText('Logged');
+
+	// Back to millilitres: 236.6 + 499.8 + 473.2 ml.
+	await page.goto('/more/units');
+	const back = page.waitForResponse(
+		(r) => r.url().includes('/api/v1/profile/preferences') && r.request().method() === 'PATCH'
+	);
+	await choose(page, 'Water', 'Millilitres (ml)');
+	await back;
+	await page.waitForLoadState('networkidle');
+	await page.goto('/');
+	await expect(page.getByRole('region', { name: 'Water' })).toContainText('1210 ml');
+});

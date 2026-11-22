@@ -29,7 +29,8 @@
 	import { dayTitle, kcal, mealName, mealShortName, mealNameTo } from '#lib/shared/format.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import { toKg, typedKg, weightNumber } from '#lib/shared/weight-unit.ts';
-	import { weightUnit } from '#lib/client/weight-unit.ts';
+	import { waterUnit, weightUnit } from '#lib/client/units.ts';
+	import { fromMl, toMl, waterNumber, waterSymbol } from '#lib/shared/body-units.ts';
 	import { basisFactor, scaleNutrients, type Unit } from '#lib/shared/quantity.ts';
 	import {
 		unitChoices,
@@ -84,7 +85,7 @@
 				open: boolean;
 		  }
 		| { kind: 'quick'; id: string; kcalText: string; description: string; open: boolean }
-		| { kind: 'water'; id: string; mlText: string; open: boolean }
+		| { kind: 'water'; id: string; waterText: string; open: boolean }
 		| { kind: 'weight'; id: string; readingText: string; open: boolean }
 		| { kind: 'activity'; id: string; kcalText: string; note: string; open: boolean };
 
@@ -140,7 +141,13 @@
 						open: false
 					};
 				case 'water':
-					return { kind: 'water', id, mlText: num(i.ml), open: false };
+					// Shown and edited in the person's unit; saved in millilitres.
+					return {
+						kind: 'water',
+						id,
+						waterText: i.ml === null ? '' : waterNumber(i.ml, waterUnit()),
+						open: false
+					};
 				case 'weight':
 					// Shown and edited in the person's unit; saved in kilograms.
 					return { kind: 'weight', id, readingText: weightNumber(i.kg, weightUnit()), open: false };
@@ -185,7 +192,7 @@
 			: c.kind === 'quick'
 				? `quick:${c.kcalText}:${c.description}`
 				: c.kind === 'water'
-					? `water:${c.mlText}`
+					? `water:${c.waterText}`
 					: c.kind === 'weight'
 						? `weight:${c.readingText}`
 						: `activity:${c.kcalText}:${c.note}`;
@@ -274,7 +281,7 @@
 			: c.kind === 'quick'
 				? positive(c.kcalText, 20_000) !== undefined
 				: c.kind === 'water'
-					? positive(c.mlText, 10_000) !== undefined
+					? positive(c.waterText, fromMl(10_000, waterUnit())) !== undefined
 					: c.kind === 'weight'
 						? positive(c.readingText, 699 / toKg(1, weightUnit())) !== undefined
 						: positive(c.kcalText, 10_000) !== undefined;
@@ -307,7 +314,7 @@
 		}
 		if (c.kind === 'quick')
 			return c.description ? `${c.description} · ${mealName(meal)}` : mealName(meal);
-		if (c.kind === 'water') return `${c.mlText} ml`;
+		if (c.kind === 'water') return `${c.waterText} ${waterSymbol(waterUnit())}`;
 		if (c.kind === 'weight') return `${c.readingText} ${weightUnit()}`;
 		return c.note || m.entry_kind_activity();
 	}
@@ -408,7 +415,7 @@
 		const kind = c.kind;
 		const value =
 			kind === 'water'
-				? parseDecimal(c.mlText)
+				? toMl(parseDecimal(c.waterText)!, waterUnit())
 				: kind === 'weight'
 					? typedKg(parseDecimal(c.readingText)!, weightUnit())
 					: Math.round(parseDecimal(c.kcalText)!);
@@ -664,11 +671,11 @@
 									{:else if card.kind === 'water'}
 										<TextField
 											id="ml-{card.id}"
-											label={m.entry_ml()}
-											bind:value={card.mlText}
+											label={m.entry_water({ unit: waterSymbol(waterUnit()) })}
+											bind:value={card.waterText}
 											inputmode="decimal"
 										/>
-										{#if !card.mlText.trim()}<p class="text-[0.8125rem] text-warn">
+										{#if !card.waterText.trim()}<p class="text-[0.8125rem] text-warn">
 												{m.entry_water_choose()}
 											</p>{/if}
 									{:else if card.kind === 'weight'}

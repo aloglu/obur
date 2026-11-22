@@ -93,7 +93,12 @@ export async function understandEntry(
 						: p.unit?.kind === 'count' && p.unit.word === 'glass' && glass
 							? p.amount * glass.ml
 							: null;
-			items.push({ kind: 'water', ml, amount: p.amount, said: said(p.unit) });
+			items.push({
+				kind: 'water',
+				ml: ml === null ? null : Math.round(ml * 10) / 10,
+				amount: p.amount,
+				said: said(p.unit)
+			});
 		} else if (p.kind === 'weight') {
 			// No unit said: the person's own (Units). Kilograms either way, as stored.
 			const unit = p.unit ?? (await goals.preferences(userId)).preferences.weightUnit;

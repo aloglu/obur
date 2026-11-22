@@ -9,8 +9,6 @@
 	}
 	let { label, feet = $bindable(), inches = $bindable(), invalid = false }: Props = $props();
 	const uid = $props.id();
-	const input =
-		'h-12 w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold text-text outline-none placeholder:font-medium placeholder:text-muted';
 	const unit = 'text-[0.875rem] font-[650] text-muted';
 </script>
 
@@ -29,7 +27,7 @@
 			autocomplete="off"
 			aria-label="{label}, ft"
 			aria-invalid={invalid || undefined}
-			class={input}
+			class="h-12 w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold text-text outline-none placeholder:font-medium placeholder:text-muted"
 		/>
 		<span class={unit}>ft</span>
 		<input
@@ -39,7 +37,7 @@
 			autocomplete="off"
 			aria-label="{label}, in"
 			aria-invalid={invalid || undefined}
-			class={[input, 'ml-2']}
+			class="ml-2 h-12 w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold text-text outline-none placeholder:font-medium placeholder:text-muted"
 		/>
 		<span class={unit}>in</span>
 	</span>

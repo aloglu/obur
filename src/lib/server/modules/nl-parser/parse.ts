@@ -650,8 +650,14 @@ function readItem(tokens: Token[]): Proposal | null {
 	if (unit?.kind === 'kcal' && amount !== null)
 		return { kind: 'quick', kcal: amount, description: text || null };
 	const foodWords = text.split(' ').map(fold).filter(Boolean);
-	if (foodWords.length && foodWords.every((w) => WATER_WORDS.has(w)))
-		return { kind: 'water', amount: amountFor(unit), unit: parsedUnit(unit) };
+	if (foodWords.length && foodWords.every((w) => WATER_WORDS.has(w))) {
+		// Water is never weighed: "16 oz of water" is 16 fluid ounces.
+		const drunk =
+			unit?.kind === 'g' && unit.factor === G_PER_OZ
+				? ({ kind: 'ml', factor: ML_PER_FL_OZ } as const)
+				: unit;
+		return { kind: 'water', amount: amountFor(drunk), unit: parsedUnit(drunk) };
+	}
 	if (!text && amount === null) return null;
 	// A quantity with no food words ("…, 200 gram") is attached to the item before it by parseEntry.
 	return { kind: 'food', text, amount: amountFor(unit), unit: parsedUnit(unit), vague };

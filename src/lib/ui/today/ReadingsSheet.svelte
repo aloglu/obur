@@ -9,9 +9,10 @@
 	import { api, ApiError } from '#lib/client/api.ts';
 	import type { BodyReading } from '#lib/shared/body-types.ts';
 	import { dayTitle, kcal } from '#lib/shared/format.ts';
-	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+	import { parseDecimal } from '#lib/shared/numbers.ts';
 	import { toKg, typedKg, weightNumber } from '#lib/shared/weight-unit.ts';
-	import { weightUnit } from '#lib/client/weight-unit.ts';
+	import { waterUnit, weightUnit } from '#lib/client/units.ts';
+	import { toMl, waterNumber, waterSymbol } from '#lib/shared/body-units.ts';
 	import Notice from '../Notice.svelte';
 	import Sheet from '../Sheet.svelte';
 
@@ -37,21 +38,25 @@
 	let budget = $state<Budget>(null);
 	let noMore = $state(false);
 
-	// Weights in the person's unit (stored in kilograms), water in millilitres.
-	const unit = $derived(kind === 'weight' ? weightUnit() : 'ml');
+	// Weights and water in the person's units (stored in kilograms and millilitres).
+	const unit = $derived(kind === 'weight' ? weightUnit() : waterSymbol(waterUnit()));
 	const show = (value: number) =>
-		kind === 'weight' ? weightNumber(value, weightUnit()) : formatDecimal(value, 0);
+		kind === 'weight' ? weightNumber(value, weightUnit()) : waterNumber(value, waterUnit());
 	const time = (iso: string) => clockTime(iso, page.data.timeFormat ?? 'device');
 	const typed = $derived(parseDecimal(text));
 	/** What is saved: kilograms for a weight. */
 	const value = $derived(
-		typed === undefined ? undefined : kind === 'weight' ? typedKg(typed, weightUnit()) : typed
+		typed === undefined
+			? undefined
+			: kind === 'weight'
+				? typedKg(typed, weightUnit())
+				: toMl(typed, waterUnit())
 	);
 	// The same ranges as the database: weight under 700 kg, water up to 10 litres.
 	const valid = $derived(
 		typed !== undefined &&
 			typed > 0 &&
-			(kind === 'weight' ? toKg(typed, weightUnit()) < 700 : typed <= 10_000)
+			(kind === 'weight' ? toKg(typed, weightUnit()) < 700 : toMl(typed, waterUnit()) <= 10_000)
 	);
 
 	async function run(action: () => Promise<void>) {

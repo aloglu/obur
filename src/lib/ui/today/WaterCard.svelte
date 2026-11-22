@@ -1,6 +1,7 @@
 <script lang="ts">
 	// docs/ui.md "Water and Weight": four rows lined up with Weight's (it sits in the parent's grid): title, amount,
-	// quick amounts, Other amount, which opens in place as a field with a tappable ml / l.
+	// quick amounts, Other amount, which opens in place as a field with a tappable ml / l. In US fluid ounces (Units)
+	// the amounts are 8 and 16 fl oz and the field takes fluid ounces; water is stored in millilitres either way.
 	import Check from '@lucide/svelte/icons/check';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
@@ -10,7 +11,9 @@
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { parseWaterMl, type BodyReading } from '#lib/shared/body-types.ts';
 	import { dayTitle } from '#lib/shared/format.ts';
-	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+	import { fromMl, toMl, waterSymbol, waterText } from '#lib/shared/body-units.ts';
+	import { waterUnit } from '#lib/client/units.ts';
 	import Roll from '../Roll.svelte';
 	import ReadingsSheet from './ReadingsSheet.svelte';
 
@@ -28,6 +31,18 @@
 	let amountError = $state('');
 	let unit = $state<'ml' | 'l'>('ml');
 	const other = $derived(inlineField.open === 'water');
+	const wu = $derived(waterUnit());
+	/** The quick amounts, in the person's unit. */
+	const quick = $derived(wu === 'floz' ? [8, 16] : [250, 500]);
+
+	/** A typed amount in millilitres: fluid ounces, or ml and l as parseWaterMl reads them. */
+	function typedMl(text: string): number | undefined {
+		if (wu === 'ml') return parseWaterMl(text, unit);
+		const n = parseDecimal(text);
+		if (n === undefined || n === null) return undefined;
+		const ml = toMl(n, 'floz');
+		return ml >= 1 && ml <= 10_000 ? ml : undefined;
+	}
 
 	$effect(() => {
 		if (other) return;
@@ -45,9 +60,9 @@
 			inlineField.open = null;
 			return;
 		}
-		const ml = parseWaterMl(amount, unit);
+		const ml = typedMl(amount);
 		if (ml === undefined) {
-			amountError = m.water_other_invalid();
+			amountError = wu === 'floz' ? m.water_other_invalid_floz() : m.water_other_invalid();
 			return;
 		}
 		amountError = '';
@@ -66,7 +81,7 @@
 			});
 			await onchange();
 			showToast({
-				message: m.toast_water({ ml: String(ml) }),
+				message: m.toast_water({ amount: waterText(ml, wu) }),
 				undo: async () => {
 					await api('POST', `/api/v1/body/water/${r.id}?action=delete`, {});
 					await onchange();
@@ -104,8 +119,10 @@
 		<p
 			class="font-display text-[1.625rem] leading-[1.1] font-[750] tracking-[-0.02em] tabular-nums"
 		>
-			<Roll value={formatDecimal(totalMl, 0)} />
-			<small class="font-sans text-[0.8125rem] font-semibold tracking-normal text-muted">ml</small>
+			<Roll value={formatDecimal(fromMl(totalMl, wu), 0)} />
+			<small class="font-sans text-[0.8125rem] font-semibold tracking-normal text-muted"
+				>{waterSymbol(wu)}</small
+			>
 		</p>
 		<p class="text-[0.8125rem] leading-[1.3] text-muted">
 			{#if lastAdded}
@@ -116,14 +133,14 @@
 		</p>
 	</div>
 	<div class="mt-3.5 grid grid-cols-2 gap-1.5">
-		{#each [250, 500] as ml (ml)}
+		{#each quick as n (n)}
 			<button
 				type="button"
 				disabled={busy}
-				onclick={() => add(ml)}
-				aria-label={m.water_add_label({ ml: String(ml) })}
+				onclick={() => add(toMl(n, wu))}
+				aria-label={m.water_add_label({ amount: `${n} ${waterSymbol(wu)}` })}
 				class="min-h-12 rounded-input bg-surface2 text-[0.9375rem] font-bold whitespace-nowrap transition-transform active:scale-[0.97] disabled:opacity-50"
-				>+{ml}</button
+				>+{n}</button
 			>
 		{/each}
 	</div>
@@ -144,7 +161,9 @@
 						inputmode="decimal"
 						autocomplete="off"
 						aria-label={m.water_other_label()}
-						placeholder={m.water_other_placeholder()}
+						placeholder={wu === 'floz'
+							? m.water_other_placeholder_floz()
+							: m.water_other_placeholder()}
 						aria-invalid={amountError ? 'true' : undefined}
 						aria-describedby={amountError ? 'water-amount-error' : undefined}
 						onkeydown={(e) => {
@@ -152,12 +171,18 @@
 						}}
 						class="w-0 min-w-0 flex-1 bg-transparent text-[1rem] font-semibold tabular-nums outline-none placeholder:font-medium placeholder:text-muted"
 					/>
-					<button
-						type="button"
-						onclick={() => (unit = unit === 'ml' ? 'l' : 'ml')}
-						aria-label={unit === 'ml' ? m.water_unit_ml() : m.water_unit_l()}
-						class="h-10 shrink-0 px-1 text-[0.875rem] font-[650] text-muted">{unit}</button
-					>
+					{#if wu === 'floz'}
+						<span class="shrink-0 px-1 text-[0.875rem] font-[650] whitespace-nowrap text-muted"
+							>fl oz</span
+						>
+					{:else}
+						<button
+							type="button"
+							onclick={() => (unit = unit === 'ml' ? 'l' : 'ml')}
+							aria-label={unit === 'ml' ? m.water_unit_ml() : m.water_unit_l()}
+							class="h-10 shrink-0 px-1 text-[0.875rem] font-[650] text-muted">{unit}</button
+						>
+					{/if}
 					<button
 						type="submit"
 						disabled={busy}

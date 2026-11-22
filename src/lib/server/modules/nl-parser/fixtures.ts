@@ -240,6 +240,14 @@ export const DEV_CASES: [string, ParseResult][] = [
 		{ daysAgo: null, meal: null, items: [{ kind: 'water', amount: 750, unit: ml }] }
 	],
 	[
+		'16 oz of water',
+		{ daysAgo: null, meal: null, items: [{ kind: 'water', amount: 473.176473, unit: ml }] }
+	],
+	[
+		'I drank 8 fl oz of water',
+		{ daysAgo: null, meal: null, items: [{ kind: 'water', amount: 236.5882365, unit: ml }] }
+	],
+	[
 		'A glass of water',
 		{ daysAgo: null, meal: null, items: [{ kind: 'water', amount: 1, unit: count('glass') }] }
 	],

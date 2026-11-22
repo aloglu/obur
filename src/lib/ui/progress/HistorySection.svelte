@@ -15,7 +15,8 @@
 		type ProgressHistory,
 		type WeightPoint
 	} from '#lib/shared/history.ts';
-	import { weightUnit } from '#lib/client/weight-unit.ts';
+	import { waterUnit, weightUnit } from '#lib/client/units.ts';
+	import { fromMl } from '#lib/shared/body-units.ts';
 	import { fixedDecimal, formatDecimal } from '#lib/shared/numbers.ts';
 	import { untrack } from 'svelte';
 	import Roll from '../Roll.svelte';
@@ -352,7 +353,11 @@
 				<div class={row}>
 					<span>{m.history_water()}</span>
 					<b class={value}
-						>{a.waterMl.value === null ? '–' : `${formatDecimal(a.waterMl.value / 1000, 1)} l`}</b
+						>{a.waterMl.value === null
+							? '–'
+							: waterUnit() === 'floz'
+								? `${formatDecimal(fromMl(a.waterMl.value, 'floz'), 0)} fl oz`
+								: `${formatDecimal(a.waterMl.value / 1000, 1)} l`}</b
 					>
 				</div>
 			</div>
