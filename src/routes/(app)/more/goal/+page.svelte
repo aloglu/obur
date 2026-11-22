@@ -12,15 +12,18 @@
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { kcal } from '#lib/shared/format.ts';
 	import { budgetForDay, maxRate } from '#lib/shared/goals.ts';
-	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+	import { parseDecimal } from '#lib/shared/numbers.ts';
 	import Button from '#lib/ui/Button.svelte';
-	import { paceLabel, PACES } from '#lib/ui/goal-pace.ts';
+	import { paceLabel, paces } from '#lib/ui/goal-pace.ts';
+	import { toKg, typedKg, weightNumber, weightText } from '#lib/shared/weight-unit.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 	import MenuRow from '#lib/ui/MenuRow.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
 	import Roll from '#lib/ui/Roll.svelte';
 	import UnitField from '#lib/ui/UnitField.svelte';
 
 	let { data } = $props();
+	const unit = $derived(weightUnit());
 	const t = $derived(data.target);
 	const calculated = $derived(t?.mode === 'calculated');
 	const manual = $derived(t?.mode === 'manual');
@@ -35,9 +38,14 @@
 	let problem = $state('');
 	let editing = $state(false);
 	let goalText = $state('');
-	const goalKg = $derived(goalText.trim() === '' ? null : parseDecimal(goalText));
+	// Typed in the person's unit, kept in kilograms.
+	const goalTyped = $derived(goalText.trim() === '' ? null : parseDecimal(goalText));
+	const goalKg = $derived(
+		goalTyped === null || goalTyped === undefined ? goalTyped : typedKg(goalTyped, unit)
+	);
 	const goalValid = $derived(
-		goalKg === null || (goalKg !== undefined && goalKg >= 20 && goalKg <= 700)
+		goalTyped === null ||
+			(goalTyped !== undefined && toKg(goalTyped, unit) >= 20 && toKg(goalTyped, unit) <= 700)
 	);
 
 	async function change(settings: { rateKgPerWeek?: number; goalWeightKg?: number | null }) {
@@ -55,14 +63,14 @@
 		}
 	}
 	function openGoal() {
-		goalText = t?.goalWeightKg ? formatDecimal(t.goalWeightKg, 1) : '';
+		goalText = t?.goalWeightKg ? weightNumber(t.goalWeightKg, unit) : '';
 		editing = !editing;
 	}
+	// The unit's paces up to the cap, and the pace asked for even when it isn't one of them (set in the other unit).
 	const options = $derived(
-		PACES.filter((p) => p <= cap || p === requested).map((p) => ({
-			value: String(p),
-			label: paceLabel(p)
-		}))
+		[...new Set([...paces(unit).filter((p) => p <= cap), requested])]
+			.sort((a, b) => a - b)
+			.map((p) => ({ value: String(p), label: paceLabel(p, unit) }))
 	);
 </script>
 
@@ -88,7 +96,7 @@
 				>
 					{m.goal_weight()}
 					<span class="flex items-center gap-1 text-[0.875rem] font-medium text-muted tabular-nums">
-						{t.goalWeightKg ? `${formatDecimal(t.goalWeightKg, 1)} kg` : m.details_no_goal()}
+						{t.goalWeightKg ? weightText(t.goalWeightKg, unit) : m.details_no_goal()}
 						<ChevronRight
 							size={18}
 							aria-hidden="true"
@@ -107,7 +115,7 @@
 						>
 							<UnitField
 								label={m.goal_new_weight()}
-								unit="kg"
+								{unit}
 								bind:value={goalText}
 								inputmode="decimal"
 								placeholder={m.onb_optional()}

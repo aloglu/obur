@@ -4,6 +4,7 @@
 	import { PROVIDER_NAME } from '#lib/shared/remote-models.ts';
 	import PageHead from '#lib/ui/PageHead.svelte';
 	import { paceLabel } from '#lib/ui/goal-pace.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 	import SettingsList from '#lib/ui/shell/SettingsList.svelte';
 
 	let { data } = $props();
@@ -23,7 +24,7 @@
 		theme={data.theme}
 		palette={data.palette}
 		timeFormat={data.timeFormat}
-		goal={data.goalPace === null ? null : paceLabel(data.goalPace)}
+		goal={data.goalPace === null ? null : paceLabel(data.goalPace, weightUnit())}
 		reminders={data.pushKey !== null}
 		{speakScan}
 		language={data.language}

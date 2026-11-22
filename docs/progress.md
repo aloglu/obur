@@ -48,7 +48,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   take the person's unit. `tests/e2e/pounds.e2e.ts`. Vitest 1,225; body, typed-entry, journal, diary, speak e2e pass.
 - Pounds, step 3: Progress's weight tab (headline, change, pace, to goal, lowest, chart readouts and the goal note) in
   the person's unit (`weightIn` in shared/history.ts converts the points once). Progress and pounds e2e pass.
-  Next: Goal, setup, Profile and the maintain offer (paces 0.5, 1, 1.5, 2 lb a week for pounds).
+- Pounds, step 4: Goal (goal weight, pace), Settings' pace and setup (weight, goal weight, pace chips) in the person's
+  unit. Paces for pounds are 0.5, 1, 1.5 and 2 lb a week (my choice; stored in kg, `requestedRateKgPerWeek` keeps the
+  exact value, the 2-decimal rate column rounds). Height stays in cm. Goals and pounds e2e pass.
+  Next: help text and docs, then the achievements once the owner's picks are in. Open: setup has no kg/lb switch of
+  its own (a new person who uses pounds sets Units first) — a screen choice for the owner, by screenshot.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

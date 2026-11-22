@@ -90,3 +90,38 @@ test('Progress shows the weight, its change and the goal in pounds', async ({ pa
 	await expect(weight).toContainText('To goal (175.0 lb)');
 	await expect(weight.locator('[aria-live="polite"]')).toContainText(': 182.1 lb');
 });
+
+test('setup and the Goal page take weights and paces in pounds', async ({ page }, testInfo) => {
+	await signedInAs(page, `Setup lb ${testInfo.project.name}`);
+	await usePounds(page);
+	await page.goto('/onboarding');
+	await page.getByLabel('Height').fill('180');
+	await page.getByLabel('Weight').fill('176.4'); // 80.01 kg
+	await page.getByLabel('Birth date').fill(`${new Date().getFullYear() - 30}-01-01`);
+	await page.getByRole('radio', { name: 'Male', exact: true }).click();
+	await page.getByRole('button', { name: 'See my estimate' }).click();
+	// The same estimate as 80 kg: 10·80 + 6.25·180 − 5·30 + 5 = 1,780; × 1.2 = 2,136.
+	await expect(page.getByText('2136', { exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Choose a goal' }).click();
+	await expect(page.getByText('Pace, lb a week')).toBeVisible();
+	await page.getByLabel('Goal weight').fill('175');
+	await page.getByRole('radio', { name: '1', exact: true }).click();
+	await page.getByRole('button', { name: 'Save my budget' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+	await expect(page.getByRole('region', { name: 'Weight' })).toContainText('176.4 lb');
+
+	await page.goto('/more/goal');
+	await expect(page.getByRole('button', { name: /^Goal weight/ })).toContainText('175 lb');
+	await expect(page.getByRole('button', { name: /^Pace:/ })).toContainText('Brisk · 1 lb a week');
+	await page.getByRole('button', { name: /^Goal weight/ }).click();
+	await page.getByLabel('New goal weight').fill('170');
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(page.getByRole('button', { name: /^Goal weight/ })).toContainText('170 lb');
+	const paceSaved = page.waitForResponse(
+		(r) => r.url().includes('/api/v1/targets') && r.request().method() !== 'GET' && r.ok()
+	);
+	await choose(page, 'Pace', 'Fast · 1.5 lb a week');
+	await paceSaved;
+	await page.getByRole('link', { name: 'Settings', exact: true }).click();
+	await expect(page.getByRole('link', { name: /^Goal/ })).toContainText('Fast · 1.5 lb a week');
+});

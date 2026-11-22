@@ -27,6 +27,9 @@
 		type Sex
 	} from '#lib/shared/goals.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
+	import { typedKg, weightNumber } from '#lib/shared/weight-unit.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
+	import { paceAmount, paces } from '#lib/ui/goal-pace.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Chips from '#lib/ui/Chips.svelte';
 	import Notice from '#lib/ui/Notice.svelte';
@@ -49,7 +52,11 @@
 	}
 
 	let height = $state(num(start.profile?.heightCm));
-	let weight = $state(num(start.latestWeight?.value, 2));
+	// Weights in the person's unit (Units), kept in kilograms.
+	const unit = $derived(weightUnit());
+	let weight = $state(
+		start.latestWeight ? weightNumber(start.latestWeight.value, weightUnit()) : ''
+	);
 	let birthDate = $state(start.profile?.birthDate ?? '');
 	let sex = $state<Sex | ''>(start.profile?.sex ?? '');
 	let bodyFat = $state(num(start.profile?.bodyFatPct));
@@ -59,14 +66,15 @@
 	let ownOpen = $state(false);
 	let fixedBase = $state('');
 	let goalWeight = $state('');
-	let rate = $state('0.5');
+	let rate = $state(String(paces(weightUnit())[2]));
 	let floorText = $state('');
 	let manualKcal = $state('');
 	let busy = $state(false);
 	let problem = $state('');
 
 	const h = $derived(parseDecimal(height));
-	const w = $derived(parseDecimal(weight));
+	const typedWeight = $derived(parseDecimal(weight));
+	const w = $derived(typedWeight === undefined ? undefined : typedKg(typedWeight, unit));
 	const bf = $derived(bodyFat.trim() ? parseDecimal(bodyFat) : null);
 	const waistCm = $derived(waist.trim() ? parseDecimal(waist) : null);
 	const expecting = $derived(sex === 'female' && pregnant);
@@ -173,13 +181,17 @@
 		}
 	}
 
-	const rates = ['0', '0.25', '0.5', '0.75', '1'];
+	const rates = $derived(paces(unit).map(String));
+	const goalKg = () => {
+		const typed = parseDecimal(goalWeight);
+		return typed === undefined ? null : typedKg(typed, unit);
+	};
 	const card = 'flex flex-col gap-4 rounded-card bg-surface p-[18px] shadow-card';
 	const estimate = 'flex flex-col gap-1.5 rounded-card bg-surface p-[18px] shadow-card';
 	const label = 'text-[0.8125rem] font-[650] text-muted';
 	const big =
 		'font-display text-[2.5rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums';
-	const unit = 'ml-1.5 text-[0.9375rem] font-[650] text-muted';
+	const unitClass = 'ml-1.5 text-[0.9375rem] font-[650] text-muted';
 	const why = 'text-[0.875rem] text-muted';
 	const eqnRow = 'flex justify-between gap-3 border-line py-2 not-first:border-t';
 	const names = { 1: m.onb_step_about, 2: m.onb_step_estimate, 3: m.onb_step_goal };
@@ -211,7 +223,7 @@
 					<div class={card}>
 						<div class="grid grid-cols-2 gap-3">
 							<UnitField label={m.onb_height()} unit="cm" bind:value={height} inputmode="decimal" />
-							<UnitField label={m.onb_weight()} unit="kg" bind:value={weight} inputmode="decimal" />
+							<UnitField label={m.onb_weight()} {unit} bind:value={weight} inputmode="decimal" />
 						</div>
 						<TextField label={m.onb_birth()} bind:value={birthDate} type="date" max={data.today} />
 						<Chips
@@ -298,7 +310,7 @@
 					<div class={estimate}>
 						<p class={label}>{m.onb_base_label()}</p>
 						<p>
-							<span class={big}><Roll value={kcal(base)} /></span><span class={unit}
+							<span class={big}><Roll value={kcal(base)} /></span><span class={unitClass}
 								>{m.onb_kcal_day()}</span
 							>
 						</p>
@@ -353,17 +365,17 @@
 				<div class={card}>
 					<UnitField
 						label={m.onb_goal_weight()}
-						unit="kg"
+						{unit}
 						bind:value={goalWeight}
 						inputmode="decimal"
 						placeholder={m.onb_optional()}
 					/>
 					<Chips
-						label={m.onb_rate()}
+						label={m.onb_rate({ unit })}
 						bind:value={rate}
 						options={rates.map((r) => ({
 							value: r,
-							label: r === '0' ? m.onb_rate_maintain() : formatDecimal(Number(r), 2),
+							label: r === '0' ? m.onb_rate_maintain() : paceAmount(Number(r), unit),
 							disabled: Number(r) > cap
 						}))}
 					/>
@@ -375,7 +387,7 @@
 				<div class={estimate}>
 					<p class={label}>{m.onb_budget_label()}</p>
 					<p>
-						<span class={big}><Roll value={kcal(preview)} /></span><span class={unit}>kcal</span>
+						<span class={big}><Roll value={kcal(preview)} /></span><span class={unitClass}>kcal</span>
 					</p>
 					<div class="flex flex-col text-[0.875rem] tabular-nums">
 						<div class={eqnRow}><span>{m.onb_base_label()}</span><span>{kcal(base)}</span></div>
@@ -400,7 +412,7 @@
 							saveTarget({
 								mode: 'calculated',
 								rateKgPerWeek: Number(rate),
-								goalWeightKg: parseDecimal(goalWeight) ?? null,
+								goalWeightKg: goalKg(),
 								fixedBaseBurnKcal: parseDecimal(fixedBase) ?? null,
 								floorKcal: parseDecimal(floorText) ?? null
 							})}>{m.onb_save()}</Button
