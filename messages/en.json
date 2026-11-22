@@ -723,7 +723,6 @@
 	"onb_height": "Height",
 	"onb_weight": "Weight",
 	"onb_units": "Units",
-	"onb_units_hint": "{units}. Change each one in Settings → Units.",
 	"onb_birth": "Birth date",
 	"onb_sex": "Sex used by the formula",
 	"onb_female": "Female",

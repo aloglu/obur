@@ -37,7 +37,6 @@
 		type WaterUnit
 	} from '#lib/shared/body-units.ts';
 	import { lengthUnit, waterUnit, weightUnit } from '#lib/client/units.ts';
-	import { unitsList } from '#lib/ui/units-summary.ts';
 	import FeetInchesField from '#lib/ui/FeetInchesField.svelte';
 	import { paceAmount, paces } from '#lib/ui/goal-pace.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -320,19 +319,12 @@
 			{#if step === 1}
 				<form class="flex flex-col gap-3" onsubmit={saveDetails}>
 					<div class={card}>
-						<div class="flex flex-col gap-1.5">
-							<Chips
-								label={m.onb_units()}
-								value={system}
-								onchange={(v) => v && changeSystem(v)}
-								options={systemOptions}
-							/>
-							<p class="text-[0.8125rem] text-muted">
-								{m.onb_units_hint({
-									units: unitsList({ weightUnit: unit, lengthUnit: lUnit, waterUnit: wUnit })
-								})}
-							</p>
-						</div>
+						<Chips
+							label={m.onb_units()}
+							value={system}
+							onchange={(v) => v && changeSystem(v)}
+							options={systemOptions}
+						/>
 						<div class="grid grid-cols-2 gap-3">
 							{#if lUnit === 'in'}
 								<FeetInchesField

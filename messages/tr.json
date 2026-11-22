@@ -723,7 +723,6 @@
 	"onb_height": "Boy",
 	"onb_weight": "Kilo",
 	"onb_units": "Birimler",
-	"onb_units_hint": "{units}. Her birini Ayarlar → Birimler'den değiştirebilirsin.",
 	"onb_birth": "Doğum tarihi",
 	"onb_sex": "Formülün kullandığı cinsiyet",
 	"onb_female": "Kadın",

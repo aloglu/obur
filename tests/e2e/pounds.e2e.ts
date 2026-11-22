@@ -111,7 +111,6 @@ test('setup and the Goal page take weights and paces in pounds', async ({ page }
 	);
 	await page.getByRole('radio', { name: 'Imperial' }).click();
 	await saved;
-	await expect(page.getByText('lb · ft, in · fl oz. Change each one')).toBeVisible();
 	await expect(page.getByLabel('Weight', { exact: true })).toHaveValue('176.4'); // 80.01 kg
 	await expect(page.getByLabel('Height, ft')).toHaveValue('5');
 	await expect(page.getByLabel('Height, in')).toHaveValue('10.9'); // 180.1 cm
