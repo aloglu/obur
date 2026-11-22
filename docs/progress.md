@@ -73,7 +73,15 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
 - Setup's own kg/lb choice (owner, 2026-11-22: needed): "Weight unit" (Kilograms / Pounds) at the top of step 1, saved
   for the account like Units; the typed weight, goal weight and pace move to the other unit with it ("80" kg becomes
   "176.4" lb; 0.5 kg a week becomes 1 lb). Pounds and goals e2e pass. Height stays in centimetres.
-  Next: screenshots of the choice for the owner; then whatever else they want before rc.8 (owner: no tag yet).
+  Owner kept it as shown (review page, 2026-11-22). Date order tied to the unit: discussed, owner chose no change.
+- Units for height, waist and water (owner, 2026-11-22: full support; one Metric/Imperial choice at setup, separate
+  rows on Units). Step 1: `profiles.length_unit` (cm/in) and `water_unit` (ml/floz), migrations 0068–0069, export
+  and import, DB tests. Step 2: Units rows, Settings summary ("Metric", "Imperial" or each unit), setup's
+  Metric/Imperial choice replacing Weight unit, height as feet and inches (`ui/FeetInchesField.svelte`), waist in
+  inches, Profile height. Step 3: water in US fluid ounces (Today's card +8/+16 and Other amount, the readings sheet,
+  the typed-entry card, "16 oz of water" as fluid ounces, Progress's water a day). Docs updated. Pounds/goals/body
+  e2e pass; Vitest 1,237.
+  Next: full browser suite, then screenshots for the owner (setup Imperial, Units, Today water in fl oz).
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
