@@ -108,7 +108,9 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   a private food and a diary entry from the last release, checks a fingerprint of every record and that migrations
   ran, then restores that release's backup (a weigh-in made after it disappears), finishes the restore and checks
   again. From rc.7 to the current image: passed. The release workflow runs it from the newest earlier published
-  release (GitHub's release list), next to the beta.19 test. Takes effect from the next tag.
+  release (GitHub's release list), next to the beta.19 test. Owner (2026-11-22): rc.8 should have had it. The first rc.8 run was cancelled before
+  publishing anything, its tag deleted, and `v1.0.0-rc.8` tagged again on this commit, so its run includes the test
+  (from rc.7).
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
