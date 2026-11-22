@@ -69,6 +69,34 @@ describe('achievements', () => {
 		expect(keys(await progress.sync(AYSE, TODAY, ZONE))).toEqual(['weight:2', 'weight:4']);
 	});
 
+	it("follow the person's unit: a change swaps kilo marks for pound marks, quietly", async () => {
+		await adult(AYSE);
+		await weigh(AYSE, '2026-06-01', 100);
+		await weigh(AYSE, '2026-10-30', 95.4); // 4.6 kg, 10.1 lb lost, two days ago
+		expect(keys(await progress.sync(AYSE, TODAY, ZONE))).toEqual([
+			'weight:2 (new)',
+			'weight:4 (new)'
+		]);
+		await progress.markSeen(AYSE, ['weight:2', 'weight:4']);
+		await admin`update profiles set weight_unit = 'lb' where user_id = ${AYSE}`;
+		// Reached two days ago, but already celebrated in kilos: not again.
+		expect(keys(await progress.sync(AYSE, TODAY, ZONE))).toEqual(['weight_lb:5', 'weight_lb:10']);
+		// A new pound mark afterwards is celebrated as usual.
+		await weigh(AYSE, TODAY, 93.1); // 15.2 lb
+		expect(keys(await progress.sync(AYSE, TODAY, ZONE))).toEqual([
+			'weight_lb:5',
+			'weight_lb:10',
+			'weight_lb:15 (new)'
+		]);
+		// And back: the kilo marks return quietly.
+		await admin`update profiles set weight_unit = 'kg' where user_id = ${AYSE}`;
+		expect(keys(await progress.sync(AYSE, TODAY, ZONE))).toEqual([
+			'weight:2',
+			'weight:4',
+			'weight:6'
+		]);
+	});
+
 	it('withdraw an award when the weigh-in behind it is deleted, and move a date that changed', async () => {
 		await adult(AYSE);
 		await weigh(AYSE, '2026-06-01', 100);

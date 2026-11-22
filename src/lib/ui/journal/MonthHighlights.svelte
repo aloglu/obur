@@ -43,8 +43,11 @@
 	function detail(e: JournalEvent): string {
 		if (e.kind === 'budget' && e.from !== null)
 			return m.journal_budget_from({ day: day(e.date), kcal: kcal(e.from) });
-		if (e.kind === 'achievement' && e.achievement.kind === 'weight') {
-			const what = comparison(e.achievement.level);
+		if (
+			e.kind === 'achievement' &&
+			(e.achievement.kind === 'weight' || e.achievement.kind === 'weight_lb')
+		) {
+			const what = comparison(e.achievement);
 			if (what) return `${day(e.date)} · ${what}`;
 		}
 		return day(e.date);

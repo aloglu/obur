@@ -12,6 +12,7 @@ import {
 	type First
 } from '../../../shared/achievements.ts';
 import { addDays } from '../../../shared/diary-rules.ts';
+import type { WeightUnit } from '../../../shared/weight-unit.ts';
 import { targetsAllowed } from '../../../shared/goals.ts';
 import { weightEntries } from '../body/index.ts';
 import { foods, recipes } from '../catalog/index.ts';
@@ -43,7 +44,7 @@ export function createProgress(db: Database) {
 			userId: string,
 			today: string,
 			zone: string
-		): Promise<{ list: StoredAchievement[]; weightAllowed: boolean }> {
+		): Promise<{ list: StoredAchievement[]; weightAllowed: boolean; weightUnit: WeightUnit }> {
 			return withUser(db, userId, async (tx) => {
 				const [readings, completed, goals, [profile], [scan], [recipe], stored, [logged]] =
 					await Promise.all([
@@ -118,6 +119,7 @@ export function createProgress(db: Database) {
 						today
 					);
 
+				const weightUnit: WeightUnit = profile?.weightUnit ?? 'kg';
 				const voice = stored.find((r) => r.kind === 'first' && r.level === 'voice');
 				const derived = derive({
 					readings,
@@ -133,7 +135,8 @@ export function createProgress(db: Database) {
 						...(recipe?.recipe ? { recipe: recipe.recipe } : {}),
 						...(voice ? { voice: voice.achievedOn } : {})
 					},
-					weightAllowed
+					weightAllowed,
+					weightUnit
 				});
 
 				const want = new Map(derived.map((a) => [achievementKey(a), a]));
@@ -151,6 +154,12 @@ export function createProgress(db: Database) {
 						);
 				}
 				const quietBefore = addDays(today, -CELEBRATE_DAYS);
+				// A change of unit (Units) swaps kilo marks for pound marks or back: the new ones were earned before and
+				// arrive quietly, never celebrated a second time.
+				const weightKinds = ['weight', 'weight_lb'];
+				const swapped = gone.some(
+					(r) => weightKinds.includes(r.kind) && !derived.some((a) => a.kind === r.kind)
+				);
 				const fresh = derived.filter((a) => !have.has(achievementKey(a)));
 				if (fresh.length) {
 					await tx
@@ -161,7 +170,10 @@ export function createProgress(db: Database) {
 								kind: a.kind,
 								level: levelText(a),
 								achievedOn: a.date,
-								seenAt: a.date < quietBefore ? new Date() : null
+								seenAt:
+									a.date < quietBefore || (swapped && weightKinds.includes(a.kind))
+										? new Date()
+										: null
 							}))
 						)
 						.onConflictDoNothing();
@@ -186,7 +198,7 @@ export function createProgress(db: Database) {
 					.from(achievements)
 					.where(eq(achievements.userId, userId))
 					.orderBy(asc(achievements.achievedOn));
-				return { list: rows.map(parse), weightAllowed };
+				return { list: rows.map(parse), weightAllowed, weightUnit };
 			});
 		},
 

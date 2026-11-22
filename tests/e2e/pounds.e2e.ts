@@ -1,11 +1,19 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiAs, choose, signedInAs } from './fixtures.ts';
+import { apiAs, choose, losingToward, signedInAs } from './fixtures.ts';
 
-async function usePounds(page: Page) {
+/** Changes the weight unit on Units and waits for it to be saved. */
+async function setUnit(page: Page, label: 'Pounds (lb)' | 'Kilograms (kg)') {
 	await page.goto('/more/units');
-	await choose(page, /^Weight:/, 'Pounds (lb)');
-	await expect(page.getByRole('button', { name: 'Weight: Pounds (lb)' })).toBeVisible();
+	const saved = page.waitForResponse(
+		(r) => r.url().includes('/api/v1/profile/preferences') && r.request().method() === 'PATCH'
+	);
+	await choose(page, /^Weight:/, label);
+	await saved;
+	await expect(page.getByRole('button', { name: `Weight: ${label}` })).toBeVisible();
+	// The page refreshes its data after the save; a test that loads another page at once would cut that short.
+	await page.waitForLoadState('networkidle');
 }
+const usePounds = (page: Page) => setUnit(page, 'Pounds (lb)');
 
 test('weights are shown and typed in pounds, and stored so they show again as typed', async ({
 	page
@@ -58,8 +66,7 @@ test('weights are shown and typed in pounds, and stored so they show again as ty
 	await expect(page.getByText('180 lb', { exact: true })).toBeVisible();
 
 	// Back to kilograms: the same weigh-in, 81.65 kg.
-	await page.goto('/more/units');
-	await choose(page, /^Weight:/, 'Kilograms (kg)');
+	await setUnit(page, 'Kilograms (kg)');
 	await page.goto('/');
 	await expect(page.getByRole('region', { name: 'Weight' })).toContainText('81.65 kg');
 });
@@ -124,4 +131,52 @@ test('setup and the Goal page take weights and paces in pounds', async ({ page }
 	await paceSaved;
 	await page.getByRole('link', { name: 'Settings', exact: true }).click();
 	await expect(page.getByRole('link', { name: /^Goal/ })).toContainText('Fast · 1.5 lb a week');
+});
+
+test('weight achievements come every 5 lb, with pound words where kilo words would show', async ({
+	page
+}, testInfo) => {
+	const userId = await signedInAs(page, `Rozet lb ${testInfo.project.name}`);
+	await losingToward(userId, 70);
+	await usePounds(page);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.goto('about:blank');
+	const zone = 'Europe/Istanbul';
+	const daysAgo = (n: number) => {
+		const d = new Date();
+		d.setDate(d.getDate() - n);
+		return d.toLocaleDateString('en-CA');
+	};
+	// 220 lb, then 190 lb weeks ago (30 lb, quietly), then 185 lb today: the 35 lb mark.
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: daysAgo(60), zone, value: 99.79 });
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: daysAgo(20), zone, value: 86.18 });
+	await apiAs(page, 'POST', '/api/v1/body/weight', { date: daysAgo(0), zone, value: 83.91 });
+
+	await page.goto('/');
+	const toast = page.getByRole('button', { name: /^35 lb lost\. That's a 35\slb kettlebell/ });
+	await expect(toast).toBeVisible();
+	await toast.click();
+	const dialog = page.getByRole('dialog', { name: 'Achievement: 35 lb lost' });
+	await expect(dialog).toContainText(/That's a 35\slb kettlebell\./);
+	await expect(dialog).toContainText('You were carrying a gym.');
+	await dialog.getByRole('button', { name: 'Done' }).click();
+	await expect(dialog).toBeHidden();
+
+	await page.goto('/achievements');
+	const pounds = page.getByRole('region', { name: 'Pounds lost' });
+	await expect(pounds).toContainText('7 so far · one every 5 lb');
+	await expect(pounds.getByRole('listitem').first()).toHaveText(/Next: 40 lb lost/);
+	await expect(page.getByRole('region', { name: 'Kilos lost' })).toHaveCount(0);
+
+	await page.goto('/journal');
+	await expect(page.getByRole('link', { name: /35 lb lost.*a 35\slb kettlebell/ })).toBeVisible();
+
+	// Back to kilograms: kilo marks, earned before, arrive quietly (no toast).
+	await setUnit(page, 'Kilograms (kg)');
+	await page.goto('/achievements');
+	await expect(page.getByRole('region', { name: 'Kilos lost' })).toContainText('one every 2 kg');
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+	await page.waitForTimeout(500);
+	await expect(page.getByRole('button', { name: /kg lost\./ })).toHaveCount(0);
 });

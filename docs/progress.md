@@ -53,7 +53,14 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   exact value, the 2-decimal rate column rounds). Height stays in cm. Goals and pounds e2e pass.
 - Pounds, step 5: help answers give pound figures beside kilos (English; Turkish unchanged), README, design and ui.md
   describe the setting, and the LoseIt import's unit starts at the person's own. Data and pounds e2e pass.
-  Next: the achievements once the owner's picks are in. Open: setup has no kg/lb switch of
+- Pounds, step 6 (owner's picks, 2026-11-22, all as recommended): weight achievements every 5 lb up to 265 lb for
+  people who use pounds (kind `weight_lb`, migration 0067), each with the nearest kilo mark's picture and words, own
+  words for 35, 180 and 220 lb; "Pounds lost" with the tint every 25 lb; badges follow the unit and a change of unit
+  swaps them quietly. Docs updated (design, ui.md, achievement-comparisons.md, help). Vitest 1,229, database 286, full
+  browser suite 314 passed. The WebKit pounds tests needed a wait after the unit save (a full page load at once cut
+  the page's refresh short; no reload happens in the app — checked).
+  Next: the image tests (smoke, upgrade from beta.19: migrations 0065-0067), then rc.8 only when the owner asks.
+  Open: setup has no kg/lb switch of its own — a screen choice for the owner, by screenshot. Open: setup has no kg/lb switch of
   its own (a new person who uses pounds sets Units first) — a screen choice for the owner, by screenshot.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and

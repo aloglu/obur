@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { formatDecimal } from '#lib/shared/numbers.ts';
 	// docs/ui.md, "Achievements, Journal and Help": the badge page. Kilos lost and streaks newest first after the one
 	// next mark; the goal and firsts only once reached. Tapping an earned badge plays its celebration again.
 	import PageHead from '#lib/ui/PageHead.svelte';
@@ -8,7 +7,8 @@
 	import type { Achievement } from '#lib/shared/achievements.ts';
 	import { shortDate } from '#lib/shared/format.ts';
 	import Badge from '#lib/ui/achievements/Badge.svelte';
-	import { firstName } from '#lib/ui/achievements/text.ts';
+	import { firstName, markText } from '#lib/ui/achievements/text.ts';
+	import { weightText } from '#lib/shared/weight-unit.ts';
 	import { replayCelebration } from '#lib/client/celebration.svelte.ts';
 
 	let { data } = $props();
@@ -17,11 +17,12 @@
 			.filter((a): a is Extract<typeof a, { kind: K }> => a.kind === kind)
 			.slice()
 			.reverse();
-	const weights = $derived(of('weight'));
+	// Only the person's unit's marks exist (kilo or pound marks; a change of unit swaps them).
+	const pounds = $derived(data.weightUnit === 'lb');
+	const weights = $derived(pounds ? of('weight_lb') : of('weight'));
 	const goals = $derived(of('goal'));
 	const streaks = $derived(of('streak'));
 	const firsts = $derived(data.achievements.filter((a) => a.kind === 'first'));
-	const kg = (v: number) => formatDecimal(v, 2);
 
 	const card = 'flex flex-col gap-3 rounded-card bg-surface p-[18px] shadow-card';
 	const grid = 'grid grid-cols-4 gap-x-2 gap-y-3 desk:grid-cols-6';
@@ -40,12 +41,18 @@
 
 	<section class={card} aria-labelledby="weight-title">
 		<div>
-			<h2 id="weight-title" class="text-[1.1875rem] font-bold">{m.achievements_weight_title()}</h2>
+			<h2 id="weight-title" class="text-[1.1875rem] font-bold">
+				{pounds ? m.achievements_weight_title_lb() : m.achievements_weight_title()}
+			</h2>
 			<p class="text-[0.8125rem] text-muted">
 				{weights.length
-					? m.achievements_weight_note({ count: String(weights.length) })
+					? (pounds ? m.achievements_weight_note_lb : m.achievements_weight_note)({
+							count: String(weights.length)
+						})
 					: data.weightAllowed
-						? m.achievements_weight_none()
+						? pounds
+							? m.achievements_weight_none_lb()
+							: m.achievements_weight_none()
 						: m.achievements_weight_off()}
 			</p>
 		</div>
@@ -53,9 +60,14 @@
 			<ul class={grid}>
 				{#if data.weightAllowed && data.next.weight !== null}
 					<li class={[item, 'text-muted']}>
-						<Badge achievement={{ kind: 'weight', level: data.next.weight }} next />
+						<Badge
+							achievement={{ kind: pounds ? 'weight_lb' : 'weight', level: data.next.weight }}
+							next
+						/>
 						<span class="sr-only"
-							>{m.achievements_next_weight({ kg: String(data.next.weight) })}</span
+							>{m.achievements_next_weight({
+								weight: markText({ kind: pounds ? 'weight_lb' : 'weight', level: data.next.weight })
+							})}</span
 						>
 						<span aria-hidden="true">{m.achievements_next()}</span>
 					</li>
@@ -70,7 +82,7 @@
 							<Badge achievement={a} />
 							<span class="sr-only"
 								>{m.achievements_weight_label({
-									kg: String(a.level),
+									weight: markText(a),
 									date: shortDate(a.date)
 								})}</span
 							>
@@ -95,9 +107,12 @@
 						>
 							<Badge achievement={a} />
 							<span class="sr-only"
-								>{m.achievements_goal_label({ kg: kg(a.level), date: shortDate(a.date) })}</span
+								>{m.achievements_goal_label({
+									weight: weightText(a.level, data.weightUnit),
+									date: shortDate(a.date)
+								})}</span
 							>
-							<span aria-hidden="true">{kg(a.level)} kg</span>
+							<span aria-hidden="true">{weightText(a.level, data.weightUnit)}</span>
 						</button>
 					</li>
 				{/each}

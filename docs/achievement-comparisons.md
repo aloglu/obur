@@ -2,7 +2,7 @@
 
 Agreed with the owner on 2026-10-31 (design mock-ups, round two). One for every 2 kg lost, up to 120 kg. Each arrives as a toast; tapping it opens a full-screen celebration with the comparison and the line below it. Weights are rough ("about") typical weights. The emoji stand for OpenMoji pictures (the food icon set); they appear only in the celebration, never on the badges, which carry the number. No two neighbours are the same kind of thing, and there are few animals.
 
-Still to decide: the step and wording for people who use pounds.
+**Pounds (owner, 2026-11-22, review with screenshots):** people who use pounds get one every 5 lb up to 265 lb (53 marks), each with the comparison and picture of the nearest kilo mark (35 lb is 15.9 kg: the 16 kg mark). The kilo marks 8, 26, 42, 60, 76, 94 and 110 are never the nearest. Three get pound words instead of kilo words: 35 lb "a 35 lb kettlebell", 180 lb "a loaded 180 lb barbell", and 220 lb's line "220 pounds. One whole elephant baby." (`achievement_weight_lb_*`). Badges follow the unit: only the person's unit's marks exist, and a change of unit swaps them quietly (no toast, no celebration).
 
 | kg | Picture | Comparison | Line |
 |---:|:---:|---|---|

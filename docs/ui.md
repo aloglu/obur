@@ -439,8 +439,9 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   every step in both themes. Streaks: 7, 14, 30, 60, 100, 180 and 365 days, coloured amber, coral, rose, violet,
   blue, teal, green in turn. The badge page opens from an "Achievements" row at the foot of Progress and from an
   achievement in the Journal; it says why when weight achievements are off. Pictures: OpenMoji 15.1.0 in
-  `static/icons/achievements/` (dark variants from `node scripts/food-icons-dark.ts`). Pounds are not handled yet
-  (no unit setting exists).
+  `static/icons/achievements/` (dark variants from `node scripts/food-icons-dark.ts`). Pounds (2026-11-22): with the
+  weight unit set to pounds, the section is "Pounds lost", one every 5 lb, the tint deepening every 25 lb (after five
+  badges, as kilos every 10 kg); the celebration, toast and Journal say "35 lb lost" (docs/achievement-comparisons.md).
 - **Journal:** a fifth tab between Log and Progress: the month calendar (moved from Progress) with its key in the
   calendar's own coloured circles, then "<Month>'s highlights": each week of the month, newest first and cut at the
   month's edges ("This week" for the current one), as one summary line (average calories a day and average under or over budget, both

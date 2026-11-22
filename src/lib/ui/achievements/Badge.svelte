@@ -1,10 +1,10 @@
 <script lang="ts">
 	// docs/ui.md, "Achievements, Journal and Help": flat circles. Kilo badges carry only the number, their tint deepening
-	// every 10 kg; streaks, the goal and firsts show their picture on a light tint of their colour. The next mark is a
+	// every 10 kg (pound badges every 25 lb); streaks, the goal and firsts show their picture on a light tint of their colour. The next mark is a
 	// dashed outline with its number in the same type. Decorative: the words beside it carry the meaning.
 	import type { Achievement } from '#lib/shared/achievements.ts';
 	import { STREAK_LEVELS } from '#lib/shared/achievements.ts';
-	import { badgeHue, kiloTint } from '#lib/shared/achievement-display.ts';
+	import { badgeHue, kiloTint, poundTint } from '#lib/shared/achievement-display.ts';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import Scale from '@lucide/svelte/icons/scale';
 	import Utensils from '@lucide/svelte/icons/utensils';
@@ -19,10 +19,16 @@
 	}
 	let { achievement: a, next = false, size = 'md' }: Props = $props();
 
-	const kilo = $derived(a.kind === 'weight');
-	const tint = $derived(kilo ? kiloTint(Number(a.level)) : { percent: 16, ink: 1 as const });
+	const kilo = $derived(a.kind === 'weight' || a.kind === 'weight_lb');
+	const tint = $derived(
+		a.kind === 'weight_lb'
+			? poundTint(Number(a.level))
+			: kilo
+				? kiloTint(Number(a.level))
+				: { percent: 16, ink: 1 as const }
+	);
 	const hue = $derived(`var(--badge-${badgeHue(a, STREAK_LEVELS)})`);
-	const numbered = $derived(a.kind === 'weight' || (next && a.kind === 'streak'));
+	const numbered = $derived(kilo || (next && a.kind === 'streak'));
 	/** A first still to reach (a new account's Progress): a line icon in the outline, as in the demo. */
 	const OUTLINE_ICONS = { weigh_in: Scale, day_logged: Utensils, complete_day: CircleCheck };
 	const OutlineIcon = $derived(

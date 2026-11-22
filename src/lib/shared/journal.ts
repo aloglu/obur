@@ -6,7 +6,13 @@ import { isoWeekday, targetOn, type CalendarDay, type TargetLike } from './calen
 import { addDays } from './diary-rules.ts';
 import { budgetForDay } from './goals.ts';
 
-const KIND_ORDER: Record<Achievement['kind'], number> = { goal: 0, weight: 1, streak: 2, first: 3 };
+const KIND_ORDER: Record<Achievement['kind'], number> = {
+	goal: 0,
+	weight: 1,
+	weight_lb: 1,
+	streak: 2,
+	first: 3
+};
 /** Same-day achievements: goal, weight, streak (higher levels first), then the first steps in FIRSTS order. */
 const achievementOrder = (a: Achievement) =>
 	KIND_ORDER[a.kind] * 1000 + (a.kind === 'first' ? FIRSTS.indexOf(a.level) : 999 - a.level);

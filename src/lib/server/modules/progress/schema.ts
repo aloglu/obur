@@ -13,8 +13,8 @@ export const achievements = pgTable(
 		userId: uuid('user_id')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
-		kind: text('kind', { enum: ['weight', 'goal', 'streak', 'first'] }).notNull(),
-		/** Kilos for weight and goal, days for a streak, the first's name. */
+		kind: text('kind', { enum: ['weight', 'weight_lb', 'goal', 'streak', 'first'] }).notNull(),
+		/** Kilos for weight and goal, pounds for weight_lb, days for a streak, the first's name. */
 		level: text('level').notNull(),
 		achievedOn: date('achieved_on', { mode: 'string' }).notNull(),
 		seenAt: timestamp('seen_at', { withTimezone: true }),
@@ -22,10 +22,13 @@ export const achievements = pgTable(
 	},
 	(t) => [
 		primaryKey({ columns: [t.userId, t.kind, t.level] }),
-		check('achievements_kind', sql`${t.kind} in ('weight', 'goal', 'streak', 'first')`),
+		check(
+			'achievements_kind',
+			sql`${t.kind} in ('weight', 'weight_lb', 'goal', 'streak', 'first')`
+		),
 		check(
 			'achievements_level',
-			sql`(${t.kind} in ('weight', 'goal') and ${t.level} ~ '^[0-9]{1,3}(\\.[0-9]{1,2})?$')
+			sql`(${t.kind} in ('weight', 'weight_lb', 'goal') and ${t.level} ~ '^[0-9]{1,3}(\\.[0-9]{1,2})?$')
 				or (${t.kind} = 'streak' and ${t.level} ~ '^[0-9]{1,4}$')
 				or (${t.kind} = 'first' and ${t.level} in ('weigh_in', 'day_logged', 'complete_day', 'scan', 'voice', 'recipe'))`
 		)

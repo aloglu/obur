@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { formatDecimal } from '#lib/shared/numbers.ts';
+	import { weightNumber } from '#lib/shared/weight-unit.ts';
+	import { weightUnit } from '#lib/client/weight-unit.ts';
 	// The full-screen celebration, opened from the achievement toast: the number counting up, the picture dropping in,
 	// the comparison and its line, and confetti that falls and stays (client/confetti.ts). A tap on the background
 	// throws it up like a snow globe. Reduced motion shows the same screen still, without confetti. Done or Escape
@@ -181,10 +182,10 @@
 			<p
 				class="font-display text-[4rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums"
 			>
-				{a.kind === 'goal' ? formatDecimal(a.level, 2) : shown}{#if a.kind !== 'streak'}<small
-						class="font-sans text-[1.75rem] text-muted"
-					>
-						kg</small
+				{a.kind === 'goal'
+					? weightNumber(a.level, weightUnit())
+					: shown}{#if a.kind !== 'streak'}<small class="font-sans text-[1.75rem] text-muted">
+						{a.kind === 'weight_lb' ? 'lb' : a.kind === 'goal' ? weightUnit() : 'kg'}</small
 					>{/if}
 			</p>
 		{/if}
@@ -192,7 +193,7 @@
 			<span class="absolute bottom-0.5 h-3.5 w-24 rounded-[50%] shadow"></span>
 			<span class="obj"><Picture hex={achievementPicture(a)} size={120} /></span>
 		</div>
-		{#if a.kind === 'weight'}
+		{#if a.kind === 'weight' || a.kind === 'weight_lb'}
 			<p class="says font-display text-[1.5rem] leading-tight font-extrabold">
 				{achievementDetail(a)}.
 			</p>

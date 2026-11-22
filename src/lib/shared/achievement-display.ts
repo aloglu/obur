@@ -1,7 +1,7 @@
 // How achievements look (docs/ui.md, "Achievements, Journal and Help"): the picture for each weight comparison (shown
 // only in the celebration; badges carry the number), the pictures and colours of the other badges, and how the
 // kilo badges' tint deepens. Pictures are OpenMoji files in static/icons/achievements (dark variants beside them).
-import type { Achievement, First } from './achievements.ts';
+import { nearestKgLevel, type Achievement, type First } from './achievements.ts';
 
 /** OpenMoji picture for each weight comparison (docs/achievement-comparisons.md). */
 export const WEIGHT_PICTURES: Record<number, string> = {
@@ -95,6 +95,7 @@ const FIRST_HUES: Record<First, BadgeHue> = {
 export function badgeHue(a: Pick<Achievement, 'kind' | 'level'>, streakLevels: number[]): BadgeHue {
 	switch (a.kind) {
 		case 'weight':
+		case 'weight_lb':
 			return 'coral';
 		case 'goal':
 			return 'teal';
@@ -114,7 +115,17 @@ export function badgeHue(a: Pick<Achievement, 'kind' | 'level'>, streakLevels: n
  * checked in tokens.test.ts).
  */
 export function kiloTint(level: number): { percent: number; ink: 1 | 2 | 3 } {
-	const step = Math.floor((level - 1) / 10);
+	return tintStep(Math.floor((level - 1) / 10));
+}
+
+/** Pound badges deepen every 25 lb: after five badges, as kilo badges do every 10 kg (owner, 2026-11-22). */
+export const poundTint = (level: number) => tintStep(Math.floor((level - 1) / 25));
+
+function tintStep(step: number): { percent: number; ink: 1 | 2 | 3 } {
 	return { percent: 10 + step * 8, ink: step <= 3 ? 1 : step <= 6 ? 2 : 3 };
 }
+
+/** The comparison picture of a weight mark: a pound mark shows its nearest kilo mark's. */
+export const weightPicture = (a: Pick<Achievement, 'kind' | 'level'>): string | undefined =>
+	WEIGHT_PICTURES[a.kind === 'weight_lb' ? nearestKgLevel(Number(a.level)) : Number(a.level)];
 export const KILO_TINT_STEPS = 12;

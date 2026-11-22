@@ -6,7 +6,13 @@ import { achievementKey, type Achievement } from '#lib/shared/achievements.ts';
 
 /** How long the toast stays before it is taken as seen. */
 const TOAST_MS = 8000;
-const RANK: Record<Achievement['kind'], number> = { goal: 4, weight: 3, streak: 2, first: 1 };
+const RANK: Record<Achievement['kind'], number> = {
+	goal: 4,
+	weight: 3,
+	weight_lb: 3,
+	streak: 2,
+	first: 1
+};
 
 export const celebration = $state<{ toast: Achievement | null; open: Achievement | null }>({
 	toast: null,

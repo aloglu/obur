@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { achievements, nextUp, startWeight, type AchievementInput } from './achievements.ts';
+import {
+	achievements,
+	nearestKgLevel,
+	nextUp,
+	startWeight,
+	WEIGHT_LEVELS_LB,
+	type AchievementInput
+} from './achievements.ts';
+import { typedKg } from './weight-unit.ts';
 
 const input = (over: Partial<AchievementInput> = {}): AchievementInput => ({
 	readings: [],
@@ -64,6 +72,39 @@ describe('weight lost', () => {
 		const typo = achievements(input({ readings: [r('2026-01-01', 100), r('2026-01-02', 10)] }));
 		expect(of(typo, 'weight')).toHaveLength(45);
 		expect(of(achievements(input({ readings: [r('2026-01-01', 100)] })), 'weight')).toEqual([]);
+	});
+});
+
+describe('pounds lost', () => {
+	const lb = (localDate: string, pounds: number) => r(localDate, typedKg(pounds, 'lb'));
+
+	it('awards every 5 lb for people who use pounds, from weights typed in pounds', () => {
+		const list = achievements(
+			input({
+				weightUnit: 'lb',
+				readings: [lb('2026-01-01', 220), lb('2026-01-08', 215), lb('2026-01-15', 205.4)]
+			})
+		);
+		expect(of(list, 'weight')).toEqual([]);
+		expect(of(list, 'weight_lb')).toEqual([
+			[5, '2026-01-08'],
+			[10, '2026-01-15']
+		]);
+	});
+
+	it('runs from 5 to 265 lb, each with the nearest kilo mark’s comparison', () => {
+		expect(WEIGHT_LEVELS_LB).toHaveLength(53);
+		expect(WEIGHT_LEVELS_LB.at(-1)).toBe(265);
+		expect([5, 20, 35, 180, 220, 265].map(nearestKgLevel)).toEqual([2, 10, 16, 82, 100, 120]);
+		// Neighbours never share a picture: each pound mark has its own kilo mark.
+		expect(new Set(WEIGHT_LEVELS_LB.map(nearestKgLevel)).size).toBe(53);
+	});
+
+	it('names the next pound mark', () => {
+		const list = achievements(
+			input({ weightUnit: 'lb', readings: [lb('2026-01-01', 220), lb('2026-01-08', 214)] })
+		);
+		expect(nextUp(list, 'lb').weight).toBe(10);
 	});
 });
 

@@ -470,6 +470,13 @@
       "when": 1795334755663,
       "tag": "0066_profile_weight_unit_grant",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795336365419,
+      "tag": "0067_achievements_pounds",
+      "breakpoints": true
     }
   ]
 }
