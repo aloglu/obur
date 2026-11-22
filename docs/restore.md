@@ -54,7 +54,8 @@ their deletions are applied again after every restore.
    `--target-timeline=current`: a restore starts a new branch of history, and PostgreSQL otherwise follows the newest
    branch ("requested timeline … is not a child of this server's history").
 
-   obur stops, moves the current database aside to `data/postgres-before-restore-<date>` (nothing is deleted),
+   If the weekly restore check is running, the restore first waits for it to end (usually a few minutes) and says
+   so. Then obur stops, moves the current database aside to `data/postgres-before-restore-<date>` (nothing is deleted),
    restores, and starts again showing "obur is being restored from a backup". If the restore fails, obur stays
    stopped: fix the cause and run it again (what the failed attempt left is cleared first), or run
    `obur restore cancel` to go back to how it was: the old database, or none if there was none.

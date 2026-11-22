@@ -38,7 +38,8 @@ start() {
 	fi
 	jq -n --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg options "$*" '{startedAt: $at, options: $options}' >"$MARK"
 	say "restoring into $PGDATA ..."
-	obur-backup pgbackrest restore "$@"
+	# Waits while the weekly restore check runs; none starts until this restore ends.
+	obur-backup restore "$@"
 	# Only a restore that completed says so: a mark without it is a failed attempt, which may be retried or cancelled.
 	jq --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {restoredAt: $at}' "$MARK" >"$MARK.new"
 	mv "$MARK.new" "$MARK"

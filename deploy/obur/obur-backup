@@ -19,6 +19,8 @@
 #   obur-backup restore-check  archive the current position, restore backup + WAL into a throwaway cluster, and
 #                              verify it reached that position and every table reads
 #   obur-backup scheduler      the nightly backup and weekly restore check (started by the container)
+#   obur-backup wait-restore-check  wait while a restore check runs (before a restore stops the database)
+#   obur-backup restore …      pgBackRest's restore, once no restore check runs; none starts until it ends
 #   obur-backup archive-push <file>  archive one WAL file (PostgreSQL's archive_command, through pgbackrest-obur,
 #                              since pgBackRest requires its name in the command)
 #   obur-backup pgbackrest …    pgBackRest with this installation's settings
@@ -42,6 +44,9 @@ TICK_SECONDS=${OBUR_SCHEDULER_SECONDS:-600}
 # cannot replay past that point until its next backup, which starts a complete history again.
 QUEUE_DIR=${OBUR_OFFSITE_QUEUE_DIR:-/data/offsite-queue}
 QUEUE_MAX_MB=${OBUR_OFFSITE_QUEUE_MAX_MB:-1024}
+# Held by a restore check from start to end, and by a restore: a restore waits for a running check, which holds
+# pgBackRest's restore lock (a restore at start-up on the check day failed with "unable to acquire lock", 2026-11-22).
+CHECK_LOCK=$STATUS_DIR/.restore-check.lock
 PSQL=(psql -X -q -t -A -h "$SOCKET" -U "${PGBACKREST_PG1_USER:-postgres}" -d postgres)
 
 # The off-site repository exists only when configured: pgBackRest refuses empty settings, so they are passed on
@@ -428,12 +433,34 @@ restore_check_repo() {
 
 # The local copy, then the off-site copy when one is configured: a backup nobody has restored is not yet a backup.
 restore_check() {
-	local ok=true
-	restore_check_repo 1 lastRestoreCheck || ok=false
-	if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then
-		restore_check_repo 2 lastOffsiteRestoreCheck || ok=false
-	fi
-	$ok
+	mkdir -p "$STATUS_DIR"
+	(
+		flock 6
+		# A restore holds the lock while it writes the database; one that is pending leaves nothing to check.
+		if [[ -f $STATUS_DIR/restore-pending ]]; then
+			log "no restore check: a restore is in progress"
+			exit 1
+		fi
+		local ok=true
+		restore_check_repo 1 lastRestoreCheck || ok=false
+		if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then
+			restore_check_repo 2 lastOffsiteRestoreCheck || ok=false
+		fi
+		$ok
+	) 6>"$CHECK_LOCK"
+}
+
+# Takes the restore check's lock on file descriptor 6, waiting while a check runs (its restore takes minutes).
+wait_for_check() {
+	mkdir -p "$STATUS_DIR"
+	exec 6>"$CHECK_LOCK"
+	flock -n 6 && return 0
+	log "the weekly restore check is running; waiting for it to end (usually a few minutes) ..."
+	flock -w 3600 6 || {
+		log "the restore check is still running after an hour; try again later"
+		return 1
+	}
+	log "the restore check ended; continuing"
 }
 
 scheduler() {
@@ -516,9 +543,16 @@ full-local)
 info) pgbackrest info ;;
 offsite-backups) offsite_backups ;;
 restore-check) restore_check ;;
+wait-restore-check) wait_for_check ;;
+# The lock stays held through exec, until the restore ends.
+restore)
+	shift
+	wait_for_check
+	exec pgbackrest restore "$@"
+	;;
 scheduler) scheduler ;;
 *)
-	echo "usage: obur-backup run|pre-upgrade|full|info|offsite-backups|restore-check|scheduler|archive-push <file>|pgbackrest <args>" >&2
+	echo "usage: obur-backup run|pre-upgrade|full|info|offsite-backups|restore-check|wait-restore-check|restore <args>|scheduler|archive-push <file>|pgbackrest <args>" >&2
 	exit 2
 	;;
 esac

@@ -80,8 +80,19 @@ copies=$(sql "select string_agg(name, ',' order by name) from foods where owner_
 echo "the older backup is restored, and its deletions reapplied"
 # Replay pauses once the database is consistent, so it stays read-only for as long as a long replay would: obur must
 # keep running and say it is being restored (start-up once stopped on a write here, 2026-11-19 audit).
+# A restore started while the weekly restore check runs waits for it (it failed on the lock, 2026-11-22).
+checklog=$(mktemp)
+docker exec "$name" obur backup restore-check >"$checklog" 2>&1 &
+check=$!
+for _ in $(seq 60); do
+	docker exec "$name" bash -c 'compgen -G "/tmp/restore-check.*" >/dev/null' && break
+	sleep 0.5
+done
 out=$(docker exec "$name" obur restore start --set="$label" --type=immediate --target-action=pause 2>&1) ||
 	fail "restore start: $out"
+[[ $out == *"restore check is running; waiting"* ]] || fail "the restore did not wait for the restore check: $out"
+wait "$check" || fail "the restore check before the restore: $(cat "$checklog")"
+rm -f "$checklog"
 for _ in $(seq 60); do
 	[[ $(sql "select pg_is_wal_replay_paused()" 2>/dev/null) == t ]] && break
 	sleep 2

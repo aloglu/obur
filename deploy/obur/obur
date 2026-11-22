@@ -65,6 +65,8 @@ restore_start() {
 		# An attempt that stopped before it began restoring: the database it replaced is aside already.
 		retry=1
 	fi
+	# A running restore check reads the live database: stopping it would record a failed check that is not one.
+	gosu postgres obur-backup wait-restore-check
 	echo "obur: stopping obur for the restore ..."
 	hold_obur || {
 		rm -f "$OBUR_RUN/hold"
