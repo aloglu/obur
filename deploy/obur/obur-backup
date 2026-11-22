@@ -121,6 +121,10 @@ offsite_only() {
 # The waiting files, oldest first. Files come and go while this looks (a WAL file arriving, another being sent), which
 # find reports as a failure; the list it printed is still right.
 queued() { { find "$QUEUE_DIR" -maxdepth 1 -name '*.gz' 2>/dev/null || true; } | sort; }
+# The oldest waiting file, or nothing. awk reads the whole list: `head -1` stopped reading, sort then died of SIGPIPE
+# once the list outgrew the pipe, and under pipefail that failed every drain from about 400 waiting files on, so the
+# off-site copy never caught up (2026-11-22 Gemini audit, G10).
+first_queued() { queued | awk 'NR == 1'; }
 
 # PostgreSQL's archive_command. The local repository decides the result: PostgreSQL keeps a WAL file until this
 # succeeds, so failing here because the off-site store is away would stop WAL reaching the local repository too
@@ -131,7 +135,7 @@ archive_push() {
 	local_only archive-push "$wal" || return 1
 	[[ -n ${PGBACKREST_REPO2_TYPE:-} ]] || return 0
 	name=$(basename "$wal")
-	if [[ -z $(queued | head -1) ]] && offsite_only archive-push "$wal" >/dev/null 2>&1; then return 0; fi
+	if [[ -z $(first_queued) ]] && offsite_only archive-push "$wal" >/dev/null 2>&1; then return 0; fi
 	file=$wal
 	[[ $file == /* ]] || file=${PGBACKREST_PG1_PATH:-$PWD}/$file
 	# A copy, never a link: PostgreSQL reuses the WAL file under a new name.
@@ -152,14 +156,14 @@ archive_push() {
 
 # Sends the waiting WAL files to the off-site store, oldest first. Fails while any still wait.
 drain_queue() {
-	[[ -n ${PGBACKREST_REPO2_TYPE:-} && -n $(queued | head -1) ]] || return 0
+	[[ -n ${PGBACKREST_REPO2_TYPE:-} && -n $(first_queued) ]] || return 0
 	(
 		flock 7
 		work=$(mktemp -d "${TMPDIR:-/tmp}/offsite-queue.XXXXXX")
 		trap 'rm -rf "$work"' EXIT
 		sent=0
 		while true; do
-			item=$(queued | head -1)
+			item=$(first_queued)
 			[[ -n $item ]] || break
 			name=$(basename "$item" .gz)
 			[[ -e $item ]] || continue
@@ -179,7 +183,7 @@ drain_queue() {
 # What waits for the off-site store, for the admin page. Written only when it changes.
 queue_status() {
 	local count oldest='' gap='' first line
-	first=$(queued | head -1)
+	first=$(first_queued)
 	count=$(queued | wc -l)
 	[[ -n $first ]] && oldest=$(date -u -r "$first" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)
 	[[ -s $QUEUE_DIR/gap ]] && gap=$(cat "$QUEUE_DIR/gap")
@@ -279,10 +283,12 @@ archive_status() {
 	# shows here even when it records no failure, and an idle database has none (2026-11-21 audit, A12).
 	local ready=${PGBACKREST_PG1_PATH:-/var/lib/postgresql/18/docker}/pg_wal/archive_status
 	if [[ -d $ready ]]; then
-		waiting=$(find "$ready" -maxdepth 1 -name '*.ready' | wc -l)
+		# Files go as they are archived, also between the two looks (find reports one gone as a failure).
+		waiting=$({ find "$ready" -maxdepth 1 -name '*.ready' 2>/dev/null || true; } | wc -l)
 		if ((waiting > 0)); then
-			oldest=$(find "$ready" -maxdepth 1 -name '*.ready' -printf '%T@\n' | sort -n | head -1)
-			oldest=$(date -u -d "@${oldest%.*}" +%Y-%m-%dT%H:%M:%SZ)
+			oldest=$({ find "$ready" -maxdepth 1 -name '*.ready' -printf '%T@\n' 2>/dev/null || true; } |
+				sort -n | awk 'NR == 1')
+			[[ -z $oldest ]] || oldest=$(date -u -d "@${oldest%.*}" +%Y-%m-%dT%H:%M:%SZ)
 		fi
 	fi
 	status --arg a "$archived" --arg f "$failed_at" --argjson n "${failed:-0}" \

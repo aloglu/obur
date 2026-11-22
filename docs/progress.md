@@ -155,6 +155,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   put it back before a restore's first start, as docs/restore.md says.
   G09 compose: the backups default to `OBUR_DATA_DIR/backups` (they went to `./data/backups` beside compose.yaml,
   on Unraid the USB boot drive); checked with `docker compose config`.
+  G10 obur-backup reads the oldest waiting WAL file with awk, not `head -1` (sort died of SIGPIPE from about 400
+  waiting files, and pipefail then failed every drain); checked with 3,000 dummy files.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
