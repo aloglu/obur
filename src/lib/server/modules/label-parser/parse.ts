@@ -299,11 +299,17 @@ function energy(nums: Num[], label: string): NutrientValue[] {
 	return out;
 }
 
-/** A row's value from one number: grams, with milligrams of salt or sodium converted (stated units only). */
+/**
+ * A row's value from one number, in obur's unit for it (shared/nutrients.ts): grams, but milligrams for sodium. Salt
+ * written in mg becomes grams (with a note), sodium written in g becomes milligrams (stated units only; 2026-11-22
+ * Gemini audit, G05: sodium was divided by 1,000 like salt).
+ */
 function amount(row: Code, n: Num, seen: Seen): NutrientValue {
-	const milligrams = n.unit === 'mg' && (row === 'salt' || row === 'sodium');
-	if (milligrams) seen.milligrams.push(row);
-	const value = milligrams ? round(n.value / 1000) : n.value;
+	let value = n.value;
+	if (row === 'salt' && n.unit === 'mg') {
+		seen.milligrams.push(row);
+		value = round(n.value / 1000);
+	} else if (row === 'sodium' && n.unit === 'g') value = round(n.value * 1000);
 	return { code: row, value, qualifier: n.lessThan ? 'less_than' : 'reported' };
 }
 
@@ -311,6 +317,8 @@ function amount(row: Code, n: Num, seen: Seen): NutrientValue {
 function possible(v: NutrientValue, per100: boolean): boolean {
 	if (v.code === 'energy_kcal') return v.value <= (per100 ? 900 : 5000);
 	if (v.code === 'energy_kj') return v.value <= (per100 ? 3800 : 21000);
+	// Milligrams: pure salt is about 39,000 mg of sodium per 100 g.
+	if (v.code === 'sodium') return v.value <= (per100 ? 40_000 : 400_000);
 	return per100 ? v.value <= 100 : v.value <= 1000;
 }
 

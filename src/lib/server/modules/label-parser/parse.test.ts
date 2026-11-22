@@ -319,6 +319,37 @@ describe('notes on what was decided', () => {
 		]);
 	});
 
+	it('keeps sodium in milligrams, from mg or g (G05)', () => {
+		const label = (rows: string[][]) =>
+			parseLabel([
+				line('Nutrition per 100 g', 100, 80, 300),
+				...rows.flatMap(([name, v], i) => [
+					line(name, 100, 120 + i * 26),
+					line(v, 300, 120 + i * 26, 60)
+				])
+			]);
+		const mg = label([
+			['Energy', '92 kcal'],
+			['Protein', '17g'],
+			['Sodium', '500 mg']
+		]);
+		expect(value(mg, 'sodium')?.value).toBe(500);
+		expect(mg.notes).not.toContainEqual(expect.objectContaining({ kind: 'converted_mg' }));
+		const g = label([
+			['Energy', '92 kcal'],
+			['Protein', '17g'],
+			['Sodium', '0,5 g']
+		]);
+		expect(value(g, 'sodium')?.value).toBe(500);
+		const both = label([
+			['Energy', '92 kcal'],
+			['Salt', '1,25 g'],
+			['Sodium', '500 mg']
+		]);
+		expect(value(both, 'salt')?.value).toBe(1.25);
+		expect(value(both, 'sodium')?.value).toBe(500);
+	});
+
 	it('names values whose numbers the OCR was unsure of, and only the column it used', () => {
 		const lines = table(ROWS);
 		const unsure = (text: string, x: number) =>
