@@ -2,7 +2,7 @@
 // conversions are in length-convert.ts and water-convert.ts (no interface text, so the server can read them); this
 // file adds the formatting, which needs the language's decimal mark. Unit symbols are not translated, as kg and lb.
 import { formatDecimal } from './numbers.ts';
-import { cmToFeetInches, cmToInches, type LengthUnit } from './length-convert.ts';
+import { cmToFeetInches, type LengthUnit } from './length-convert.ts';
 import { fromMl, type WaterUnit } from './water-convert.ts';
 
 export * from './length-convert.ts';
@@ -14,10 +14,6 @@ export function heightText(cm: number, unit: LengthUnit): string {
 	const { feet, inches } = cmToFeetInches(cm);
 	return `${feet} ft ${formatDecimal(inches, 1)} in`;
 }
-
-/** "86.4 cm" or "34 in". */
-export const waistText = (cm: number, unit: LengthUnit): string =>
-	unit === 'cm' ? `${formatDecimal(cm, 1)} cm` : `${formatDecimal(cmToInches(cm), 1)} in`;
 
 /** The water unit's symbol: "ml" or "fl oz". */
 export const waterSymbol = (unit: WaterUnit): string => (unit === 'floz' ? 'fl oz' : 'ml');

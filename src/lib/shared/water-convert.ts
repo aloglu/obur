@@ -4,7 +4,7 @@
 export const WATER_UNITS = ['ml', 'floz'] as const;
 export type WaterUnit = (typeof WATER_UNITS)[number];
 
-/** A US fluid ounce is exactly 29.5735295625 ml (shared/quantity.ts uses the same). */
+/** A US fluid ounce is exactly 29.5735295625 ml (the one place this is written). */
 export const ML_PER_FL_OZ = 29.5735295625;
 
 /** Millilitres in the person's unit. */

@@ -18,6 +18,7 @@ import {
 	type NutrientValue
 } from '../../../shared/nutrients.ts';
 import { matchKey, sameFood, type MatchableFood } from '../../../shared/food-match.ts';
+import { KG_PER_LB } from '../../../shared/weight-convert.ts';
 import { foldForSearch, foodSearchKey } from '../../../shared/search-text.ts';
 import { activityEntries, waterEntries, weightEntries } from '../body/index.ts';
 import { foodNutrients, foods } from '../catalog/index.ts';
@@ -28,7 +29,6 @@ import { importFiles, importIdentities } from './schema.ts';
 
 /** Stands for "LoseIt" as the source installation of every imported identity. */
 export const LOSEIT_SOURCE = '10e5e17e-0000-4000-8000-000000000001';
-const LB_TO_KG = 0.45359237;
 
 export interface LoseItOptions {
 	/** The zone the entries were made in (LoseIt exports none). */
@@ -634,7 +634,7 @@ export async function writeLoseIt(
 		const id = p.create.weight.get(p.ids.weights[i]);
 		if (!id) return [];
 		remember('weight', p.ids.weights[i], id);
-		const kg = options.weightUnit === 'lb' ? w.value * LB_TO_KG : w.value;
+		const kg = options.weightUnit === 'lb' ? w.value * KG_PER_LB : w.value;
 		return [{ ...reading(id, w.date), kg: Math.round(kg * 100) / 100 }];
 	});
 	await chunked(weightRows, (c) => tx.insert(weightEntries).values(c));

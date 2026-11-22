@@ -4,8 +4,9 @@
 export const WEIGHT_UNITS = ['kg', 'lb'] as const;
 export type WeightUnit = (typeof WEIGHT_UNITS)[number];
 
-/** A pound is exactly 0.45359237 kg. */
+/** A pound is exactly 0.45359237 kg, and an ounce a sixteenth of it (the one place these are written). */
 export const KG_PER_LB = 0.45359237;
+export const G_PER_OZ = (KG_PER_LB * 1000) / 16;
 
 /** A weight in kilograms, in the person's unit. */
 export const fromKg = (kg: number, unit: WeightUnit): number =>

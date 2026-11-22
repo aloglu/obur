@@ -1,6 +1,8 @@
 // Converting a chosen amount and unit into a multiplier of a food's nutrient basis (docs/design.md,
 // "Quantities and source values"). Never assumes 1 g/ml or invents a portion's mass: a conversion that needs a
 // density or an unknown serving size returns undefined, and the interface asks instead.
+import { G_PER_OZ, KG_PER_LB } from './weight-convert.ts';
+import { ML_PER_FL_OZ } from './water-convert.ts';
 import type { NutrientValue } from './nutrients.ts';
 
 export type Basis = '100g' | '100ml' | 'serving';
@@ -22,13 +24,13 @@ export interface QuantityModel {
 }
 
 // Physical units with exact definitions. Household volume presets come from the database as millilitres.
-export const MASS_UNITS = { g: 1, kg: 1000, oz: 28.349523125, lb: 453.59237 } as const;
+export const MASS_UNITS = { g: 1, kg: 1000, oz: G_PER_OZ, lb: KG_PER_LB * 1000 } as const;
 export const VOLUME_UNITS = {
 	ml: 1,
 	l: 1000,
 	us_cup: 236.5882365,
 	metric_cup: 250,
-	us_fl_oz: 29.5735295625,
+	us_fl_oz: ML_PER_FL_OZ,
 	imp_fl_oz: 28.4130625
 } as const;
 

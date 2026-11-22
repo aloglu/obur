@@ -3,6 +3,8 @@
 // and splits a sentence into tagged proposals. It never decides a food or its nutrients: food proposals carry the
 // words to search for, and everything is confirmed by the person before saving.
 import type { Meal } from '../../../shared/diary-types.ts';
+import { G_PER_OZ, KG_PER_LB } from '../../../shared/weight-convert.ts';
+import { ML_PER_FL_OZ } from '../../../shared/water-convert.ts';
 
 /** A count word the person used ("3 slices", "bir kutu"); matched to the food's own portions later. */
 export type CountWord =
@@ -341,9 +343,7 @@ function wordNumber(tokens: Token[], k: number, afterPercent = false): [number |
 /** "2,000", "12,500", "1,000,000"; not "0,250" (a decimal). */
 const THOUSANDS = /^[1-9]\d{0,2}(,\d{3})+$/;
 /** Exact by definition: the avoirdupois ounce and pound, and the US fluid ounce. */
-const G_PER_OZ = 28.349523125;
-const G_PER_LB = 453.59237;
-const ML_PER_FL_OZ = 29.5735295625;
+const G_PER_LB = KG_PER_LB * 1000;
 const OUNCE = /^(oz|ozs|ounce|ounces)$/;
 
 type UnitHit =
