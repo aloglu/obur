@@ -34,8 +34,24 @@ export interface Delivery {
 /** What delivering one notification to one device came to. */
 export type DeliveryResult = 'sent' | 'gone' | 'failed';
 
-/** A device is dropped after this many failed deliveries in a row (gone is dropped at once). */
+/**
+ * A device is dropped after failed deliveries on this many days in a row (gone is dropped at once). Retries within a
+ * day count once: tries every five minutes had counted each, so a 25-minute outage removed devices (2026-11-22 Gemini
+ * audit, G06).
+ */
 const MAX_FAILURES = 5;
+/** A failure this long after the last counted one counts again. */
+const FAILURE_COUNTS_AGAIN_MS = 20 * 60 * 60 * 1000;
+
+/** A device's failure count and time after one more failed delivery at `now`. */
+export function afterFailure(
+	d: { failures: number; failedAt: Date | null },
+	now: Date
+): { failures: number; failedAt: Date } {
+	if (d.failedAt && now.getTime() - d.failedAt.getTime() < FAILURE_COUNTS_AGAIN_MS)
+		return { failures: d.failures, failedAt: d.failedAt };
+	return { failures: d.failures + 1, failedAt: now };
+}
 
 const COLUMN: Record<ReminderKind, 'breakfast' | 'lunch' | 'dinner' | 'weighIn' | 'dayComplete'> = {
 	breakfast: 'breakfast',
@@ -198,7 +214,8 @@ export async function sendDueReminders(
 							endpoint: pushSubscriptions.endpoint,
 							p256dh: pushSubscriptions.p256dh,
 							auth: pushSubscriptions.auth,
-							failures: pushSubscriptions.failures
+							failures: pushSubscriptions.failures,
+							failedAt: pushSubscriptions.failedAt
 						})
 						.from(pushSubscriptions)
 				: [];
@@ -218,7 +235,10 @@ export async function sendDueReminders(
 			const reached = outcomes.some(({ r }) => r === 'sent');
 			if (reached) sent++;
 			const gone = outcomes
-				.filter(({ d, r }) => r === 'gone' || (r === 'failed' && d.failures + 1 >= MAX_FAILURES))
+				.filter(
+					({ d, r }) =>
+						r === 'gone' || (r === 'failed' && afterFailure(d, now).failures >= MAX_FAILURES)
+				)
 				.map(({ d }) => d.id);
 			// No device took it because the push service failed for now: the day's mark goes, so a later pass within
 			// the hour tries again (2026-11-21 audit, A46). Once any device has it, the mark stays: no duplicates.
@@ -240,13 +260,18 @@ export async function sendDueReminders(
 					if (gone.includes(d.id)) continue;
 					await tx
 						.update(pushSubscriptions)
-						.set(r === 'sent' ? { lastSentAt: now, failures: 0 } : { failures: d.failures + 1 })
+						.set(
+							r === 'sent' ? { lastSentAt: now, failures: 0, failedAt: null } : afterFailure(d, now)
+						)
 						.where(eq(pushSubscriptions.id, d.id));
 				}
 			});
 			live = outcomes
 				.filter(({ d }) => !gone.includes(d.id))
-				.map(({ d, r }) => ({ ...d, failures: r === 'sent' ? 0 : d.failures + 1 }));
+				.map(({ d, r }) => ({
+					...d,
+					...(r === 'sent' ? { failures: 0, failedAt: null } : afterFailure(d, now))
+				}));
 		}
 	}
 	return sent;

@@ -51,7 +51,10 @@ export const pushSubscriptions = pgTable(
 		auth: text('auth').notNull(),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		lastSentAt: timestamp('last_sent_at', { withTimezone: true }),
-		failures: integer('failures').notNull().default(0)
+		/** Days with a failed delivery in a row, counted at most once a day (failedAt). */
+		failures: integer('failures').notNull().default(0),
+		/** When the last counted failure happened: retries within the hour don't count again (G06). */
+		failedAt: timestamp('failed_at', { withTimezone: true })
 	},
 	(t) => [
 		unique('push_subscriptions_user_endpoint').on(t.userId, t.endpoint),

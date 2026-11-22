@@ -1,0 +1,1 @@
+ALTER TABLE "push_subscriptions" ADD COLUMN "failed_at" timestamp with time zone;

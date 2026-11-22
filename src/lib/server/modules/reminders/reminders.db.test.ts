@@ -162,14 +162,44 @@ describe('sending', () => {
 		]);
 	});
 
-	it('counts each failure when two reminders are due at once, and nothing as sent when no device took it', async () => {
+	it('counts a failure once a day however often it is retried, and drops the device after five failing days (G06)', async () => {
+		await on({ lunch: '14:00' });
+		await reminders.subscribe(AYSE, device(1));
+		const failing = postbox({ [device(1).endpoint]: 'failed' });
+		// A push service away for most of an hour: tried every five minutes, one failure.
+		for (const t of ['14:00', '14:05', '14:10', '14:15', '14:20', '14:25', '14:30', '14:35'])
+			await sendDueReminders(worker, at(t), failing.deliver);
+		expect(await admin`select failures from push_subscriptions`).toEqual([{ failures: 1 }]);
+		// The next four days fail too: the fifth failing day removes it.
+		for (let day = 1; day <= 4; day++) {
+			const when = new Date(at('14:05').getTime() + day * 24 * 60 * 60 * 1000);
+			await sendDueReminders(worker, when, failing.deliver);
+		}
+		expect(await admin`select failures from push_subscriptions`).toEqual([]);
+	});
+
+	it('starts counting again after a delivery that worked', async () => {
+		await on({ lunch: '14:00' });
+		await reminders.subscribe(AYSE, device(1));
+		await sendDueReminders(
+			worker,
+			at('14:05'),
+			postbox({ [device(1).endpoint]: 'failed' }).deliver
+		);
+		await sendDueReminders(worker, at('14:10'), postbox().deliver);
+		expect(await admin`select failures, failed_at from push_subscriptions`).toEqual([
+			{ failures: 0, failed_at: null }
+		]);
+	});
+
+	it('counts one failure when two reminders are due at once, and nothing as sent when no device took it', async () => {
 		await on({ lunch: '14:00', dinner: '14:00' });
 		await reminders.subscribe(AYSE, device(1));
 		await reminders.subscribe(AYSE, device(2));
 		const box = postbox({ [device(1).endpoint]: 'failed', [device(2).endpoint]: 'gone' });
 		expect(await sendDueReminders(worker, at('14:05'), box.deliver)).toBe(0);
 		expect(await admin`select endpoint, failures from push_subscriptions`).toEqual([
-			{ endpoint: device(1).endpoint, failures: 2 }
+			{ endpoint: device(1).endpoint, failures: 1 }
 		]);
 		// The device dropped for the first reminder got nothing more.
 		expect(box.got.filter((g) => g.endpoint === device(2).endpoint)).toHaveLength(1);

@@ -145,6 +145,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   signed-in person to Today. Auth journey e2e (fails on the old code) passes.
   G29 help and guide paths say More → Settings → … (Profile for the goal-reached and activity settings); the BMI
   scale on setup writes 18.5 in the person's decimal mark; member initials follow the interface language.
+  G06 a reminder device's failures count once a day (`failed_at`, migrations 0070–0071); five failing days remove it
+  (retries every 5 min had removed devices after a 25-minute outage). Reminder database tests pass.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
