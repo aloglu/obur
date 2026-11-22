@@ -12,6 +12,7 @@ import { withUser, type Database, type Tx } from '../../db/identity.ts';
 import {
 	ageOn,
 	baseBurn,
+	budgetForDay,
 	CALCULATION_VERSION,
 	DEFAULT_FAT_SHARE,
 	DEFAULT_FLOOR,
@@ -113,6 +114,27 @@ const toVersion = (r: VersionRow): TargetVersion => ({
 	carbShare: r.carbShare,
 	createdAt: r.createdAt.toISOString()
 });
+
+/**
+ * The version in force on a day: the newest `effective_from` on or before it, then the newest `created_at`. The one
+ * place this order is written (2026-11-21 audit, C05).
+ */
+async function inForce(tx: Tx, onDate: string): Promise<VersionRow | undefined> {
+	const [row] = await tx
+		.select()
+		.from(goalVersions)
+		.where(lte(goalVersions.effectiveFrom, onDate))
+		.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
+		.limit(1);
+	return row;
+}
+
+/** The budget of a version with a budget on a day without activity, as Today shows it (shared budgetForDay). */
+function inactiveBudget(r: VersionRow): number {
+	const day = budgetForDay(r, 0);
+	if (!day) throw new Error('version without a budget');
+	return day.budget;
+}
 
 /** The macro choice a version records (percent shares back as whole percents). */
 function macroChoice(r: VersionRow): MacroChoice {
@@ -307,14 +329,7 @@ export function createGoals(db: Database) {
 
 		/** The target in force on a day: the newest version among those effective on or before it. */
 		async targetFor(userId: string, onDate: string): Promise<TargetVersion | null> {
-			const [row] = await withUser(db, userId, (tx) =>
-				tx
-					.select()
-					.from(goalVersions)
-					.where(lte(goalVersions.effectiveFrom, onDate))
-					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
-					.limit(1)
-			);
+			const row = await withUser(db, userId, (tx) => inForce(tx, onDate));
 			return row ? toVersion(row) : null;
 		},
 
@@ -339,13 +354,8 @@ export function createGoals(db: Database) {
 		): Promise<TargetVersion> {
 			return withUser(db, userId, async (tx) => {
 				// A new target keeps the person's settings unless the request changes them.
-				const [inForce] = await tx
-					.select()
-					.from(goalVersions)
-					.where(lte(goalVersions.effectiveFrom, request.effectiveFrom))
-					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
-					.limit(1);
-				const kept = settingsOf(inForce);
+				const inForceRow = await inForce(tx, request.effectiveFrom);
+				const kept = settingsOf(inForceRow);
 				const asked: Partial<BudgetSettings> = request.mode !== 'none' ? request : {};
 				const settings: BudgetSettings = {
 					countActivity: asked.countActivity ?? kept.countActivity,
@@ -400,12 +410,7 @@ export function createGoals(db: Database) {
 			change: BudgetSettingsChange
 		): Promise<TargetVersion> {
 			return withUser(db, userId, async (tx) => {
-				const [current] = await tx
-					.select()
-					.from(goalVersions)
-					.where(lte(goalVersions.effectiveFrom, today))
-					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
-					.limit(1);
+				const current = await inForce(tx, today);
 				if (!current || current.mode === 'none') throw new GoalError('no_target');
 				const kept = settingsOf(current);
 				const settings: BudgetSettings = {
@@ -482,12 +487,7 @@ export function createGoals(db: Database) {
 					.values({ userId, ...set })
 					.onConflictDoUpdate({ target: profiles.userId, set })
 					.returning();
-				const [current] = await tx
-					.select()
-					.from(goalVersions)
-					.where(lte(goalVersions.effectiveFrom, today))
-					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
-					.limit(1);
+				const current = await inForce(tx, today);
 				const done = (outcome: DetailsOutcome, row = current) => ({
 					profile: toProfile(profileRow),
 					outcome,
@@ -522,7 +522,7 @@ export function createGoals(db: Database) {
 						return done(
 							{
 								kind: 'ended',
-								beforeKcal: Math.max(current.floorKcal, current.baseBurnKcal! - current.deficitKcal)
+								beforeKcal: inactiveBudget(current)
 							},
 							row
 						);
@@ -544,9 +544,12 @@ export function createGoals(db: Database) {
 				if (same) return done({ kind: 'unchanged' });
 				values.inputs = { ...inputs, source: 'details' };
 				const [row] = await tx.insert(goalVersions).values(values).returning();
-				const budget = (r: VersionRow) => Math.max(r.floorKcal, r.baseBurnKcal! - r.deficitKcal);
 				return done(
-					{ kind: 'recalculated', beforeKcal: budget(current), afterKcal: budget(row) },
+					{
+						kind: 'recalculated',
+						beforeKcal: inactiveBudget(current),
+						afterKcal: inactiveBudget(row)
+					},
 					row
 				);
 			});
@@ -574,12 +577,7 @@ export function createGoals(db: Database) {
 				);
 				const latestWeightKg = typeof latest === 'function' ? await latest(tx) : latest;
 				if (!latestWeightKg) return null;
-				const [current] = await tx
-					.select()
-					.from(goalVersions)
-					.where(lte(goalVersions.effectiveFrom, today))
-					.orderBy(desc(goalVersions.effectiveFrom), desc(goalVersions.createdAt))
-					.limit(1);
+				const current = await inForce(tx, today);
 				if (current?.mode !== 'calculated') return null;
 				let values: typeof goalVersions.$inferInsert;
 				try {
@@ -603,8 +601,11 @@ export function createGoals(db: Database) {
 				// The time now, after the lock, not when the transaction began: versions on one day are ordered by it.
 				values.createdAt = sql`clock_timestamp()` as unknown as Date;
 				const [row] = await tx.insert(goalVersions).values(values).returning();
-				const budget = (r: VersionRow) => Math.max(r.floorKcal, r.baseBurnKcal! - r.deficitKcal);
-				return { beforeKcal: budget(current), afterKcal: budget(row), target: toVersion(row) };
+				return {
+					beforeKcal: inactiveBudget(current),
+					afterKcal: inactiveBudget(row),
+					target: toVersion(row)
+				};
 			});
 		}
 	};

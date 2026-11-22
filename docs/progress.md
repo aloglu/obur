@@ -35,12 +35,14 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   text say Server. check, lint, Vitest and the full browser suite (306 passed) pass.
 - Image tests after these changes: `obur` smoke and upgrade from beta.19 pass; speech add-on passes. Off-site tests
   not run (no backup code changed).
+- C05 done (2026-11-22): the goals service finds the version in force in one place (`inForce`) and takes the budget
+  without activity from the shared `budgetForDay` (`inactiveBudget`); no behaviour change. check, lint, Vitest 1,222,
+  database 285 pass.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
   setting in export and backups). First a review page with screenshots for the achievement screens, then build.
-- **To do before the next release candidate (owner, 2026-11-22), picked up next session:** C05 (one "target in
-  force" helper and `budgetForDay` for the budget without activity in the goals service; no behaviour change), then
+- **To do before the next release candidate (owner, 2026-11-22), picked up next session:** C05 (done), then
   pounds. Then rc.8 (only when the owner asks), so the owner can test both and measure Speak on the server (C10).
   1.0 comes only after the owner has tested the release candidates and every issue is sorted; never assume the next
   release is 1.0.
