@@ -180,6 +180,11 @@ jobs:
     needs: [checks, images]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
+    # One publication at a time, across runs: two runs (a tag pushed twice, a re-run) never interleave their steps
+    # (2026-11-22 audit, A09).
+    concurrency:
+      group: release-publish
+      cancel-in-progress: false
     permissions:
       contents: write
       packages: write
@@ -205,9 +210,18 @@ jobs:
           docker logout ghcr.io
           for image in $IMAGES; do docker manifest inspect "$REGISTRY/$image:$VERSION" >/dev/null; done
       - name: Move latest
-        # Test releases (a version with a hyphen) never become `latest`.
+        # Test releases (a version with a hyphen) never become `latest`, and `latest` never moves back: a delayed or
+        # re-run publication of an older version leaves it at the newer one, which servers may already run (A09).
         if: ${{ !contains(needs.checks.outputs.version, '-') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          newest=$(gh release list --repo "${{ github.repository }}" --exclude-pre-releases --exclude-drafts \
+            --limit 100 --json tagName --jq '.[].tagName' | sed 's/^v//' | { cat; echo "$VERSION"; } | sort -V | tail -1)
+          if [[ $newest != "$VERSION" ]]; then
+            echo "latest stays at $newest, newer than $VERSION"
+            exit 0
+          fi
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           for image in $IMAGES; do
             docker tag "$image:test" "$REGISTRY/$image:latest"
@@ -217,6 +231,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Made once: a second run for the same tag finds it and stops here without failing.
+          if gh release view "v$VERSION" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "the release record for $VERSION exists already"
+            exit 0
+          fi
           pre=()
           [[ $VERSION == *-* ]] && pre=(--prerelease)
           gh release create "v$VERSION" --repo "${{ github.repository }}" --verify-tag "${pre[@]}" \
