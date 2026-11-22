@@ -1,4 +1,5 @@
 import { error, json } from '@sveltejs/kit';
+import { readBody } from '#lib/server/http.ts';
 import { isIsoDate, isValidZone } from '#lib/shared/diary-rules.ts';
 import { MAX_AUDIO_BYTES, SpeechFailure, understandSpeech } from '#lib/server/speech.ts';
 import type { RequestHandler } from './$types';
@@ -37,9 +38,8 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
 	const date = url.searchParams.get('date') ?? '';
 	const zone = url.searchParams.get('zone') ?? '';
 	if (!isIsoDate(date) || !isValidZone(zone)) error(400, 'Invalid date or zone');
-	const declared = Number(request.headers.get('content-length') ?? '0');
-	if (declared > MAX_AUDIO_BYTES) return json({ error: 'too_large' }, { status: 413 });
-	const audio = new Uint8Array(await request.arrayBuffer());
+	const audio = await readBody(request, MAX_AUDIO_BYTES);
+	if (!audio) return json({ error: 'too_large' }, { status: 413 });
 	try {
 		const started = performance.now();
 		const result = await understandSpeech(

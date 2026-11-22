@@ -8,7 +8,7 @@ import {
 	PortabilityError
 } from '#lib/server/modules/imports-exports/index.ts';
 import { db } from './db/index.ts';
-import { respond } from './http.ts';
+import { readBody, respond } from './http.ts';
 
 export const portability = createPortability(db);
 
@@ -44,9 +44,7 @@ export function respondPortability(run: () => Promise<Response>): Promise<Respon
 
 /** Reads an uploaded archive, refusing anything over the archive limit before and while reading it. */
 export async function readArchiveBody(request: Request): Promise<Uint8Array> {
-	const declared = Number(request.headers.get('content-length') ?? 0);
-	if (declared > ARCHIVE_LIMITS.archiveBytes) throw new ArchiveError('too_large');
-	const bytes = new Uint8Array(await request.arrayBuffer());
-	if (bytes.length > ARCHIVE_LIMITS.archiveBytes) throw new ArchiveError('too_large');
+	const bytes = await readBody(request, ARCHIVE_LIMITS.archiveBytes);
+	if (!bytes) throw new ArchiveError('too_large');
 	return bytes;
 }

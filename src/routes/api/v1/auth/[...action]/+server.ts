@@ -3,7 +3,13 @@ import { error, json, type RequestEvent, type RequestHandler } from '@sveltejs/k
 import * as v from 'valibot';
 import { auth, SESSION_COOKIE } from '#lib/server/auth.ts';
 import { clientIp, config } from '#lib/server/config.ts';
-import { clearSessionCookie, readJson, respond, setSessionCookie } from '#lib/server/http.ts';
+import {
+	clearSessionCookie,
+	readBody,
+	readJson,
+	respond,
+	setSessionCookie
+} from '#lib/server/http.ts';
 import type { SessionRecord } from '#lib/server/modules/auth/index.ts';
 import { reminders } from '#lib/server/reminders.ts';
 import { isPushService } from '#lib/shared/push-services.ts';
@@ -102,9 +108,16 @@ const routes: Record<string, Handler> = {
 	},
 	'POST logout': async ({ cookies, locals, request }, session) => {
 		// The device's reminders stop with the sign-out: if that fails, so does the sign-out, and it is tried again.
+		const sent = await readBody(request, 4096);
+		let raw: unknown = {};
+		try {
+			raw = sent && sent.length ? JSON.parse(new TextDecoder().decode(sent)) : {};
+		} catch {
+			// Not JSON: signed out without a device to stop.
+		}
 		const body = v.safeParse(
 			v.object({ pushEndpoint: v.optional(v.pipe(v.string(), v.maxLength(2048))) }),
-			await request.json().catch(() => ({}))
+			raw
 		);
 		const endpoint = body.success ? body.output.pushEndpoint : undefined;
 		if (session && endpoint && isPushService(endpoint))

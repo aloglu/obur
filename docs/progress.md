@@ -190,6 +190,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   is no date; weigh-ins and water are checked at the precision they are stored (699.999 kg, 10000.5 ml were 500s).
   G21 the unused answer header is removed (its comment described the service worker's old copies); sign-out and
   account deletion clear a toast. Unit, database and related e2e pass.
+  G08 request bodies are read with a running size check (`readBody` in server/http.ts): JSON 64 KB, sign-out 4 KB,
+  audio, photos and archives at their own limits; a chunked body without a length no longer reaches 21 MB first.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

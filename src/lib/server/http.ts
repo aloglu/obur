@@ -7,14 +7,43 @@ import { config } from './config.ts';
 
 const MAX_JSON_BYTES = 64 * 1024;
 
+/**
+ * A request's body, or null as soon as it passes `max` bytes. Read as it arrives: a body sent in chunks has no
+ * declared length, and reading it whole first let anyone, signed in or not, make the server hold up to the server's
+ * own 21 MB limit for each request (2026-11-22 Gemini audit, G08).
+ */
+export async function readBody(request: Request, max: number): Promise<Uint8Array | null> {
+	if (Number(request.headers.get('content-length') ?? 0) > max) return null;
+	if (!request.body) return new Uint8Array();
+	const reader = request.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let size = 0;
+	for (;;) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		size += value.byteLength;
+		if (size > max) {
+			await reader.cancel().catch(() => {});
+			return null;
+		}
+		chunks.push(value);
+	}
+	const out = new Uint8Array(size);
+	let at = 0;
+	for (const c of chunks) {
+		out.set(c, at);
+		at += c.byteLength;
+	}
+	return out;
+}
+
 export async function readJson<S extends v.GenericSchema>(
 	request: Request,
 	schema: S
 ): Promise<v.InferOutput<S>> {
-	const length = Number(request.headers.get('content-length') ?? 0);
-	if (length > MAX_JSON_BYTES) error(413, 'Request too large');
-	const text = await request.text();
-	if (text.length > MAX_JSON_BYTES) error(413, 'Request too large');
+	const bytes = await readBody(request, MAX_JSON_BYTES);
+	if (!bytes) error(413, 'Request too large');
+	const text = new TextDecoder().decode(bytes);
 	let data: unknown;
 	try {
 		data = text ? JSON.parse(text) : {};

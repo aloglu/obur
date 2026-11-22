@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { readBody } from '#lib/server/http.ts';
 import { MAX_IMAGE_BYTES, ScanFailure, scanLabel } from '#lib/server/scan.ts';
 import type { RequestHandler } from './$types';
 
@@ -22,9 +23,8 @@ const STATUS = {
  * own add-on even when the person chose their key.
  */
 export const POST: RequestHandler = async ({ request, locals, url }) => {
-	const declared = Number(request.headers.get('content-length') ?? '0');
-	if (declared > MAX_IMAGE_BYTES) return json({ error: 'too_large' }, { status: 413 });
-	const image = new Uint8Array(await request.arrayBuffer());
+	const image = await readBody(request, MAX_IMAGE_BYTES);
+	if (!image) return json({ error: 'too_large' }, { status: 413 });
 	try {
 		const started = performance.now();
 		const result = await scanLabel(
