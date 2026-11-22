@@ -198,6 +198,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   G32 (part): obur-labels stops at once on SIGTERM (it waited the whole grace period as PID 1); speech gets the
   same with A11. Skipped, with reasons given to the owner: G20 (the safe fix breaks tunnels on Docker networks;
   sign-in is passkeys and recovery codes have 80 bits), G27 (the app sends photos at about 1,600 px), most of G32.
+  A11 phone test: `spikes/speech-browser/index.html` records 5 s two ways (A: MediaRecorder + decodeAudioData +
+  OfflineAudioContext; B: AudioWorklet raw samples) and makes 16 kHz WAV on the phone, nothing sent; both work in
+  headless Chromium with a fake microphone. An artifact page cannot use the microphone, so it needs an HTTPS host
+  for the owner's iPhone (owner to choose). Next: the owner's results decide A or B; then the add-on reads WAV only
+  and PyAV goes.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
