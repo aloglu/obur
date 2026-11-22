@@ -81,7 +81,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   inches, Profile height. Step 3: water in US fluid ounces (Today's card +8/+16 and Other amount, the readings sheet,
   the typed-entry card, "16 oz of water" as fluid ounces, Progress's water a day). Docs updated. Pounds/goals/body
   e2e pass; Vitest 1,237.
-  Next: full browser suite, then screenshots for the owner (setup Imperial, Units, Today water in fl oz).
+  Full browser suite: 311 passed; 2 tests followed the new texts (fixed), 1 WebKit timeout in an unrelated goals test
+  (passed 3 of 3 again). Next: the owner's picks on the review page (setup, Units, water); rc.8 only when asked.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
