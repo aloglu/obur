@@ -6,6 +6,7 @@ export const HELP_TOPICS = [
 	'logging',
 	'budget',
 	'weight',
+	'units',
 	'progress',
 	'reminders',
 	'privacy'
@@ -29,6 +30,8 @@ export const HELP: HelpEntry[] = [
 	{ id: 'goalreached', topic: 'budget', answers: 1 },
 	{ id: 'smoothed', topic: 'weight', answers: 2 },
 	{ id: 'weight_up', topic: 'weight', answers: 1 },
+	{ id: 'units_change', topic: 'units', answers: 2 },
+	{ id: 'units_records', topic: 'units', answers: 2 },
 	{ id: 'complete', topic: 'progress', answers: 1 },
 	{ id: 'averages', topic: 'progress', answers: 1 },
 	{ id: 'journal', topic: 'progress', answers: 1 },

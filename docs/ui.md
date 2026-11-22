@@ -453,7 +453,7 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   recorded are left out; an empty month says so. Changing the month changes the highlights. No switch and no
   setting. Progress keeps the charts. Phone: calendar, then highlights; desktop: side by side, the calendar sticky.
   Highlights that aren't achievements sit in neutral circles with a line icon.
-- **Help:** its own page (search that ignores accents and Turkish letters, answers grouped under topic headings with no topic chips (owner, 2026-11-09), short real answers that slide open with the shared `.collapse-row` motion), opened
+- **Help:** a Units topic (2026-11-22, audit D09: where to change each unit, the start units, and that records stay as stored). Its own page (search that ignores accents and Turkish letters, answers grouped under topic headings with no topic chips (owner, 2026-11-09), short real answers that slide open with the shared `.collapse-row` motion), opened
   from More. No inline "?" or "How?" links (owner tried both and chose the page only). Built as `/help`, the "Help" row in More (and
   desktop Settings) after Security: a search box, topic chips (All, Logging, Budget, Weight, Progress, Reminders,
   Privacy) and the questions as disclosures grouped by topic; a search with a single match opens it. Words live in

@@ -92,6 +92,12 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   a UK-phone test checks the start units, the field buttons and the date field's size. Accessibility: the unit text
   in the text colour (orange was 4.37:1). Vitest 1,239; full browser suite 317 passed before the contrast fix
   (accessibility and pounds pass after it). Not checked on a real iPhone yet: the date field.
+- rc.8 audit (2026-11-22, `~/Documents/Obur-rc.8-Audit-Claude.md`, D01–D09). Owner agreed with every verdict and
+  asked for D09 too. Built, one commit each: D06 one definition for lb, oz and fl oz; D05 spoken unit labels from the
+  messages; D03 an unusable height or weight turns its field red once left; D01 start units from the time zone (sent
+  by the sign-in pages), only for accounts with no settings and no records; D02 LoseIt water unit (ml or fl oz) and a
+  height under 100 read as inches; D09 a Units topic in Help. D04 waits for the owner's iPhone. Skipped: D07
+  (optional), D08.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
