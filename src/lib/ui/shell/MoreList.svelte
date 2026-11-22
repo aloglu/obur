@@ -100,12 +100,27 @@
 	>
 </div>
 
-<!-- Credit the icons' licence requires (static/icons/food/LICENSE.txt, static/icons/achievements/LICENSE.txt). -->
+<!-- Credit the icons' licence requires (static/icons/food/LICENSE.txt, static/icons/achievements/LICENSE.txt): the
+     work, its licence and the change made (2026-11-22 Gemini audit, G14); then everything else the app contains. -->
 <p class="px-1 text-[0.78125rem] text-muted">
 	<a
 		href="https://openmoji.org"
 		target="_blank"
 		rel="noreferrer"
 		class="underline decoration-dotted underline-offset-2">{m.icon_credit()}</a
+	>,
+	<a
+		href="https://creativecommons.org/licenses/by-sa/4.0/"
+		target="_blank"
+		rel="noreferrer"
+		class="underline decoration-dotted underline-offset-2">{m.icon_credit_licence()}</a
+	>, {m.icon_credit_changes()}
+	<!-- eslint-disable svelte/no-navigation-without-resolve -- a file the build writes (scripts/third-party-notices.ts), no route -->
+	<a
+		href="/third-party-notices.txt"
+		target="_blank"
+		rel="noreferrer"
+		class="underline decoration-dotted underline-offset-2">{m.licences_link()}</a
 	>
+	<!-- eslint-enable svelte/no-navigation-without-resolve -->
 </p>

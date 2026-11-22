@@ -7,6 +7,7 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { readdirSync } from 'node:fs';
 import pkg from './package.json' with { type: 'json' };
 import { appPages } from './src/lib/shared/app-pages.ts';
+import { thirdPartyNotices } from './scripts/notices-plugin.ts';
 
 export default defineConfig({
 	// The version an admin sees in Members, and the one compared with the published ones.
@@ -18,6 +19,7 @@ export default defineConfig({
 		)
 	},
 	plugins: [
+		thirdPartyNotices(),
 		tailwindcss(),
 		sveltekit({
 			compilerOptions: {
@@ -77,7 +79,8 @@ export default defineConfig({
 					include: [
 						'src/**/*.{test,spec}.{js,ts}',
 						'eslint-rules/**/*.test.js',
-						'deploy/**/*.test.ts'
+						'deploy/**/*.test.ts',
+						'scripts/**/*.test.ts'
 					],
 					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}', 'src/**/*.db.test.ts']
 				}

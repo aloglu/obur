@@ -168,6 +168,12 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   key in the database's environment; checked). G11 operator scripts run as their own user `obur-ops` with only the
   schema owner's URL. Image tests: smoke, off-site, off-site restore, interruption (19 rounds), upgrade from beta.19
   and from rc.8 passed.
+  G13, G14, G30 (main image): a build plugin (`scripts/notices-plugin.ts`) lists every package the client, server
+  and service worker bundles came from, with its licence files; the prerendered public route
+  `/third-party-notices.txt` joins them with obur's licence, the OpenMoji credit, the fonts (OFL 1.1), Tailwind and
+  Paraglide (48 packages). More's credit links OpenMoji, CC BY-SA 4.0, says the dark-mode outlines are recoloured,
+  and links "Other licences". The food icons' LICENSE.txt names the dark copies. The image keeps obur's LICENSE and
+  Node.js's. Unit, help/app-shell/accessibility e2e, image build and smoke test pass.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

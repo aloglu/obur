@@ -53,3 +53,29 @@ test('Help explains day notes', async ({ page }, testInfo) => {
 	await expect(page.getByText('What are day notes?')).toBeVisible();
 	await expect(page.getByText('Only you see your notes')).toBeVisible();
 });
+
+test('More credits the icons with their licence and change, and links every other licence (G13, G14)', async ({
+	page,
+	request
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'one browser is enough for links');
+	await signedInAs(page, 'Lisans Okuru');
+	await page.goto('/more');
+	await expect(page.getByRole('link', { name: 'CC BY-SA 4.0' })).toHaveAttribute(
+		'href',
+		'https://creativecommons.org/licenses/by-sa/4.0/'
+	);
+	await expect(page.getByText('outlines recoloured for dark mode.')).toBeVisible();
+	const others = page.getByRole('link', { name: 'Other licences' });
+	await expect(others).toHaveAttribute('href', '/third-party-notices.txt');
+	const notices = await request.get('/third-party-notices.txt');
+	expect(notices.ok()).toBe(true);
+	const text = await notices.text();
+	for (const part of [
+		'SIL Open Font License, Version 1.1',
+		'@sveltejs/kit',
+		'svelte ',
+		'Copyright 2016 The Inter'
+	])
+		expect(text).toContain(part);
+});

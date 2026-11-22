@@ -19,6 +19,9 @@ For developers:
 - Current status: [`docs/progress.md`](docs/progress.md)
 - Working rules and verified commands: [`CLAUDE.md`](CLAUDE.md)
 
-Licence: MIT. The food icons are from [OpenMoji](https://openmoji.org) under CC BY-SA 4.0
-([`static/icons/food/LICENSE.txt`](static/icons/food/LICENSE.txt)). The optional speech image (`obur-speech`) also contains FFmpeg, x264
+Licence: MIT. The food icons and achievement pictures are from [OpenMoji](https://openmoji.org) under CC BY-SA 4.0
+([`static/icons/food/LICENSE.txt`](static/icons/food/LICENSE.txt),
+[`static/icons/achievements/LICENSE.txt`](static/icons/achievements/LICENSE.txt)). The fonts (Inter, Bricolage
+Grotesque) are under the SIL Open Font License 1.1. Every bundled package's licence is listed at
+`/third-party-notices.txt` on a running obur (written by `npm run build`). The optional speech image (`obur-speech`) also contains FFmpeg, x264
 and x265, which are GPL licensed: see [`speech/THIRD-PARTY-NOTICES.md`](speech/THIRD-PARTY-NOTICES.md).

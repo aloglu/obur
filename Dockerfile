@@ -27,6 +27,9 @@ RUN apt-get update \
 	&& useradd --uid 1002 --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin obur-ops \
 	&& install -d -o postgres -g postgres -m 700 /var/lib/pgbackrest /tmp/pgbackrest
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
+# Node.js's own licence travels with its binary; obur's licence and the bundled packages' notices are in /app
+# (build/prerendered/third-party-notices.txt, served at /third-party-notices.txt).
+COPY --from=node /usr/local/LICENSE /usr/share/doc/nodejs/LICENSE
 
 ENV PGDATA=/data/postgres/18/docker \
 	PGBACKREST_STANZA=obur \
@@ -46,7 +49,7 @@ ENV PGDATA=/data/postgres/18/docker \
 	POSTGRES_DB=obur
 
 WORKDIR /app
-COPY --from=build /app/package.json ./
+COPY --from=build /app/package.json /app/LICENSE ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
 COPY --from=build /app/server.js ./server.js
