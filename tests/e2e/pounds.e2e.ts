@@ -101,20 +101,27 @@ test('Progress shows the weight, its change and the goal in pounds', async ({ pa
 test('setup and the Goal page take weights and paces in pounds', async ({ page }, testInfo) => {
 	await signedInAs(page, `Setup lb ${testInfo.project.name}`);
 	await page.goto('/onboarding');
+	await expect(page.getByRole('radio', { name: 'Metric' })).toHaveAttribute('aria-checked', 'true');
 	await page.getByLabel('Height').fill('180');
 	await page.getByLabel('Weight', { exact: true }).fill('80');
-	// Setup's own choice: the typed weight follows, and the account keeps it.
+	await page.getByLabel('Waist').fill('86.4');
+	// Setup's own choice: what was typed follows, and the account keeps the units.
 	const saved = page.waitForResponse(
 		(r) => r.url().includes('/api/v1/profile/preferences') && r.request().method() === 'PATCH'
 	);
-	await page.getByRole('radio', { name: 'Pounds (lb)' }).click();
+	await page.getByRole('radio', { name: 'Imperial' }).click();
 	await saved;
+	await expect(page.getByText('lb · ft, in · fl oz. Change each one')).toBeVisible();
 	await expect(page.getByLabel('Weight', { exact: true })).toHaveValue('176.4'); // 80.01 kg
+	await expect(page.getByLabel('Height, ft')).toHaveValue('5');
+	await expect(page.getByLabel('Height, in')).toHaveValue('10.9'); // 180.1 cm
+	await expect(page.getByLabel('Waist')).toHaveValue('34');
+	await page.getByLabel('Height, in').fill('10'); // 177.8 cm
 	await page.getByLabel('Birth date').fill(`${new Date().getFullYear() - 30}-01-01`);
 	await page.getByRole('radio', { name: 'Male', exact: true }).click();
 	await page.getByRole('button', { name: 'See my estimate' }).click();
-	// The same estimate as 80 kg: 10·80 + 6.25·180 − 5·30 + 5 = 1,780; × 1.2 = 2,136.
-	await expect(page.getByText('2136', { exact: true })).toBeVisible();
+	// 10·80.01 + 6.25·177.8 − 5·30 + 5 = 1,766.4; × 1.2 = 2,120.
+	await expect(page.getByText('2120', { exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Choose a goal' }).click();
 	await expect(page.getByText('Pace, lb a week')).toBeVisible();
 	await page.getByLabel('Goal weight').fill('175');
@@ -125,6 +132,12 @@ test('setup and the Goal page take weights and paces in pounds', async ({ page }
 
 	await page.goto('/more/units');
 	await expect(page.getByRole('button', { name: 'Weight: Pounds (lb)' })).toBeVisible();
+	await expect(
+		page.getByRole('button', { name: 'Height and waist: Feet and inches (ft, in)' })
+	).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Water: US fluid ounces (fl oz)' })).toBeVisible();
+	await page.goto('/profile');
+	await expect(page.getByText('5 ft 10 in')).toBeVisible();
 	await page.goto('/more/goal');
 	await expect(page.getByRole('button', { name: /^Goal weight/ })).toContainText('175 lb');
 	await expect(page.getByRole('button', { name: /^Pace:/ })).toContainText('Brisk · 1 lb a week');

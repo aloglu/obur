@@ -9,7 +9,8 @@
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import MenuRow from '#lib/ui/MenuRow.svelte';
 	import NavRow from './NavRow.svelte';
-	import { weightUnit } from '#lib/client/weight-unit.ts';
+	import { page } from '$app/state';
+	import { unitsSummary } from '#lib/ui/units-summary.ts';
 
 	interface Props {
 		theme: ThemeChoice;
@@ -73,7 +74,7 @@
 	<NavRow
 		href={resolve('/(app)/more/units')}
 		label={m.more_units()}
-		value="{weightUnit()} · {time}"
+		value="{unitsSummary(page.data.preferences)} · {time}"
 	/>
 	<NavRow
 		href={resolve('/(app)/more/appearance')}

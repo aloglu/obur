@@ -28,7 +28,17 @@
 	} from '#lib/shared/goals.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
 	import { toKg, typedKg, weightNumber, type WeightUnit } from '#lib/shared/weight-unit.ts';
-	import { weightUnit } from '#lib/client/weight-unit.ts';
+	import {
+		cmToFeetInches,
+		cmToInches,
+		feetInchesToCm,
+		inchesToCm,
+		type LengthUnit,
+		type WaterUnit
+	} from '#lib/shared/body-units.ts';
+	import { lengthUnit, waterUnit, weightUnit } from '#lib/client/units.ts';
+	import { unitsList } from '#lib/ui/units-summary.ts';
+	import FeetInchesField from '#lib/ui/FeetInchesField.svelte';
 	import { paceAmount, paces } from '#lib/ui/goal-pace.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Chips from '#lib/ui/Chips.svelte';
@@ -51,16 +61,27 @@
 		scrollTo(0, 0);
 	}
 
-	let height = $state(num(start.profile?.heightCm));
-	// Weights in the person's unit (Units, or the choice here, which saves it), kept in kilograms.
+	// Weights, height and waist in the person's units (Units, or Metric / Imperial here, which saves them), kept in
+	// kilograms and centimetres. Water isn't asked here, but Imperial sets it too.
 	let unit = $state<WeightUnit>(weightUnit());
+	const startLength = lengthUnit();
+	let lUnit = $state<LengthUnit>(startLength);
+	let wUnit = $state<WaterUnit>(waterUnit());
+	const startFt = start.profile?.heightCm ? cmToFeetInches(start.profile.heightCm) : null;
+	let height = $state(startLength === 'cm' ? num(start.profile?.heightCm) : '');
+	let heightFt = $state(startLength === 'in' && startFt ? String(startFt.feet) : '');
+	let heightIn = $state(startLength === 'in' && startFt ? num(startFt.inches) : '');
 	let weight = $state(
 		start.latestWeight ? weightNumber(start.latestWeight.value, weightUnit()) : ''
 	);
 	let birthDate = $state(start.profile?.birthDate ?? '');
 	let sex = $state<Sex | ''>(start.profile?.sex ?? '');
 	let bodyFat = $state(num(start.profile?.bodyFatPct));
-	let waist = $state(num(start.profile?.waistCm));
+	let waist = $state(
+		start.profile?.waistCm
+			? num(startLength === 'in' ? cmToInches(start.profile.waistCm) : start.profile.waistCm)
+			: ''
+	);
 	let pregnant = $state(start.profile?.pregnant ?? false);
 	let breastfeeding = $state(start.profile?.breastfeeding ?? false);
 	let ownOpen = $state(false);
@@ -72,37 +93,89 @@
 	let busy = $state(false);
 	let problem = $state('');
 
+	type Units = { weight: WeightUnit; length: LengthUnit; water: WaterUnit };
+	const SYSTEMS = {
+		metric: { weight: 'kg', length: 'cm', water: 'ml' },
+		imperial: { weight: 'lb', length: 'in', water: 'floz' }
+	} as const satisfies Record<string, Units>;
+	type System = keyof typeof SYSTEMS;
+	const units = (): Units => ({ weight: unit, length: lUnit, water: wUnit });
+	// A mix set on Units (lb with cm, say) chooses neither.
+	const system = $derived<System | ''>(
+		(Object.keys(SYSTEMS) as System[]).find(
+			(k) => SYSTEMS[k].weight === unit && SYSTEMS[k].length === lUnit && SYSTEMS[k].water === wUnit
+		) ?? ''
+	);
+
+	const systemOptions: { value: System | ''; label: string }[] = [
+		{ value: 'metric', label: m.units_metric() },
+		{ value: 'imperial', label: m.units_imperial() }
+	];
+
 	/** A typed weight in the other unit ("80" kg becomes "176.4" lb); text that isn't a number stays. */
 	function convert(text: string, from: WeightUnit, to: WeightUnit) {
 		const typed = parseDecimal(text);
-		return typed === undefined || typed === null ? text : weightNumber(toKg(typed, from), to);
+		return typed === undefined || typed === null || from === to
+			? text
+			: weightNumber(toKg(typed, from), to);
 	}
-	function switchUnit(from: WeightUnit, to: WeightUnit) {
-		weight = convert(weight, from, to);
-		goalWeight = convert(goalWeight, from, to);
+	/** Moves what was typed to other units: weights, height, waist and the pace. */
+	function switchUnits(from: Units, to: Units) {
+		weight = convert(weight, from.weight, to.weight);
+		goalWeight = convert(goalWeight, from.weight, to.weight);
 		// The same place in the other unit's paces ("0.5 kg" is "1 lb").
-		const at = paces(from).findIndex((p) => String(p) === rate);
-		if (at >= 0) rate = String(paces(to)[at]);
+		const at = paces(from.weight).findIndex((p) => String(p) === rate);
+		if (at >= 0) rate = String(paces(to.weight)[at]);
+		if (from.length !== to.length) {
+			const cm = h;
+			const waistTyped = waist.trim() ? parseDecimal(waist) : undefined;
+			if (to.length === 'in') {
+				const fi = cm ? cmToFeetInches(cm) : null;
+				heightFt = fi ? String(fi.feet) : '';
+				heightIn = fi ? num(fi.inches) : '';
+				if (waistTyped) waist = num(cmToInches(waistTyped));
+			} else {
+				height = cm ? num(cm) : '';
+				if (waistTyped) waist = num(inchesToCm(waistTyped));
+			}
+		}
+		unit = to.weight;
+		lUnit = to.length;
+		wUnit = to.water;
 	}
-	// Changed at once; saved for the account, like the Units page. A failed save puts the unit back.
-	async function changeUnit(next: WeightUnit) {
-		const before: WeightUnit = next === 'kg' ? 'lb' : 'kg';
-		switchUnit(before, next);
+	// Changed at once; saved for the account, like the Units page. A failed save puts the units back.
+	async function changeSystem(next: System) {
+		const before = units();
+		const after = SYSTEMS[next];
+		switchUnits(before, after);
 		try {
-			await savePreferences({ weightUnit: next });
+			await savePreferences({
+				weightUnit: after.weight,
+				lengthUnit: after.length,
+				waterUnit: after.water
+			});
 			await invalidateAll();
 		} catch {
-			unit = before;
-			switchUnit(next, before);
+			switchUnits(after, before);
 			showToast({ message: m.settings_save_failed() });
 		}
 	}
 
-	const h = $derived(parseDecimal(height));
+	// Centimetres, from "180" or from 5 ft 10 in (inches may be left empty: 6 ft).
+	const h = $derived.by(() => {
+		if (lUnit === 'cm') return parseDecimal(height);
+		const ft = parseDecimal(heightFt);
+		const inches = heightIn.trim() ? parseDecimal(heightIn) : 0;
+		if (!ft || inches === undefined || inches === null || inches >= 12) return undefined;
+		return feetInchesToCm(ft, inches);
+	});
 	const typedWeight = $derived(parseDecimal(weight));
 	const w = $derived(typedWeight === undefined ? undefined : typedKg(typedWeight, unit));
 	const bf = $derived(bodyFat.trim() ? parseDecimal(bodyFat) : null);
-	const waistCm = $derived(waist.trim() ? parseDecimal(waist) : null);
+	const waistTyped = $derived(waist.trim() ? parseDecimal(waist) : null);
+	const waistCm = $derived(
+		waistTyped && lUnit === 'in' ? inchesToCm(waistTyped) : (waistTyped ?? null)
+	);
 	const expecting = $derived(sex === 'female' && pregnant);
 	const nursing = $derived(sex === 'female' && breastfeeding);
 	const detailsValid = $derived(
@@ -247,17 +320,34 @@
 			{#if step === 1}
 				<form class="flex flex-col gap-3" onsubmit={saveDetails}>
 					<div class={card}>
-						<Chips
-							label={m.onb_weight_unit()}
-							bind:value={unit}
-							onchange={changeUnit}
-							options={[
-								{ value: 'kg', label: m.units_kg() },
-								{ value: 'lb', label: m.units_lb() }
-							]}
-						/>
+						<div class="flex flex-col gap-1.5">
+							<Chips
+								label={m.onb_units()}
+								value={system}
+								onchange={(v) => v && changeSystem(v)}
+								options={systemOptions}
+							/>
+							<p class="text-[0.8125rem] text-muted">
+								{m.onb_units_hint({
+									units: unitsList({ weightUnit: unit, lengthUnit: lUnit, waterUnit: wUnit })
+								})}
+							</p>
+						</div>
 						<div class="grid grid-cols-2 gap-3">
-							<UnitField label={m.onb_height()} unit="cm" bind:value={height} inputmode="decimal" />
+							{#if lUnit === 'in'}
+								<FeetInchesField
+									label={m.onb_height()}
+									bind:feet={heightFt}
+									bind:inches={heightIn}
+								/>
+							{:else}
+								<UnitField
+									label={m.onb_height()}
+									unit="cm"
+									bind:value={height}
+									inputmode="decimal"
+								/>
+							{/if}
 							<UnitField label={m.onb_weight()} {unit} bind:value={weight} inputmode="decimal" />
 						</div>
 						<TextField label={m.onb_birth()} bind:value={birthDate} type="date" max={data.today} />
@@ -292,7 +382,7 @@
 							/>
 							<UnitField
 								label={m.onb_waist()}
-								unit="cm"
+								unit={lUnit === 'in' ? 'in' : 'cm'}
 								bind:value={waist}
 								inputmode="decimal"
 								placeholder={m.onb_optional()}

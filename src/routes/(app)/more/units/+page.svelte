@@ -1,6 +1,7 @@
 <script lang="ts">
-	// docs/ui.md "More and settings": weight unit and time follow the account. Weights are stored in kilograms, so a
-	// change of unit changes only how they are shown and typed.
+	// docs/ui.md "More and settings": weight, height and waist, water and time follow the account. Weights, lengths and
+	// water are stored in kilograms, centimetres and millilitres, so a change of unit changes only how they are shown
+	// and typed.
 	import PageHead from '#lib/ui/PageHead.svelte';
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
@@ -10,18 +11,27 @@
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import MenuRow from '#lib/ui/MenuRow.svelte';
 	import type { WeightUnit } from '#lib/shared/weight-unit.ts';
+	import type { LengthUnit, WaterUnit } from '#lib/shared/body-units.ts';
+	import type { Preferences } from '#lib/shared/preferences.ts';
 
 	let { data } = $props();
 	let time = $state<TimeFormat>(untrack(() => data.timeFormat));
-	let unit = $state<WeightUnit>(untrack(() => data.preferences.weightUnit));
+	let units = $state<Pick<Preferences, 'weightUnit' | 'lengthUnit' | 'waterUnit'>>(
+		untrack(() => ({
+			weightUnit: data.preferences.weightUnit,
+			lengthUnit: data.preferences.lengthUnit,
+			waterUnit: data.preferences.waterUnit
+		}))
+	);
 
-	async function changeUnit(next: WeightUnit) {
-		const before = unit;
+	async function changeUnit<K extends keyof typeof units>(key: K, next: (typeof units)[K]) {
+		const before = $state.snapshot(units);
+		units[key] = next;
 		try {
-			await savePreferences({ weightUnit: next });
+			await savePreferences({ [key]: next });
 			await invalidateAll();
 		} catch {
-			unit = before;
+			units = before;
 			showToast({ message: m.settings_save_failed() });
 		}
 	}
@@ -51,11 +61,29 @@
 	<div class="flex flex-col divide-y divide-line rounded-card bg-surface px-[18px] shadow-card">
 		<MenuRow
 			label={m.units_weight()}
-			bind:value={unit}
-			onchange={changeUnit}
+			value={units.weightUnit}
+			onchange={(v: WeightUnit) => changeUnit('weightUnit', v)}
 			options={[
 				{ value: 'kg', label: m.units_kg() },
 				{ value: 'lb', label: m.units_lb() }
+			]}
+		/>
+		<MenuRow
+			label={m.units_length()}
+			value={units.lengthUnit}
+			onchange={(v: LengthUnit) => changeUnit('lengthUnit', v)}
+			options={[
+				{ value: 'cm', label: m.units_cm() },
+				{ value: 'in', label: m.units_ftin() }
+			]}
+		/>
+		<MenuRow
+			label={m.units_water()}
+			value={units.waterUnit}
+			onchange={(v: WaterUnit) => changeUnit('waterUnit', v)}
+			options={[
+				{ value: 'ml', label: m.units_ml() },
+				{ value: 'floz', label: m.units_floz() }
 			]}
 		/>
 		<MenuRow

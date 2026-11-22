@@ -14,8 +14,10 @@
 	import Switch from '#lib/ui/Switch.svelte';
 	import { dateWithYear, dayTitle, kcal } from '#lib/shared/format.ts';
 	import { budgetForDay } from '#lib/shared/goals.ts';
-	import { formatDecimal, percentText } from '#lib/shared/numbers.ts';
+	import { percentText } from '#lib/shared/numbers.ts';
 	import Card from '#lib/ui/Card.svelte';
+	import { heightText } from '#lib/shared/body-units.ts';
+	import { lengthUnit } from '#lib/client/units.ts';
 	import MacroSettings from '#lib/ui/profile/MacroSettings.svelte';
 
 	let { data } = $props();
@@ -31,7 +33,7 @@
 	const setupHref = `${resolve('/(app)/onboarding')}?from=profile`;
 	const notSet = m.details_not_set();
 	const about = $derived([
-		[m.details_height(), p?.heightCm ? `${formatDecimal(p.heightCm, 1)} cm` : notSet],
+		[m.details_height(), p?.heightCm ? heightText(p.heightCm, lengthUnit()) : notSet],
 		[m.details_birth(), p?.birthDate ? dateWithYear(p.birthDate) : notSet],
 		[
 			m.details_sex(),
