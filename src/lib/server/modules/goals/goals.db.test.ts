@@ -334,7 +334,9 @@ describe('settings', () => {
 		await goals.savePreferences(MEHMET, {
 			weightView: 'trend',
 			voiceOffSeen: true,
-			weightUnit: 'lb'
+			weightUnit: 'lb',
+			lengthUnit: 'in',
+			waterUnit: 'floz'
 		});
 		expect(await goals.preferences(MEHMET)).toEqual({
 			preferences: {
@@ -344,6 +346,8 @@ describe('settings', () => {
 				themeMode: 'dark',
 				weightView: 'trend',
 				weightUnit: 'lb',
+				lengthUnit: 'in',
+				waterUnit: 'floz',
 				voiceOffSeen: true
 			},
 			saved: true
@@ -357,6 +361,8 @@ describe('settings', () => {
 		// Only known values.
 		await expect(goals.savePreferences(MEHMET, { palette: 'neon' as never })).rejects.toThrow();
 		await expect(goals.savePreferences(MEHMET, { weightUnit: 'st' as never })).rejects.toThrow();
+		await expect(goals.savePreferences(MEHMET, { lengthUnit: 'ft' as never })).rejects.toThrow();
+		await expect(goals.savePreferences(MEHMET, { waterUnit: 'oz' as never })).rejects.toThrow();
 		await expect(goals.savePreferences(MEHMET, { extra: 1 } as never)).rejects.toThrow();
 		// The language: a known one is kept (the API refuses one the server doesn't offer); others never.
 		await goals.savePreferences(MEHMET, { language: 'tr' });

@@ -7,6 +7,8 @@ import { APP_ICONS, DEFAULT_APP_ICON, type AppIconId } from './app-icons.ts';
 import { DEFAULT_LANGUAGE, LANGUAGES, type Language } from './languages.ts';
 import { DEFAULT_PALETTE, PALETTES, type PaletteId } from './themes.ts';
 import { WEIGHT_UNITS, type WeightUnit } from './weight-convert.ts';
+import { LENGTH_UNITS, type LengthUnit } from './length-convert.ts';
+import { WATER_UNITS, type WaterUnit } from './water-convert.ts';
 
 export interface Preferences {
 	/** The interface language (shared/languages.ts). */
@@ -19,6 +21,10 @@ export interface Preferences {
 	weightView: 'readings' | 'trend';
 	/** Weights shown and typed in kilograms or pounds; stored in kilograms (shared/weight-unit.ts). */
 	weightUnit: WeightUnit;
+	/** Height and waist in centimetres, or feet and inches; stored in centimetres (shared/length-convert.ts). */
+	lengthUnit: LengthUnit;
+	/** Water in millilitres or US fluid ounces; stored in millilitres (shared/water-convert.ts). */
+	waterUnit: WaterUnit;
 	/** The grey "Speak is off" card was dismissed. */
 	voiceOffSeen: boolean;
 	/** Today's tip about holding entries was dismissed. */
@@ -35,6 +41,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timeFormat: 'device',
 	weightView: 'readings',
 	weightUnit: 'kg',
+	lengthUnit: 'cm',
+	waterUnit: 'ml',
 	voiceOffSeen: false,
 	holdHintSeen: false,
 	maintainOfferDeclinedKg: null
@@ -50,6 +58,8 @@ export const PreferencesInput = v.strictObject({
 	timeFormat: v.optional(v.picklist(['device', '24', '12'])),
 	weightView: v.optional(v.picklist(['readings', 'trend'])),
 	weightUnit: v.optional(v.picklist(WEIGHT_UNITS)),
+	lengthUnit: v.optional(v.picklist(LENGTH_UNITS)),
+	waterUnit: v.optional(v.picklist(WATER_UNITS)),
 	voiceOffSeen: v.optional(v.boolean()),
 	holdHintSeen: v.optional(v.boolean()),
 	maintainOfferDeclinedKg: v.optional(

@@ -90,6 +90,8 @@ const toPreferences = (r: ProfileRow): Preferences => ({
 	timeFormat: r.timeFormat,
 	weightView: r.weightView,
 	weightUnit: r.weightUnit,
+	lengthUnit: r.lengthUnit,
+	waterUnit: r.waterUnit,
 	voiceOffSeen: r.voiceOffSeen,
 	holdHintSeen: r.holdHintSeen,
 	maintainOfferDeclinedKg: r.maintainOfferDeclinedKg

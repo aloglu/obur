@@ -55,6 +55,14 @@ export const profiles = pgTable(
 		weightUnit: text('weight_unit', { enum: ['kg', 'lb'] })
 			.notNull()
 			.default('kg'),
+		/** Height and waist in centimetres, or in feet and inches; always stored in centimetres (shared/length-convert.ts). */
+		lengthUnit: text('length_unit', { enum: ['cm', 'in'] })
+			.notNull()
+			.default('cm'),
+		/** Water in millilitres or US fluid ounces; always stored in millilitres (shared/water-convert.ts). */
+		waterUnit: text('water_unit', { enum: ['ml', 'floz'] })
+			.notNull()
+			.default('ml'),
 		voiceOffSeen: boolean('voice_off_seen').notNull().default(false),
 		holdHintSeen: boolean('hold_hint_seen').notNull().default(false),
 		/** The goal weight at which the offer to switch to maintenance was declined (shared/goals.ts, maintainOffer). */
@@ -88,6 +96,8 @@ export const profiles = pgTable(
 		check('profiles_time_format_valid', sql`${t.timeFormat} in ('device', '24', '12')`),
 		check('profiles_weight_view_valid', sql`${t.weightView} in ('readings', 'trend')`),
 		check('profiles_weight_unit_valid', sql`${t.weightUnit} in ('kg', 'lb')`),
+		check('profiles_length_unit_valid', sql`${t.lengthUnit} in ('cm', 'in')`),
+		check('profiles_water_unit_valid', sql`${t.waterUnit} in ('ml', 'floz')`),
 		check(
 			'profiles_app_icon_valid',
 			sql`${t.appIcon} is null or ${t.appIcon} in ('pazar', 'pazar-light', 'sade', 'zerde', 'patlican', 'zeytin', 'disko', 'kaset', 'sinyal')`

@@ -174,7 +174,9 @@ async function buildHistory() {
 		palette: 'kaset',
 		appIcon: 'zerde',
 		timeFormat: '24',
-		weightUnit: 'lb'
+		weightUnit: 'lb',
+		lengthUnit: 'in',
+		waterUnit: 'floz'
 	});
 	// A language stored before it can be chosen here (a later version's archive) still travels with the account.
 	await admin`update profiles set language = 'tr' where user_id = ${MEHMET}`;
@@ -491,6 +493,8 @@ describe('import', () => {
 				appIcon: 'zerde',
 				timeFormat: '24',
 				weightUnit: 'lb',
+				lengthUnit: 'in',
+				waterUnit: 'floz',
 				themeMode: 'system'
 			},
 			saved: true

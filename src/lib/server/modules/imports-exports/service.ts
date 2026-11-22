@@ -213,6 +213,8 @@ async function collect(tx: Tx, userId: string): Promise<PortableData> {
 						timeFormat: profile.timeFormat,
 						weightView: profile.weightView,
 						weightUnit: profile.weightUnit,
+						lengthUnit: profile.lengthUnit,
+						waterUnit: profile.waterUnit,
 						voiceOffSeen: profile.voiceOffSeen,
 						holdHintSeen: profile.holdHintSeen,
 						maintainOfferDeclinedKg: profile.maintainOfferDeclinedKg

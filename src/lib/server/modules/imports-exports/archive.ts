@@ -315,6 +315,9 @@ export const ProfileRecord = v.object({
 	weightView: v.optional(v.picklist(['readings', 'trend'])),
 	// Added 2026-11-22; older archives keep kilograms.
 	weightUnit: v.optional(v.picklist(['kg', 'lb'])),
+	// Added 2026-11-22 (after weightUnit); older archives keep centimetres and millilitres.
+	lengthUnit: v.optional(v.picklist(['cm', 'in'])),
+	waterUnit: v.optional(v.picklist(['ml', 'floz'])),
 	voiceOffSeen: v.optional(v.boolean()),
 	holdHintSeen: v.optional(v.boolean()),
 	// Added 2026-11-13.
