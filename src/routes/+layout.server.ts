@@ -4,10 +4,12 @@ import { DEFAULT_PREFERENCES, type Preferences } from '#lib/shared/preferences.t
 import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, usable, type Language } from '#lib/shared/languages.ts';
 import { config } from '#lib/server/config.ts';
 import { regionUnits } from '#lib/shared/region-units.ts';
+import { isValidZone } from '#lib/shared/diary-rules.ts';
+import { body } from '#lib/server/body.ts';
 import { getLocale } from '#lib/paraglide/runtime.js';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ locals, depends, cookies, request }) => {
+export const load: LayoutServerLoad = async ({ locals, depends, cookies }) => {
 	// Asked for again after every page change (the app layout, ACCOUNT_DATA), so a setting changed on another device
 	// arrives without a reload, and the Home Screen icon link in the page's head is always the account's (docs/ui.md,
 	// "App icon"). After, not during: a page never waits for this before it opens.
@@ -21,16 +23,26 @@ export const load: LayoutServerLoad = async ({ locals, depends, cookies, request
 		themeMode: locals.theme ?? 'system',
 		palette: locals.palette,
 		appIcon: locals.appIcon,
-		timeFormat: locals.timeFormat,
-		// The phone's region: a new account starts with its units (shared/region-units.ts).
-		...regionUnits(request.headers.get('accept-language'))
+		timeFormat: locals.timeFormat
 	};
 	let preferences = device;
 	if (s?.kind === 'normal') {
 		const stored = await goals.preferences(s.userId);
-		const changed = (Object.keys(device) as (keyof Preferences)[]).some(
-			(k) => device[k] !== DEFAULT_PREFERENCES[k]
+		// A new account (no settings and no records yet) starts with the units of where the device is, once its zone is
+		// known (the sign-in pages send it). An older account that never saved a setting keeps what it shows.
+		const zone = cookies.get('obur_zone');
+		const start =
+			!stored.saved && zone && isValidZone(zone) && (await body.firstDay(s.userId)) === null
+				? regionUnits(zone)
+				: {};
+		const startChanged = (Object.keys(start) as (keyof typeof start)[]).some(
+			(k) => start[k] !== DEFAULT_PREFERENCES[k]
 		);
+		const changed =
+			startChanged ||
+			(Object.keys(device) as (keyof Preferences)[]).some(
+				(k) => device[k] !== DEFAULT_PREFERENCES[k]
+			);
 		// The first time, an account takes over the choices this browser already had (settings were per device
 		// until 2026-11-07); after that the account decides everywhere.
 		preferences =
@@ -41,9 +53,7 @@ export const load: LayoutServerLoad = async ({ locals, depends, cookies, request
 						palette: device.palette,
 						appIcon: device.appIcon,
 						timeFormat: device.timeFormat,
-						weightUnit: device.weightUnit,
-						lengthUnit: device.lengthUnit,
-						waterUnit: device.waterUnit
+						...start
 					})
 				: stored.preferences;
 		// The page's head and <html> are written after this load, from these.

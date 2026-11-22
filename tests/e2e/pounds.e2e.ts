@@ -257,9 +257,9 @@ test('water in US fluid ounces: added, typed and listed in ounces, stored in mil
 	await expect(page.getByRole('region', { name: 'Water' })).toContainText('1210 ml');
 });
 
-test.describe('on a UK phone', () => {
-	// Feet and inches with kilograms.
-	test.use({ locale: 'en-GB' });
+test.describe('on a phone in the UK', () => {
+	// Feet and inches with kilograms, from the time zone (an English (US) phone language changes nothing).
+	test.use({ timezoneId: 'Europe/London', locale: 'en-US' });
 
 	test('a new account starts with its phone region units; each setup field switches its own', async ({
 		page
@@ -296,5 +296,19 @@ test.describe('on a UK phone', () => {
 			page.getByRole('button', { name: 'Height and waist: Centimetres (cm)' })
 		).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Water: Millilitres (ml)' })).toBeVisible();
+	});
+
+	test('an account that already has records keeps its units', async ({ page }, testInfo) => {
+		await signedInAs(page, `Older ${testInfo.project.name}`);
+		await apiAs(page, 'POST', '/api/v1/body/weight', {
+			date: new Date().toLocaleDateString('en-CA'),
+			zone: 'Europe/London',
+			value: 80
+		});
+		await page.goto('/more/units');
+		await expect(page.getByRole('button', { name: 'Weight: Kilograms (kg)' })).toBeVisible();
+		await expect(
+			page.getByRole('button', { name: 'Height and waist: Centimetres (cm)' })
+		).toBeVisible();
 	});
 });

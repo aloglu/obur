@@ -1,8 +1,9 @@
 <script lang="ts">
 	// Set up, Join and Recover (docs/ui.md, "Signing in and first day"): the app's icon and name, a centred title, then the
 	// page's own cards and buttons. The recovery codes step keeps only the title.
-	import type { Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
+	import { syncZoneCookie } from '#lib/client/prefs.ts';
 
 	interface Props {
 		title: string;
@@ -11,6 +12,9 @@
 		children: Snippet;
 	}
 	let { title, lead, brand = true, children }: Props = $props();
+	// The device's time zone before an account exists, so its first page knows where it is: a new account's units start
+	// from it (shared/region-units.ts).
+	onMount(() => void syncZoneCookie());
 </script>
 
 <svelte:head><title>{title} · {m.app_name()}</title></svelte:head>
