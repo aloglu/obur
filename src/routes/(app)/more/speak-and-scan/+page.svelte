@@ -9,6 +9,7 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
+	import { withRecentAuth } from '#lib/client/passkeys.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { dayAndMonth } from '#lib/shared/format.ts';
 	import {
@@ -55,11 +56,13 @@
 		}
 		saving = true;
 		try {
-			({ choices } = await api<{ choices: ModelChoices }>('PUT', '/api/v1/remote-models/choice', {
-				feature,
-				source,
-				allowed
-			}));
+			({ choices } = await withRecentAuth(() =>
+				api<{ choices: ModelChoices }>('PUT', '/api/v1/remote-models/choice', {
+					feature,
+					source,
+					allowed
+				})
+			));
 			asking = null;
 			showToast({ message: m.models_choice_saved() });
 			await invalidateAll();

@@ -2,7 +2,7 @@
 // against the stand-in provider in tests/e2e/speech-stub.ts: a key starting "sk-good" is accepted.
 import { expect, test, type Page } from '@playwright/test';
 import { NO_ADDONS, SPEECH_STUB } from '../../playwright.config.ts';
-import { signedInAs } from './fixtures.ts';
+import { signedInAs, staleSessions } from './fixtures.ts';
 
 const keyFor = (name: string) => `sk-good-${name.replace(/\W/g, '')}-0123456789ABCD`;
 const nextAnswer = (key: string, status: number, body: unknown) =>
@@ -230,4 +230,32 @@ test('an admin sees the personal keys switch, on by default', async ({ page }, t
 	await signedInAs(page, 'Yönetici Anahtar', 'admin');
 	await page.goto('/server');
 	await expect(page.getByRole('switch', { name: 'Personal AI keys' })).toBeChecked();
+});
+
+test('a key and a company choice need a passkey check moments old; going back to the server does not (G18)', async ({
+	page
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'a server rule; one browser is enough');
+	const name = `Eski Oturum ${testInfo.project.name}`;
+	const userId = await signedInAs(page, name);
+	await useKey(page, 'openai', keyFor(name), 'speak');
+	// Later, with the last passkey check old: a forgotten unlocked phone.
+	await staleSessions(userId);
+	const origin = new URL(page.url()).origin;
+	const refusedKey = await page.request.post('/api/v1/remote-models/keys', {
+		headers: { origin },
+		data: { provider: 'openrouter', key: keyFor(`${name} 2`) }
+	});
+	expect(refusedKey.status()).toBe(403);
+	expect((await refusedKey.json()).error).toBe('recent_auth_required');
+	const refusedChoice = await page.request.put('/api/v1/remote-models/choice', {
+		headers: { origin },
+		data: { feature: 'scan', source: 'openai', allowed: true }
+	});
+	expect(refusedChoice.status()).toBe(403);
+	const back = await page.request.put('/api/v1/remote-models/choice', {
+		headers: { origin },
+		data: { feature: 'speak', source: 'server' }
+	});
+	expect(back.ok()).toBe(true);
 });

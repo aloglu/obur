@@ -4,6 +4,7 @@
 	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
+	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
 	import {
 		PROVIDER_NAME,
 		PROVIDERS,
@@ -39,20 +40,24 @@
 		}
 		checking = true;
 		try {
-			const { keys } = await api<{ keys: KeySummary[] }>('POST', '/api/v1/remote-models/keys', {
-				provider,
-				key: trimmed
-			});
+			const { keys } = await withRecentAuth(() =>
+				api<{ keys: KeySummary[] }>('POST', '/api/v1/remote-models/keys', {
+					provider,
+					key: trimmed
+				})
+			);
 			key = '';
 			onsaved(keys, provider);
 		} catch (e) {
 			const code = e instanceof ApiError ? e.code : '';
 			problem =
-				code === 'key_refused'
-					? m.models_key_refused({ provider: name })
-					: code === 'rate_limited'
-						? m.error_rate_limited()
-						: m.models_key_unreachable({ provider: name });
+				e instanceof DOMException || code === 'recent_auth_required'
+					? describeError(e)
+					: code === 'key_refused'
+						? m.models_key_refused({ provider: name })
+						: code === 'rate_limited'
+							? m.error_rate_limited()
+							: m.models_key_unreachable({ provider: name });
 		} finally {
 			checking = false;
 		}
