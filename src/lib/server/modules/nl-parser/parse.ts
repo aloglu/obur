@@ -33,6 +33,9 @@ export type Proposal =
 	| { kind: 'weight'; value: number; unit: 'kg' | 'lb' | null }
 	| { kind: 'activity'; kcal: number; note: string | null };
 
+/** About ten years: further back is no diary day. */
+const MAX_DAYS_AGO = 3660;
+
 export interface ParseResult {
 	/** Days before today ("dün" = 1), or null when no day was said. */
 	daysAgo: number | null;
@@ -430,6 +433,9 @@ function readContext(tokens: Token[], today: number): { rest: Token[]; ctx: Cont
 	while (i < tokens.length) {
 		const w = f(i);
 		const n = tokens[i].n;
+		// A number of days back that can be a date: "40000 days ago" made no date at all and failed the request
+		// (2026-11-22 Gemini audit, G26); such words stay part of the text.
+		const days = n !== undefined && Number.isInteger(n) && n <= MAX_DAYS_AGO ? n : undefined;
 		// Days.
 		if ((w === 'onceki' || w === 'evvelsi') && f(i + 1).startsWith('gun')) {
 			ctx.daysAgo = 2;
@@ -446,13 +452,13 @@ function readContext(tokens: Token[], today: number): { rest: Token[]; ctx: Cont
 			i += 3;
 			continue;
 		}
-		if (n !== undefined && f(i + 1).startsWith('gun') && f(i + 2) === 'once') {
-			ctx.daysAgo = n;
+		if (days !== undefined && f(i + 1).startsWith('gun') && f(i + 2) === 'once') {
+			ctx.daysAgo = days;
 			i += 3;
 			continue;
 		}
-		if (n !== undefined && /^days?$/.test(f(i + 1)) && f(i + 2) === 'ago') {
-			ctx.daysAgo = n;
+		if (days !== undefined && /^days?$/.test(f(i + 1)) && f(i + 2) === 'ago') {
+			ctx.daysAgo = days;
 			i += 3;
 			continue;
 		}
@@ -502,10 +508,10 @@ function readContext(tokens: Token[], today: number): { rest: Token[]; ctx: Cont
 			continue;
 		}
 		// "iki akşam önce": two days ago, at dinner.
-		if (n !== undefined && f(i + 2) === 'once') {
+		if (days !== undefined && f(i + 2) === 'once') {
 			const meal = mealAt(tokens, i + 1);
 			if (meal && meal.used === 1) {
-				ctx.daysAgo = n;
+				ctx.daysAgo = days;
 				setMeal(meal.meal);
 				i += 3;
 				continue;

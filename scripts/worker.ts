@@ -9,6 +9,7 @@ import { JOB_SCHEMA, QUEUES } from '../src/lib/server/jobs/setup.ts';
 import { sendDueReminders } from '../src/lib/server/modules/reminders/index.ts';
 import { reminderTitle } from '../src/lib/server/reminder-text.ts';
 import { enabledLanguages } from '../src/lib/shared/languages.ts';
+import { isPushService } from '../src/lib/shared/push-services.ts';
 
 const url = process.env.DATABASE_WORKER_URL;
 if (!url) throw new Error('DATABASE_WORKER_URL is not set');
@@ -57,6 +58,8 @@ if (vapid.publicKey && vapid.privateKey && vapid.subject) {
 				url: '/',
 				tag: kind
 			});
+			// Checked again here, where it is sent: a row from before the check, or written past it, is dropped (G19).
+			if (!isPushService(to.endpoint)) return 'gone';
 			try {
 				await webpush.sendNotification(
 					{ endpoint: to.endpoint, keys: { p256dh: to.p256dh, auth: to.auth } },

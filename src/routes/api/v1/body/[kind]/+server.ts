@@ -1,25 +1,31 @@
 import { error, json } from '@sveltejs/kit';
 import * as v from 'valibot';
+import { readingFits } from '#lib/shared/reading-limits.ts';
 import { body, respondBody } from '#lib/server/body.ts';
 import { budgetNote, followLatestWeight } from '#lib/server/goals.ts';
 import { readJson } from '#lib/server/http.ts';
 import { DateString, Zone } from '#lib/shared/diary-input.ts';
 import type { RequestHandler } from './$types';
 
-const Reading = (max: number) =>
+const Reading = (kind: 'weight' | 'water') =>
 	v.object({
 		id: v.optional(v.pipe(v.string(), v.uuid())),
 		date: DateString,
 		zone: Zone,
-		value: v.pipe(v.number(), v.finite(), v.gtValue(0), v.ltValue(max))
+		value: v.pipe(
+			v.number(),
+			v.check((x) => readingFits(kind, x))
+		)
 	});
+const WEIGHT = Reading('weight');
+const WATER = Reading('water');
 
 /** POST /api/v1/body/weight (kg), /api/v1/body/water (ml) or /api/v1/body/activity (kcal, note). */
 export const POST: RequestHandler = ({ params, request, locals }) =>
 	respondBody(async () => {
 		const userId = locals.session!.userId;
 		if (params.kind === 'weight') {
-			const r = await readJson(request, Reading(700));
+			const r = await readJson(request, WEIGHT);
 			const reading = await body.logWeight(
 				userId,
 				{ id: r.id, localDate: r.date, zone: r.zone },
@@ -36,7 +42,7 @@ export const POST: RequestHandler = ({ params, request, locals }) =>
 			);
 		}
 		if (params.kind === 'water') {
-			const r = await readJson(request, Reading(10_001));
+			const r = await readJson(request, WATER);
 			return json(
 				await body.logWater(userId, { id: r.id, localDate: r.date, zone: r.zone }, r.value),
 				{ status: 201 }

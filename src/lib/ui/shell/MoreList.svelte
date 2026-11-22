@@ -6,7 +6,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
-	import { showToast } from '#lib/client/toast.svelte.ts';
+	import { dismissToast, showToast } from '#lib/client/toast.svelte.ts';
 	import Button from '../Button.svelte';
 	import NavRow from './NavRow.svelte';
 
@@ -56,6 +56,8 @@
 			return;
 		}
 		setAccount(null);
+		// A toast can name a food: it goes with the person (G21).
+		dismissToast();
 		// Nothing prepared for this person stays in the service worker.
 		navigator.serviceWorker?.controller?.postMessage({ type: 'obur:signed-out' });
 		await invalidateAll();

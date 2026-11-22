@@ -183,6 +183,13 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   and catches a late failure; Foods, archive lists and turning reminders on say when the connection fails instead
   of leaving the error unhandled; recovery codes: a refused clipboard is caught and the download address stays
   valid for Safari. Related e2e pass.
+  Small server items: G28 one person's failing reminders no longer stop everyone else's (DB test fails on the old
+  code); a LoseIt custom food without a name is refused like a logged one; the most-water figure uses a loop, not a
+  spread. G19 at most 20 reminder devices a person (the longest without a reminder go); a push address with a
+  password is refused; the worker checks each address again before sending. G26 "N days ago" beyond about ten years
+  is no date; weigh-ins and water are checked at the precision they are stored (699.999 kg, 10000.5 ml were 500s).
+  G21 the unused answer header is removed (its comment described the service worker's old copies); sign-out and
+  account deletion clear a toast. Unit, database and related e2e pass.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

@@ -227,6 +227,31 @@ describe('sending', () => {
 		expect(box.got.filter((g) => g.endpoint === device(1).endpoint)).toHaveLength(1);
 	});
 
+	it("one person's failure never stops another's reminders (G28)", async () => {
+		await on({ lunch: '14:00' });
+		await reminders.subscribe(AYSE, device(1));
+		// Mehmet's settings hold a zone the server no longer knows (written past the checks), so his pass throws.
+		await reminders.saveSettings(MEHMET, {
+			zone: ZONE,
+			times: { breakfast: null, lunch: '14:00', dinner: null, weigh_in: null, day_complete: null },
+			quietStart: '22:00',
+			quietEnd: '07:00'
+		});
+		await reminders.subscribe(MEHMET, device(2));
+		await admin`update reminder_settings set zone = 'Nowhere/Gone' where user_id = ${MEHMET}`;
+		const box = postbox();
+		expect(await sendDueReminders(worker, at('14:05'), box.deliver)).toBe(1);
+		expect(box.got.map((g) => g.endpoint)).toEqual([device(1).endpoint]);
+	});
+
+	it('keeps at most 20 devices, dropping the ones longest without a reminder (G19)', async () => {
+		for (let i = 1; i <= 22; i++) await reminders.subscribe(AYSE, device(i));
+		const rows = await admin`select endpoint from push_subscriptions where user_id = ${AYSE}`;
+		expect(rows).toHaveLength(20);
+		// The newest is always kept.
+		expect(rows.map((r) => r.endpoint)).toContain(device(22).endpoint);
+	});
+
 	it('skips disabled accounts and people without a device', async () => {
 		await on({ lunch: '14:00' });
 		const box = postbox();

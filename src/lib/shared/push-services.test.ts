@@ -21,6 +21,7 @@ describe('isPushService', () => {
 			'https://fcm.googleapis.com.evil.example/x',
 			'https://evilpush.apple.com.example/x',
 			'https://user@fcm.googleapis.com/x',
+			'https://:secret@fcm.googleapis.com/x',
 			'not a url'
 		])
 			expect(isPushService(url)).toBe(false);

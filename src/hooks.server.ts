@@ -168,16 +168,10 @@ const handleSession: Handle = async ({ event, resolve }) => {
 	) {
 		return json({ error: WRONG_ACCOUNT }, { status: 409 });
 	}
-	const response = await resolve(event);
-	// Whose answer this is (empty: nobody signed in), so the service worker serves saved copies only to the person
-	// they were saved for, even before a page could clear another's (2026-11-19 audit). After the request: signing
-	// in or out says who is signed in now, not who was (2026-11-20 audit).
-	try {
-		response.headers.set(ACCOUNT_HEADER, event.locals.session?.userId ?? '');
-	} catch {
-		// Fixed headers (a redirect from fetch): the service worker learns the account from the next answer.
-	}
-	return response;
+	// Answers no longer say whose they are: nothing read it once the service worker stopped keeping copies of pages
+	// (2026-11-20); the pages it prepares ahead are dropped on sign-out and on any answer without a session
+	// (service-worker.ts, R13; 2026-11-22 Gemini audit, G21).
+	return resolve(event);
 };
 
 /** Requests whose work is slow by nature (reading a recording or a photo, building or reading an archive). */

@@ -10,7 +10,7 @@
 	import { waterSymbol, type WaterUnit } from '#lib/shared/body-units.ts';
 	import { accountHeaders, wrongAccount } from '#lib/client/account.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
-	import { showToast } from '#lib/client/toast.svelte.ts';
+	import { dismissToast, showToast } from '#lib/client/toast.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { shortDate } from '#lib/shared/format.ts';
 	import { formatDecimal } from '#lib/shared/numbers.ts';
@@ -320,6 +320,7 @@
 			() =>
 				withRecentAuth(async () => {
 					await api('DELETE', '/api/v1/account', {});
+					dismissToast();
 					navigator.serviceWorker?.controller?.postMessage({ type: 'obur:signed-out' });
 					confirming = false;
 					await invalidateAll();

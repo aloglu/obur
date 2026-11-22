@@ -20,6 +20,7 @@ export function isPushService(endpoint: string): boolean {
 		url.protocol === 'https:' &&
 		url.port === '' &&
 		url.username === '' &&
+		url.password === '' &&
 		HOSTS.some((h) => h.test(url.hostname))
 	);
 }

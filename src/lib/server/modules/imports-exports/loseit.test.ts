@@ -148,5 +148,11 @@ describe('readLoseItArchive', () => {
 			'food-logs.csv': files['food-logs.csv'].replace('Breakfast', 'Brunch')
 		};
 		expect(() => readLoseItFiles(badMeal)).toThrow(/meal "Brunch"/);
+		// A custom food without a name is refused like a logged one, not left to fail in the database (G28).
+		const unnamed = {
+			...files,
+			'custom-foods.csv': files['custom-foods.csv'].replace('\nAyran,', '\n ,')
+		};
+		expect(() => readLoseItFiles(unnamed)).toThrow(/custom-foods.csv.*name/);
 	});
 });

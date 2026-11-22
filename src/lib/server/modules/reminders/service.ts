@@ -4,6 +4,7 @@
 // passed in, so this module makes no network calls.
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { withUser, type Database } from '../../db/identity.ts';
+import { describeError } from '../../log.ts';
 import {
 	DEFAULT_REMINDERS,
 	REMINDER_KINDS,
@@ -40,6 +41,8 @@ export type DeliveryResult = 'sent' | 'gone' | 'failed';
  * audit, G06).
  */
 const MAX_FAILURES = 5;
+/** Reminder devices kept for one person. */
+export const MAX_DEVICES = 20;
 /** A failure this long after the last counted one counts again. */
 const FAILURE_COUNTS_AGAIN_MS = 20 * 60 * 60 * 1000;
 
@@ -96,15 +99,20 @@ export function createReminders(db: Database) {
 		},
 
 		async subscribe(userId: string, sub: PushSubscriptionInput): Promise<void> {
-			await withUser(db, userId, (tx) =>
-				tx
+			await withUser(db, userId, async (tx) => {
+				await tx
 					.insert(pushSubscriptions)
 					.values({ userId, endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth })
 					.onConflictDoUpdate({
 						target: [pushSubscriptions.userId, pushSubscriptions.endpoint],
 						set: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }
-					})
-			);
+					});
+				// At most MAX_DEVICES each: the ones longest without a reminder go, so old phones and browsers never
+				// pile up (each pass sends to every device; 2026-11-22 Gemini audit, G19).
+				await tx.execute(sql`delete from push_subscriptions where user_id = ${userId} and id not in (
+					select id from push_subscriptions where user_id = ${userId}
+					order by greatest(created_at, coalesce(last_sent_at, created_at)) desc, id limit ${MAX_DEVICES})`);
+			});
 		},
 
 		async unsubscribe(userId: string, endpoint: string): Promise<void> {
@@ -158,120 +166,133 @@ export async function sendDueReminders(
 	}[];
 	let sent = 0;
 	for (const c of candidates) {
-		const settings: ReminderSettings = {
-			zone: c.zone,
-			times: Object.fromEntries(
-				REMINDER_KINDS.map((k) => [k, hhmm(c[k])])
-			) as ReminderSettings['times'],
-			quietStart: hhmm(c.quiet_start)!,
-			quietEnd: hhmm(c.quiet_end)!
-		};
-		const due = dueReminders(settings, now, new Set());
-		if (!due.length) continue;
-		// Under the person's identity: still needed? Not sent yet? Record it, and read their devices.
-		const { kinds, devices } = await withUser(worker, c.user_id, async (tx) => {
-			const kinds: { kind: ReminderKind; localDate: string }[] = [];
-			for (const { kind, localDate } of due) {
-				const done =
-					kind === 'weigh_in'
-						? await tx
-								.select({ id: weightEntries.id })
-								.from(weightEntries)
-								.where(and(eq(weightEntries.localDate, localDate), isNull(weightEntries.deletedAt)))
-								.limit(1)
-						: kind === 'day_complete'
-							? await tx
-									.select({ d: dayCompletions.localDate })
-									.from(dayCompletions)
-									.where(eq(dayCompletions.localDate, localDate))
-									.limit(1)
-							: await tx
-									.select({ id: diaryEntries.id })
-									.from(diaryEntries)
-									.where(
-										and(
-											eq(diaryEntries.localDate, localDate),
-											eq(diaryEntries.meal, kind),
-											isNull(diaryEntries.deletedAt)
-										)
-									)
-									.limit(1);
-				if (done.length) continue;
-				const recorded = await tx
-					.insert(reminderSends)
-					.values({ userId: c.user_id, kind, localDate })
-					.onConflictDoNothing()
-					.returning({ kind: reminderSends.kind });
-				if (recorded.length) kinds.push({ kind, localDate });
-			}
-			const [profile] = kinds.length
-				? await tx.select({ language: profiles.language }).from(profiles)
-				: [];
-			const devices = kinds.length
-				? await tx
-						.select({
-							id: pushSubscriptions.id,
-							endpoint: pushSubscriptions.endpoint,
-							p256dh: pushSubscriptions.p256dh,
-							auth: pushSubscriptions.auth,
-							failures: pushSubscriptions.failures,
-							failedAt: pushSubscriptions.failedAt
-						})
-						.from(pushSubscriptions)
-				: [];
-			return {
-				kinds,
-				devices: devices.map((d) => ({ ...d, language: profile?.language ?? 'en' }))
+		// One person's failure (a database error, a zone no longer known) never stops the others' reminders
+		// (2026-11-22 Gemini audit, G28).
+		try {
+			const settings: ReminderSettings = {
+				zone: c.zone,
+				times: Object.fromEntries(
+					REMINDER_KINDS.map((k) => [k, hhmm(c[k])])
+				) as ReminderSettings['times'],
+				quietStart: hhmm(c.quiet_start)!,
+				quietEnd: hhmm(c.quiet_end)!
 			};
-		});
-		// Delivered outside the transaction: a slow push service never holds a database connection. Several reminders
-		// can be due in one pass: each device's failure count carries from one to the next, and a device dropped for
-		// one gets none of the rest.
-		let live = devices;
-		for (const { kind, localDate } of kinds) {
-			if (!live.length) break;
-			const outcomes = await Promise.all(live.map(async (d) => ({ d, r: await deliver(d, kind) })));
-			// Counted as sent only when some device took it.
-			const reached = outcomes.some(({ r }) => r === 'sent');
-			if (reached) sent++;
-			const gone = outcomes
-				.filter(
-					({ d, r }) =>
-						r === 'gone' || (r === 'failed' && afterFailure(d, now).failures >= MAX_FAILURES)
-				)
-				.map(({ d }) => d.id);
-			// No device took it because the push service failed for now: the day's mark goes, so a later pass within
-			// the hour tries again (2026-11-21 audit, A46). Once any device has it, the mark stays: no duplicates.
-			const retry = !reached && outcomes.some(({ d, r }) => r === 'failed' && !gone.includes(d.id));
-			await withUser(worker, c.user_id, async (tx) => {
-				if (retry)
-					await tx
-						.delete(reminderSends)
-						.where(
-							and(
-								eq(reminderSends.userId, c.user_id),
-								eq(reminderSends.kind, kind),
-								eq(reminderSends.localDate, localDate)
-							)
-						);
-				if (gone.length)
-					await tx.delete(pushSubscriptions).where(inArray(pushSubscriptions.id, gone));
-				for (const { d, r } of outcomes) {
-					if (gone.includes(d.id)) continue;
-					await tx
-						.update(pushSubscriptions)
-						.set(
-							r === 'sent' ? { lastSentAt: now, failures: 0, failedAt: null } : afterFailure(d, now)
-						)
-						.where(eq(pushSubscriptions.id, d.id));
+			const due = dueReminders(settings, now, new Set());
+			if (!due.length) continue;
+			// Under the person's identity: still needed? Not sent yet? Record it, and read their devices.
+			const { kinds, devices } = await withUser(worker, c.user_id, async (tx) => {
+				const kinds: { kind: ReminderKind; localDate: string }[] = [];
+				for (const { kind, localDate } of due) {
+					const done =
+						kind === 'weigh_in'
+							? await tx
+									.select({ id: weightEntries.id })
+									.from(weightEntries)
+									.where(
+										and(eq(weightEntries.localDate, localDate), isNull(weightEntries.deletedAt))
+									)
+									.limit(1)
+							: kind === 'day_complete'
+								? await tx
+										.select({ d: dayCompletions.localDate })
+										.from(dayCompletions)
+										.where(eq(dayCompletions.localDate, localDate))
+										.limit(1)
+								: await tx
+										.select({ id: diaryEntries.id })
+										.from(diaryEntries)
+										.where(
+											and(
+												eq(diaryEntries.localDate, localDate),
+												eq(diaryEntries.meal, kind),
+												isNull(diaryEntries.deletedAt)
+											)
+										)
+										.limit(1);
+					if (done.length) continue;
+					const recorded = await tx
+						.insert(reminderSends)
+						.values({ userId: c.user_id, kind, localDate })
+						.onConflictDoNothing()
+						.returning({ kind: reminderSends.kind });
+					if (recorded.length) kinds.push({ kind, localDate });
 				}
+				const [profile] = kinds.length
+					? await tx.select({ language: profiles.language }).from(profiles)
+					: [];
+				const devices = kinds.length
+					? await tx
+							.select({
+								id: pushSubscriptions.id,
+								endpoint: pushSubscriptions.endpoint,
+								p256dh: pushSubscriptions.p256dh,
+								auth: pushSubscriptions.auth,
+								failures: pushSubscriptions.failures,
+								failedAt: pushSubscriptions.failedAt
+							})
+							.from(pushSubscriptions)
+					: [];
+				return {
+					kinds,
+					devices: devices.map((d) => ({ ...d, language: profile?.language ?? 'en' }))
+				};
 			});
-			live = outcomes
-				.filter(({ d }) => !gone.includes(d.id))
-				.map(({ d, r }) => ({
-					...d,
-					...(r === 'sent' ? { failures: 0, failedAt: null } : afterFailure(d, now))
-				}));
+			// Delivered outside the transaction: a slow push service never holds a database connection. Several reminders
+			// can be due in one pass: each device's failure count carries from one to the next, and a device dropped for
+			// one gets none of the rest.
+			let live = devices;
+			for (const { kind, localDate } of kinds) {
+				if (!live.length) break;
+				const outcomes = await Promise.all(
+					live.map(async (d) => ({ d, r: await deliver(d, kind) }))
+				);
+				// Counted as sent only when some device took it.
+				const reached = outcomes.some(({ r }) => r === 'sent');
+				if (reached) sent++;
+				const gone = outcomes
+					.filter(
+						({ d, r }) =>
+							r === 'gone' || (r === 'failed' && afterFailure(d, now).failures >= MAX_FAILURES)
+					)
+					.map(({ d }) => d.id);
+				// No device took it because the push service failed for now: the day's mark goes, so a later pass within
+				// the hour tries again (2026-11-21 audit, A46). Once any device has it, the mark stays: no duplicates.
+				const retry =
+					!reached && outcomes.some(({ d, r }) => r === 'failed' && !gone.includes(d.id));
+				await withUser(worker, c.user_id, async (tx) => {
+					if (retry)
+						await tx
+							.delete(reminderSends)
+							.where(
+								and(
+									eq(reminderSends.userId, c.user_id),
+									eq(reminderSends.kind, kind),
+									eq(reminderSends.localDate, localDate)
+								)
+							);
+					if (gone.length)
+						await tx.delete(pushSubscriptions).where(inArray(pushSubscriptions.id, gone));
+					for (const { d, r } of outcomes) {
+						if (gone.includes(d.id)) continue;
+						await tx
+							.update(pushSubscriptions)
+							.set(
+								r === 'sent'
+									? { lastSentAt: now, failures: 0, failedAt: null }
+									: afterFailure(d, now)
+							)
+							.where(eq(pushSubscriptions.id, d.id));
+					}
+				});
+				live = outcomes
+					.filter(({ d }) => !gone.includes(d.id))
+					.map(({ d, r }) => ({
+						...d,
+						...(r === 'sent' ? { failures: 0, failedAt: null } : afterFailure(d, now))
+					}));
+			}
+		} catch (e) {
+			console.error(`reminders: one person's reminders failed: ${describeError(e)}`);
 		}
 	}
 	return sent;

@@ -531,7 +531,11 @@ export async function planLoseIt(
 					(first, w) => (!first || w.date < first.date ? w : first),
 					null
 				)?.value ?? null,
-			mostWater: data.water.length ? Math.max(...data.water.map((w) => w.value)) : null,
+			// A loop, not Math.max(...): a spread of a very long list overflows the stack (G28).
+			mostWater: data.water.reduce<number | null>(
+				(most, w) => (most === null || w.value > most ? w.value : most),
+				null
+			),
 			reconciliation: { days: data.days.length, mismatched },
 			matchedFoods: matched.size,
 			warnings: [...warnings],

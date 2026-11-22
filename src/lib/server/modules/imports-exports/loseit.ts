@@ -283,9 +283,12 @@ export function readLoseItFiles(files: Record<string, string>): LoseItData {
 			bad('custom-foods.csv', row, 'quantity');
 		const uniqueId = get('UniqueId').trim();
 		if (!/^[0-9a-f]{32}$/i.test(uniqueId)) bad('custom-foods.csv', row, 'unique ID');
+		// As in food-logs.csv: a food needs a name (a blank one failed the import with a database error; G28).
+		const name = get('Name').trim();
+		if (!name) bad('custom-foods.csv', row, 'name');
 		return {
 			uniqueId,
-			name: get('Name').trim(),
+			name,
 			brand: get('Brand').trim() || null,
 			quantity: quantity!,
 			unit: unitOf(get('Measure')),

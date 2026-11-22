@@ -33,6 +33,9 @@ describe('parseEntry: edges', () => {
 	it('reads "last <weekday>" as the most recent past one, never today', () => {
 		expect(parseEntry('geçen cuma 80 kiloydum', 5).daysAgo).toBe(7);
 		expect(parseEntry('last saturday 80 kilos weighed', 5).daysAgo).toBe(6);
+		// A number no diary day is that far back is not a date (G26).
+		expect(parseEntry('40000 days ago 80 kilos', 5).daysAgo).toBeNull();
+		expect(parseEntry('3 days ago 80 kilos', 5).daysAgo).toBe(3);
 	});
 
 	it('folds Turkish letters for keywords but keeps the words as typed', () => {
