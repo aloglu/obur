@@ -195,6 +195,9 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   G07 import archives are unpacked in 16 KB pieces with the real size counted (`imports-exports/unzip.ts`): a file
   that declares one byte and unpacks to gigabytes stops at the limit (400 MB test: under 0.3 s instead of the whole
   decompression). Vitest 1,259 and database 294 pass.
+  G32 (part): obur-labels stops at once on SIGTERM (it waited the whole grace period as PID 1); speech gets the
+  same with A11. Skipped, with reasons given to the owner: G20 (the safe fix breaks tunnels on Docker networks;
+  sign-in is passkeys and recovery codes have 80 bits), G27 (the app sends photos at about 1,600 px), most of G32.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account

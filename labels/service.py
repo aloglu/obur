@@ -16,6 +16,8 @@ import binascii
 import io
 import json
 import os
+import signal
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -158,6 +160,9 @@ def main() -> None:
     print(f"ocr: models loaded in {time.perf_counter() - started:.1f}s, {THREADS} threads", flush=True)
     server = ThreadingHTTPServer(("0.0.0.0", int(os.environ.get("OCR_PORT", "8000"))), make_handler(reader))
     server.daemon_threads = True
+    # As PID 1 the process gets no default SIGTERM handling: `docker stop` waited its whole grace period, then killed
+    # it (2026-11-22 Gemini audit, G32). Nothing is kept, so it can stop at once.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     server.serve_forever()
 
 
