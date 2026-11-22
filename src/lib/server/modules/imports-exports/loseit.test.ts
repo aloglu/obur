@@ -113,8 +113,9 @@ describe('readLoseItFiles', () => {
 	it('reads weights, water, activity, budgets, completed days and the profile', () => {
 		expect(data.weights.map((w) => w.value)).toEqual([91.39999999999, 91.1]);
 		expect(data.water).toEqual([
-			{ date: '2026-01-05', ml: 2000 },
-			{ date: '2026-01-06', ml: 2500 }
+			// The value as written (float noise kept) and rounded to millilitres.
+			{ date: '2026-01-05', ml: 2000, value: 1999.99 },
+			{ date: '2026-01-06', ml: 2500, value: 2500 }
 		]);
 		expect(data.activity.map((a) => [a.name, a.kcal])).toEqual([
 			['Calorie Burn Bonus', 212],
