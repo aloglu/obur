@@ -312,3 +312,39 @@ test.describe('on a phone in the UK', () => {
 		).toBeVisible();
 	});
 });
+
+test('setup saves no weigh-in unless the weight is typed, and checks the optional fields', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Setup again ${testInfo.project.name}`);
+	await usePounds(page);
+	const today = new Date().toLocaleDateString('en-CA');
+	await apiAs(page, 'POST', '/api/v1/body/weight', {
+		date: today,
+		zone: 'Europe/Istanbul',
+		value: 80
+	});
+	const weighIns = async () =>
+		(
+			await apiAs<{ readings: unknown[] }>(
+				page,
+				'GET',
+				`/api/v1/body/weight?from=2026-01-01&to=${today}`
+			)
+		).readings.length;
+	await page.goto('/onboarding');
+	// 80 kg shown as 176.4 lb, which reads back as 80.01 kg: not a new weigh-in (2026-11-22 audit, A07).
+	await expect(page.getByLabel('Weight', { exact: true })).toHaveValue('176.4');
+	await page.getByLabel('Height', { exact: true }).fill('180');
+	await page.getByLabel('Birth date').fill(`${new Date().getFullYear() - 30}-01-01`);
+	await page.getByRole('radio', { name: 'Male', exact: true }).click();
+	// A filled optional field out of range is marked and keeps Next off (A08).
+	await page.getByLabel('Body fat').fill('90');
+	await page.getByLabel('Height', { exact: true }).focus();
+	await expect(page.getByLabel('Body fat')).toHaveAttribute('aria-invalid', 'true');
+	await expect(page.getByRole('button', { name: 'See my estimate' })).toBeDisabled();
+	await page.getByLabel('Body fat').fill('20');
+	await page.getByRole('button', { name: 'See my estimate' }).click();
+	await expect(page.getByRole('button', { name: 'Choose a goal' })).toBeVisible();
+	expect(await weighIns()).toBe(1);
+});

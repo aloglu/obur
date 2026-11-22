@@ -71,9 +71,12 @@
 	let height = $state(startLength === 'cm' ? num(start.profile?.heightCm) : '');
 	let heightFt = $state(startLength === 'in' && startFt ? String(startFt.feet) : '');
 	let heightIn = $state(startLength === 'in' && startFt ? num(startFt.inches) : '');
-	let weight = $state(
-		start.latestWeight ? weightNumber(start.latestWeight.value, weightUnit()) : ''
-	);
+	// The latest weigh-in as shown in a unit: Weight starts as this text, and only a different text is a new reading.
+	const shownWeight = (u: WeightUnit) =>
+		start.latestWeight ? weightNumber(start.latestWeight.value, u) : '';
+	let weight = $state(shownWeight(weightUnit()));
+	// The reading a save sends, kept so a retry sends the same one.
+	let weighIn = $state<{ kg: number; id: string } | null>(null);
 	let birthDate = $state(start.profile?.birthDate ?? '');
 	let sex = $state<Sex | ''>(start.profile?.sex ?? '');
 	let bodyFat = $state(num(start.profile?.bodyFatPct));
@@ -104,7 +107,11 @@
 	}
 	/** Moves what was typed to other units: weights, height, waist and the pace. */
 	function switchUnits(from: Units, to: Units) {
-		weight = convert(weight, from.weight, to.weight);
+		// The prefilled weight is shown again from the stored one, so it stays the same reading in any unit.
+		weight =
+			weight === shownWeight(from.weight)
+				? shownWeight(to.weight)
+				: convert(weight, from.weight, to.weight);
 		goalWeight = convert(goalWeight, from.weight, to.weight);
 		// The same place in the other unit's paces ("0.5 kg" is "1 lb").
 		const at = paces(from.weight).findIndex((p) => String(p) === rate);
@@ -196,6 +203,12 @@
 	);
 	const heightBad = $derived(heightTyped && !(h && h >= 50 && h <= 260));
 	const weightBad = $derived(weight.trim() !== '' && !(w && w > 20 && w < 700));
+	// The optional fields, when filled in, within what the profile accepts (2-75 %, 30-250 cm; audit A08).
+	const bodyFatBad = $derived(bf !== null && !(bf !== undefined && bf >= 2 && bf <= 75));
+	const waistBad = $derived(
+		waistTyped !== null &&
+			!(waistCm !== undefined && waistCm !== null && waistCm >= 30 && waistCm <= 250)
+	);
 	const detailsValid = $derived(
 		!!h &&
 			h >= 50 &&
@@ -204,7 +217,9 @@
 			w > 20 &&
 			w < 700 &&
 			/^\d{4}-\d{2}-\d{2}$/.test(birthDate) &&
-			!!sex
+			!!sex &&
+			!bodyFatBad &&
+			!waistBad
 	);
 	const allowed = $derived(
 		detailsValid &&
@@ -249,10 +264,16 @@
 		busy = true;
 		problem = '';
 		try {
-			// A new or changed weight is a genuine reading for today; saved first, so the details below use it.
-			if (w !== start.latestWeight?.value) {
+			// A weight the person typed is a genuine reading for today; saved first, so the details below use it. Only a
+			// typed one: the prefilled weight shown in pounds reads back 10 g off, which once saved a new weigh-in on
+			// every pass through this step (2026-11-22 audit, A07). Compared as text, so it holds however early the
+			// person typed (an event handler attached late would miss it). The same reading keeps its ID, so a retry after an
+			// error is answered as already saved, never added twice.
+			if (weight.trim() !== shownWeight(unit) && w !== start.latestWeight?.value) {
+				const reading = weighIn && weighIn.kg === w ? weighIn : { kg: w!, id: crypto.randomUUID() };
+				weighIn = reading;
 				await api('POST', '/api/v1/body/weight', {
-					id: crypto.randomUUID(),
+					id: reading.id,
 					date: data.today,
 					zone: deviceZone(),
 					value: w
@@ -394,6 +415,7 @@
 								unit="%"
 								bind:value={bodyFat}
 								inputmode="decimal"
+								aria-invalid={bodyFatBad || undefined}
 								placeholder={m.onb_optional()}
 							/>
 							<UnitField
@@ -402,6 +424,7 @@
 								choice={waistChoice}
 								bind:value={waist}
 								inputmode="decimal"
+								aria-invalid={waistBad || undefined}
 								placeholder={m.onb_optional()}
 							/>
 						</div>
