@@ -205,6 +205,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   and PyAV goes.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
+- A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):
+  test B's plain averaging to 16 kHz against today's PyAV decoding: word error rate 0.103 both, exact clips 27 vs 26,
+  same text on 36 of 48 (the others differ both ways, e.g. "Migros" right only with averaging, "üçgen" only
+  without). A windowed-sinc filter was worse (0.138). So a phone-made WAV loses nothing measurable here; test A's
+  browser resampler was not measured (headless Chromium has no AAC decoder). 48 clips is a small sample.
 - **Next (owner, 2026-11-22): pounds for 1.0, in the next session.** Owner chose one weight achievement every 5 lb
   for people who use pounds (each with the nearest kg comparison picture). Scope measured: about 40 code files and
   about 25 messages per language (weight fields, charts, goal pace, onboarding, typed "180 lb", a new account
