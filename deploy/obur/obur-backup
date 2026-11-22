@@ -87,6 +87,8 @@ status() {
 		if [[ -s $STATUS_FILE ]]; then current=$(cat "$STATUS_FILE"); fi
 		jq --arg now "$(now)" --argjson offsite "$([[ -n ${PGBACKREST_REPO2_TYPE:-} ]] && echo true || echo false)" \
 			"$@" "($filter) + {updatedAt: \$now, offsiteConfigured: \$offsite}" <<<"$current" >"$STATUS_FILE.tmp"
+		# The web app reads it as its own user, whatever this process's file-mode setting (A03).
+		chmod 644 "$STATUS_FILE.tmp"
 		mv "$STATUS_FILE.tmp" "$STATUS_FILE"
 	) 8>"$STATUS_DIR/.backup.lock"
 }

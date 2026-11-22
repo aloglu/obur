@@ -23,15 +23,19 @@ obur_secrets() {
 		install -d -m 700 "$(dirname "$OBUR_SECRETS")"
 		local keys
 		keys=$(cd /app && node -e "const w=require('web-push');const k=w.generateVAPIDKeys();console.log(k.publicKey+' '+k.privateKey)")
-		umask 077
-		{
-			for role in ADMIN MIGRATOR APP WORKER; do
-				echo "OBUR_${role}_DB_PASSWORD=$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
-			done
-			echo "OBUR_SECRETS_KEY=$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
-			echo "OBUR_VAPID_PUBLIC_KEY=${keys% *}"
-			echo "OBUR_VAPID_PRIVATE_KEY=${keys#* }"
-		} >"$OBUR_SECRETS.tmp"
+		# Only this file is private: in the shell itself the setting would reach everything started after it (the
+		# backup status file the web app reads was then unreadable to it until a restart; 2026-11-22 audit, A03).
+		(
+			umask 077
+			{
+				for role in ADMIN MIGRATOR APP WORKER; do
+					echo "OBUR_${role}_DB_PASSWORD=$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
+				done
+				echo "OBUR_SECRETS_KEY=$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
+				echo "OBUR_VAPID_PUBLIC_KEY=${keys% *}"
+				echo "OBUR_VAPID_PRIVATE_KEY=${keys#* }"
+			} >"$OBUR_SECRETS.tmp"
+		)
 		mv "$OBUR_SECRETS.tmp" "$OBUR_SECRETS"
 	fi
 	if ! grep -q '^OBUR_SECRETS_KEY=' "$OBUR_SECRETS"; then

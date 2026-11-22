@@ -54,14 +54,15 @@ for _ in $(seq 30); do
 	sleep 2
 done
 [[ $(docker exec "$name" obur backup info) == *'full backup'* ]] || fail "no first backup"
-# The status says the scheduler is alive and how many changes wait to be archived (A12).
+# The status says the scheduler is alive and how many changes wait to be archived (A12). Read as the web app's user,
+# as the Server page reads it: a fresh install once wrote it readable by the database's user only (2026-11-22, A03).
 for _ in $(seq 30); do
 	docker exec "$name" jq -e '.scheduler.at and (.archive.waiting | type == "number")' /data/status/backup.json \
 		>/dev/null 2>&1 && break
 	sleep 2
 done
-docker exec "$name" jq -e '.scheduler.at and (.archive.waiting | type == "number")' /data/status/backup.json \
-	>/dev/null || fail "no scheduler time or archive backlog in the backup status"
+docker exec -u node "$name" jq -e '.scheduler.at and (.archive.waiting | type == "number")' /data/status/backup.json \
+	>/dev/null || fail "the web app's user cannot read the backup status, or it lacks the scheduler time or backlog"
 # The web app and the worker run as different users, and neither can read the other's settings (A32).
 owner() {
 	docker exec "$name" bash -c "for p in /proc/[0-9]*; do grep -qa '$1' \$p/cmdline 2>/dev/null && stat -c %U \$p && break; done"
