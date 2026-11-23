@@ -89,7 +89,11 @@
 	}
 
 	// Refreshed on every focus: logging, undo or edits elsewhere change what is recent.
-	async function loadRecent() {
+	/** When Recent was last asked for: the search box's focus just after opening asks again only after a while. */
+	let recentAt = 0;
+	async function loadRecent(again = true) {
+		if (!again && performance.now() - recentAt < 5000) return;
+		recentAt = performance.now();
 		if (onpickmeal) void loadSavedMeals();
 		try {
 			recent = (await api<{ results: FoodSearchResult[] }>('GET', '/api/v1/diary/recent')).results;
@@ -178,6 +182,8 @@
 			}
 			searchFailed = !found;
 		}, 180);
+		// Gone or typed again before it ran: it doesn't run (H21).
+		return () => clearTimeout(timer);
 	});
 
 	function cancel() {
@@ -271,7 +277,8 @@
 				placeholder={m.log_search_placeholder()}
 				onfocus={() => {
 					focused = true;
-					void loadRecent();
+					// Not twice when the page opens with the box focused (Gemini audit 2, H21).
+					void loadRecent(false);
 				}}
 				class="min-w-0 flex-1 bg-transparent text-[1rem] font-medium text-text outline-none placeholder:font-normal placeholder:text-muted"
 			/>
@@ -316,12 +323,18 @@
 			{#if searchFailed}
 				<p class="py-2 text-[0.9375rem] text-muted">{m.foods_search_offline()}</p>
 			{:else if searchedFor && results.length === 0}
-				<div class="flex flex-col items-start gap-2 py-2">
-					<p class="text-[0.9375rem] text-muted">{m.log_no_results({ query: searchedFor })}</p>
-					<a href={resolve('/(app)/foods/new')} class="font-semibold text-accent underline"
+				<!-- 44 px tap targets, like every other control (Gemini audit 2, H22). -->
+				<div class="flex flex-col items-start py-1">
+					<p class="py-1 text-[0.9375rem] text-muted">{m.log_no_results({ query: searchedFor })}</p>
+					<a
+						href={resolve('/(app)/foods/new')}
+						class="inline-flex min-h-11 items-center font-semibold text-accent underline"
 						>{m.log_create_food()}</a
 					>
-					<button type="button" onclick={onquick} class="font-semibold text-accent underline"
+					<button
+						type="button"
+						onclick={onquick}
+						class="inline-flex min-h-11 items-center font-semibold text-accent underline"
 						>{m.log_quick_add()}</button
 					>
 				</div>

@@ -254,6 +254,7 @@ export function matchable(input: FoodInput): MatchableFood {
 }
 
 export function createCatalog(db: Database, now: () => Date = () => new Date()) {
+	let measures: Promise<(typeof householdMeasures.$inferSelect)[]> | undefined;
 	return {
 		async createFood(
 			userId: string,
@@ -813,9 +814,21 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			return strip(full);
 		},
 
-		/** Shared reference data; no personal rows, so no identity is needed. */
-		async householdMeasures() {
-			return db.select().from(householdMeasures).orderBy(asc(householdMeasures.position));
+		/**
+		 * Shared reference data; no personal rows, so no identity is needed. Only migrations write it, and the app
+		 * restarts after each (upgrade, restore), so it is read once per process (Gemini audit 2, H21). A failed read
+		 * is not kept.
+		 */
+		householdMeasures() {
+			measures ??= db
+				.select()
+				.from(householdMeasures)
+				.orderBy(asc(householdMeasures.position))
+				.catch((e: unknown) => {
+					measures = undefined;
+					throw e;
+				});
+			return measures;
 		},
 
 		async foodsById(userId: string, ids: string[]): Promise<FoodDetail[]> {

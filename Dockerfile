@@ -21,7 +21,7 @@ FROM node:24.22.3-trixie-slim AS node
 FROM postgres:18.7-trixie
 # Where the source and the licences are, next to the image on the registry (2026-11-22 Gemini audit, G30).
 LABEL org.opencontainers.image.source="https://github.com/aloglu/obur" \
-	org.opencontainers.image.licenses="MIT AND ISC AND Apache-2.0 AND BSD-3-Clause AND MPL-2.0 AND CC-BY-SA-4.0 AND OFL-1.1 AND PostgreSQL" \
+	org.opencontainers.image.licenses="MIT AND ISC AND Apache-2.0 AND BSD-3-Clause AND MPL-2.0 AND 0BSD AND Unlicense AND CC-BY-SA-4.0 AND OFL-1.1 AND PostgreSQL" \
 	org.opencontainers.image.description="obur: calorie, weight and water tracker (web app, worker, PostgreSQL and backups); notices at /third-party-notices.txt"
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends pgbackrest jq ca-certificates tini \
@@ -57,8 +57,10 @@ COPY --from=build /app/package.json /app/LICENSE ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
 COPY --from=build /app/server.js ./server.js
-# The operator, migration and worker commands run as TypeScript directly (Node 24 strips types).
-COPY --from=build /app/scripts ./scripts
+# The operator, migration and worker commands run as TypeScript directly (Node 24 strips types). Only the ones the
+# container runs (deploy/obur: obur, obur-init); the others are for development (Gemini audit 2, H21).
+COPY --from=build /app/scripts/admin-recovery-link.ts /app/scripts/admin-setup-link.ts /app/scripts/curated-load.ts \
+	/app/scripts/db-bootstrap.ts /app/scripts/jobs-setup.ts /app/scripts/migrate.ts /app/scripts/worker.ts ./scripts/
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/src/lib/server ./src/lib/server
 COPY --from=build /app/src/lib/shared ./src/lib/shared

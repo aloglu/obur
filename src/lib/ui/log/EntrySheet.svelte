@@ -180,6 +180,11 @@
 
 	let lastRead = $state(untrack(() => initial?.heard.trim() ?? ''));
 	let readTimer: ReturnType<typeof setTimeout> | undefined;
+	// Closed while a read or a search waited to start: neither starts (Gemini audit 2, H21).
+	onMount(() => () => {
+		clearTimeout(readTimer);
+		clearTimeout(searchTimer);
+	});
 	function textChanged() {
 		clearTimeout(readTimer);
 		readTimer = setTimeout(read, 350);

@@ -1,6 +1,7 @@
 # obur-speech: third-party components
 
-obur's own code is MIT licensed (see the repository's `LICENSE`). The `obur-speech` image also contains other
+obur's own code (`service.py`, `fetch_model.py`, `strip_imports.py`) is MIT licensed; the licence is at the end of
+this file (Gemini audit 2, H19). The `obur-speech` image also contains other
 people's software under their own licences. This file lists them. The image keeps a copy of this file at
 `/app/THIRD-PARTY-NOTICES.md` and the licence texts in `/app/licenses/`.
 
@@ -44,3 +45,29 @@ code (2026-11-22 audits A11, G02 and G03; until then, PyAV's FFmpeg build was in
 
 When a package is updated, check this file again. For CTranslate2, read its build script
 (`python/tools/prepare_build_environment_linux.sh` at the new tag) for the oneMKL and oneDNN versions.
+
+## obur's licence
+
+```
+MIT License
+
+Copyright (c) 2026 Abdullah Aloğlu
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

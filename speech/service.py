@@ -59,6 +59,9 @@ def read_wav(data: bytes, max_seconds: float) -> np.ndarray:
     return np.frombuffer(frames[: len(frames) // 2 * 2], dtype="<i2").astype(np.float32) / 32768.0
 
 
+OPTIONS_ONLY = np.zeros(16000, dtype=np.float32)
+
+
 class Transcriber:
     def __init__(self) -> None:
         self.model = WhisperModel(MODEL_DIR, device="cpu", compute_type="int8", cpu_threads=THREADS)
@@ -103,9 +106,11 @@ class Transcriber:
         # Turkish or English only: unrestricted detection once read a mixed sentence as Persian.
         probs = {token[2:-2]: p for token, p in m.model.detect_language(encoded)[0]}
         language = max(LANGUAGES, key=lambda code: probs.get(code, 0.0))
-        # transcribe() builds the options with every default; its segments are lazy and never run.
+        # transcribe() builds the options with every default; its segments are lazy and never run. It is given one
+        # second of silence: its options do not depend on the audio, and the whole clip's features were already made
+        # above (2026-11-23 Gemini audit 2, H21: they were made twice).
         _, info = m.transcribe(
-            audio,
+            OPTIONS_ONLY,
             language=language,
             beam_size=5,
             initial_prompt=prompt or None,

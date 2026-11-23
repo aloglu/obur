@@ -3,7 +3,7 @@
 FROM python:3.12-slim-bookworm
 # Where the source and the licences are, next to the image on the registry (2026-11-22 Gemini audit, G30).
 LABEL org.opencontainers.image.source="https://github.com/aloglu/obur" \
-	org.opencontainers.image.licenses="MIT AND Apache-2.0 AND LGPL-2.1-or-later" \
+	org.opencontainers.image.licenses="MIT AND Apache-2.0 AND BSD-3-Clause AND MPL-2.0 AND MIT-CMU AND LGPL-2.1-or-later" \
 	org.opencontainers.image.description="obur-labels: label reading for obur Scan (third-party notices in /app/THIRD-PARTY-NOTICES.md)"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 OCR_MODEL_DIR=/models/pp-ocrv6-small
 COPY requirements.txt constraints.txt /app/

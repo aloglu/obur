@@ -859,11 +859,12 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 
 	// Foods first (diary entries link to them), as private copies, each after the food it was derived from.
 	const remaining = new Set(data.foods.filter((f) => isNew('food', f.id)));
+	const foodById = new Map(data.foods.map((f) => [f.id, f])); // not a search per food (Gemini audit 2, H21)
 	const newFoods: PortableData['foods'] = [];
 	while (remaining.size) {
 		const before = remaining.size;
 		for (const f of remaining) {
-			const source = f.derivedFrom && data.foods.find((x) => x.id === f.derivedFrom);
+			const source = f.derivedFrom && foodById.get(f.derivedFrom);
 			if (!source || !remaining.has(source)) {
 				newFoods.push(f);
 				remaining.delete(f);
