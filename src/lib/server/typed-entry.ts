@@ -32,7 +32,14 @@ async function portionFirst(userId: string, p: FoodProposal, recent: string[]) {
 	for (const size of [2, 1]) {
 		if (all.length <= size) continue;
 		const word = all.slice(0, size).join(' ');
-		const candidates = await catalog.searchFoodsLoose(userId, all.slice(size).join(' '), 5, recent);
+		// Only a whole match is used here, so no typo pass (Gemini audit 2, H09).
+		const candidates = await catalog.searchFoodsLoose(
+			userId,
+			all.slice(size).join(' '),
+			5,
+			recent,
+			false
+		);
 		if (!candidates[0] || candidates[0].loose) continue;
 		const food = await catalog.getFood(userId, candidates[0].id);
 		if (food && portionNamed(word, food)) return { candidates, food, word };
@@ -61,49 +68,52 @@ export async function understandEntry(
 		? await catalog.householdMeasures()
 		: [];
 
-	const items: EntryItem[] = [];
-	for (const p of parsed.items) {
-		if (p.kind === 'food') {
-			const named = await portionFirst(userId, p, recent);
-			const candidates =
-				named?.candidates ?? (await catalog.searchFoodsLoose(userId, p.text, 5, recent));
-			const food =
-				named?.food ?? (candidates[0] ? await catalog.getFood(userId, candidates[0].id) : null);
-			const proposed = food
-				? proposeForFood(p.amount, p.unit, food, named?.word)
-				: { unit: null, amount: p.amount };
-			items.push({
-				kind: 'food',
-				text: p.text,
-				candidates,
-				food,
-				amount: proposed.amount,
-				unit: proposed.unit,
-				said: said(p.unit),
-				vague: p.vague
-			});
-		} else if (p.kind === 'water') {
-			// A glass is the seeded "su bardağı" household measure; a bottle has no stated size, so it is asked.
-			const glass = measures.find((m) => m.code === 'su_bardagi');
-			const ml =
-				p.amount === null
-					? null
-					: p.unit?.kind === 'ml'
-						? p.amount
-						: p.unit?.kind === 'count' && p.unit.word === 'glass' && glass
-							? p.amount * glass.ml
-							: null;
-			items.push({
-				kind: 'water',
-				ml: ml === null ? null : Math.round(ml * 10) / 10,
-				amount: p.amount,
-				said: said(p.unit)
-			});
-		} else if (p.kind === 'weight') {
-			// No unit said: the person's own (Units). Kilograms either way, as stored.
-			const unit = p.unit ?? (await goals.preferences(userId)).preferences.weightUnit;
-			items.push({ kind: 'weight', kg: toKg(p.value, unit) });
-		} else items.push(p);
-	}
+	// Each item on its own, at the same time: one slow search no longer holds up the others (Gemini audit 2, H09).
+	const items = await Promise.all(
+		parsed.items.map(async (p): Promise<EntryItem> => {
+			if (p.kind === 'food') {
+				const named = await portionFirst(userId, p, recent);
+				const candidates =
+					named?.candidates ?? (await catalog.searchFoodsLoose(userId, p.text, 5, recent));
+				const food =
+					named?.food ?? (candidates[0] ? await catalog.getFood(userId, candidates[0].id) : null);
+				const proposed = food
+					? proposeForFood(p.amount, p.unit, food, named?.word)
+					: { unit: null, amount: p.amount };
+				return {
+					kind: 'food',
+					text: p.text,
+					candidates,
+					food,
+					amount: proposed.amount,
+					unit: proposed.unit,
+					said: said(p.unit),
+					vague: p.vague
+				};
+			} else if (p.kind === 'water') {
+				// A glass is the seeded "su bardağı" household measure; a bottle has no stated size, so it is asked.
+				const glass = measures.find((m) => m.code === 'su_bardagi');
+				const ml =
+					p.amount === null
+						? null
+						: p.unit?.kind === 'ml'
+							? p.amount
+							: p.unit?.kind === 'count' && p.unit.word === 'glass' && glass
+								? p.amount * glass.ml
+								: null;
+				return {
+					kind: 'water',
+					ml: ml === null ? null : Math.round(ml * 10) / 10,
+					amount: p.amount,
+					said: said(p.unit)
+				};
+			} else if (p.kind === 'weight') {
+				// No unit said: the person's own (Units). Kilograms either way, as stored.
+				const unit = p.unit ?? (await goals.preferences(userId)).preferences.weightUnit;
+				return { kind: 'weight', kg: toKg(p.value, unit) };
+			}
+			return p;
+		})
+	);
 	return { heard: text, date, meal: parsed.meal, items };
 }

@@ -646,7 +646,9 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 			query: string,
 			limit = 20,
 			/** Foods to rank first among real matches, e.g. the person's recent foods. */
-			boostIds: string[] = []
+			boostIds: string[] = [],
+			/** False: real matches only, without the typo pass over every food (Gemini audit 2, H09). */
+			typos = true
 		): Promise<
 			(FoodSearchResult & {
 				/** Every word matched without a typo. */ whole: boolean;
@@ -710,7 +712,8 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						asc(foods.id)
 					])
 				).map((r) => tidy(r, true));
-				if (rows.length >= size || !queryWords(q).some((w) => typosAllowed(w) > 0)) return rows;
+				if (rows.length >= size || !typos || !queryWords(q).some((w) => typosAllowed(w) > 0))
+					return rows;
 				// Typos: the other foods' search text, compared here.
 				const others = await tx
 					.select({
@@ -747,13 +750,16 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		/**
 		 * Search for words taken from a sentence, which may carry extra words ("SEK protein süt after gym"). A match
 		 * on every word wins; otherwise the longest run of consecutive words that every word of matches, so extra words
-		 * never turn a real match into a typo match. Falls back to the typo-tolerant results.
+		 * never turn a real match into a typo match. Falls back to the typo-tolerant results (`typos` false: none).
+		 * Only a whole match on part of the words is used, so those parts skip the typo pass (2026-11-23 Gemini audit 2,
+		 * H09: it compared every food up to 12 times, for nothing).
 		 */
 		async searchFoodsLoose(
 			userId: string,
 			text: string,
 			limit = 5,
-			boostIds: string[] = []
+			boostIds: string[] = [],
+			typos = true
 		): Promise<FoodSearchResult[]> {
 			const strip = (rows: (FoodSearchResult & { whole: boolean })[]): FoodSearchResult[] =>
 				rows.map((r) => ({
@@ -768,7 +774,7 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 					curated: r.curated,
 					loose: !r.whole
 				}));
-			const full = await this.searchFoods(userId, text, limit, boostIds);
+			const full = await this.searchFoods(userId, text, limit, boostIds, typos);
 			if (full[0]?.whole) return strip(full);
 			const words = foldForSearch(text).split(' ').filter(Boolean).slice(0, 8);
 			let tries = 0;
@@ -779,7 +785,8 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 						userId,
 						words.slice(start, start + size).join(' '),
 						limit,
-						boostIds
+						boostIds,
+						false
 					);
 					// Some of the words were ignored: a food may have been lost, so it counts as loose too.
 					if (part[0]?.whole) return strip(part).map((r) => ({ ...r, loose: true }));
