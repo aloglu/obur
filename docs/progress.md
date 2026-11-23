@@ -203,6 +203,12 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   headless Chromium with a fake microphone. An artifact page cannot use the microphone, so it needs an HTTPS host
   for the owner's iPhone (owner to choose). Next: the owner's results decide A or B; then the add-on reads WAV only
   and PyAV goes.
+- A11 phone test page published (owner's go, 2026-11-23): GitHub Pages from the `gh-pages` branch, which holds only
+  a copy of `spikes/speech-browser/index.html` (and `.nojekyll`), at the repository's github.io address. Next: the
+  owner's iPhone results decide way B (AudioWorklet, preferred) or A; then build. Checked in the speech image:
+  onnxruntime (67 MB) is used only by the VAD filter, which is off; faster-whisper imports `av`, `huggingface_hub`
+  and `requests` at load, so dropping them needs those imports removed at build. Not checked: tokenizers without
+  huggingface_hub. After A11 the `gh-pages` branch can be deleted and Pages turned off.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):
