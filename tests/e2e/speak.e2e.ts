@@ -190,3 +190,32 @@ test('a browser whose sound never starts says so instead of waiting (2026-11-23)
 	});
 	await expect(speak.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
+
+test('Speak opens at its full size: the example, the time and Done are there while the microphone starts', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Tek parça ${testInfo.project.name}`);
+	// The microphone answers only when the test says so.
+	await page.addInitScript(() => {
+		const real = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+		const w = window as unknown as { micGo: () => void };
+		const go = new Promise<void>((r) => (w.micGo = r));
+		navigator.mediaDevices.getUserMedia = async (c) => {
+			await go;
+			return real(c);
+		};
+	});
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Speak' }).click();
+	const speak = page.getByRole('dialog', { name: 'Speak' });
+	await expect(speak).toContainText('Starting the microphone…');
+	await expect(speak.getByText('two eggs and toast for breakfast')).toBeVisible();
+	await expect(speak.getByText('0 s of 30')).toBeVisible();
+	await expect(speak.getByRole('button', { name: 'Done' })).toBeDisabled();
+	await page.waitForTimeout(500); // slid in
+	const before = (await speak.boundingBox())!.height;
+	await page.evaluate(() => (window as unknown as { micGo: () => void }).micGo());
+	await expect(speak).toContainText('Listening… say what you ate');
+	await expect(speak.getByRole('button', { name: 'Done' })).toBeEnabled();
+	expect((await speak.boundingBox())!.height).toBe(before);
+});

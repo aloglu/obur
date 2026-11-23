@@ -1,7 +1,8 @@
 <script lang="ts">
 	// Scan a label (docs/ui.md, "Scan"), as a sheet like Speak and Type it: take or choose a photo of the nutrition
 	// table; it is made smaller on the phone (which also drops its location data) and read on the server, waiting in
-	// line when the scanner is busy. What was read goes to `onread`, which shows it as a food form to check; nothing
+	// line when the scanner is busy. The frame shows the camera live and Take photo takes what it shows (owner,
+	// 2026-11-23); without a camera the page may use (refused, none, an old browser) Take photo opens the phone's own. What was read goes to `onread`, which shows it as a food form to check; nothing
 	// is saved here. The photo is never kept on the server.
 	import { onMount } from 'svelte';
 	import Camera from '@lucide/svelte/icons/camera';
@@ -66,6 +67,104 @@
 	/** The last photo, kept on the phone for Try again; the server never keeps it. */
 	let lastImage: Blob | null = null;
 
+	let video = $state<HTMLVideoElement>();
+	let stream: MediaStream | undefined;
+	/** The camera shows in the frame. */
+	let live = $state(false);
+	/** The photo being read, shown in the frame in place of the camera. */
+	let still = $state<string | null>(null);
+	let closed = false;
+
+	let starting = false;
+	async function startCamera() {
+		if (starting || !navigator.mediaDevices?.getUserMedia) return;
+		starting = true;
+		try {
+			const granted = await navigator.mediaDevices.getUserMedia({
+				audio: false,
+				video: {
+					facingMode: { ideal: 'environment' },
+					width: { ideal: 1920 },
+					height: { ideal: 1440 }
+				}
+			});
+			if (closed || !video) return granted.getTracks().forEach((t) => t.stop());
+			stream = granted;
+			// The phone can take the camera away (another app, Choose photo's own camera): back to the phone's camera
+			// until the page is shown again.
+			for (const track of granted.getVideoTracks())
+				track.onended = () => {
+					lost = true;
+					stopCamera();
+				};
+			video.srcObject = granted;
+			await video.play();
+			if (!closed) live = true;
+		} catch {
+			// Refused or no camera: Take photo uses the phone's own camera instead.
+			stopCamera();
+		} finally {
+			starting = false;
+		}
+	}
+
+	/** The camera was on and the phone took it away: it comes back when the page is shown again. Never asked again
+	 *  after a refusal. */
+	let lost = false;
+	function stopCamera() {
+		stream?.getTracks().forEach((t) => t.stop());
+		stream = undefined;
+		if (video) video.srcObject = null;
+		live = false;
+	}
+
+	/** What the frame shows, at most about 1600 px on the long side (like a chosen photo after `shrink`). */
+	function snapshot(): Promise<Blob> {
+		const v = video!;
+		const box = v.getBoundingClientRect();
+		// The frame crops the picture to fill it (object-fit: cover): the photo is cut the same way.
+		const fit = Math.max(box.width / v.videoWidth, box.height / v.videoHeight);
+		const sw = box.width / fit;
+		const sh = box.height / fit;
+		const sx = (v.videoWidth - sw) / 2;
+		const sy = (v.videoHeight - sh) / 2;
+		const scale = Math.min(1, 1600 / Math.max(sw, sh));
+		const canvas = document.createElement('canvas');
+		canvas.width = Math.round(sw * scale);
+		canvas.height = Math.round(sh * scale);
+		canvas.getContext('2d')!.drawImage(v, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+		return new Promise((done, fail) =>
+			canvas.toBlob((b) => (b ? done(b) : fail(new Error('encode'))), 'image/jpeg', 0.88)
+		);
+	}
+
+	async function take() {
+		if (reading || !live || !video?.videoWidth) return;
+		const mine = ++attempt;
+		problem = null;
+		remote = null;
+		reading = true;
+		waiting = null;
+		let image: Blob;
+		try {
+			image = await snapshot();
+		} catch {
+			if (mine === attempt) {
+				problem = P.photo();
+				reading = false;
+			}
+			return;
+		}
+		lastImage = image;
+		showStill(image);
+		await send(image, mine);
+	}
+
+	function showStill(image: Blob | null) {
+		if (still) URL.revokeObjectURL(still);
+		still = image ? URL.createObjectURL(image) : null;
+	}
+
 	/** About 1600 px on the long side as JPEG: OCR gains nothing above that, and drawing drops the location data. */
 	async function shrink(file: File): Promise<Blob> {
 		const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -101,6 +200,7 @@
 			return;
 		}
 		lastImage = image;
+		showStill(image);
 		await send(image, mine);
 	}
 
@@ -110,6 +210,7 @@
 		problem = null;
 		remote = null;
 		reading = true;
+		showStill(lastImage);
 		send(lastImage, ++attempt, viaServer);
 	}
 
@@ -164,6 +265,7 @@
 			if (mine === attempt) {
 				reading = false;
 				waiting = null;
+				showStill(null);
 			}
 		}
 	}
@@ -180,29 +282,56 @@
 	}
 
 	// Gone another way (Back, a link): a photo still being read stops being asked about (Gemini audit 2, H12).
-	onMount(() => () => {
-		attempt++;
+	onMount(() => {
+		startCamera();
+		const back = () => {
+			if (document.visibilityState === 'visible' && lost && !stream && !closed) {
+				lost = false;
+				startCamera();
+			}
+		};
+		document.addEventListener('visibilitychange', back);
+		return () => {
+			document.removeEventListener('visibilitychange', back);
+			closed = true;
+			attempt++;
+			stopCamera();
+			showStill(null);
+		};
 	});
 </script>
 
 {#snippet camera(primary: boolean, label?: string)}
-	<label
-		class={[
-			'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button px-2 text-[1rem] font-[750] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent',
-			primary ? 'bg-fill text-on-accent' : 'bg-surface2',
-			reading && 'pointer-events-none opacity-50'
-		]}
-	>
-		<Camera size={20} aria-hidden="true" />{label ?? (problem ? m.scan_retake() : m.scan_take())}
-		<input
-			type="file"
-			accept="image/*"
-			capture="environment"
-			class="sr-only"
+	{@const look = [
+		'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button px-2 text-[1rem] font-[750] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent',
+		primary ? 'bg-fill text-on-accent' : 'bg-surface2',
+		reading && 'pointer-events-none opacity-50'
+	]}
+	{#if live}
+		<button
+			type="button"
+			class={[
+				look,
+				'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+			]}
 			disabled={reading}
-			onchange={picked}
-		/>
-	</label>
+			onclick={take}
+		>
+			<Camera size={20} aria-hidden="true" />{label ?? (problem ? m.scan_retake() : m.scan_take())}
+		</button>
+	{:else}
+		<label class={look}>
+			<Camera size={20} aria-hidden="true" />{label ?? (problem ? m.scan_retake() : m.scan_take())}
+			<input
+				type="file"
+				accept="image/*"
+				capture="environment"
+				class="sr-only"
+				disabled={reading}
+				onchange={picked}
+			/>
+		</label>
+	{/if}
 {/snippet}
 
 <Sheet title={m.log_scan()} onclose={close}>
@@ -241,18 +370,37 @@
 			{/snippet}
 		</Notice>
 	{/if}
-	<!-- The frame says how to take the photo; the camera itself is the phone's. -->
+	<!-- The camera, live, inside the frame; the photo being read stays there while it is read. Without the camera the
+	     frame says how to take the photo, and the phone's own camera takes it. -->
 	<div
-		class="grid aspect-[4/3] max-h-[42dvh] w-full place-items-center rounded-input border-2 border-dashed border-accent bg-soft px-6 text-center text-[0.9375rem] font-semibold text-accent"
+		class="relative grid aspect-[4/3] max-h-[42dvh] w-full place-items-center overflow-hidden rounded-input border-2 border-dashed border-accent bg-soft px-6 text-center text-[0.9375rem] font-semibold text-accent"
 	>
-		{#if waiting !== null}
-			<span role="status" class="flex flex-col gap-1">
-				<span>{m.scan_waiting()}</span>
-				<span class="text-[0.875rem] font-medium text-muted">
-					{waiting === 1 ? m.scan_waiting_one() : m.scan_waiting_many({ count: String(waiting) })}
-				</span>
+		<video
+			bind:this={video}
+			muted
+			playsinline
+			aria-hidden="true"
+			class={['absolute inset-0 size-full object-cover', !live && 'invisible']}
+		></video>
+		{#if still}
+			<img src={still} alt="" class="absolute inset-0 size-full object-cover" />
+		{/if}
+		{#if waiting !== null || reading}
+			<span
+				role="status"
+				class={[
+					'relative flex flex-col gap-1',
+					(live || still) && 'rounded-button bg-surface/90 px-4 py-2 shadow-sheet'
+				]}
+			>
+				{#if waiting !== null}
+					<span>{m.scan_waiting()}</span>
+					<span class="text-[0.875rem] font-medium text-muted">
+						{waiting === 1 ? m.scan_waiting_one() : m.scan_waiting_many({ count: String(waiting) })}
+					</span>
+				{:else}{m.scan_reading()}{/if}
 			</span>
-		{:else if reading}<span role="status">{m.scan_reading()}</span>{:else}{m.scan_frame()}{/if}
+		{:else if !live}<span class="relative">{m.scan_frame()}</span>{/if}
 	</div>
 	<p class="text-[0.8125rem] text-muted">{m.scan_tip()}</p>
 	<div class="grid grid-cols-2 gap-2">

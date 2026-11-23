@@ -314,6 +314,23 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   drizzle-kit/esbuild moderates only. The AI-agent guide names the new "still reopening" message.
   `~/Documents/obur-rc-test-checklist.md` was gone; started again with "New in 1.0.0-rc.9". Next: the release
   workflow publishes; the owner updates and goes through the checklist (Speak on the iPhone first).
+- Owner's reports after rc.9 (2026-11-23), all in one change:
+  - Scan's frame now shows the camera live (getUserMedia, back camera, about 1920×1440); Take photo takes what the
+    frame shows, cut the same way and at most 1600 px, and keeps it in the frame while it is read. Without a camera
+    the page may use (refused, none) the old way stays: the frame's words and the phone's own camera.
+  - Choose photo dismissed without a choice closed Scan: a file input's `cancel` event bubbles to the sheet, which
+    took it for Escape. The sheet now only answers its own `cancel`. This was in every sheet with a file input.
+  - Speak shows its whole layout from the first frame (example, seconds, Done disabled until it listens), so it no
+    longer grows in two steps.
+  - Sheets close with a swipe down on phones (`Sheet.svelte`, touch events; quarter of the height or a flick; springs
+    back otherwise; not when scrolled, sideways, in a text area, slider, menu or inner scroller).
+  - Tests: `sheet-swipe.e2e.ts` (real touch drags through Chromium; the picker's cancel in both browsers), a live
+    camera test in `scan.e2e.ts` (Chromium's fake camera), a full-size test in `speak.e2e.ts`. Browser suite in
+    Docker: 190 passed; the only failures were `review-screens.e2e.ts` (a review screenshot script that runs only with
+    the `.review-shots` marker, left from the H17 review; it looks for an older button name). Firefox Speak on the
+    host passed. check, lint, Vitest 1,272 pass (one earlier run had 2 failures that did not repeat in two runs).
+  - Not checked: a real iPhone. Needs the owner: the camera in the frame (permission question, back camera, sharpness
+    of the photo), Choose photo dismissed, the swipe on a real finger, Speak opening.
   - H22 done: chart sliders show a ring for keyboard focus; empty-search links are 44 px; recipes.count names
     deletedAt (already excluded by foods_deleted_archived); release.yml comment; Speak and Scan offline titles have no
     period. H17 not done: matching phone focus order needs either the phone order or the desktop layout to change, a

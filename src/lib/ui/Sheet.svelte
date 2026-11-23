@@ -28,6 +28,10 @@
 	let scrolled = 0;
 	let settledHeight = 0;
 	let resizing: Animation | undefined;
+	/** How far a swipe had pulled the sheet down when it closed, so it slides on from there. */
+	let pulled = 0;
+	/** The sheet is gone: a swipe that closed it doesn't spring it back. */
+	let gone = false;
 
 	$effect(() => {
 		const opener = document.activeElement as HTMLElement | null;
@@ -41,10 +45,13 @@
 		if (document.activeElement === closeButton) dialog.focus({ preventScroll: true });
 		const stopFitting = fitAboveKeyboard();
 		const stopResizing = untrack(() => resizes) ? followContentHeight() : undefined;
+		const stopSwiping = swipeToClose();
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) untrack(() => onopened?.());
 		return () => {
+			gone = true;
 			stopFitting();
 			stopResizing?.();
+			stopSwiping();
 			// The sheet itself goes at once, so the page is usable straight away and opening it again gets a fresh one. What
 			// slides off the screen is a lifeless copy.
 			const copy = dialog.cloneNode(true) as HTMLDialogElement;
@@ -65,9 +72,107 @@
 					: document.querySelector<HTMLDialogElement>('dialog[open]');
 				target?.focus({ preventScroll: true });
 			}
-			slideAway(copy, scrolled);
+			slideAway(copy, scrolled, pulled);
 		};
 	});
+
+	// On phones a finger on the sheet pulls it down, and letting go far or fast enough closes it, as with the phone's own
+	// sheets (owner, 2026-11-23). Only from the top of its content: when it has scrolled, the finger scrolls it back
+	// first. A drag that starts sideways, inside something that scrolls on its own, or in a menu over it is left alone.
+	function swipeToClose() {
+		const DISTANCE = 0.25; // of the sheet's height
+		const SPEED = 0.5; // px per ms, at the end of the pull
+		let startY = 0;
+		let startX = 0;
+		let lastY = 0;
+		let lastT = 0;
+		let speed = 0;
+		/** null: not decided yet; false: this touch is not a pull. */
+		let pulling: boolean | null = false;
+		const ownScroll = (from: EventTarget | null) => {
+			for (let el = from as HTMLElement | null; el && el !== dialog; el = el.parentElement) {
+				if (el.matches('[popover], textarea, input[type=range]')) return true;
+				if (el.scrollTop > 0) return true;
+				if (
+					el.scrollWidth > el.clientWidth + 1 &&
+					/auto|scroll/.test(getComputedStyle(el).overflowX)
+				)
+					return true;
+			}
+			return false;
+		};
+		const reset = () => {
+			dialog.style.removeProperty('transform');
+			dialog.style.removeProperty('--pull');
+		};
+		const start = (e: TouchEvent) => {
+			pulling = false;
+			if (e.touches.length !== 1 || matchMedia('(min-width: 760px)').matches) return;
+			if (dialog.scrollTop > 0 || ownScroll(e.target)) return;
+			resizing?.cancel();
+			startY = lastY = e.touches[0].clientY;
+			startX = e.touches[0].clientX;
+			lastT = e.timeStamp;
+			speed = 0;
+			pulling = null;
+		};
+		const move = (e: TouchEvent) => {
+			if (pulling === false) return;
+			const { clientX, clientY } = e.touches[0];
+			const dy = clientY - startY;
+			if (pulling === null) {
+				if (Math.abs(clientX - startX) < 6 && Math.abs(dy) < 6) return;
+				// Up or sideways: an ordinary scroll or a swipe on something inside.
+				if (dy <= 0 || Math.abs(clientX - startX) > dy || dialog.scrollTop > 0) {
+					pulling = false;
+					return;
+				}
+				pulling = true;
+				(document.activeElement as HTMLElement | null)?.blur?.();
+			}
+			// No scroll and no rubber band while the sheet follows the finger; a touch that moved makes no click either.
+			e.preventDefault();
+			const dt = e.timeStamp - lastT;
+			if (dt > 0) speed = (clientY - lastY) / dt;
+			lastY = clientY;
+			lastT = e.timeStamp;
+			const y = Math.max(0, dy);
+			dialog.style.transform = `translateY(${y}px)`;
+			dialog.style.setProperty('--pull', String(Math.min(1, y / dialog.offsetHeight)));
+		};
+		const end = () => {
+			if (pulling !== true) return (pulling = false);
+			pulling = false;
+			const y = Math.max(0, lastY - startY);
+			if (y > dialog.offsetHeight * DISTANCE || (speed > SPEED && y > 24)) {
+				pulled = y;
+				onclose();
+				// Something that asks first may keep it open: then it goes back up.
+				setTimeout(() => {
+					if (!gone) springBack(y);
+				});
+			} else springBack(y);
+		};
+		const springBack = (y: number) => {
+			pulled = 0;
+			reset();
+			if (y === 0 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+			dialog.animate([{ transform: `translateY(${y}px)` }, { transform: 'none' }], {
+				duration: 220,
+				easing: 'cubic-bezier(0.3, 0.75, 0.1, 1)'
+			});
+		};
+		dialog.addEventListener('touchstart', start, { passive: true });
+		dialog.addEventListener('touchmove', move, { passive: false });
+		dialog.addEventListener('touchend', end);
+		dialog.addEventListener('touchcancel', end);
+		return () => {
+			dialog.removeEventListener('touchstart', start);
+			dialog.removeEventListener('touchmove', move);
+			dialog.removeEventListener('touchend', end);
+			dialog.removeEventListener('touchcancel', end);
+		};
+	}
 
 	// The keyboard doesn't resize the page on iPhones: it covers the bottom, and the phone moves the whole page up to keep
 	// the field in view. A sheet that then grows goes off the top, so it is placed by what is actually visible.
@@ -122,10 +227,12 @@
 		return () => observer.disconnect();
 	}
 
-	function slideAway(copy: HTMLDialogElement, top: number) {
+	function slideAway(copy: HTMLDialogElement, top: number, from: number) {
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		const wide = matchMedia('(min-width: 760px)').matches;
 		for (const el of copy.querySelectorAll('[id]')) el.removeAttribute('id');
+		// A copied camera view has no picture: the frame behind it shows instead of a black box.
+		for (const el of copy.querySelectorAll('video')) el.style.visibility = 'hidden';
 		copy.inert = true;
 		copy.setAttribute('aria-hidden', 'true');
 		Object.assign(copy.style, {
@@ -133,8 +240,10 @@
 			inset: 'var(--view-top, 0px) 0 var(--view-bottom, 0px)',
 			zIndex: '60',
 			pointerEvents: 'none',
-			animation: 'none'
+			animation: 'none',
+			transform: ''
 		});
+		copy.style.removeProperty('--pull');
 		document.body.append(copy);
 		copy.scrollTop = top;
 		const scrim = 'color-mix(in srgb, var(--scrim) 100%, transparent)';
@@ -146,7 +255,10 @@
 					{ opacity: 0, transform: 'translateY(3%) scale(0.98)', boxShadow: `${spread} ${none}` }
 				]
 			: [
-					{ transform: 'none', boxShadow: `${spread} ${scrim}` },
+					{
+						transform: `translateY(${from}px)`,
+						boxShadow: `${spread} color-mix(in srgb, var(--scrim) ${Math.round(100 * Math.max(0, 1 - from / Math.max(1, copy.offsetHeight)))}%, transparent)`
+					},
 					{ transform: 'translateY(105%)', boxShadow: `${spread} ${none}` }
 				];
 		copy
@@ -181,6 +293,9 @@
 	{onclose}
 	onscroll={() => (scrolled = dialog.scrollTop)}
 	oncancel={(e) => {
+		// A file picker dismissed without a choice fires its own `cancel`, which bubbles up to here: only Escape on the
+		// sheet itself closes it (owner, 2026-11-23: dismissing Choose photo closed Scan).
+		if (e.target !== dialog) return;
 		e.preventDefault();
 		onclose();
 	}}
@@ -225,6 +340,8 @@
 	}
 	.sheet::backdrop {
 		animation: scrim-in 240ms ease;
+		/* Fades as a swipe pulls the sheet down. */
+		opacity: calc(1 - var(--pull, 0));
 	}
 	@media (min-width: 760px) {
 		.sheet[open] {

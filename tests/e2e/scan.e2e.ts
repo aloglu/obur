@@ -371,3 +371,39 @@ test('a scanned label of a food the person already has goes on to that food inst
 	const own = await apiAs<{ foods: { id: string }[] }>(page, 'GET', '/api/v1/foods?mine');
 	expect(own.foods.map((f) => f.id)).toEqual([existing]);
 });
+
+test('the camera shows live in the frame and Take photo sends what it shows', async ({
+	page,
+	context,
+	request,
+	browserName
+}, testInfo) => {
+	test.skip(browserName !== 'chromium', 'needs a fake camera (WebKit in Playwright has none)');
+	await context.grantPermissions(['camera']);
+	await signedInAs(page, `Kamera ${testInfo.project.name}`);
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Scan a label' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Scan a label' });
+	const view = sheet.locator('video');
+	await expect(view).toBeVisible();
+	await expect.poll(() => view.evaluate((v: HTMLVideoElement) => v.videoWidth)).toBeGreaterThan(0);
+	await expect(sheet.getByText('Fill the frame with the nutrition table')).toBeHidden();
+	// Take photo is a button now, not the phone's camera; Choose photo still opens the photos.
+	await sheet.getByRole('button', { name: 'Take photo' }).click();
+	// The stand-in reads nothing from a fake camera's picture: "no table", and the camera is back for Retake.
+	await expect(sheet.getByRole('alert')).toContainText('No nutrition table found');
+	const sent = await (await request.get(`${SPEECH_STUB}/last-ocr`)).json();
+	expect(sent.jpeg).toBe(true);
+	expect(sent.width).toBeGreaterThan(100);
+	expect(sent.width).toBeLessThanOrEqual(1600);
+	await expect(sheet.getByRole('button', { name: 'Retake' })).toBeVisible();
+	await expect(view).toBeVisible();
+	// Closing turns the camera off.
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	expect(
+		await page.evaluate(() =>
+			[...document.querySelectorAll('video')].some((v) => v.srcObject !== null)
+		)
+	).toBe(false);
+});

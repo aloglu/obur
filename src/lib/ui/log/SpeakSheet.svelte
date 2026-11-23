@@ -333,6 +333,8 @@
 			{/snippet}
 		</Notice>
 	{:else}
+		<!-- The whole layout from the first frame, so the sheet slides in at its full size instead of growing when the
+		     microphone starts (owner, 2026-11-23); Done waits for the microphone. -->
 		<div class="flex flex-col items-center gap-4 py-2 text-center">
 			<span
 				class={[
@@ -344,26 +346,19 @@
 			</span>
 			<!-- Only the phase is read aloud: a screen reader saying the seconds would talk into the open microphone
 			     (2026-11-23 Gemini audit 2, H02). -->
-			<p
-				aria-live="polite"
-				class={phase === 'starting' ? 'text-[0.9375rem] text-muted' : 'text-[1.1875rem] font-bold'}
-			>
+			<p aria-live="polite" class="text-[1.1875rem] font-bold">
 				{phase === 'listening'
 					? m.speak_listening()
 					: phase === 'working'
 						? m.speak_working()
 						: m.speak_starting()}
 			</p>
-			{#if phase === 'listening'}
-				<p class="text-[0.875rem] text-muted">{m.speak_example()}</p>
-				<p class="text-[0.8125rem] text-muted tabular-nums">
-					{m.speak_elapsed({ seconds: String(seconds) })}
-				</p>
-			{/if}
+			<p class="text-[0.875rem] text-muted">{m.speak_example()}</p>
+			<p class="text-[0.8125rem] text-muted tabular-nums">
+				{m.speak_elapsed({ seconds: String(seconds) })}
+			</p>
 		</div>
-	{/if}
-	{#if phase === 'listening'}
-		<Button wide onclick={done}>{m.speak_done()}</Button>
+		<Button wide disabled={phase !== 'listening'} onclick={done}>{m.speak_done()}</Button>
 		{#if source !== 'server'}
 			<p class="text-center text-[0.8125rem] text-muted">
 				{m.speak_via({ provider: PROVIDER_NAME[source] })}
