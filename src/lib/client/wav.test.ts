@@ -43,6 +43,14 @@ describe('to16k', () => {
 		expect(out.every((s) => Math.abs(s - 0.25) < 1e-6)).toBe(true);
 	});
 
+	test('8 kHz becomes twice as many samples, each between its neighbours (no silent gaps)', () => {
+		const out = to16k(new Float32Array([0, 1, 0, -1]), 8000);
+		expect(Array.from(out)).toEqual([0, 0.5, 1, 0.5, 0, -0.5, -1, -1]);
+		const steady = to16k(new Float32Array(8000).fill(0.25), 8000);
+		expect(steady.length).toBe(16000);
+		expect(steady.every((s) => s === 0.25)).toBe(true);
+	});
+
 	test('16 kHz is left as it is', () => {
 		const same = new Float32Array([0.1, 0.2]);
 		expect(to16k(same, 16000)).toBe(same);

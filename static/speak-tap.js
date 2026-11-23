@@ -4,7 +4,10 @@
 class SpeakTap extends AudioWorkletProcessor {
 	process(inputs) {
 		const channel = inputs[0] && inputs[0][0];
-		if (channel) this.port.postMessage(channel.slice(0));
+		if (!channel) return true;
+		// One copy, handed over rather than copied again (2026-11-23 Gemini audit 2, H21).
+		const copy = channel.slice(0);
+		this.port.postMessage(copy, [copy.buffer]);
 		return true;
 	}
 }

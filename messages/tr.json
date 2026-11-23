@@ -593,6 +593,7 @@
 	"speak_example": "kahvaltıda iki yumurta ve bir dilim ekmek",
 	"speak_elapsed": "{seconds} / 30 sn",
 	"speak_done": "Bitti",
+	"speak_starting": "Mikrofon açılıyor…",
 	"speak_working": "Anlamaya çalışıyorum…",
 	"speak_try_again": "Tekrar dene",
 	"speak_type_instead": "Yazarak gir",

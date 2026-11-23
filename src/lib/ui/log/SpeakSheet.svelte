@@ -120,8 +120,12 @@
 	let context: AudioContext | undefined;
 	/** The microphone's samples so far, in 128-sample blocks at the context's own rate. */
 	let parts: Float32Array[] = [];
+	/** How many samples `parts` holds: the recording stops at 30 s of sound, also when timers run late. */
+	let sampleCount = 0;
 	let recording = false;
 	let ticker: ReturnType<typeof setInterval> | undefined;
+	/** The recording being sent: closing the sheet stops it (2026-11-23 Gemini audit 2, H21). */
+	let sending: AbortController | undefined;
 
 	/** Stops the microphone and the audio graph; what was recorded stays in `parts`. */
 	function stopTracks() {
@@ -141,11 +145,19 @@
 		resend = false;
 		seconds = 0;
 		parts = [];
+		sampleCount = 0;
+		phase = 'starting';
 		if (!navigator.onLine) return fail(P.offline());
 		if (typeof AudioWorkletNode === 'undefined') return fail(P.noRecorder());
 		// Made before anything is awaited, so it still counts as the tap that opened Speak (iPhones need that to start
-		// sound); its real rate is read later (44.1, 48 or 16 kHz, also with Bluetooth).
-		const audio = new AudioContext();
+		// sound); its real rate is read later (44.1, 48 or 16 kHz, also with Bluetooth). A browser can refuse to make
+		// one (too many open, no sound device): that is said, not left on a blank sheet (Gemini audit 2, H07).
+		let audio: AudioContext;
+		try {
+			audio = new AudioContext();
+		} catch {
+			return fail(P.noSound());
+		}
 		context = audio;
 		audio.resume().catch(() => {});
 		let granted: MediaStream;
@@ -170,8 +182,12 @@
 			await audio.audioWorklet.addModule(asset('speak-tap.js'));
 			if (closed || context !== audio) return;
 			const tap = new AudioWorkletNode(audio, 'speak-tap');
+			const most = audio.sampleRate * MAX_SECONDS;
 			tap.port.onmessage = (e: MessageEvent<Float32Array>) => {
-				if (recording) parts.push(e.data);
+				if (!recording) return;
+				parts.push(e.data);
+				sampleCount += e.data.length;
+				if (sampleCount >= most) done();
 			};
 			// Through a silent gain, so the graph runs without playing the microphone back.
 			const silent = audio.createGain();
@@ -225,13 +241,17 @@
 		problem = null;
 		remote = null;
 		const audio = lastAudio!;
+		sending?.abort();
+		const request = new AbortController();
+		sending = request;
 		try {
 			const response = await fetch(
 				`/api/v1/speech?date=${date}&zone=${encodeURIComponent(deviceZone())}&at=${encodeURIComponent(recordedAt)}${viaServer ? '&via=server' : ''}`,
 				{
 					method: 'POST',
 					headers: { 'content-type': audio.type, ...accountHeaders() },
-					body: audio
+					body: audio,
+					signal: request.signal
 				}
 			);
 			const body = (await response.json().catch(() => ({}))) as {
@@ -260,6 +280,7 @@
 			);
 			fail((problems[body.error ?? ''] ?? P.unavailable)(), again);
 		} catch {
+			if (closed) return;
 			fail(P.unavailable(), true);
 		}
 	}
@@ -275,6 +296,7 @@
 		start();
 		return () => {
 			closed = true;
+			sending?.abort();
 			stopTracks(); // closing the sheet discards the recording
 			parts = [];
 		};
@@ -311,7 +333,7 @@
 			{/snippet}
 		</Notice>
 	{:else}
-		<div class="flex flex-col items-center gap-4 py-2 text-center" aria-live="polite">
+		<div class="flex flex-col items-center gap-4 py-2 text-center">
 			<span
 				class={[
 					'grid size-24 place-items-center rounded-full bg-voice-bg text-voice',
@@ -320,14 +342,23 @@
 			>
 				<Mic size={44} aria-hidden="true" />
 			</span>
+			<!-- Only the phase is read aloud: a screen reader saying the seconds would talk into the open microphone
+			     (2026-11-23 Gemini audit 2, H02). -->
+			<p
+				aria-live="polite"
+				class={phase === 'starting' ? 'text-[0.9375rem] text-muted' : 'text-[1.1875rem] font-bold'}
+			>
+				{phase === 'listening'
+					? m.speak_listening()
+					: phase === 'working'
+						? m.speak_working()
+						: m.speak_starting()}
+			</p>
 			{#if phase === 'listening'}
-				<p class="text-[1.1875rem] font-bold">{m.speak_listening()}</p>
 				<p class="text-[0.875rem] text-muted">{m.speak_example()}</p>
 				<p class="text-[0.8125rem] text-muted tabular-nums">
 					{m.speak_elapsed({ seconds: String(seconds) })}
 				</p>
-			{:else if phase === 'working'}
-				<p class="text-[1.1875rem] font-bold">{m.speak_working()}</p>
 			{/if}
 		</div>
 	{/if}

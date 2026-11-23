@@ -6,11 +6,22 @@ export const WAV_RATE = 16000;
 
 /**
  * Samples at `from` Hz to 16 kHz by averaging each output sample's span of input samples. For speech at 44.1 or
- * 48 kHz this gave the same transcripts as FFmpeg's resampler; a windowed-sinc filter was worse.
+ * 48 kHz this gave the same transcripts as FFmpeg's resampler; a windowed-sinc filter was worse. Below 16 kHz (an 8 kHz
+ * Bluetooth headset) each output sample lies between two input samples instead (2026-11-23 Gemini audit 2, H06).
  */
 export function to16k(samples: Float32Array, from: number): Float32Array {
 	if (from === WAV_RATE) return samples;
 	const ratio = from / WAV_RATE;
+	if (ratio < 1) {
+		const out = new Float32Array(Math.floor(samples.length / ratio));
+		for (let i = 0; i < out.length; i++) {
+			const at = i * ratio;
+			const j = Math.floor(at);
+			const next = samples[Math.min(j + 1, samples.length - 1)];
+			out[i] = samples[j] + (next - samples[j]) * (at - j);
+		}
+		return out;
+	}
 	const out = new Float32Array(Math.floor(samples.length / ratio));
 	for (let i = 0; i < out.length; i++) {
 		const start = Math.floor(i * ratio);

@@ -593,6 +593,7 @@
 	"speak_example": "two eggs and toast for breakfast",
 	"speak_elapsed": "{seconds} s of 30",
 	"speak_done": "Done",
+	"speak_starting": "Starting the microphone…",
 	"speak_working": "Working it out…",
 	"speak_try_again": "Try again",
 	"speak_type_instead": "Type it instead",
