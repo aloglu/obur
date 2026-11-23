@@ -307,7 +307,13 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   - Final checks (2026-11-23, at ab2e95a): check, lint, Vitest 1,272; Firefox Speak on the host 6 passed; image
     tests on the final obur image: smoke, off-site, off-site restore, restore interruption, upgrade from beta.19 and
     from rc.8 all pass. Report: ~/Documents/obur-audit-2-changes-2026-11-23.md. H17: the owner chose to keep Today as it is
-    (review page with screenshots; recorded in ui.md). **Next: rc.9, only when the owner asks.**
+    (review page with screenshots; recorded in ui.md).
+- Release 1.0.0-rc.9 (2026-11-23, owner asked). Checks on the final code (ab2e95a; later commits only docs): check,
+  lint, Vitest 1,272, full browser suite 328 passed (41 skipped), Firefox Speak 6, add-on tests, image tests (smoke,
+  off-site, off-site restore, restore interruption, upgrade from beta.19 and from rc.8). npm audit: the 4 known
+  drizzle-kit/esbuild moderates only. The AI-agent guide names the new "still reopening" message.
+  `~/Documents/obur-rc-test-checklist.md` was gone; started again with "New in 1.0.0-rc.9". Next: the release
+  workflow publishes; the owner updates and goes through the checklist (Speak on the iPhone first).
   - H22 done: chart sliders show a ring for keyboard focus; empty-search links are 44 px; recipes.count names
     deletedAt (already excluded by foods_deleted_archived); release.yml comment; Speak and Scan offline titles have no
     period. H17 not done: matching phone focus order needs either the phone order or the desktop layout to change, a

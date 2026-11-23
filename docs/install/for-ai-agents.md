@@ -131,6 +131,10 @@ Read `docker compose logs obur` first; obur's own lines start with `obur:`. Then
   runs on the half-restored folder. Ask the person whether to complete it (`obur restore start` again, with the same
   options) or go back (`obur restore cancel`). At step `finishing`, only `obur restore finish` (with the same list)
   is allowed.
+- **"the last restore is finished and obur is still reopening"** (from `obur restore start`): a restore just
+  finished, and obur is setting up the restored database before it opens. Nothing was changed. Wait until the app
+  opens, then check with the person that another restore is really wanted. If obur does not open, read the log
+  (`docker compose logs obur`).
 - **"the weekly restore check is running; waiting for it to end"** (from `obur restore start`): normal; the restore
   continues by itself when the check ends. Do not interrupt it. After an hour it gives up and says so; run it again.
 - **"the off-site repository could not be set up … is or was the repo encrypted?":** the bucket folder holds another
