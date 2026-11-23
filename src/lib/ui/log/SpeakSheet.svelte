@@ -37,6 +37,8 @@
 	let { date, source, local, onheard, ontype, onclose }: Props = $props();
 
 	const MAX_SECONDS = 30;
+	/** How long the browser may take to start sound once the microphone is on. */
+	const START_MS = 4000;
 	type Phase = 'starting' | 'listening' | 'working' | 'failed';
 	type Problem = { title: string; line: string; tone: 'info' | 'warn' | 'bad'; icon: typeof Mic };
 	const P = {
@@ -81,6 +83,12 @@
 			line: m.speak_limited_line(),
 			tone: 'warn',
 			icon: Timer
+		}),
+		noSound: () => ({
+			title: m.speak_no_sound(),
+			line: m.speak_no_sound_line(),
+			tone: 'warn',
+			icon: MicOff
 		}),
 		noRecorder: () => ({
 			title: m.speak_no_recorder(),
@@ -139,7 +147,7 @@
 		// sound); its real rate is read later (44.1, 48 or 16 kHz, also with Bluetooth).
 		const audio = new AudioContext();
 		context = audio;
-		const resumed = audio.resume().catch(() => {});
+		audio.resume().catch(() => {});
 		let granted: MediaStream;
 		try {
 			granted = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -153,8 +161,12 @@
 			return;
 		}
 		stream = granted;
+		// Asked again now that the microphone is on. A browser with no sound device never starts it (Firefox in the
+		// test container, 2026-11-23): say so instead of waiting for good.
+		const started = await running(audio);
+		if (closed || context !== audio) return;
+		if (!started) return fail(P.noSound());
 		try {
-			await resumed;
 			await audio.audioWorklet.addModule(asset('speak-tap.js'));
 			if (closed || context !== audio) return;
 			const tap = new AudioWorkletNode(audio, 'speak-tap');
@@ -177,6 +189,15 @@
 			seconds += 1;
 			if (seconds >= MAX_SECONDS) done();
 		}, 1000);
+	}
+
+	/** The audio context is running, or starts within a few seconds. */
+	async function running(audio: AudioContext): Promise<boolean> {
+		if (audio.state === 'running') return true;
+		const late = new Promise<void>((r) => setTimeout(r, START_MS));
+		await Promise.race([audio.resume().catch(() => {}), late]);
+		// Read again: the state changed while this waited.
+		return (audio.state as AudioContextState) === 'running';
 	}
 
 	function done() {

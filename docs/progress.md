@@ -225,6 +225,15 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   48 development clips as phone-made WAV: 35/320 word errors vs 33 before (3 clips +1, 1 clip −1), 26 exact both.
   `scripts/voice-eval.ts` sends WAV (converts m4a with the computer's ffmpeg through a file). Docs: design
   "Recording format", feasibility table, README, updating guide, release notes line.
+- A11 step 3 (2026-11-23): the first full Docker browser run failed 3 Firefox Speak tests: the container has no sound
+  device, so Firefox's AudioContext never starts (checked: suspended in the container, running on the host; neither
+  `media.cubeb.force_null_context` nor an ALSA null device helped). Speak now stops after 4 s without sound and says
+  "Speak can't start recording" (new e2e test). In Docker (`OBUR_E2E_DOCKER=1`, set by scripts/e2e-docker.sh)
+  Firefox skips Speak; on the host `npx playwright test --project=desktop-firefox` runs it (after Chromium: they
+  share the stand-in's next answer). Checks: type-check, lint, Vitest 1266, Speak e2e Chromium + Firefox on the host,
+  full Docker suite 328 passed, 41 skipped. A WAV made by wav.ts went to the real new add-on and came back as text.
+  Not checked: Android on a device; the real app's Speak on the owner's iPhone (with the next RC). Open: the GitHub
+  Pages test page (delete when the owner says), the re-audit against the Codex report, then rc.9 when asked.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):

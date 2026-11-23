@@ -5,6 +5,11 @@ import { createFood, signedInAs } from './fixtures.ts';
 // Chromium's and Firefox's fake microphones (set up in playwright.config.ts); WebKit in Playwright has none, so these
 // run in desktop Chromium and Firefox. The iPhone was checked by hand (2026-11-23, spikes/speech-browser).
 test.skip(({ browserName }) => browserName === 'webkit', 'needs a fake microphone');
+// The Docker test container has no sound device, and Firefox starts no audio without one (Chromium does).
+test.skip(
+	({ browserName }) => browserName === 'firefox' && !!process.env.OBUR_E2E_DOCKER,
+	'Firefox needs a sound device; run these on the computer: npx playwright test --project=desktop-firefox'
+);
 test.beforeEach(async ({ context, browserName }) => {
 	// Firefox's microphone question is turned off by its settings instead.
 	if (browserName === 'chromium') await context.grantPermissions(['microphone']);
@@ -167,4 +172,21 @@ test('a browser that cannot record raw sound says so and offers typing (A11)', a
 	await expect(speak.getByRole('alert')).toContainText("This browser can't record for Speak");
 	await speak.getByRole('button', { name: 'Type it instead' }).click();
 	await expect(page.getByRole('dialog', { name: 'Type what you ate' })).toBeVisible();
+});
+
+test('a browser whose sound never starts says so instead of waiting (2026-11-23)', async ({
+	page
+}) => {
+	await page.addInitScript(() => {
+		AudioContext.prototype.resume = () => new Promise<void>(() => {});
+		Object.defineProperty(AudioContext.prototype, 'state', { get: () => 'suspended' });
+	});
+	await signedInAs(page, 'Sessiz Cihaz');
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Speak' }).click();
+	const speak = page.getByRole('dialog', { name: 'Speak' });
+	await expect(speak.getByRole('alert')).toContainText("Speak can't start recording", {
+		timeout: 10_000
+	});
+	await expect(speak.getByRole('button', { name: 'Try again' })).toBeVisible();
 });

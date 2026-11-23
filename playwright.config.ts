@@ -122,7 +122,8 @@ export default defineConfig({
 		{
 			name: 'desktop-firefox',
 			testMatch: 'speak.e2e.ts',
-			dependencies: ['auth-journey'],
+			// After Chromium: both would share the speech stand-in's one "next answer" at the same time.
+			dependencies: ['desktop-chromium'],
 			use: {
 				...devices['Desktop Firefox'],
 				launchOptions: {

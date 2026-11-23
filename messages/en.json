@@ -604,6 +604,8 @@
 	"speak_unavailable": "Speak can't be reached right now",
 	"speak_limited": "That's a lot of recordings",
 	"speak_offline": "Speak needs a connection.",
+	"speak_no_sound": "Speak can't start recording",
+	"speak_no_sound_line": "Try again, or type it instead.",
 	"speak_no_recorder": "This browser can't record for Speak",
 	"speak_no_recorder_line": "Update the browser and try again, or type it instead.",
 	"entry_heard": "I heard",
