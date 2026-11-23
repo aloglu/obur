@@ -1,3 +1,6 @@
+Copyright (C) Intel Corporation. Applies to the Intel oneAPI Math Kernel Library (oneMKL) inside CTranslate2's
+library in this image (see ../THIRD-PARTY-NOTICES.md).
+
 Intel Simplified Software License (Version October 2022)
 
 Use and Redistribution.  You may use and redistribute the software, which is provided in binary form only, (the “Software”), without modification, provided the following conditions are met:
