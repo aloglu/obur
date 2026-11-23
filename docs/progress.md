@@ -348,6 +348,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   the slide-in and after a spring-back. The stand-in keeps each photo by width (`/last-ocr?width=` / `?min=`), so
   tests in both browsers no longer read each other's. Full browser suite in Docker: 338 passed, 0 failed. check, lint,
   Vitest 1,272 pass.
+- Release 1.0.0-rc.10 (2026-11-23, owner asked). Final code 3083c73: check, lint, Vitest 1,272, full browser suite in
+  Docker 338 passed (0 failed), build. npm audit: the 4 known drizzle-kit/esbuild moderates only. The AI-agent guide
+  needs no change (no commands, settings or log lines changed). `~/Documents/obur-rc-test-checklist.md` has "New in
+  1.0.0-rc.10" (Scan's camera on the iPhone first). Image tests run in the release workflow. Next: the workflow
+  publishes; the owner updates and goes through the checklist.
   - H22 done: chart sliders show a ring for keyboard focus; empty-search links are 44 px; recipes.count names
     deletedAt (already excluded by foods_deleted_archived); release.yml comment; Speak and Scan offline titles have no
     period. H17 not done: matching phone focus order needs either the phone order or the desktop layout to change, a
