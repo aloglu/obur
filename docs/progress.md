@@ -268,7 +268,9 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   - H03, H04, H05 done: the drag count badge uses --fill (readable in every palette); the welcome card and the
     maintenance offer span both desktop columns (new e2e check, fails without the fix); the celebration is a native
     modal dialog (Escape, focus kept inside and restored; e2e checks :modal and Escape).
-  - H08, H20 done: the add-ons stop on SIGTERM after the request the model is on; an empty input is 400
+  - H08, H20 done: the add-ons stop on SIGTERM after every request already in, answer included (`InFlight`; waiting
+    for the model's lock alone still cut answers off, measured: curl exit 18; now 0.15/0.5/1.2 s into a 1.5 s request
+    each gets its answer, and an idle stop takes 0.7 s); an empty input is 400
     bad_request; a busy speech add-on refunds the per-person limit; too many files is too_large in kind detection
     and in the obur reader, folders counted (unit test).
   - H09 done: the sub-phrase searches and portionFirst skip the typo pass (`typos` false); spoken items resolve in
@@ -300,6 +302,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
     Recent is not asked twice on opening; search and read timers stop when Log or the entry sheet closes. Not done:
     nutrients and servings in parallel (one transaction, one connection: no gain); per-row archive and trash updates
     in an import (rare, measured fast in C12); the pre-quantized model (owner).
+  - Speech check: the 48 development clips give the same transcript on all 48 before and after (p50 465 → 415 ms);
+    add-on tests pass for both images. Full browser suite in Docker: 328 passed, 41 skipped.
   - H22 done: chart sliders show a ring for keyboard focus; empty-search links are 44 px; recipes.count names
     deletedAt (already excluded by foods_deleted_archived); release.yml comment; Speak and Scan offline titles have no
     period. H17 not done: matching phone focus order needs either the phone order or the desktop layout to change, a

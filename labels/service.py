@@ -107,6 +107,30 @@ class Reader:
                 self.waiting -= 1
 
 
+class InFlight:
+    """The requests being answered, so a stop waits for them to finish, answer included (Gemini audit 2, H08)."""
+
+    def __init__(self) -> None:
+        self.count = 0
+        self.changed = threading.Condition()
+
+    def __enter__(self) -> None:
+        with self.changed:
+            self.count += 1
+
+    def __exit__(self, *_: object) -> None:
+        with self.changed:
+            self.count -= 1
+            self.changed.notify_all()
+
+    def wait(self, timeout: float) -> None:
+        with self.changed:
+            self.changed.wait_for(lambda: self.count == 0, timeout)
+
+
+IN_FLIGHT = InFlight()
+
+
 def make_handler(reader: Reader):
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
@@ -115,6 +139,10 @@ def make_handler(reader: Reader):
             self._json(200, {"ok": True, "model": "PP-OCRv6 small"})
 
         def do_POST(self) -> None:  # noqa: N802
+            with IN_FLIGHT:
+                self._post()
+
+        def _post(self) -> None:
             if self.path != "/ocr":
                 return self._json(404, {"error": "not_found"})
             try:
@@ -162,14 +190,14 @@ def main() -> None:
     server = ThreadingHTTPServer(("0.0.0.0", int(os.environ.get("OCR_PORT", "8000"))), make_handler(reader))
     server.daemon_threads = True
     # As PID 1 the process gets no default SIGTERM handling: `docker stop` waited its whole grace period, then killed
-    # it (2026-11-22 Gemini audit, G32). Nothing is kept, so it stops at once, but not while the model is working:
-    # tearing the native libraries down under it could crash (2026-11-23 Gemini audit 2, H08). serve_forever() returns
-    # after shutdown(), which must run on another thread.
+    # it (2026-11-22 Gemini audit, G32). Nothing is kept, so it stops at once, but not while a request is answered:
+    # tearing the native libraries down under the model could crash, and the answer would be lost (2026-11-23 Gemini
+    # audit 2, H08). serve_forever() returns after shutdown(), which must run on another thread.
     signal.signal(signal.SIGTERM, lambda *_: threading.Thread(target=server.shutdown, daemon=True).start())
     server.serve_forever()
     server.server_close()
-    # Waits for the request the model is on (at most one at a time); the ones still queued are dropped.
-    reader.lock.acquire(timeout=60)
+    # Waits for the requests already in (the model takes one at a time; at most a few wait), answers included.
+    IN_FLIGHT.wait(timeout=60)
 
 
 if __name__ == "__main__":
