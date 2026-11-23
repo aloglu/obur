@@ -58,6 +58,9 @@ restore_start() {
 	restored) obur_fail "a restore is already pending: finish it with 'obur restore finish', or put the old database back with 'obur restore cancel'" ;;
 	finishing) obur_fail "a restore is being finished: run 'obur restore finish' again to complete it" ;;
 	cancelling) obur_fail "a restore is being cancelled: run 'obur restore cancel' again to complete it" ;;
+	# The live database is the restored one, not yet set up: starting again would delete it, with nothing moved aside
+	# (2026-11-23 Gemini audit 2, H01).
+	reopening) obur_fail "the last restore is finished and obur is still reopening: wait until it is open, then try again" ;;
 	esac
 	# A running restore check reads the live database: stopping it would record a failed check that is not one.
 	gosu postgres obur-backup wait-restore-check

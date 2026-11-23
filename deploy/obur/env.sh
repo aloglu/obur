@@ -153,6 +153,7 @@ obur_psql() {
 #   restoring   pgBackRest writes the database folder
 #   restored    the restored database runs; the app says "being restored" until `restore finish`
 #   finishing   sign-outs, deletions and the new backup: from here the restored database is the one kept
+#   reopening   finished: obur-init sets up and upgrades the restored database, then clears the step and reopens
 #   cancelling  the database from before is being put back
 # Each step is on disk before what it names begins, so an interruption anywhere leaves a step that says what to do.
 RESTORE_STATE=$OBUR_STATUS_DIR/restore.json

@@ -253,6 +253,26 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   a new round (the app never answers while the step says reopening; a restart at reopening reopens), 20 rounds
   pass. Off-site test waits for the reopening. Image tests: smoke, off-site, off-site restore, upgrade from beta.19
   and from rc.8 pass. All the verification items the owner agreed are done; rc.9 waits for the owner.
+- Gemini's second full audit (2026-11-23, `~/Documents/Obur-1.0-Full-Audit-2-Gemini.md`, H01–H22, at 7292064):
+  verified; owner's go (no rush for 1.0) for everything except H18 (keep LayerChart, a stack decision) and H21's
+  pre-quantized model (keep the published, checksummed one). H14's MPL-2.0 claim is wrong (the text is in the labels
+  image's /usr/share/common-licenses). Report to the owner afterwards in ~/Documents. One commit per group:
+  - H01 done: `obur restore start` refuses the reopening step (it went on as an unfinished restore and deleted the
+    restored database, with nothing moved aside). env.sh's step list names reopening. Interruption test: a start
+    during reopening (obur held, so the step stays) is refused and the restored database opens; 20 rounds pass.
+  - Speak done: H02 only the phase is a live region (the seconds were read aloud into the microphone; the starting
+    phase now says "Starting the microphone…", H22); H06 below 16 kHz each sample is interpolated (8 kHz had a zero
+    in every other sample; unit test); H07 a refused AudioContext says "can't start recording", and the recording
+    stops at 30 s of samples, not by the timer; H21 the worklet hands its copy over, closing the sheet aborts the
+    upload. Vitest 1,270 pass; Speak e2e pass.
+  - H03, H04, H05 done: the drag count badge uses --fill (readable in every palette); the welcome card and the
+    maintenance offer span both desktop columns (new e2e check, fails without the fix); the celebration is a native
+    modal dialog (Escape, focus kept inside and restored; e2e checks :modal and Escape).
+  - H08, H20 done: the add-ons stop on SIGTERM after the request the model is on; an empty input is 400
+    bad_request; a busy speech add-on refunds the per-person limit; too many files is too_large in kind detection
+    and in the obur reader, folders counted (unit test).
+  - H09 done: the sub-phrase searches and portionFirst skip the typo pass (`typos` false); spoken items resolve in
+    parallel.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):

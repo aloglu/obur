@@ -202,4 +202,17 @@ docker start "$name" >/dev/null
 wait_page 200 "not open after a restart during reopening"
 [[ $(step) == none ]] || fail "the reopening step was not cleared after a restart: $(step)"
 
+echo "a restore start while obur is reopening is refused and deletes nothing (H01)"
+# Held, so obur-init cannot clear the step while the command reads it.
+docker exec "$name" touch /run/obur/hold
+for _ in $(seq 60); do docker exec "$name" test -f /run/obur/held && break; sleep 1; done
+docker exec "$name" test -f /run/obur/held || fail "obur did not hold for the reopening refusal"
+docker exec "$name" bash -c 'echo "{\"step\": \"reopening\"}" >/data/status/restore.json && chmod 644 /data/status/restore.json'
+# shellcheck disable=SC2046
+out=$(restore start $(RESTORE_ARGS)) && fail "restore start during reopening was not refused: $out"
+[[ $out == *"still reopening"* ]] || fail "restore start during reopening: $out"
+[[ $(step) == reopening ]] || fail "the refused start changed the step to $(step)"
+docker exec "$name" rm -f /run/obur/hold
+expect_restored "a refused start during reopening"
+
 echo "restore interruption test passed ($round rounds)"
