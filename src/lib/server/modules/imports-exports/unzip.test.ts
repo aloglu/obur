@@ -1,8 +1,8 @@
 import { strToU8, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { readArchive } from './archive.ts';
-import { readLoseItArchive } from './loseit.ts';
-import { unzipLimited } from './unzip.ts';
+import { archiveKind, readLoseItArchive } from './loseit.ts';
+import { listZip, MAX_ENTRIES, TooManyEntries, unzipLimited } from './unzip.ts';
 
 /** An archive whose file says it holds one byte, and holds `mb` megabytes of zeros. */
 function lying(mb: number): Uint8Array {
@@ -43,5 +43,31 @@ describe('unzipLimited (G07)', () => {
 		expect(() => readArchive(zip)).toThrow(/too_large/);
 		const loseit = zipSync({ 'food-logs.csv': new Uint8Array(250 * 1024 * 1024) }, { level: 9 });
 		expect(() => readLoseItArchive(loseit)).toThrow(/too_large/);
+	});
+});
+
+describe('archives that list too many files (G07, 2026-11-23 verification)', () => {
+	const many = (first: Record<string, Uint8Array>) => {
+		const files: Record<string, Uint8Array> = { ...first };
+		for (let i = 0; i < MAX_ENTRIES + 1; i++) files[`x/${i}.txt`] = new Uint8Array();
+		return zipSync(files);
+	};
+
+	it('are not recognised as an export, and every reader refuses them', () => {
+		const loseit = many({
+			'food-logs.csv': strToU8('Date'),
+			'daily-calorie-summary.csv': strToU8('Date')
+		});
+		expect(archiveKind(loseit)).toBe('unknown');
+		expect(() => readLoseItArchive(loseit)).toThrow(/too_large/);
+		expect(unzipLimited(loseit, () => true, 1024 * 1024)).toBe('too_large');
+		expect(() => listZip(loseit, () => {})).toThrow(TooManyEntries);
+	});
+
+	it('up to the limit are read as usual', () => {
+		const files: Record<string, Uint8Array> = { 'a.json': strToU8('{}') };
+		for (let i = 0; i < MAX_ENTRIES - 1; i++) files[`x/${i}.txt`] = new Uint8Array();
+		const out = unzipLimited(zipSync(files), (n) => n === 'a.json', 1024);
+		expect(Object.keys(out)).toEqual(['a.json']);
 	});
 });

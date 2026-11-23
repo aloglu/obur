@@ -1,8 +1,8 @@
 // Reads a LoseIt export (docs/loseit-export.md) into plain records, with no database or file access. The layout is
 // recognised by its exact headers; anything else stops with a clear reason rather than being guessed. Values are kept
 // as LoseIt stated them: "n/a" is unknown (never zero), deleted rows are left out, a diary row keeps its own totals.
-import { strFromU8, unzipSync } from 'fflate';
-import { unzipLimited } from './unzip.ts';
+import { strFromU8 } from 'fflate';
+import { listZip, TooManyEntries, unzipLimited } from './unzip.ts';
 import type { EntryNutrients } from '../../../shared/diary-types.ts';
 import type { NutrientCode } from '../../../shared/nutrients.ts';
 
@@ -97,12 +97,7 @@ export interface LoseItData {
 export function archiveKind(bytes: Uint8Array): 'obur' | 'loseit' | 'unknown' {
 	const names: string[] = [];
 	try {
-		unzipSync(bytes, {
-			filter: (file) => {
-				names.push(file.name);
-				return false;
-			}
-		});
+		listZip(bytes, (file) => names.push(file.name));
 	} catch {
 		return 'unknown';
 	}
@@ -387,13 +382,10 @@ export function readLoseItArchive(bytes: Uint8Array): LoseItData {
 	let total = 0;
 	let unpacked: Record<string, Uint8Array>;
 	try {
-		unzipSync(bytes, {
-			// The declared sizes first, before anything is decompressed.
-			filter: (file) => {
-				if (file.name in HEADERS) total += file.originalSize;
-				if (total > LOSEIT_LIMITS.unpackedBytes) throw new LoseItError('too_large');
-				return false;
-			}
+		// The declared sizes first, before anything is decompressed; too many files is too large as well.
+		listZip(bytes, (file) => {
+			if (file.name in HEADERS) total += file.originalSize;
+			if (total > LOSEIT_LIMITS.unpackedBytes) throw new LoseItError('too_large');
 		});
 		// Then the real ones, counted while unpacking (unzip.ts; 2026-11-22 Gemini audit, G07).
 		const read = unzipLimited(bytes, (name) => name in HEADERS, LOSEIT_LIMITS.unpackedBytes);
@@ -401,6 +393,7 @@ export function readLoseItArchive(bytes: Uint8Array): LoseItData {
 		unpacked = read;
 	} catch (e) {
 		if (e instanceof LoseItError) throw e;
+		if (e instanceof TooManyEntries) throw new LoseItError('too_large');
 		throw new LoseItError('not_loseit');
 	}
 	if (!isLoseItArchive(Object.keys(unpacked))) throw new LoseItError('not_loseit');

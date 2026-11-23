@@ -235,6 +235,12 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   Not checked: Android on a device; the real app's Speak on the owner's iPhone (with the next RC).
 - Owner, 2026-11-23: no re-audit against the Codex report; the `gh-pages` branch and the Pages site are deleted.
   **Next: rc.9, only when the owner asks** (then the owner tries the new Speak on the iPhone).
+- Gemini's verification report (2026-11-23, `~/Documents/Obur-1.0-Audit-Verification-Gemini.md`): owner's go to
+  fix the stray `ff-probe.mjs` (done, with Intel's copyright line on its licence text), G07's file count, G13's
+  notices and G23's reopening gap; the rest judged not worth work. rc.9 still waits.
+  G07 done: an upload may list at most 500 files (`MAX_ENTRIES`, `listZip` in unzip.ts): kind detection, the LoseIt
+  reader and `unzipLimited` stop past it (a 20 MB archive could list ~400,000 empty files, each visited on the main
+  thread). Import/export tests 57 pass.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):
