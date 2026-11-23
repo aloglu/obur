@@ -53,12 +53,20 @@ describe('archives that list too many files (G07, 2026-11-23 verification)', () 
 		return zipSync(files);
 	};
 
-	it('are not recognised as an export, and every reader refuses them', () => {
+	it('in folders alone are refused as too large by the obur reader', () => {
+		const files: Record<string, Uint8Array> = { 'manifest.json': strToU8('{}') };
+		for (let i = 0; i < MAX_ENTRIES + 1; i++) files[`x${i}/`] = new Uint8Array();
+		const zip = zipSync(files);
+		expect(archiveKind(zip)).toBe('too_large');
+		expect(() => readArchive(zip)).toThrow(/too_large/);
+	});
+
+	it('are said to be too large, and every reader refuses them', () => {
 		const loseit = many({
 			'food-logs.csv': strToU8('Date'),
 			'daily-calorie-summary.csv': strToU8('Date')
 		});
-		expect(archiveKind(loseit)).toBe('unknown');
+		expect(archiveKind(loseit)).toBe('too_large');
 		expect(() => readLoseItArchive(loseit)).toThrow(/too_large/);
 		expect(unzipLimited(loseit, () => true, 1024 * 1024)).toBe('too_large');
 		expect(() => listZip(loseit, () => {})).toThrow(TooManyEntries);

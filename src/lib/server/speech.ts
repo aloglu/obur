@@ -73,8 +73,15 @@ export async function understandSpeech(
 	if (!perPerson.attempt(userId)) throw new SpeechFailure('limited');
 	const prompt = await promptFor(userId);
 	let heard: { text: string; audioS: number; asrMs: number; queueMs: number };
-	if (source === 'server') heard = await onServer(audio, prompt);
-	else {
+	if (source === 'server') {
+		try {
+			heard = await onServer(audio, prompt);
+		} catch (e) {
+			// A busy add-on is not another recording, as with a busy provider (2026-11-23 Gemini audit 2, H20).
+			if (e instanceof SpeechFailure && e.code === 'busy') perPerson.refund(userId);
+			throw e;
+		}
+	} else {
 		const key = await remoteModels.keyFor(userId, source);
 		if (!key) throw new SpeechFailure('key_missing');
 		const started = performance.now();

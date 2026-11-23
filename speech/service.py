@@ -18,7 +18,6 @@ import io
 import json
 import os
 import signal
-import sys
 import threading
 import time
 import wave
@@ -144,7 +143,9 @@ def make_handler(transcriber: Transcriber):
                     raise ValueError
             except (ValueError, KeyError, TypeError, binascii.Error):
                 return self._json(400, {"error": "bad_request"})
-            if not audio or len(audio) > MAX_AUDIO_BYTES:
+            if not audio:  # empty: a bad request, not a large one (2026-11-23 Gemini audit 2, H20)
+                return self._json(400, {"error": "bad_request"})
+            if len(audio) > MAX_AUDIO_BYTES:
                 return self._json(413, {"error": "too_large"})
             try:
                 result = transcriber.run(audio, (prompt or "")[:MAX_PROMPT_CHARS] or None)
@@ -177,9 +178,14 @@ def main() -> None:
     server = ThreadingHTTPServer(("0.0.0.0", int(os.environ.get("SPEECH_PORT", "8000"))), make_handler(transcriber))
     server.daemon_threads = True
     # As PID 1 the process gets no default SIGTERM handling: `docker stop` waited its whole grace period, then killed
-    # it (2026-11-22 Gemini audit, G32). Nothing is kept, so it can stop at once.
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    # it (2026-11-22 Gemini audit, G32). Nothing is kept, so it stops at once, but not while the model is working:
+    # tearing the native libraries down under it could crash (2026-11-23 Gemini audit 2, H08). serve_forever() returns
+    # after shutdown(), which must run on another thread.
+    signal.signal(signal.SIGTERM, lambda *_: threading.Thread(target=server.shutdown, daemon=True).start())
     server.serve_forever()
+    server.server_close()
+    # Waits for the request the model is on (at most one at a time); the ones still queued are dropped.
+    transcriber.lock.acquire(timeout=60)
 
 
 if __name__ == "__main__":

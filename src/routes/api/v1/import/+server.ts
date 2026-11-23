@@ -16,6 +16,7 @@ export const POST: RequestHandler = ({ request, url, locals }) =>
 		const confirm = url.searchParams.get('confirm') ?? '';
 		if (apply && !/^[0-9a-f]{64}$/.test(confirm)) error(400, 'Preview first');
 		const kind = archiveKind(bytes);
+		if (kind === 'too_large') throw new ArchiveError('too_large');
 		if (kind === 'loseit') {
 			const zone = url.searchParams.get('zone') ?? '';
 			const weightUnit = url.searchParams.get('weightUnit') ?? 'kg';

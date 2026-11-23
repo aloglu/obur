@@ -94,12 +94,13 @@ export interface LoseItData {
 }
 
 /** Which kind of export an upload is, from its file names alone (nothing is decompressed). */
-export function archiveKind(bytes: Uint8Array): 'obur' | 'loseit' | 'unknown' {
+export function archiveKind(bytes: Uint8Array): 'obur' | 'loseit' | 'unknown' | 'too_large' {
 	const names: string[] = [];
 	try {
 		listZip(bytes, (file) => names.push(file.name));
-	} catch {
-		return 'unknown';
+	} catch (e) {
+		// Too many files is said as too large, as the importers say it (2026-11-23 Gemini audit 2, H20).
+		return e instanceof TooManyEntries ? 'too_large' : 'unknown';
 	}
 	if (names.includes('manifest.json')) return 'obur';
 	return isLoseItArchive(names) ? 'loseit' : 'unknown';

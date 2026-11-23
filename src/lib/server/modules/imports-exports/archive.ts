@@ -7,7 +7,7 @@ import { PALETTES } from '../../../shared/themes.ts';
 import { LANGUAGES } from '../../../shared/languages.ts';
 import { createHash } from 'node:crypto';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import { unzipLimited, type Unpacked } from './unzip.ts';
+import { listZip, TooManyEntries, unzipLimited, type Unpacked } from './unzip.ts';
 import * as v from 'valibot';
 import { DateString, Zone } from '../../../shared/diary-input.ts';
 import { MEALS } from '../../../shared/diary-types.ts';
@@ -606,17 +606,14 @@ export function readArchive(bytes: Uint8Array): { manifest: Manifest; data: Port
 	let total = 0;
 	let count = 0;
 	try {
-		unzipSync(bytes, {
-			// The archive's list and declared sizes, read before anything is decompressed.
-			filter: (file) => {
-				if (file.name.endsWith('/')) return false;
-				if (!ALLOWED.has(file.name)) throw new ArchiveError('unexpected_file', file.name);
-				count += 1;
-				total += file.originalSize;
-				if (count > LIMITS.files || total > LIMITS.unpackedBytes)
-					throw new ArchiveError('too_large');
-				return false;
-			}
+		// The archive's list and declared sizes, read before anything is decompressed. Folders count towards
+		// listZip's cap too (2026-11-23 Gemini audit 2, H20).
+		listZip(bytes, (file) => {
+			if (file.name.endsWith('/')) return;
+			if (!ALLOWED.has(file.name)) throw new ArchiveError('unexpected_file', file.name);
+			count += 1;
+			total += file.originalSize;
+			if (count > LIMITS.files || total > LIMITS.unpackedBytes) throw new ArchiveError('too_large');
 		});
 		// The declared sizes could understate: the real ones are counted while unpacking (unzip.ts).
 		const read = unzipLimited(bytes, (name) => ALLOWED.has(name), LIMITS.unpackedBytes);
@@ -624,6 +621,7 @@ export function readArchive(bytes: Uint8Array): { manifest: Manifest; data: Port
 		unpacked = read;
 	} catch (e) {
 		if (e instanceof ArchiveError) throw e;
+		if (e instanceof TooManyEntries) throw new ArchiveError('too_large');
 		throw new ArchiveError('not_an_archive');
 	}
 
