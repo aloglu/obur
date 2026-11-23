@@ -241,7 +241,13 @@
 	}
 
 	async function choose(card: Extract<Card, { kind: 'food' }>, foodId: string) {
-		card.food = await api<FoodDetail>('GET', `/api/v1/foods/${foodId}`);
+		try {
+			card.food = await api<FoodDetail>('GET', `/api/v1/foods/${foodId}`);
+		} catch {
+			// No connection: the card stays as it was, and the sheet says so (Gemini audit 2, H13).
+			unreachable = true;
+			return;
+		}
 		card.unsure = false;
 		card.searching = false;
 		// The unit chosen for the previous food may not exist for this one.

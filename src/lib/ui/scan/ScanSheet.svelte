@@ -3,6 +3,7 @@
 	// table; it is made smaller on the phone (which also drops its location data) and read on the server, waiting in
 	// line when the scanner is busy. What was read goes to `onread`, which shows it as a food form to check; nothing
 	// is saved here. The photo is never kept on the server.
+	import { onMount } from 'svelte';
 	import Camera from '@lucide/svelte/icons/camera';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 	import CloudOff from '@lucide/svelte/icons/cloud-off';
@@ -177,12 +178,17 @@
 		attempt++; // a photo still being read no longer opens anything
 		onclose();
 	}
+
+	// Gone another way (Back, a link): a photo still being read stops being asked about (Gemini audit 2, H12).
+	onMount(() => () => {
+		attempt++;
+	});
 </script>
 
 {#snippet camera(primary: boolean, label?: string)}
 	<label
 		class={[
-			'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button px-2 text-[1rem] font-[750]',
+			'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button px-2 text-[1rem] font-[750] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent',
 			primary ? 'bg-fill text-on-accent' : 'bg-surface2',
 			reading && 'pointer-events-none opacity-50'
 		]}
@@ -253,7 +259,7 @@
 		{@render camera(true)}
 		<label
 			class={[
-				'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button bg-surface2 px-2 text-[1rem] font-[750]',
+				'inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-button bg-surface2 px-2 text-[1rem] font-[750] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent',
 				reading && 'pointer-events-none opacity-50'
 			]}
 		>

@@ -273,13 +273,19 @@
 		savePreferences({ holdHintSeen: true }).catch(() => {});
 	}
 
+	// One change at a time: a second tap before the first is saved would send the same answer again (H13).
+	let completing = false;
 	async function toggleComplete() {
+		if (completing) return;
+		completing = true;
 		try {
 			await api('PUT', `/api/v1/diary/days/${data.date}`, { complete: !data.complete });
 			await invalidateAll();
 		} catch {
 			// No connection or refused: the day stays as it was, and says so.
 			showToast({ message: m.error_generic() });
+		} finally {
+			completing = false;
 		}
 	}
 

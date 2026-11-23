@@ -10,6 +10,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
 	import { withRecentAuth } from '#lib/client/passkeys.ts';
+	import { radioKeys } from '#lib/client/radio-keys.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { dayAndMonth } from '#lib/shared/format.ts';
 	import {
@@ -27,12 +28,15 @@
 	import ConsentSheet from '#lib/ui/own-key/ConsentSheet.svelte';
 
 	let { data } = $props();
-	const s = untrack(() => data.settings);
-	let choices = $state<ModelChoices>(s.choices);
-	let keys = $state<KeySummary[]>(s.keys);
+	// What the page shows follows the server after each save; the choices and keys are what this page last saved
+	// (Gemini audit 2, H13: usage and the admins' switch had stayed as first loaded).
+	const s = $derived(data.settings);
+	let choices = $state<ModelChoices>(untrack(() => data.settings.choices));
+	let keys = $state<KeySummary[]>(untrack(() => data.settings.keys));
 	let adding = $state(false);
 	let asking = $state<{ feature: Feature; provider: Provider } | null>(null);
 	let saving = $state(false);
+	let removing = $state(false);
 
 	const usable = $derived(s.allowed ? keys.filter((k) => !k.unreadable) : []);
 	const checked = (iso: string) => {
@@ -49,7 +53,8 @@
 				: m.models_server_none_admin_scan();
 
 	async function choose(feature: Feature, source: Source, allowed = false) {
-		if (choices[feature] === source) return;
+		// One save at a time; the options stay enabled so a keyboard keeps its place (H13).
+		if (saving || choices[feature] === source) return;
 		if (source !== 'server' && !allowed) {
 			asking = { feature, provider: source };
 			return;
@@ -74,6 +79,8 @@
 	}
 
 	async function remove(provider: Provider) {
+		if (removing) return;
+		removing = true;
 		try {
 			({ keys, choices } = await api<{ keys: KeySummary[]; choices: ModelChoices }>(
 				'DELETE',
@@ -84,8 +91,16 @@
 			await invalidateAll();
 		} catch {
 			showToast({ message: m.settings_save_failed() });
+		} finally {
+			removing = false;
 		}
 	}
+
+	/** The option chosen can take focus: then it is the group's one Tab stop, otherwise every option is (H22). */
+	const chosenUsable = (feature: Feature) =>
+		choices[feature] === 'server'
+			? s.local[feature]
+			: usable.some((k) => k.provider === choices[feature]);
 </script>
 
 <svelte:head><title>{m.more_speak_scan()} · {m.app_name()}</title></svelte:head>
@@ -95,8 +110,10 @@
 		type="button"
 		role="radio"
 		aria-checked={choices[feature] === value}
+		tabindex={!chosenUsable(feature) || choices[feature] === value ? 0 : -1}
 		{disabled}
 		onclick={() => choose(feature, value)}
+		onkeydown={(e) => radioKeys(e, false)}
 		class="grid min-h-14 w-full grid-cols-[minmax(0,1fr)_22px] items-center gap-3 py-2 text-left disabled:opacity-45"
 	>
 		<span class="min-w-0">

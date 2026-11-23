@@ -32,7 +32,7 @@
 <div
 	role="status"
 	aria-live="polite"
-	class="pointer-events-none fixed inset-x-3 bottom-[calc(max(12px,env(safe-area-inset-bottom))+76px)] z-40 flex flex-col items-center gap-2 desk:inset-x-auto desk:bottom-6 desk:left-[calc(232px+28px)] desk:items-start"
+	class="pointer-events-none fixed inset-x-3 bottom-[calc(max(12px,env(safe-area-inset-bottom))+76px)] z-40 flex flex-col items-center gap-2 desk:inset-x-auto desk:bottom-6 desk:left-[calc(72px+28px)] desk:items-start wide:left-[calc(232px+28px)]"
 >
 	<!-- An achievement sits above an ordinary toast when both show. -->
 	<AchievementToast />

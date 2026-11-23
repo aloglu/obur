@@ -1,6 +1,7 @@
 <script lang="ts" generics="T extends string">
 	// A segmented control for two to four options filled in once (radio group semantics, docs/ui.md "Choices"). Equal
-	// widths, never stacked; the highlight slides to the chosen option.
+	// widths, never stacked; the highlight slides to the chosen option. One Tab stop; the arrow keys choose (H22).
+	import { radioKeys } from '#lib/client/radio-keys.ts';
 	interface Option {
 		value: T;
 		label: string;
@@ -16,6 +17,10 @@
 	}
 	let { label, options, value = $bindable(), onchange, hideLabel = false }: Props = $props();
 	const at = $derived(options.findIndex((o) => o.value === value));
+	/** The Tab stop: the chosen option, or the first that can be chosen when none is. */
+	const stop = $derived(
+		at >= 0 && !options[at].disabled ? at : options.findIndex((o) => !o.disabled)
+	);
 </script>
 
 <fieldset class="flex flex-col gap-1.5">
@@ -30,12 +35,14 @@
 		style:--at={at}
 	>
 		{#if at >= 0}<span class="thumb" aria-hidden="true"></span>{/if}
-		{#each options as option (option.value)}
+		{#each options as option, i (option.value)}
 			<button
 				type="button"
 				role="radio"
 				aria-checked={value === option.value}
+				tabindex={i === stop ? 0 : -1}
 				disabled={option.disabled}
+				onkeydown={(e) => radioKeys(e)}
 				onclick={() => {
 					value = option.value;
 					onchange?.(option.value);
