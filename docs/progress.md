@@ -353,6 +353,12 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   needs no change (no commands, settings or log lines changed). `~/Documents/obur-rc-test-checklist.md` has "New in
   1.0.0-rc.10" (Scan's camera on the iPhone first). Image tests run in the release workflow. Next: the workflow
   publishes; the owner updates and goes through the checklist.
+  - First release run failed (nothing published): the two big-archive tests in `unzip.test.ts` took more than 5 s
+    on the runner, building their 250-400 MB fixtures (also seen once locally under load). They now allow 60 s; what
+    they measure is unchanged. The owner moved the unpublished tag to the fix (c25f616).
+  - Second run passed every job: checks, browser tests, the three images and Publish; published 2026-11-23 18:10 UTC.
+    Next: the owner updates and goes through the rc.10 checklist (Scan's camera on the iPhone first; note whether the
+    installed app asks for the camera again).
   - H22 done: chart sliders show a ring for keyboard focus; empty-search links are 44 px; recipes.count names
     deletedAt (already excluded by foods_deleted_archived); release.yml comment; Speak and Scan offline titles have no
     period. H17 not done: matching phone focus order needs either the phone order or the desktop layout to change, a
