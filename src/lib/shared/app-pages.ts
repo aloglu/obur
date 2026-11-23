@@ -21,3 +21,10 @@ export function appPages(files: string[]): string[] {
 	const rest = ids.filter((id) => !FIRST.includes(id)).sort();
 	return [...FIRST.filter((id) => ids.includes(id)), ...rest];
 }
+
+/** Pages only an admin can open (their loaders send anyone else away). */
+export const ADMIN_PAGES = new Set(['/(app)/members', '/(app)/server']);
+
+/** The pages worth reading in for this person: an admin's own pages only for an admin (Gemini audit 2, H16). */
+export const pagesFor = (pages: string[], isAdmin: boolean) =>
+	isAdmin ? pages : pages.filter((id) => !ADMIN_PAGES.has(id));

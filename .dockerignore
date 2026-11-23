@@ -9,6 +9,9 @@ build
 test-results
 playwright-report
 spikes
+# The add-ons have their own images: their changes need not rebuild obur's (Gemini audit 2, H16).
+speech
+labels
 private
 docs
 tests

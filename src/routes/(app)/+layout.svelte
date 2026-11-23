@@ -15,6 +15,7 @@
 	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import { forgetPrepared, startPreparing } from '#lib/client/prepare.ts';
 	import { pageDirection } from '#lib/shared/page-tree.ts';
+	import { pagesFor } from '#lib/shared/app-pages.ts';
 	import AppShell from '#lib/ui/shell/AppShell.svelte';
 
 	let { children, data } = $props();
@@ -125,7 +126,7 @@
 			// One at a time, so the first visit to a page does not wait for it (the files are already on this device, in
 			// the service worker's copy; this reads them in before the tap).
 			// Every page, found by the build (shared/app-pages.ts): a new one is never left out.
-			const pages = __APP_PAGES__;
+			const pages = pagesFor(__APP_PAGES__, data.user?.role === 'admin');
 			let next = 0;
 			ahead = setInterval(() => {
 				if (next >= pages.length) return clearInterval(ahead);
