@@ -246,6 +246,13 @@ test('first day: the welcome offers a budget once, and "Just log" leaves no ment
 	await page.goto('/');
 	const welcome = page.getByRole('region', { name: /^Welcome, Selin/ });
 	await expect(welcome).toBeVisible();
+	if (testInfo.project.name === 'desktop-chromium') {
+		// Above both columns, so the budget keeps the wide one (Gemini audit 2, H04: it had pushed it right).
+		const card = await welcome.boundingBox();
+		const budget = await page.getByRole('region', { name: 'Budget' }).boundingBox();
+		expect(card!.width).toBeGreaterThan(budget!.width * 1.5);
+		expect(Math.abs(card!.x - budget!.x)).toBeLessThan(2);
+	}
 	await welcome.getByRole('button', { name: 'Just log' }).click();
 	await expect(page.getByRole('status')).toContainText(
 		'Set one up any time in More → Settings → Profile'

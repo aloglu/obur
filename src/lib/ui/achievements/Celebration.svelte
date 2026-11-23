@@ -30,6 +30,7 @@
 	];
 	let shown = $state(0);
 	let done = $state<HTMLButtonElement>();
+	let box = $state<HTMLDialogElement>();
 	let canvas = $state<HTMLCanvasElement>();
 	const TICK = 1 / 60;
 	const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -52,6 +53,19 @@
 	$effect(() => {
 		if (!celebration.open) return;
 		return lockPageScroll();
+	});
+
+	// A native modal dialog, like Sheet: Tab stays inside, the page behind can't be reached, and focus goes back to
+	// what had it when the celebration closes (2026-11-23 Gemini audit 2, H05).
+	$effect(() => {
+		const node = box;
+		if (!celebration.open || !node) return;
+		const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		if (!node.open) node.showModal();
+		return () => {
+			if (node.open) node.close();
+			if (before?.isConnected) before.focus({ preventScroll: true });
+		};
 	});
 
 	$effect(() => {
@@ -152,19 +166,18 @@
 	});
 </script>
 
-<svelte:window onkeydown={(e) => celebration.open && e.key === 'Escape' && closeCelebration()} />
-
 {#if celebration.open}
 	{@const a = celebration.open}
 	<!-- Tapping the background only plays with the confetti: decoration, with nothing for a keyboard to miss. -->
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<div
-		role="dialog"
-		aria-modal="true"
-		tabindex="-1"
+	<dialog
+		bind:this={box}
 		aria-label={m.achievement_celebration({ title: achievementTitle(a) })}
 		onclick={poke}
-		class="celebrate fixed inset-0 isolate z-50 flex flex-col items-center justify-center gap-3 overflow-hidden px-7 pt-[calc(env(safe-area-inset-top)+40px)] pb-[calc(env(safe-area-inset-bottom)+40px)] text-center"
+		oncancel={(e) => {
+			e.preventDefault();
+			closeCelebration();
+		}}
+		class="celebrate fixed inset-0 isolate m-0 h-dvh max-h-none w-full max-w-none flex-col items-center justify-center gap-3 overflow-hidden border-0 px-7 pt-[calc(env(safe-area-inset-top)+40px)] pb-[calc(env(safe-area-inset-bottom)+40px)] text-center text-text open:flex"
 	>
 		{#if !reduced()}
 			<canvas
@@ -224,7 +237,7 @@
 				>{m.achievement_see_all()}</a
 			>
 		{/if}
-	</div>
+	</dialog>
 {/if}
 
 <style>

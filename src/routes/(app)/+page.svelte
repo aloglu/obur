@@ -296,12 +296,12 @@
 <main class="today mx-auto max-w-[1064px] px-3.5 pt-[calc(1rem-1.25px)] pb-3 desk:px-7 desk:pb-5">
 	<DayHeader date={data.date} today={data.today} onmove={move} />
 	{#if data.date === data.today && !data.target}
-		<div transition:slide={{ duration: 260 }}>
+		<div class="o-banner" transition:slide={{ duration: 260 }}>
 			<WelcomeCard name={data.user?.displayName ?? ''} busy={skipping} onskip={justLog} />
 		</div>
 	{/if}
 	{#if data.date === data.today && data.maintainAtKg !== null}
-		<div transition:slide={{ duration: 260 }}>
+		<div class="o-banner" transition:slide={{ duration: 260 }}>
 			<MaintainOffer goalKg={data.maintainAtKg} />
 		</div>
 	{/if}
@@ -507,7 +507,9 @@
 			grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
 			align-items: start;
 		}
-		.today > :global(header) {
+		/* The day header and the cards above both columns (Gemini audit 2, H04: they had taken the first column). */
+		.today > :global(header),
+		.o-banner {
 			grid-column: 1 / -1;
 		}
 		.today-a,

@@ -128,7 +128,8 @@
 	}
 	.hold-drag-count {
 		border-radius: 999px;
-		background: var(--accent);
+		/* --on-accent is made for --fill; on --accent it was unreadable in three palettes (Gemini audit 2, H03). */
+		background: var(--fill);
 		color: var(--on-accent);
 		padding: 2px 9px;
 		font-size: 0.8125rem;

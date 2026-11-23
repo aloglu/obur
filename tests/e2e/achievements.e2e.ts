@@ -59,7 +59,9 @@ test('a new weight mark is celebrated once; older ones arrive quietly', async ({
 	const again = page.getByRole('dialog', { name: 'Achievement: 4 kg lost' });
 	await expect(again).toContainText("That's a pumpkin.");
 	await expect(again.getByRole('link', { name: 'See all achievements' })).toHaveCount(0);
-	await again.getByRole('button', { name: 'Done' }).click();
+	// A real modal dialog: the page behind can't be reached, and Escape closes it (Gemini audit 2, H05).
+	expect(await again.evaluate((d) => d.matches(':modal'))).toBe(true);
+	await page.keyboard.press('Escape');
 	await expect(again).toBeHidden();
 	await expect(badge).toBeFocused();
 	await expect(kilos.getByRole('button', { name: /Next: 6 kg/ })).toHaveCount(0); // not reached yet
