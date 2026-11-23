@@ -148,3 +148,52 @@ test('dismissing the photo picker leaves Scan open; Escape still closes it', asy
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 });
+
+test('a pull while the sheet still slides in, or just after it sprang back, follows the finger (audit S08)', async ({
+	page,
+	browserName
+}, testInfo) => {
+	test.skip(browserName !== 'chromium', 'touch drags are sent through Chromium only');
+	await signedInAs(page, `Erken ${testInfo.project.name}`);
+	await page.goto('/log');
+	const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
+	const cdp = await page.context().newCDPSession(page);
+	const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', y?: number) =>
+		cdp.send('Input.dispatchTouchEvent', {
+			type,
+			touchPoints: y === undefined ? [] : [{ x: 60, y, id: 1 }]
+		});
+	/** Pulls 60 px from `y` (under a quarter of the sheet) and gives the sheet's top while the finger is down. */
+	const pullAndMeasure = async (y: number) => {
+		await touch('touchStart', y);
+		for (let i = 1; i <= 3; i++) {
+			await touch('touchMove', y + i * 20);
+			await page.waitForTimeout(60); // slow: a pull, not a flick
+		}
+		await page.waitForTimeout(50);
+		const top = (await sheet.boundingBox())!.y;
+		await touch('touchEnd');
+		return top;
+	};
+	await page.getByRole('button', { name: 'Type it' }).click();
+	await expect(sheet).toBeVisible();
+	const settledTop = await sheet.evaluate(async (d) => {
+		await Promise.all(d.getAnimations().map((a) => a.finished));
+		return d.getBoundingClientRect().y;
+	});
+	await expectSettled(page, sheet);
+
+	// Again from the start, and pulled at once, while it slides in.
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await page.waitForTimeout(400);
+	await page.getByRole('button', { name: 'Type it' }).click();
+	expect(await pullAndMeasure(settledTop + 30)).toBeGreaterThan(settledTop + 45);
+	await expectSettled(page, sheet);
+
+	// A short pull, then another before the sheet is back up.
+	expect(await pullAndMeasure(settledTop + 30)).toBeGreaterThan(settledTop + 45);
+	expect(await pullAndMeasure(settledTop + 30)).toBeGreaterThan(settledTop + 45);
+	await expectSettled(page, sheet);
+	await cdp.detach();
+});

@@ -81,9 +81,12 @@
 	let still = $state<string | null>(null);
 	let closed = false;
 
+	/** A label was read: the camera is done, also when a start is still on its way (review of d9b85f8). */
+	let finished = false;
 	let starting = false;
-	async function startCamera() {
-		if (starting || refused || closed || !navigator.mediaDevices?.getUserMedia) return;
+	/** `opening`: the start when the sheet opens, whose refusal is remembered; a later restart's failure isn't. */
+	async function startCamera(opening = false) {
+		if (starting || refused || closed || finished || !navigator.mediaDevices?.getUserMedia) return;
 		starting = true;
 		try {
 			const granted = await navigator.mediaDevices.getUserMedia({
@@ -94,36 +97,40 @@
 					height: { ideal: 1440 }
 				}
 			});
-			if (closed || !video) return granted.getTracks().forEach((t) => t.stop());
+			if (closed || finished || !video) return granted.getTracks().forEach((t) => t.stop());
 			stream = granted;
-			// The phone can take the camera away (another app, Choose photo's own camera): back to the phone's camera
-			// until the page is shown again.
-			for (const track of granted.getVideoTracks())
+			for (const track of granted.getVideoTracks()) {
+				// The phone can end it (Choose photo's own camera, another app): the phone's camera until it comes back.
 				track.onended = () => {
 					lost = true;
 					stopCamera();
 				};
+				// Paused by the phone while the app is away: no stale picture to take meanwhile.
+				track.onmute = () => (live = false);
+				track.onunmute = () => (live = stream === granted);
+			}
 			video.srcObject = granted;
 			await video.play();
-			if (!closed) live = true;
+			if (!closed && stream === granted) live = !granted.getVideoTracks()[0]?.muted;
 		} catch (e) {
 			// Refused or no camera: Take photo uses the phone's own camera instead.
 			const name = (e as DOMException).name;
-			if (name === 'NotAllowedError' || name === 'NotFoundError') refused = true;
+			if (opening && (name === 'NotAllowedError' || name === 'NotFoundError')) refused = true;
 			stopCamera();
 		} finally {
 			starting = false;
 		}
 	}
 
-	/** The camera was on and the phone took it away: it comes back when the page is shown again. Never asked again
-	 *  after a refusal. */
+	/** The phone ended the camera: it is asked for again when the page is shown, gets focus or a photo picker closes.
+	 *  Never asked again after a refusal on opening. */
 	let lost = false;
-	/** The camera was taken away and may come back: when the page is shown, gets focus or a photo picker closes. */
 	function comeBack() {
-		if (!lost || closed || document.visibilityState !== 'visible') return;
-		lost = false;
-		startCamera();
+		if (closed || document.visibilityState !== 'visible') return;
+		if (lost) {
+			lost = false;
+			startCamera();
+		} else if (stream && video?.paused) video.play().catch(() => {});
 	}
 
 	function stopCamera() {
@@ -275,6 +282,7 @@
 			lastImage = null;
 			attempt++;
 			// The photo stays in the frame until the next screen is there; the camera is done (audit S10).
+			finished = true;
 			stopCamera();
 			onread({ proposal: read, blurry: body.blurry === true, photo });
 		} catch {
@@ -301,21 +309,14 @@
 
 	// Gone another way (Back, a link): a photo still being read stops being asked about (Gemini audit 2, H12).
 	onMount(() => {
-		startCamera();
-		// Hidden: the camera goes off (no light in a background tab, no stale picture after the phone was away) and
-		// comes back when the page is shown again (audit S05).
-		const shown = () => {
-			if (document.visibilityState === 'hidden') {
-				if (stream) {
-					stopCamera();
-					lost = true;
-				}
-			} else comeBack();
-		};
-		document.addEventListener('visibilitychange', shown);
+		startCamera(true);
+		// The camera stays on while the app is away: stopping it would ask again on the way back, which an installed
+		// iPhone app does each time (review of d9b85f8; WebKit bug 215884). The phone pauses it meanwhile; back, it
+		// plays again, or starts again if the phone ended it (audit S05, S06).
+		document.addEventListener('visibilitychange', comeBack);
 		window.addEventListener('focus', comeBack);
 		return () => {
-			document.removeEventListener('visibilitychange', shown);
+			document.removeEventListener('visibilitychange', comeBack);
 			window.removeEventListener('focus', comeBack);
 			closed = true;
 			attempt++;

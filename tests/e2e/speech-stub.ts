@@ -40,6 +40,7 @@ function wavFacts(b: Buffer): WavFacts {
 type OcrAnswer = { status: number; body: unknown; then?: OcrAnswer };
 const nextOcr = new Map<number, OcrAnswer>();
 let lastOcr: { imageBytes: number; jpeg: boolean; width: number } | null = null;
+const recentOcr: { imageBytes: number; jpeg: boolean; width: number }[] = [];
 
 /** A JPEG's width from its start-of-frame marker; 0 when not found. */
 function jpegWidth(b: Buffer): number {
@@ -78,6 +79,15 @@ createServer(async (req, res) => {
 		return reply(200, { ok: true });
 	}
 	if (req.method === 'GET' && req.url === '/last-ocr') return reply(200, lastOcr ?? {});
+	// The last photo of one width, or the last wider than `min` (a camera's), so tests in both browsers at once
+	// don't read each other's.
+	if (req.method === 'GET' && req.url?.startsWith('/last-ocr?')) {
+		const q = new URL(req.url, 'http://stub').searchParams;
+		const w = Number(q.get('width') ?? -1);
+		const min = Number(q.get('min') ?? Infinity);
+		const found = recentOcr.findLast((o) => o.width === w || o.width >= min);
+		return reply(200, found ?? {});
+	}
 	if (req.method === 'POST' && req.url === '/next-ocr') {
 		const { width, ...answer } = JSON.parse(await read(req));
 		nextOcr.set(width, answer);
@@ -87,6 +97,8 @@ createServer(async (req, res) => {
 		const image = Buffer.from(JSON.parse(await read(req)).image, 'base64');
 		const jpeg = image[0] === 0xff && image[1] === 0xd8;
 		lastOcr = { imageBytes: image.length, jpeg, width: jpeg ? jpegWidth(image) : 0 };
+		recentOcr.push(lastOcr);
+		if (recentOcr.length > 100) recentOcr.shift();
 		const answer = nextOcr.get(lastOcr.width) ?? { status: 200, body: { lines: [] } };
 		// `then`: the answer after this one (busy, then read).
 		if (answer.then) nextOcr.set(lastOcr.width, answer.then);

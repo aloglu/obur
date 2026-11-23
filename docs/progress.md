@@ -340,6 +340,14 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   until the app is opened again. Tests in sheet-swipe and scan e2e. Full browser suite in Docker: 335 passed, 1
   failed (goals.e2e.ts on WebKit, a timeout; passed 3 of 3 alone). check, lint, Vitest 1,272 pass. Firefox Speak not
   run again (Speak unchanged since it passed). Next: rc.10 when the owner asks; then the iPhone check.
+- Short review of d9b85f8 (owner's go): stopping the camera while hidden would ask again on each return in an
+  installed iPhone app, so it now stays on (paused by the phone; restarted only when the phone ended it); a refusal is
+  remembered only from the start on opening; no camera start after a read; a pull finishes only the slide-in and
+  cancels a spring-back. Not done: a read whose next page never loads leaves "Reading the label…" (as in rc.9; close
+  and scan again). Tests: camera kept across hide/show, back after the phone ends it, off after a read; pulls during
+  the slide-in and after a spring-back. The stand-in keeps each photo by width (`/last-ocr?width=` / `?min=`), so
+  tests in both browsers no longer read each other's. Full browser suite in Docker: 338 passed, 0 failed. check, lint,
+  Vitest 1,272 pass.
   - H22 done: chart sliders show a ring for keyboard focus; empty-search links are 44 px; recipes.count names
     deletedAt (already excluded by foods_deleted_archived); release.yml comment; Speak and Scan offline titles have no
     period. H17 not done: matching phone focus order needs either the phone order or the desktop layout to change, a

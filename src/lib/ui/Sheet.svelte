@@ -92,6 +92,8 @@
 		let speed = 0;
 		/** null: not decided yet; false: this touch is not a pull. */
 		let pulling: boolean | null = false;
+		/** The way back up after a short pull: a new pull takes the sheet from where it is. */
+		let springing: Animation | undefined;
 		const ownScroll = (from: EventTarget | null) => {
 			for (let el = from as HTMLElement | null; el && el !== dialog; el = el.parentElement) {
 				if (el.matches('[popover], textarea, input[type=range]')) return true;
@@ -141,8 +143,10 @@
 					return;
 				}
 				pulling = true;
+				springing?.cancel();
 				// Still sliding in: it follows the finger from here instead (audit S08).
-				for (const a of dialog.getAnimations()) a.finish();
+				for (const a of dialog.getAnimations())
+					if (a instanceof CSSAnimation && /sheet-in|dialog-in/.test(a.animationName)) a.finish();
 				(document.activeElement as HTMLElement | null)?.blur?.();
 			}
 			// No scroll and no rubber band while the sheet follows the finger; a touch that moved makes no click either.
@@ -179,7 +183,7 @@
 			pulled = 0;
 			reset();
 			if (y === 0 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-			dialog.animate([{ transform: `translateY(${y}px)` }, { transform: 'none' }], {
+			springing = dialog.animate([{ transform: `translateY(${y}px)` }, { transform: 'none' }], {
 				duration: 220,
 				easing: 'cubic-bezier(0.3, 0.75, 0.1, 1)'
 			});

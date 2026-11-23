@@ -35,6 +35,10 @@ const WIDE19 = png(
 const WIDE21 = png(
 	'iVBORw0KGgoAAAANSUhEUgAAABUAAAACCAIAAAA4pgDiAAAAD0lEQVR4nGNooAwwUKgfAMFhPwEbx7sNAAAAAElFTkSuQmCC'
 );
+// Only the camera test below (Chromium) uses it.
+const WIDE23 = png(
+	'iVBORw0KGgoAAAANSUhEUgAAABcAAAACCAIAAAA8U9DfAAAAD0lEQVR4nGNooAZgoIopAN+aRQHXWp8cAAAAAElFTkSuQmCC'
+);
 const line = (text: string, x: number, y: number, w = text.length * 8) => ({
 	text,
 	box: [
@@ -98,7 +102,7 @@ test('scan a label: the proposal fills the food form, the person checks and name
 	]);
 	await expect(page.getByText('Copy the label.')).toBeHidden();
 	// The photo went out small and as JPEG (drawn again on the phone, which drops its location data).
-	const sent = await (await request.get(`${SPEECH_STUB}/last-ocr`)).json();
+	const sent = await (await request.get(`${SPEECH_STUB}/last-ocr?width=3`)).json();
 	expect(sent).toMatchObject({ jpeg: true, width: 3 });
 	// The photo is one tap away.
 	await expect(page.getByRole('img', { name: 'Your photo of the label' })).toBeHidden();
@@ -392,7 +396,7 @@ test('the camera shows live in the frame and Take photo sends what it shows', as
 	await sheet.getByRole('button', { name: 'Take photo' }).click();
 	// The stand-in reads nothing from a fake camera's picture: "no table", and the camera is back for Retake.
 	await expect(sheet.getByRole('alert')).toContainText('No nutrition table found');
-	const sent = await (await request.get(`${SPEECH_STUB}/last-ocr`)).json();
+	const sent = await (await request.get(`${SPEECH_STUB}/last-ocr?min=100`)).json();
 	expect(sent.jpeg).toBe(true);
 	expect(sent.width).toBeGreaterThan(100);
 	expect(sent.width).toBeLessThanOrEqual(1600);
@@ -441,4 +445,71 @@ test('a refused camera is not asked for again while the app stays open; Take pho
 		await expect(sheet).toBeHidden();
 	}
 	expect(await page.evaluate(() => (window as unknown as { asked: number }).asked)).toBe(1);
+});
+
+test('the camera stays on while the app is away, comes back after the phone ends it, and is off once a label is read (audit S05, S06, S10)', async ({
+	page,
+	context,
+	request,
+	browserName
+}, testInfo) => {
+	test.skip(browserName !== 'chromium', 'needs a fake camera (WebKit in Playwright has none)');
+	await context.grantPermissions(['camera']);
+	// Every camera the page is given, to see whether it is still on.
+	await page.addInitScript(() => {
+		const w = window as unknown as { cams: MediaStream[] };
+		w.cams = [];
+		const real = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+		navigator.mediaDevices.getUserMedia = async (c) => {
+			const s = await real(c);
+			w.cams.push(s);
+			return s;
+		};
+	});
+	const cams = () =>
+		page.evaluate(() =>
+			(window as unknown as { cams: MediaStream[] }).cams.map(
+				(s) => s.getVideoTracks()[0].readyState
+			)
+		);
+	const setShown = (state: 'visible' | 'hidden') =>
+		page.evaluate((v) => {
+			Object.defineProperty(document, 'visibilityState', { value: v, configurable: true });
+			document.dispatchEvent(new Event('visibilitychange'));
+		}, state);
+	await signedInAs(page, `Geri gelen ${testInfo.project.name}`);
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Scan a label' }).click();
+	const sheet = page.getByRole('dialog', { name: 'Scan a label' });
+	const takeButton = sheet.locator('button', { hasText: 'Take photo' });
+	await expect(takeButton).toBeVisible();
+	expect(await cams()).toEqual(['live']);
+
+	// Away and back: the same camera, never asked for again.
+	await setShown('hidden');
+	await setShown('visible');
+	expect(await cams()).toEqual(['live']);
+	await expect(takeButton).toBeVisible();
+
+	// The phone ends it (its own camera through Choose photo): the phone's camera until the page is back.
+	await page.evaluate(() => {
+		const t = (window as unknown as { cams: MediaStream[] }).cams[0].getVideoTracks()[0];
+		t.dispatchEvent(new Event('ended'));
+	});
+	await expect(sheet.getByText('Fill the frame with the nutrition table')).toBeVisible();
+	await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+	await expect(takeButton).toBeVisible();
+	expect(await cams()).toEqual(['ended', 'live']);
+
+	// A label is read: the photo stays in the frame and the camera is off, before the next page.
+	await request.post(`${SPEECH_STUB}/next-ocr`, {
+		data: { width: 23, status: 200, body: { lines: TABLE, ocrMs: 900, queueMs: 0 } }
+	});
+	await sheet.getByLabel('Choose photo').setInputFiles({
+		name: 'label.png',
+		mimeType: 'image/png',
+		buffer: WIDE23
+	});
+	await expect(page.getByRole('heading', { level: 1, name: 'Check the label' })).toBeVisible();
+	expect(await cams()).toEqual(['ended', 'ended']);
 });
