@@ -306,8 +306,8 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
     add-on tests pass for both images. Full browser suite in Docker: 328 passed, 41 skipped.
   - Final checks (2026-11-23, at ab2e95a): check, lint, Vitest 1,272; Firefox Speak on the host 6 passed; image
     tests on the final obur image: smoke, off-site, off-site restore, restore interruption, upgrade from beta.19 and
-    from rc.8 all pass. Report: ~/Documents/obur-audit-2-changes-2026-11-23.md. **Next: the owner's H17 choice
-    (screenshots of both options first), then rc.9 only when the owner asks.**
+    from rc.8 all pass. Report: ~/Documents/obur-audit-2-changes-2026-11-23.md. H17: the owner chose to keep Today as it is
+    (review page with screenshots; recorded in ui.md). **Next: rc.9, only when the owner asks.**
   - H22 done: chart sliders show a ring for keyboard focus; empty-search links are 44 px; recipes.count names
     deletedAt (already excluded by foods_deleted_archived); release.yml comment; Speak and Scan offline titles have no
     period. H17 not done: matching phone focus order needs either the phone order or the desktop layout to change, a
