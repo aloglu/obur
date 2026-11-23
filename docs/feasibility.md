@@ -69,6 +69,17 @@ Findings on the server:
 
 **Conclusion so far.** The provisional voice target (p95 at most 5 s after the clip ends) is met **only** by the small model, and only on the server side, with about 0.4 s to spare for upload. About three in four clips need no correction, with mixed-language sentences the weakest. End-to-end phone timings are pending (probe).
 
+**Recording made on the phone (2026-11-22/23, audits A11, G02, G03).** Speak now sends a 16 kHz WAV made on the phone from the microphone's raw samples (`docs/design.md`, "Recording format"). Checks, on the owner's 48 development clips (iPhone m4a, made into WAV the phone's way: decoded at 48 kHz, averaged to 16 kHz, 16-bit), in the speech image on the desktop, with the owner's prompt:
+
+| Audio path | Word errors (of 320) | Clips exactly right | Same text as before |
+|---|---|---|---|
+| Before: PyAV decodes the m4a to 16 kHz | 33 (0.103) | 26 | — |
+| Averaged to 16 kHz, float samples (2026-11-22) | 0.103 | 27 | 36 of 48 |
+| Windowed-sinc filter instead of averaging (2026-11-22) | 0.138 | — | — |
+| New add-on, 16-bit WAV (2026-11-23) | 35 (0.109) | 26 | 39 of 48 |
+
+The differences go both ways (three clips gained a word error, one lost one) and are within what 48 clips can show. The real phone recording is not compressed before the add-on reads it, which these m4a clips cannot measure. On the owner's iPhone (Safari and Home Screen app) both ways to make the WAV worked, with a 48 kHz microphone; 5 seconds became about 160 KB.
+
 ## Label OCR (PaddleOCR via ONNX Runtime)
 
 **Setup.** Ten real label photos from the owner's kitchen (an eleventh photo was not a label and was excluded and deleted). Values were read by hand from the photos (136 values over 16 nutrient columns; the owner spot-checked 5–6 of the 10 labels against the photos and found no errors, so this is not a full verification). Photos were converted to orientation-corrected JPEG with all metadata removed (the originals contain GPS location). The set includes curved packs, glare through plastic, very small print, two labels in running text rather than tables, %RI columns, bilingual rows, distractor tables in other languages and a distractor energy figure. Development data only. Scripts: `spikes/ocr/`; RapidOCR 3.9.2 on ONNX Runtime 1.31.0.

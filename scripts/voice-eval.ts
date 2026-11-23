@@ -3,7 +3,11 @@
 // file and prints only totals. Usage:
 //   node scripts/voice-eval.ts <transcripts.tsv> <raw dir> <speech url> <results.json> [prefix=prompt-file …]
 // e.g. h=~/obur-private/results/prompt-owner.txt gives clips h… that prompt; clips without one get none.
-import { readFileSync, writeFileSync } from 'node:fs';
+// The add-on reads only 16 kHz mono WAV, as Speak makes it on the phone (A11): <clip>.wav is sent when it exists,
+// otherwise <clip>.m4a is converted with the computer's own ffmpeg (its resampler, not the phone's averaging).
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { parseEntry, type ParseResult } from '../src/lib/server/modules/nl-parser/index.ts';
@@ -48,9 +52,24 @@ const rows = readFileSync(tsv, 'utf8')
 	.map((l) => l.split('\t'))
 	.map(([clip, text, lang, conditions]) => ({ clip, text, lang, conditions }));
 
+/** <clip>.m4a as 16 kHz mono WAV, through a file: written to a pipe, ffmpeg's header gives no real length. */
+function converted(clip: string): Buffer {
+	const out = path.join(mkdtempSync(path.join(tmpdir(), 'voice-eval-')), 'clip.wav');
+	try {
+		execFileSync('ffmpeg', [
+			...['-loglevel', 'error', '-i', path.join(rawDir, `${clip}.m4a`)],
+			...['-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le', out]
+		]);
+		return readFileSync(out);
+	} finally {
+		rmSync(path.dirname(out), { recursive: true, force: true });
+	}
+}
+
 const results = [];
 for (const row of rows) {
-	const audio = readFileSync(path.join(rawDir, `${row.clip}.m4a`));
+	const wavPath = path.join(rawDir, `${row.clip}.wav`);
+	const audio = existsSync(wavPath) ? readFileSync(wavPath) : converted(row.clip);
 	const prompt = prompts.get(row.clip[0]) ?? null;
 	const started = performance.now();
 	const response = await fetch(`${speechUrl}/transcribe`, {

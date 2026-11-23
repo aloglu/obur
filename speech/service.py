@@ -2,12 +2,13 @@
 logging"; settings measured in docs/feasibility.md). Runs inside the Compose project on an internal network with no
 internet access; only the web container reaches it.
 
-POST /transcribe  {"audio": base64 bytes (m4a/mp4, webm, ogg, wav), "prompt": optional str}
+POST /transcribe  {"audio": base64 16 kHz mono 16-bit PCM WAV, "prompt": optional str}
   → 200 {"text", "language", "audioS", "queueMs", "asrMs"}
   → 400 {"error": "bad_request" | "decode_failed" | "too_long"}, 413 too large, 503 {"error": "busy"}
 GET  /health      → 200 {"ok": true, "model": ...} once the model is loaded
 
-Audio is decoded from memory and never written to disk. Nothing about requests is logged: transcripts and audio stay
+Speak makes the WAV on the phone (src/lib/client/wav.ts), so no media decoder (FFmpeg) is in this image (2026-11-22 audits
+A11, G02, G03). Audio is read from memory and never written to disk. Nothing about requests is logged: transcripts and audio stay
 out of logs. One transcription runs at a time; a short queue waits, anything beyond it is told "busy".
 """
 
@@ -16,11 +17,13 @@ import binascii
 import io
 import json
 import os
+import signal
+import sys
 import threading
 import time
+import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-import av
 import numpy as np
 from faster_whisper import WhisperModel
 from faster_whisper.audio import pad_or_trim
@@ -42,27 +45,19 @@ class Busy(Exception):
     pass
 
 
-def decode_limited(data: bytes, max_seconds: float) -> np.ndarray:
-    """Decodes the first audio stream to 16 kHz mono float32, stopping as soon as it runs past max_seconds: a small
-    upload that holds hours of audio is refused before it fills memory (2026-11-21 audit, A36)."""
-    limit = int((max_seconds + 1) * SAMPLE_RATE)
-    resampler = av.AudioResampler(format="s16", layout="mono", rate=SAMPLE_RATE)
-    chunks: list[np.ndarray] = []
-    total = 0
-    with av.open(io.BytesIO(data), mode="r") as container:
-        stream = container.streams.audio[0]
-        frames = (f for frame in container.decode(stream) for f in resampler.resample(frame))
-        for frame in frames:
-            samples = frame.to_ndarray().reshape(-1)
-            total += samples.size
-            if total > limit:
+def read_wav(data: bytes, max_seconds: float) -> np.ndarray:
+    """The samples of a 16 kHz mono 16-bit PCM WAV as float32. Anything else is "decode_failed"; a clip longer than
+    max_seconds is "too_long", judged from its header before its samples are read."""
+    try:
+        with wave.open(io.BytesIO(data), "rb") as clip:
+            if (clip.getnchannels(), clip.getsampwidth(), clip.getframerate()) != (1, 2, SAMPLE_RATE):
+                raise ValueError("decode_failed")
+            if clip.getnframes() > max_seconds * SAMPLE_RATE:
                 raise ValueError("too_long")
-            chunks.append(samples)
-        for frame in resampler.resample(None):
-            chunks.append(frame.to_ndarray().reshape(-1))
-    if not chunks:
-        return np.zeros(0, dtype=np.float32)
-    return np.concatenate(chunks).astype(np.float32) / 32768.0
+            frames = clip.readframes(clip.getnframes())
+    except (wave.Error, EOFError) as exc:
+        raise ValueError("decode_failed") from exc
+    return np.frombuffer(frames[: len(frames) // 2 * 2], dtype="<i2").astype(np.float32) / 32768.0
 
 
 class Transcriber:
@@ -81,7 +76,7 @@ class Transcriber:
         try:
             with self.lock:
                 started = time.perf_counter()
-                audio = decode_limited(audio_bytes, MAX_AUDIO_S)
+                audio = read_wav(audio_bytes, MAX_AUDIO_S)
                 seconds = len(audio) / SAMPLE_RATE
                 if seconds > MAX_AUDIO_S:
                     raise ValueError("too_long")
@@ -157,8 +152,8 @@ def make_handler(transcriber: Transcriber):
                 return self._json(503, {"error": "busy"})
             except ValueError as exc:
                 return self._json(400, {"error": "too_long" if str(exc) == "too_long" else "decode_failed"})
-            except Exception:  # noqa: BLE001 - undecodable audio surfaces as various library errors
-                return self._json(400, {"error": "decode_failed"})
+            except Exception:  # noqa: BLE001 - the model itself failed: an answer, not a dropped connection
+                return self._json(500, {"error": "failed"})
             self._json(200, result)
 
         def _json(self, status: int, data: dict) -> None:
@@ -181,6 +176,9 @@ def main() -> None:
     print(f"speech: model loaded in {time.perf_counter() - started:.1f}s, {THREADS} threads", flush=True)
     server = ThreadingHTTPServer(("0.0.0.0", int(os.environ.get("SPEECH_PORT", "8000"))), make_handler(transcriber))
     server.daemon_threads = True
+    # As PID 1 the process gets no default SIGTERM handling: `docker stop` waited its whole grace period, then killed
+    # it (2026-11-22 Gemini audit, G32). Nothing is kept, so it can stop at once.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     server.serve_forever()
 
 

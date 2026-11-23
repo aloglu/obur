@@ -240,4 +240,4 @@ jobs:
           [[ $VERSION == *-* ]] && pre=(--prerelease)
           gh release create "v$VERSION" --repo "${{ github.repository }}" --verify-tag "${pre[@]}" \
             --title "obur $VERSION" \
-            --notes "Images (x86-64): $REGISTRY/obur:$VERSION, obur-speech:$VERSION, obur-labels:$VERSION. Updating: docs/install/updating.md. obur-speech contains FFmpeg, x264 and x265 (GPL): speech/THIRD-PARTY-NOTICES.md lists them with their sources."
+            --notes "Images (x86-64): $REGISTRY/obur:$VERSION, obur-speech:$VERSION, obur-labels:$VERSION. Updating: docs/install/updating.md. Third-party notices: speech/THIRD-PARTY-NOTICES.md and labels/THIRD-PARTY-NOTICES.md (obur-speech includes Intel oneMKL under the Intel Simplified Software License)."

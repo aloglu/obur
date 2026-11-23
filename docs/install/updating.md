@@ -24,6 +24,11 @@ docker compose up -d
 
 `docker image prune` afterwards removes the old downloads.
 
+Keep `obur-speech` and `obur-labels` at the same version as obur: `compose.yaml` uses `OBUR_VERSION` for all three,
+so `pull` updates them together. A different add-on version may not understand the app. For example, since the
+release after 1.0.0-rc.8, Speak sends a WAV recording that only the new `obur-speech` reads, and the new
+`obur-speech` reads nothing else.
+
 ## Unraid (obur only)
 
 The Docker tab shows **update ready** next to obur: click it.

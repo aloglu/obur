@@ -215,6 +215,16 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   without AudioWorklet says so. The old add-on reads WAV too, so this step works alone. Speak e2e in Chromium and in
   a new `desktop-firefox` project (Speak tests only) pass, and check the WAV that arrives. Next: step 2, the add-on
   reads WAV only, without PyAV, onnxruntime and huggingface_hub.
+- A11 step 2 done (2026-11-23): `obur-speech` reads only 16 kHz mono 16-bit WAV (`wave`; anything else
+  decode_failed, over 30 s too_long from the header, a model failure 500), stops at once on SIGTERM (G32), OCI
+  labels (G30). Packages installed with --no-deps: no PyAV/FFmpeg, onnxruntime, huggingface_hub, requests;
+  `speech/strip_imports.py` removes faster-whisper 1.1.1's imports of them and fails the build on another version.
+  Image 1.77 → 1.46 GB. Notices rewritten with licence texts in `speech/licenses/` (oneMKL under the Intel
+  Simplified Software License, October 2022 text from Intel's mkl-include 2025.3.0 wheel; oneDNN 3.1.1, spdlog,
+  libgomp with the GCC runtime exception, CTranslate2, faster-whisper, tokenizers, Whisper). Add-on test passes.
+  48 development clips as phone-made WAV: 35/320 word errors vs 33 before (3 clips +1, 1 clip −1), 26 exact both.
+  `scripts/voice-eval.ts` sends WAV (converts m4a with the computer's ffmpeg through a file). Docs: design
+  "Recording format", feasibility table, README, updating guide, release notes line.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):

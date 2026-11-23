@@ -1,10 +1,11 @@
-# Pinned as measured in Phase 0 (docs/feasibility.md, spikes/speech/requirements.lock).
+# Pinned as measured in Phase 0 (docs/feasibility.md, spikes/speech/requirements.lock). Installed with --no-deps: Speak
+# sends 16 kHz WAV, so PyAV (FFmpeg), onnxruntime (the voice filter, off) and huggingface_hub (downloads; the model is
+# fetched by fetch_model.py) are left out (2026-11-22 audits A11, G02, G03). strip_imports.py removes their imports.
 faster-whisper==1.1.1
 ctranslate2==4.8.3
-# 19.0.2 (2026-11-21 audit, A36): bundles FFmpeg 9.0.2 instead of the unsupported 7.0; see THIRD-PARTY-NOTICES.md.
-av==19.0.2
 tokenizers==0.23.3
-huggingface_hub==2.3.0
 numpy==2.5.4
-onnxruntime==1.31.0
-requests==2.33.1
+# CTranslate2's own requirement.
+PyYAML==6.0.3
+# faster-whisper's transcribe module imports it.
+tqdm==4.70.1
