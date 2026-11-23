@@ -22,18 +22,19 @@ written from its `inference.yml`.
 **FFmpeg** (libavcodec, libavformat, libavutil, libswresample, libswscale), licensed under the **GNU LGPL version 2.1
 or later**. obur never uses OpenCV's video functions; the libraries are part of the wheel. OpenCV's own notice for
 every bundled library, with FFmpeg's licence and where its source is, is in
-`site-packages/cv2/LICENSE-3RD-PARTY.txt`, and OpenCV's licence in `site-packages/cv2/LICENSE.txt`. Source of this
-exact build: <https://github.com/opencv/opencv-python/tree/93> (the build scripts, with the FFmpeg version they use)
-and <https://ffmpeg.org/download.html#releases>.
+`site-packages/cv2/LICENSE-3RD-PARTY.txt`, and OpenCV's licence in `site-packages/cv2/LICENSE.txt`. The bundled FFmpeg is
+version **8.1.1** (read from the library itself, `av_version_info`, 2026-11-23). Source: the FFmpeg 8.1.1 release,
+<https://ffmpeg.org/releases/ffmpeg-8.1.1.tar.xz>, and this exact build's scripts,
+<https://github.com/opencv/opencv-python/tree/93>.
 
 The headless build is used (2026-11-22): the full `opencv-python` also carried Qt 5 (LGPL-3.0) and needed the
 system's OpenGL and GLib, none of which obur uses.
 
 ## Shapely and GEOS (LGPL)
 
-**Shapely** 2.2.0 (BSD-3-Clause) bundles **GEOS** 3.14 (`shapely.libs/libgeos*.so`), licensed under the **GNU LGPL
+**Shapely** 2.2.0 (BSD-3-Clause) bundles **GEOS** 3.14.1 (`shapely.libs/libgeos*.so`), licensed under the **GNU LGPL
 version 2.1 or later**. Both licences are in `site-packages/shapely-2.2.0.dist-info/licenses/` (`LICENSE.txt`,
-`LICENSE_GEOS`). GEOS source: <https://github.com/libgeos/geos/releases> (version 3.14.1); Shapely's build scripts:
+`LICENSE_GEOS`). GEOS source (version 3.14.1, read from the library): <https://github.com/libgeos/geos/tree/3.14.1>; Shapely's build scripts:
 <https://github.com/shapely/shapely/tree/2.2.0>.
 
 ## Other Python packages

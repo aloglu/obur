@@ -1,7 +1,9 @@
 # Installing obur
 
 obur is a calorie, weight and water tracker for a small circle of people, such as family and friends. It runs on a server you
-control and you use it in the browser on your phone, where it installs as an app. Nothing is sent anywhere else.
+control and you use it in the browser on your phone, where it installs as an app. Nothing about anyone's diary leaves your server, unless someone chooses
+to use their own OpenAI or OpenRouter key for Speak and Scan. Other outside services are used only if you turn them on:
+an off-site copy of the encrypted backups, reminders and a daily check for new versions.
 
 Every guide goes step by step and says what you should see.
 

@@ -52,25 +52,27 @@ Ask the person for, and confirm, before starting: the address (a domain or subdo
 time zone, whether they want Speak and Scan on the server (needs ~2.5 GB of RAM in total, else ~1 GB), and whether
 backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cloudflare R2).
 
-1. **Docker:** `docker compose version` must work. If not, install Docker Engine for the distribution
+1. **Processor:** `uname -m` must say `x86_64`. The images are built for 64-bit Intel and AMD processors only; on
+   ARM (`aarch64`, such as a Raspberry Pi or an ARM VPS) they do not run. Then stop and tell the person.
+2. **Docker:** `docker compose version` must work. If not, install Docker Engine for the distribution
    (`curl -fsSL https://get.docker.com | sh` on Debian and Ubuntu).
-2. **Folder and files** (as the user who will run it; any folder works):
+3. **Folder and files** (as the user who will run it; any folder works):
    ```bash
    mkdir -p ~/obur && cd ~/obur
    curl -fsSLo compose.yaml https://raw.githubusercontent.com/aloglu/obur/main/deploy/compose.yaml
    curl -fsSLo .env https://raw.githubusercontent.com/aloglu/obur/main/deploy/.env.example
    chmod 600 .env
    ```
-3. **`.env`:** set `PUBLIC_ORIGIN`, `OBUR_BACKUP_PASSPHRASE` (let the person choose it, or generate one with
+4. **`.env`:** set `PUBLIC_ORIGIN`, `OBUR_BACKUP_PASSPHRASE` (let the person choose it, or generate one with
    `openssl rand -base64 24` and **have them save it before you continue**) and `TZ`. For a test release, add
    `OBUR_VERSION=<version>` (e.g. `1.0.0-beta.2`); releases without a hyphen are also `latest`.
    Without Speak and Scan on the server: delete the `obur-speech` and `obur-labels` services from `compose.yaml` and
    add `SPEECH_URL=` and `LABELS_URL=` (empty) to `.env`.
-4. **Start:** `docker compose up -d`, then `docker compose logs obur`. Expect `creating a new database`,
+5. **Start:** `docker compose up -d`, then `docker compose logs obur`. Expect `creating a new database`,
    `database ready`, `obur-backup: scheduler started` and `ready on port 3000`. `docker compose ps` should show `obur`
    as `healthy` within two minutes. The first backup runs straight away; `docker exec obur obur backup info` lists it
    a minute later.
-5. **HTTPS** with Caddy on the same server (see `remote-access.md` for Cloudflare Tunnel or Tailscale instead):
+6. **HTTPS** with Caddy on the same server (see `remote-access.md` for Cloudflare Tunnel or Tailscale instead):
    install Caddy from caddyserver.com/docs/install, put this in `/etc/caddy/Caddyfile`, and reload it:
    ```caddyfile
    obur.example.com {
@@ -80,13 +82,13 @@ backups should go to a second disk or an off-site bucket (S3-compatible, e.g. Cl
    Keep `OBUR_BIND_ADDRESS` at its default `127.0.0.1`. Open only ports 80 and 443 (and SSH) in the firewall.
    A proxy or tunnel connector on another machine also needs `OBUR_TRUSTED_PROXIES=<its address>`, or everyone
    shares one sign-in limit (`remote-access.md`).
-6. **Check:** `curl -sI https://<address>/login` returns `200`.
-7. **First account:** the log printed a one-time setup link (`obur: no account exists yet …`), valid for 24 hours.
+7. **Check:** `curl -sI https://<address>/login` returns `200`.
+8. **First account:** the log printed a one-time setup link (`obur: no account exists yet …`), valid for 24 hours.
    Give it to the person privately, and don't paste the log anywhere until it is used (then the log says "the setup
    link in this log no longer works"). A new one: `docker exec obur obur setup-link`. Remind them to save the
    recovery codes the app shows after they create their passkey. If obur stops at once with "/data is not a mounted
    folder", the data folder mapping is missing or mistyped.
-8. **Tell the person** where the folder is, that the passphrase must be kept safe, and whether there is an off-site
+9. **Tell the person** where the folder is, that the passphrase must be kept safe, and whether there is an off-site
    copy (Server → Backups warns while there isn't).
 
 ## Routine maintenance
