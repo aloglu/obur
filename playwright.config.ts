@@ -117,6 +117,21 @@ export default defineConfig({
 					args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream']
 				}
 			}
+		},
+		// Speak in Firefox too: its recorder is the browser's own AudioWorklet (A11), so each engine is checked.
+		{
+			name: 'desktop-firefox',
+			testMatch: 'speak.e2e.ts',
+			dependencies: ['auth-journey'],
+			use: {
+				...devices['Desktop Firefox'],
+				launchOptions: {
+					firefoxUserPrefs: {
+						'media.navigator.streams.fake': true,
+						'media.navigator.permission.disabled': true
+					}
+				}
+			}
 		}
 	]
 });

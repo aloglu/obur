@@ -604,6 +604,8 @@
 	"speak_unavailable": "Söyle'ye şu an ulaşılamıyor",
 	"speak_limited": "Çok fazla kayıt yapıldı",
 	"speak_offline": "Söyle için bağlantı gerekiyor.",
+	"speak_no_recorder": "Bu tarayıcı Söyle için kayıt yapamıyor",
+	"speak_no_recorder_line": "Tarayıcıyı güncelleyip tekrar dene ya da yazarak gir.",
 	"entry_heard": "Duyduğum",
 	"saved_title": "Kayıtlı öğünler",
 	"saved_save_label": "Öğün olarak kaydet: {meal}",

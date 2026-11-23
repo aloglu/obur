@@ -10,7 +10,32 @@ let next: { status: number; body: unknown } = {
 	status: 200,
 	body: { text: '', language: 'tr', audioS: 1, queueMs: 0, asrMs: 1 }
 };
-let last: { prompt: string | null; audioBytes: number } | null = null;
+type WavFacts = {
+	rate: number;
+	channels: number;
+	bits: number;
+	seconds: number;
+	peak: number;
+} | null;
+let last: { prompt: string | null; audioBytes: number; wav: WavFacts } | null = null;
+
+/** What a 16-bit PCM WAV holds, as the speech add-on reads it; null for anything else. */
+function wavFacts(b: Buffer): WavFacts {
+	if (
+		b.length < 44 ||
+		b.toString('latin1', 0, 4) !== 'RIFF' ||
+		b.toString('latin1', 8, 12) !== 'WAVE'
+	)
+		return null;
+	if (b.readUInt16LE(20) !== 1 || b.toString('latin1', 36, 40) !== 'data') return null;
+	const rate = b.readUInt32LE(24);
+	const channels = b.readUInt16LE(22);
+	const bits = b.readUInt16LE(34);
+	const count = Math.floor((b.length - 44) / 2);
+	let peak = 0;
+	for (let i = 0; i < count; i++) peak = Math.max(peak, Math.abs(b.readInt16LE(44 + i * 2)));
+	return { rate, channels, bits, seconds: count / channels / rate, peak: peak / 32768 };
+}
 // OCR answers are keyed by the photo's width, so tests running at the same time (one per browser) each get theirs.
 type OcrAnswer = { status: number; body: unknown; then?: OcrAnswer };
 const nextOcr = new Map<number, OcrAnswer>();
@@ -69,7 +94,8 @@ createServer(async (req, res) => {
 	}
 	if (req.method === 'POST' && req.url === '/transcribe') {
 		const body = JSON.parse(await read(req));
-		last = { prompt: body.prompt, audioBytes: Buffer.from(body.audio, 'base64').length };
+		const audio = Buffer.from(body.audio, 'base64');
+		last = { prompt: body.prompt, audioBytes: audio.length, wav: wavFacts(audio) };
 		return reply(next.status, next.body);
 	}
 	if (req.method === 'POST' && req.url === '/next-provider') {

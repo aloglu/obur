@@ -2,11 +2,12 @@ import { expect, test } from '@playwright/test';
 import { SPEECH_STUB } from '../../playwright.config.ts';
 import { createFood, signedInAs } from './fixtures.ts';
 
-// Chromium's fake microphone (set up in playwright.config.ts); WebKit in Playwright has none, so these run in desktop
-// Chromium only.
-test.skip(({ browserName }) => browserName !== 'chromium', 'needs a fake microphone');
-test.beforeEach(async ({ context }) => {
-	await context.grantPermissions(['microphone']);
+// Chromium's and Firefox's fake microphones (set up in playwright.config.ts); WebKit in Playwright has none, so these
+// run in desktop Chromium and Firefox. The iPhone was checked by hand (2026-11-23, spikes/speech-browser).
+test.skip(({ browserName }) => browserName === 'webkit', 'needs a fake microphone');
+test.beforeEach(async ({ context, browserName }) => {
+	// Firefox's microphone question is turned off by its settings instead.
+	if (browserName === 'chromium') await context.grantPermissions(['microphone']);
 });
 
 const nextTranscript = (body: unknown, status = 200) =>
@@ -60,6 +61,11 @@ test('Speak records, sends the clip with the person’s foods as a prompt, and c
 	expect(sent.prompt).toContain('Köy');
 	expect(sent.prompt).toContain('Sesli Ayran');
 	expect(sent.audioBytes).toBeGreaterThan(1000);
+	// The phone makes the 16 kHz mono WAV the add-on reads (A11); Chromium's fake microphone beeps, so it is not silent.
+	expect(sent.wav).toMatchObject({ rate: 16000, channels: 1, bits: 16 });
+	expect(sent.wav.seconds).toBeGreaterThan(0.8);
+	expect(sent.wav.seconds).toBeLessThan(5);
+	expect(sent.wav.peak).toBeGreaterThan(0.01);
 	await sheet.getByRole('button', { name: 'Log 2 to Dinner' }).click();
 	await expect(page.getByRole('status')).toContainText('Logged 2 items');
 });
@@ -148,4 +154,17 @@ test('closing Speak while the microphone question is open never starts recording
 				.filter((t) => t.readyState === 'live').length
 	);
 	expect(live).toBe(0);
+});
+
+test('a browser that cannot record raw sound says so and offers typing (A11)', async ({ page }) => {
+	await page.addInitScript(() => {
+		delete (window as unknown as { AudioWorkletNode?: unknown }).AudioWorkletNode;
+	});
+	await signedInAs(page, 'Eski Tarayıcı');
+	await page.goto('/log');
+	await page.getByRole('button', { name: 'Speak' }).click();
+	const speak = page.getByRole('dialog', { name: 'Speak' });
+	await expect(speak.getByRole('alert')).toContainText("This browser can't record for Speak");
+	await speak.getByRole('button', { name: 'Type it instead' }).click();
+	await expect(page.getByRole('dialog', { name: 'Type what you ate' })).toBeVisible();
 });

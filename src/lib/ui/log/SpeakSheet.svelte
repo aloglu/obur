@@ -2,9 +2,11 @@
 	// docs/ui.md "Speak": a pulsing mic with "Listening… say what you ate", an example and Done; then the transcription
 	// (the server's add-on or the person's own key), handed to the same confirmation as typed text. The recording lives
 	// only in this page's memory until it is sent, and is kept there for Try again; the server does not keep it.
+	// The microphone's raw samples go through an AudioWorklet and become a 16 kHz WAV here, which the speech add-on reads
+	// without FFmpeg (2026-11-22 audits A11/G02/G03; tested on an iPhone, Safari and Home Screen, 2026-11-23).
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
+	import { asset, resolve } from '$app/paths';
 	import { PROVIDER_NAME, type RemoteError, type Source } from '#lib/shared/remote-models.ts';
 	import { REMOTE_ERRORS, remoteProblem, type RemoteProblem } from '../remote-problem.ts';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
@@ -16,6 +18,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { accountHeaders, wrongAccount } from '#lib/client/account.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
+	import { recordingWav } from '#lib/client/wav.ts';
 	import type { ParsedEntry } from '#lib/shared/entry-types.ts';
 	import Button from '../Button.svelte';
 	import Notice from '../Notice.svelte';
@@ -79,6 +82,12 @@
 			tone: 'warn',
 			icon: Timer
 		}),
+		noRecorder: () => ({
+			title: m.speak_no_recorder(),
+			line: m.speak_no_recorder_line(),
+			tone: 'warn',
+			icon: MicOff
+		}),
 		unavailable: () => ({
 			title: m.speak_unavailable(),
 			line: m.speak_unavailable_line(),
@@ -99,21 +108,21 @@
 	/** The sheet was closed: a microphone permission answered after that must not start recording (A29). */
 	let closed = false;
 	let seconds = $state(0);
-	let recorder: MediaRecorder | undefined;
 	let stream: MediaStream | undefined;
-	let chunks: Blob[] = [];
+	let context: AudioContext | undefined;
+	/** The microphone's samples so far, in 128-sample blocks at the context's own rate. */
+	let parts: Float32Array[] = [];
+	let recording = false;
 	let ticker: ReturnType<typeof setInterval> | undefined;
 
-	/** A format the server can decode: Safari records MP4 (AAC), Chrome and Firefox WebM or Ogg (Opus). */
-	const mimeType = () =>
-		['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find((t) =>
-			MediaRecorder.isTypeSupported(t)
-		);
-
+	/** Stops the microphone and the audio graph; what was recorded stays in `parts`. */
 	function stopTracks() {
 		clearInterval(ticker);
+		recording = false;
 		stream?.getTracks().forEach((t) => t.stop());
 		stream = undefined;
+		context?.close().catch(() => {});
+		context = undefined;
 	}
 
 	async function start() {
@@ -123,8 +132,14 @@
 		lastAudio = null;
 		resend = false;
 		seconds = 0;
-		chunks = [];
+		parts = [];
 		if (!navigator.onLine) return fail(P.offline());
+		if (typeof AudioWorkletNode === 'undefined') return fail(P.noRecorder());
+		// Made before anything is awaited, so it still counts as the tap that opened Speak (iPhones need that to start
+		// sound); its real rate is read later (44.1, 48 or 16 kHz, also with Bluetooth).
+		const audio = new AudioContext();
+		context = audio;
+		const resumed = audio.resume().catch(() => {});
 		let granted: MediaStream;
 		try {
 			granted = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -132,17 +147,31 @@
 			const name = (e as DOMException).name;
 			return fail(name === 'NotFoundError' ? P.missing() : P.blocked());
 		}
-		if (closed) {
+		if (closed || context !== audio) {
 			granted.getTracks().forEach((t) => t.stop());
+			audio.close().catch(() => {});
 			return;
 		}
 		stream = granted;
+		try {
+			await resumed;
+			await audio.audioWorklet.addModule(asset('speak-tap.js'));
+			if (closed || context !== audio) return;
+			const tap = new AudioWorkletNode(audio, 'speak-tap');
+			tap.port.onmessage = (e: MessageEvent<Float32Array>) => {
+				if (recording) parts.push(e.data);
+			};
+			// Through a silent gain, so the graph runs without playing the microphone back.
+			const silent = audio.createGain();
+			silent.gain.value = 0;
+			audio.createMediaStreamSource(granted).connect(tap);
+			tap.connect(silent);
+			silent.connect(audio.destination);
+		} catch {
+			return fail(P.noRecorder());
+		}
 		recordedAt = new Date().toISOString();
-		const type = mimeType();
-		recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
-		recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-		recorder.onstop = () => send();
-		recorder.start();
+		recording = true;
 		phase = 'listening';
 		ticker = setInterval(() => {
 			seconds += 1;
@@ -151,8 +180,12 @@
 	}
 
 	function done() {
-		if (recorder?.state === 'recording') recorder.stop();
+		if (!recording || !context) return stopTracks();
+		const rate = context.sampleRate;
 		stopTracks();
+		lastAudio = recordingWav(parts, rate, MAX_SECONDS);
+		parts = [];
+		send();
 	}
 
 	function fail(message: Problem, canResend = false) {
@@ -163,17 +196,13 @@
 	}
 
 	/** Try again: the same recording when only the sending failed, otherwise a new one (A30). */
-	const tryAgain = () => (resend ? send(true) : start());
+	const tryAgain = () => (resend ? send() : start());
 
-	/** The recording just made, or the kept one again (`viaServer`: this once on the server's add-on). */
-	async function send(again = false, viaServer = false) {
+	/** The recording in `lastAudio`, new or kept for Try again (`viaServer`: this once on the server's add-on). */
+	async function send(viaServer = false) {
 		phase = 'working';
 		problem = null;
 		remote = null;
-		if (!again) {
-			lastAudio = new Blob(chunks, { type: recorder?.mimeType || 'audio/mp4' });
-			chunks = [];
-		}
 		const audio = lastAudio!;
 		try {
 			const response = await fetch(
@@ -217,7 +246,7 @@
 	function fix() {
 		if (!remote) return;
 		if (remote.fix === 'settings') goto(resolve('/(app)/more/speak-and-scan'));
-		else if (remote.fix === 'retry') send(true);
+		else if (remote.fix === 'retry') send();
 		else start();
 	}
 
@@ -225,11 +254,8 @@
 		start();
 		return () => {
 			closed = true;
-			if (recorder?.state === 'recording') {
-				recorder.onstop = null; // closing the sheet discards the recording
-				recorder.stop();
-			}
-			stopTracks();
+			stopTracks(); // closing the sheet discards the recording
+			parts = [];
 		};
 	});
 </script>
@@ -245,7 +271,7 @@
 					{#if local}
 						<button
 							type="button"
-							onclick={() => send(true, true)}
+							onclick={() => send(true)}
 							class="min-h-11 text-[0.9375rem] font-[650] text-accent"
 							>{m.remote_via_server()}</button
 						>

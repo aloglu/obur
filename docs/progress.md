@@ -209,6 +209,12 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   onnxruntime (67 MB) is used only by the VAD filter, which is off; faster-whisper imports `av`, `huggingface_hub`
   and `requests` at load, so dropping them needs those imports removed at build. Not checked: tokenizers without
   huggingface_hub. After A11 the `gh-pages` branch can be deleted and Pages turned off.
+- A11 owner's results (2026-11-23, iPhone, Safari and Home Screen app): A and B both worked, 48 kHz microphone,
+  same sound. Owner chose way B. Step 1 done: Speak records the microphone's raw samples through an AudioWorklet
+  (`static/speak-tap.js`) and sends a 16 kHz mono WAV (`src/lib/client/wav.ts`, unit tests), at most 30 s; a browser
+  without AudioWorklet says so. The old add-on reads WAV too, so this step works alone. Speak e2e in Chromium and in
+  a new `desktop-firefox` project (Speak tests only) pass, and check the WAV that arrives. Next: step 2, the add-on
+  reads WAV only, without PyAV, onnxruntime and huggingface_hub.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):
