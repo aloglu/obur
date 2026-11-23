@@ -232,8 +232,9 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   Firefox skips Speak; on the host `npx playwright test --project=desktop-firefox` runs it (after Chromium: they
   share the stand-in's next answer). Checks: type-check, lint, Vitest 1266, Speak e2e Chromium + Firefox on the host,
   full Docker suite 328 passed, 41 skipped. A WAV made by wav.ts went to the real new add-on and came back as text.
-  Not checked: Android on a device; the real app's Speak on the owner's iPhone (with the next RC). Open: the GitHub
-  Pages test page (delete when the owner says), the re-audit against the Codex report, then rc.9 when asked.
+  Not checked: Android on a device; the real app's Speak on the owner's iPhone (with the next RC).
+- Owner, 2026-11-23: no re-audit against the Codex report; the `gh-pages` branch and the Pages site are deleted.
+  **Next: rc.9, only when the owner asks** (then the owner tries the new Speak on the iPhone).
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):
