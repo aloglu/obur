@@ -21,7 +21,7 @@ FROM node:24.22.3-trixie-slim AS node
 FROM postgres:18.7-trixie
 # Where the source and the licences are, next to the image on the registry (2026-11-22 Gemini audit, G30).
 LABEL org.opencontainers.image.source="https://github.com/aloglu/obur" \
-	org.opencontainers.image.licenses="MIT AND CC-BY-SA-4.0 AND OFL-1.1" \
+	org.opencontainers.image.licenses="MIT AND ISC AND Apache-2.0 AND BSD-3-Clause AND MPL-2.0 AND CC-BY-SA-4.0 AND OFL-1.1 AND PostgreSQL" \
 	org.opencontainers.image.description="obur: calorie, weight and water tracker (web app, worker, PostgreSQL and backups); notices at /third-party-notices.txt"
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends pgbackrest jq ca-certificates tini \

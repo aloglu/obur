@@ -75,7 +75,12 @@ test('More credits the icons with their licence and change, and links every othe
 		'SIL Open Font License, Version 1.1',
 		'@sveltejs/kit',
 		'svelte ',
-		'Copyright 2016 The Inter'
+		'Copyright 2016 The Inter',
+		// The server's own packages too, not only what the bundles hold (2026-11-23 verification of G13).
+		'web-push 3.6.7 (MPL-2.0)',
+		'pg-boss ',
+		'Mozilla Public License',
+		'/usr/share/doc/nodejs/LICENSE'
 	])
 		expect(text).toContain(part);
 });

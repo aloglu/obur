@@ -241,6 +241,11 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   G07 done: an upload may list at most 500 files (`MAX_ENTRIES`, `listZip` in unzip.ts): kind detection, the LoseIt
   reader and `unzipLimited` stop past it (a 20 MB archive could list ~400,000 empty files, each visited on the main
   thread). Import/export tests 57 pass.
+  G13 done: /third-party-notices.txt also lists every package the image keeps for the server (package-lock entries
+  not marked dev, installed: web-push and lightningcss MPL-2.0, pg-boss, postgres, drizzle-orm, fflate, … 187 in
+  all) and names Node.js, PostgreSQL, pgBackRest and Debian's copyright files; the image's licence label lists MIT,
+  ISC, Apache-2.0, BSD-3-Clause, MPL-2.0, CC-BY-SA-4.0, OFL-1.1 and PostgreSQL. Help e2e checks it; image built,
+  smoke test passed, the page in the image has web-push.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):

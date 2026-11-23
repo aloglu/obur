@@ -1,4 +1,4 @@
-// Every bundled package's licence, written once when the app is built (2026-11-22 Gemini audit, G13 and G30). Public,
+// Every bundled and server package's licence, written once when the app is built (2026-11-22 Gemini audit, G13 and G30). Public,
 // like the sign-in page: the notices go with every copy of the app.
 import { noticesText } from '../../../scripts/third-party-notices.ts';
 import type { RequestHandler } from './$types';
