@@ -2,7 +2,7 @@
 # ghcr.io/aloglu/obur, obur-speech and obur-labels with the version and `latest`, then a GitHub release for it.
 # Nothing is published unless the checks, the browser tests and every image's tests pass (obur: smoke, off-site
 # outage and restore, restore interrupted at every step, upgrade and restore from beta.19 and from the last release;
-# add-ons: one input each), and then all three together. A test release
+# add-ons: one input each; each image in its own job). A test release
 # (v1.0.0-beta.1) is published under its own version only, never as `latest`. Pushes to branches run nothing. Run it
 # by hand (Actions → Release → Run workflow), on a branch or a tag, to build and test without publishing.
 name: Release

@@ -286,6 +286,24 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
     source links; the AI-agent guide checks for x86-64 first; the install guide says what can leave the server;
     design.md says AI keys work after a restore with the secrets file.
   - Vitest: one run had 2 failures that 4 later runs did not repeat (not identified; the log was not kept).
+  - H16 done: the speech image fetches its model before the packages (the 480 MB layer stays cached; labels' fetcher
+    needs PyYAML, so it stays after); `.dockerignore` leaves out speech/ and labels/; @simplewebauthn/browser is a
+    development package (bundled into the client); admin pages are not read in ahead for others (`pagesFor`, unit
+    test that every admin-only loader is listed).
+  - H19 done in part: image licence labels list 0BSD and Unlicense (obur), BSD-3-Clause, MPL-2.0 and libgomp's
+    GPL-3.0-or-later WITH GCC-exception-3.1 (speech), BSD-3-Clause, MPL-2.0 and MIT-CMU (labels); the speech notices
+    end with obur's licence. Not changed: the "devOptional over-included" claim is wrong (esbuild, lightningcss,
+    typescript and @types/node are in the obur image after `npm prune --omit=dev`, so the licence page is right).
+  - H21 done: household measures read once per process; the import finds a food's source by id (Map); the speech
+    add-on no longer makes the clip's features twice (transcribe() gets one second of silence for its options, which
+    do not depend on the audio; faster-whisper 1.1.1 read); the image copies only the seven scripts it runs; Log's
+    Recent is not asked twice on opening; search and read timers stop when Log or the entry sheet closes. Not done:
+    nutrients and servings in parallel (one transaction, one connection: no gain); per-row archive and trash updates
+    in an import (rare, measured fast in C12); the pre-quantized model (owner).
+  - H22 done: chart sliders show a ring for keyboard focus; empty-search links are 44 px; recipes.count names
+    deletedAt (already excluded by foods_deleted_archived); release.yml comment; Speak and Scan offline titles have no
+    period. H17 not done: matching phone focus order needs either the phone order or the desktop layout to change, a
+    visual decision for the owner.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):

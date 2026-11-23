@@ -134,7 +134,8 @@ export function createRecipes(db: Database, now: () => Date = () => new Date()) 
 					.select({ n: count() })
 					.from(recipes)
 					.innerJoin(foods, eq(foods.id, recipes.foodId))
-					.where(isNull(foods.archivedAt))
+					// A deleted recipe is also archived (foods_deleted_archived); said here too (H22).
+					.where(and(isNull(foods.archivedAt), isNull(foods.deletedAt)))
 			);
 			return row.n;
 		},

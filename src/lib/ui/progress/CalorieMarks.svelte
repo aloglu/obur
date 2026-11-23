@@ -142,7 +142,7 @@
 	aria-valuemax={Math.max(0, bars.length - 1)}
 	aria-valuenow={selected ?? bars.length - 1}
 	aria-valuetext={valuetext}
-	class="cursor-crosshair touch-pan-y outline-none"
+	class="cursor-crosshair touch-pan-y outline-none focus-visible:stroke-accent focus-visible:stroke-2"
 	onpointerdown={pick}
 	onpointermove={pick}
 	onpointerup={lift}
