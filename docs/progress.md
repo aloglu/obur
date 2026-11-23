@@ -331,6 +331,15 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
     host passed. check, lint, Vitest 1,272 pass (one earlier run had 2 failures that did not repeat in two runs).
   - Not checked: a real iPhone. Needs the owner: the camera in the frame (permission question, back camera, sharpness
     of the photo), Choose photo dismissed, the swipe on a real finger, Speak opening.
+- Audit of those changes before rc.10 (owner's go, 2026-11-23): report `~/Documents/obur-rc10-audit-2026-11-23.md`
+  (S01-S11; a separate code review plus my checks). Built: S01 (a sheet over another closes alone), S02 (no flick
+  after a stop), S03 (interrupted touch springs back), S04 (second finger), S05 (camera off while hidden), S06 (camera
+  back after the phone's own camera), S07 (hold first: not a pull), S08 (pull during slide-in), S10 (photo stays until
+  the next screen). S09 left (iOS 17.0-17.3 scrim). S11, owner: live camera at once like Speak (an installed iPhone
+  app may ask each session: WebKit bug 215884), a tap on the camera takes the photo too, a refusal not asked again
+  until the app is opened again. Tests in sheet-swipe and scan e2e. Full browser suite in Docker: 335 passed, 1
+  failed (goals.e2e.ts on WebKit, a timeout; passed 3 of 3 alone). check, lint, Vitest 1,272 pass. Firefox Speak not
+  run again (Speak unchanged since it passed). Next: rc.10 when the owner asks; then the iPhone check.
   - H22 done: chart sliders show a ring for keyboard focus; empty-search links are 44 px; recipes.count names
     deletedAt (already excluded by foods_deleted_archived); release.yml comment; Speak and Scan offline titles have no
     period. H17 not done: matching phone focus order needs either the phone order or the desktop layout to change, a

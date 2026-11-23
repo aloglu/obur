@@ -82,8 +82,11 @@
 	function swipeToClose() {
 		const DISTANCE = 0.25; // of the sheet's height
 		const SPEED = 0.5; // px per ms, at the end of the pull
+		const STILL_MS = 100; // a finger still for longer than this is no longer flicking
+		const HOLD_MS = 500; // held before it moves: the phone's own text cursor or selection, not a pull
 		let startY = 0;
 		let startX = 0;
+		let startT = 0;
 		let lastY = 0;
 		let lastT = 0;
 		let speed = 0;
@@ -106,13 +109,17 @@
 			dialog.style.removeProperty('--pull');
 		};
 		const start = (e: TouchEvent) => {
+			// A second finger ends a pull: back up (audit S04).
+			if (pulling === true) springBack(Math.max(0, lastY - startY));
 			pulling = false;
 			if (e.touches.length !== 1 || matchMedia('(min-width: 760px)').matches) return;
+			// A sheet opened over this one, inside it in the page: its touches are its own (audit S01).
+			if ((e.target as Element | null)?.closest('dialog') !== dialog) return;
 			if (dialog.scrollTop > 0 || ownScroll(e.target)) return;
 			resizing?.cancel();
 			startY = lastY = e.touches[0].clientY;
 			startX = e.touches[0].clientX;
-			lastT = e.timeStamp;
+			startT = lastT = e.timeStamp;
 			speed = 0;
 			pulling = null;
 		};
@@ -122,12 +129,20 @@
 			const dy = clientY - startY;
 			if (pulling === null) {
 				if (Math.abs(clientX - startX) < 6 && Math.abs(dy) < 6) return;
-				// Up or sideways: an ordinary scroll or a swipe on something inside.
-				if (dy <= 0 || Math.abs(clientX - startX) > dy || dialog.scrollTop > 0) {
+				// Up or sideways: an ordinary scroll or a swipe on something inside. Held first: the phone's own
+				// text cursor (audit S07).
+				if (
+					dy <= 0 ||
+					Math.abs(clientX - startX) > dy ||
+					dialog.scrollTop > 0 ||
+					e.timeStamp - startT > HOLD_MS
+				) {
 					pulling = false;
 					return;
 				}
 				pulling = true;
+				// Still sliding in: it follows the finger from here instead (audit S08).
+				for (const a of dialog.getAnimations()) a.finish();
 				(document.activeElement as HTMLElement | null)?.blur?.();
 			}
 			// No scroll and no rubber band while the sheet follows the finger; a touch that moved makes no click either.
@@ -140,11 +155,13 @@
 			dialog.style.transform = `translateY(${y}px)`;
 			dialog.style.setProperty('--pull', String(Math.min(1, y / dialog.offsetHeight)));
 		};
-		const end = () => {
+		const end = (e: TouchEvent) => {
 			if (pulling !== true) return (pulling = false);
 			pulling = false;
 			const y = Math.max(0, lastY - startY);
-			if (y > dialog.offsetHeight * DISTANCE || (speed > SPEED && y > 24)) {
+			// A finger that stopped before it let go isn't flicking (audit S02).
+			const flick = speed > SPEED && e.timeStamp - lastT < STILL_MS && y > 24;
+			if (y > dialog.offsetHeight * DISTANCE || flick) {
 				pulled = y;
 				onclose();
 				// Something that asks first may keep it open: then it goes back up.
@@ -152,6 +169,11 @@
 					if (!gone) springBack(y);
 				});
 			} else springBack(y);
+		};
+		// The phone took the touch (a call, Notification Center): never a close (audit S03).
+		const cancel = () => {
+			if (pulling === true) springBack(Math.max(0, lastY - startY));
+			pulling = false;
 		};
 		const springBack = (y: number) => {
 			pulled = 0;
@@ -165,12 +187,12 @@
 		dialog.addEventListener('touchstart', start, { passive: true });
 		dialog.addEventListener('touchmove', move, { passive: false });
 		dialog.addEventListener('touchend', end);
-		dialog.addEventListener('touchcancel', end);
+		dialog.addEventListener('touchcancel', cancel);
 		return () => {
 			dialog.removeEventListener('touchstart', start);
 			dialog.removeEventListener('touchmove', move);
 			dialog.removeEventListener('touchend', end);
-			dialog.removeEventListener('touchcancel', end);
+			dialog.removeEventListener('touchcancel', cancel);
 		};
 	}
 

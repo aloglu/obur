@@ -1,9 +1,15 @@
+<script lang="ts" module>
+	/** The camera was refused, or there is none: not asked again while the app stays open (audit S11). */
+	let refused = false;
+</script>
+
 <script lang="ts">
 	// Scan a label (docs/ui.md, "Scan"), as a sheet like Speak and Type it: take or choose a photo of the nutrition
 	// table; it is made smaller on the phone (which also drops its location data) and read on the server, waiting in
-	// line when the scanner is busy. The frame shows the camera live and Take photo takes what it shows (owner,
-	// 2026-11-23); without a camera the page may use (refused, none, an old browser) Take photo opens the phone's own. What was read goes to `onread`, which shows it as a food form to check; nothing
-	// is saved here. The photo is never kept on the server.
+	// line when the scanner is busy. The frame shows the camera live from the start, as Speak listens at once, and
+	// Take photo or a tap on the frame takes what it shows (owner, 2026-11-23); without a camera the page may use
+	// (refused, none, an old browser) Take photo opens the phone's own. What was read goes to `onread`, which shows it
+	// as a food form to check; nothing is saved here. The photo is never kept on the server.
 	import { onMount } from 'svelte';
 	import Camera from '@lucide/svelte/icons/camera';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
@@ -77,7 +83,7 @@
 
 	let starting = false;
 	async function startCamera() {
-		if (starting || !navigator.mediaDevices?.getUserMedia) return;
+		if (starting || refused || closed || !navigator.mediaDevices?.getUserMedia) return;
 		starting = true;
 		try {
 			const granted = await navigator.mediaDevices.getUserMedia({
@@ -100,8 +106,10 @@
 			video.srcObject = granted;
 			await video.play();
 			if (!closed) live = true;
-		} catch {
+		} catch (e) {
 			// Refused or no camera: Take photo uses the phone's own camera instead.
+			const name = (e as DOMException).name;
+			if (name === 'NotAllowedError' || name === 'NotFoundError') refused = true;
 			stopCamera();
 		} finally {
 			starting = false;
@@ -111,6 +119,13 @@
 	/** The camera was on and the phone took it away: it comes back when the page is shown again. Never asked again
 	 *  after a refusal. */
 	let lost = false;
+	/** The camera was taken away and may come back: when the page is shown, gets focus or a photo picker closes. */
+	function comeBack() {
+		if (!lost || closed || document.visibilityState !== 'visible') return;
+		lost = false;
+		startCamera();
+	}
+
 	function stopCamera() {
 		stream?.getTracks().forEach((t) => t.stop());
 		stream = undefined;
@@ -180,6 +195,7 @@
 	}
 
 	async function picked(event: Event) {
+		comeBack(); // the phone's own camera may have taken the live one (audit S06)
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
 		input.value = '';
@@ -258,6 +274,8 @@
 			const photo = URL.createObjectURL(image);
 			lastImage = null;
 			attempt++;
+			// The photo stays in the frame until the next screen is there; the camera is done (audit S10).
+			stopCamera();
 			onread({ proposal: read, blurry: body.blurry === true, photo });
 		} catch {
 			if (mine === attempt) problem = navigator.onLine ? P.unavailable() : P.offline();
@@ -284,15 +302,21 @@
 	// Gone another way (Back, a link): a photo still being read stops being asked about (Gemini audit 2, H12).
 	onMount(() => {
 		startCamera();
-		const back = () => {
-			if (document.visibilityState === 'visible' && lost && !stream && !closed) {
-				lost = false;
-				startCamera();
-			}
+		// Hidden: the camera goes off (no light in a background tab, no stale picture after the phone was away) and
+		// comes back when the page is shown again (audit S05).
+		const shown = () => {
+			if (document.visibilityState === 'hidden') {
+				if (stream) {
+					stopCamera();
+					lost = true;
+				}
+			} else comeBack();
 		};
-		document.addEventListener('visibilitychange', back);
+		document.addEventListener('visibilitychange', shown);
+		window.addEventListener('focus', comeBack);
 		return () => {
-			document.removeEventListener('visibilitychange', back);
+			document.removeEventListener('visibilitychange', shown);
+			window.removeEventListener('focus', comeBack);
 			closed = true;
 			attempt++;
 			stopCamera();
@@ -329,6 +353,7 @@
 				class="sr-only"
 				disabled={reading}
 				onchange={picked}
+				oncancel={comeBack}
 			/>
 		</label>
 	{/if}
@@ -385,6 +410,16 @@
 		{#if still}
 			<img src={still} alt="" class="absolute inset-0 size-full object-cover" />
 		{/if}
+		{#if live && !still && !reading}
+			<!-- A tap on the camera takes the photo too (owner, 2026-11-23); Take photo below is the named control. -->
+			<button
+				type="button"
+				tabindex="-1"
+				aria-hidden="true"
+				class="absolute inset-0 cursor-pointer"
+				onclick={take}
+			></button>
+		{/if}
 		{#if waiting !== null || reading}
 			<span
 				role="status"
@@ -418,6 +453,7 @@
 				class="sr-only"
 				disabled={reading}
 				onchange={picked}
+				oncancel={comeBack}
 			/>
 		</label>
 	</div>

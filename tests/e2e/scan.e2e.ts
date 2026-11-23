@@ -398,6 +398,13 @@ test('the camera shows live in the frame and Take photo sends what it shows', as
 	expect(sent.width).toBeLessThanOrEqual(1600);
 	await expect(sheet.getByRole('button', { name: 'Retake' })).toBeVisible();
 	await expect(view).toBeVisible();
+	// A tap on the camera takes the photo too.
+	const sentAgain = page.waitForRequest(
+		(r) => r.url().includes('/api/v1/scan') && r.method() === 'POST'
+	);
+	await sheet.locator('video').click({ force: true });
+	await sentAgain;
+	await expect(sheet.getByRole('alert')).toContainText('No nutrition table found');
 	// Closing turns the camera off.
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
@@ -406,4 +413,32 @@ test('the camera shows live in the frame and Take photo sends what it shows', as
 			[...document.querySelectorAll('video')].some((v) => v.srcObject !== null)
 		)
 	).toBe(false);
+});
+
+test('a refused camera is not asked for again while the app stays open; Take photo opens the phone’s camera', async ({
+	page,
+	browserName
+}, testInfo) => {
+	test.skip(browserName !== 'chromium', 'needs a fake camera (WebKit in Playwright has none)');
+	await page.addInitScript(() => {
+		const w = window as unknown as { asked: number };
+		w.asked = 0;
+		navigator.mediaDevices.getUserMedia = async () => {
+			w.asked++;
+			throw new DOMException('refused', 'NotAllowedError');
+		};
+	});
+	await signedInAs(page, `Kamerasız ${testInfo.project.name}`);
+	await page.goto('/log');
+	const sheet = page.getByRole('dialog', { name: 'Scan a label' });
+	for (let i = 0; i < 2; i++) {
+		await page.getByRole('button', { name: 'Scan a label' }).click();
+		await expect(sheet.getByText('Fill the frame with the nutrition table')).toBeVisible();
+		// The phone's own camera: a photo input, not a button.
+		await expect(sheet.locator('button', { hasText: 'Take photo' })).toHaveCount(0);
+		await expect(sheet.getByLabel('Take photo')).toHaveAttribute('capture', 'environment');
+		await page.keyboard.press('Escape');
+		await expect(sheet).toBeHidden();
+	}
+	expect(await page.evaluate(() => (window as unknown as { asked: number }).asked)).toBe(1);
 });
