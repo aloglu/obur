@@ -179,4 +179,27 @@ wait_page 503 "the older restore mark did not keep the app closed"
 out=$(restore cancel) || fail "cancel of a restore from the older marks: $out"
 expect_before "cancel of a restore from the older marks"
 
+echo "after finish the app stays closed until the restored database is set up, also across a restart (G23)"
+new_round
+# shellcheck disable=SC2046
+out=$(restore start $(RESTORE_ARGS)) || fail "start before the reopening check: $out"
+wait_page 503 "not saying 'being restored' before the reopening check"
+out=$(restore finish --none) || fail "finish before the reopening check: $out"
+# The page is read before the step: a 200 while the step still says reopening means the app answered too early.
+for _ in $(seq 150); do
+	got=$(page)
+	now=$(step)
+	[[ $got == 200 && $now == reopening ]] && fail "the app answered before the restored database was set up"
+	[[ $now == none && $got == 200 ]] && break
+	[[ $now == reopening || $now == none ]] || fail "after finish the step is $now"
+	sleep 0.2
+done
+expect_restored "the reopening check"
+docker stop -t 60 "$name" >/dev/null
+docker run --rm -v "$data:/data" --entrypoint bash "$image" -c \
+	'echo "{\"step\": \"reopening\"}" >/data/status/restore.json && chmod 644 /data/status/restore.json'
+docker start "$name" >/dev/null
+wait_page 200 "not open after a restart during reopening"
+[[ $(step) == none ]] || fail "the reopening step was not cleared after a restart: $(step)"
+
 echo "restore interruption test passed ($round rounds)"

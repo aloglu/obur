@@ -127,6 +127,11 @@ out=$(docker exec "$name" obur restore start 2>&1) || fail "restore start: $out"
 out=$(docker exec "$name" obur restore finish --none 2>&1) || fail "restore finish with the store away: $out"
 [[ $out == *'next nightly backup'* ]] || fail "restore finish did not say the off-site copy waits: $out"
 docker exec "$name" test -f /data/status/offsite-full-needed || fail "the off-site full backup is not remembered"
+# obur reopens a moment after finish, once the restored database is set up (G23).
+for _ in $(seq 60); do
+	docker exec "$name" test -f /data/status/restore.json || break
+	sleep 1
+done
 docker exec "$name" test ! -f /data/status/restore.json || fail "obur stayed closed after the restore"
 [[ $(status '.lastBackup.repos["1"]') == true ]] || fail "no local full backup after the restore"
 docker exec "$name" chmod 700 /offsite

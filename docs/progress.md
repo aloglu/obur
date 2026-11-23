@@ -246,6 +246,13 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
   all) and names Node.js, PostgreSQL, pgBackRest and Debian's copyright files; the image's licence label lists MIT,
   ISC, Apache-2.0, BSD-3-Clause, MPL-2.0, CC-BY-SA-4.0, OFL-1.1 and PostgreSQL. Help e2e checks it; image built,
   smoke test passed, the page in the image has web-push.
+  G23 done: `obur restore finish` ends at a new step `reopening` instead of removing restore.json; obur-init then
+  stops the web app, sets up the restored database (roles, upgrade) and only then clears the step and reopens (it
+  had cleared first, so for up to a second requests could reach a database without this installation's roles or
+  upgrade). finish at reopening says it is already finished; cancel says no restore is pending. Interruption test:
+  a new round (the app never answers while the step says reopening; a restart at reopening reopens), 20 rounds
+  pass. Off-site test waits for the reopening. Image tests: smoke, off-site, off-site restore, upgrade from beta.19
+  and from rc.8 pass. All the verification items the owner agreed are done; rc.9 waits for the owner.
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):

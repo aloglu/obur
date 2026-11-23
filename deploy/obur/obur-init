@@ -4,7 +4,8 @@
 # everything down in order. Anything that dies unexpectedly stops the container, so Docker's restart policy restarts
 # it whole. `obur restore start` asks for a hold (everything stopped) through $OBUR_RUN/hold. The restore's own state
 # (env.sh, RESTORE_STATE) decides the rest: while it is restored or finishing, only the database and the web app's
-# "being restored" page run; a restore that stopped before that (also across a restart) keeps everything stopped
+# "being restored" page run; at reopening (after finish) the web app is stopped, the database set up and upgraded,
+# then the step cleared and everything started; a restore that stopped before that (also across a restart) keeps everything stopped
 # until `obur restore start` or `obur restore cancel`, so a half-written database folder is never started.
 set -euo pipefail
 # shellcheck source=deploy/obur/env.sh
@@ -262,13 +263,17 @@ while :; do
 			fi
 			migrated=0
 			[[ -n $web_pid ]] || start_web
-		elif ((!migrated)); then
+		elif [[ $(restore_step) == reopening ]] || ((!migrated)); then
+			# After `obur restore finish` the web app still shows the restore page: it is stopped, the restored
+			# database gets this installation's roles and its upgrade, and only then the step is cleared (G23).
 			stop_app
 			migrated=1
 			if reason=$(older_than_database); then
 				log "$reason"
+				[[ $(restore_step) != reopening ]] || restore_clear
 			else
 				upgrade
+				[[ $(restore_step) != reopening ]] || restore_clear
 				start_web
 				start_worker
 				log "ready on port 3000 for $PUBLIC_ORIGIN"

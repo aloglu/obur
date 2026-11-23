@@ -109,6 +109,10 @@ restore_finish() {
 	restore_lock
 	case $(restore_step) in
 	restored | finishing) ;;
+	reopening)
+		echo "obur: the restore is already finished; obur reopens in a few seconds"
+		return
+		;;
 	'') obur_fail "no restore is pending" ;;
 	cancelling) obur_fail "a restore is being cancelled: run 'obur restore cancel' again to complete it" ;;
 	*) obur_fail "the restore did not complete (it stopped at '$(restore_step)'): run 'obur restore start' again, or 'obur restore cancel'" ;;
@@ -134,7 +138,9 @@ restore_finish() {
 	checkpoint finish-done-unrecorded
 	local aside
 	aside=$(restore_field aside)
-	restore_clear
+	# Not cleared here: obur-init stops the web app, sets up the restored database's roles and upgrades it, and only
+	# then clears the step and reopens, so no request reaches it before (2026-11-23 verification of G23).
+	restore_set reopening
 	echo "obur: obur reopens in a few seconds. Then check Server → Backups, and run: obur backup restore-check"
 	[[ -z $aside || ! -d $aside ]] || echo "obur: the database from before the restore stays at $aside until you delete it"
 }
@@ -145,7 +151,7 @@ restore_cancel() {
 	local step aside
 	step=$(restore_step)
 	case $step in
-	'') obur_fail "no restore is pending" ;;
+	'' | reopening) obur_fail "no restore is pending (the last one is finished)" ;;
 	finishing) obur_fail "the restore is being finished, so the restored database is the one kept: run 'obur restore finish' again to complete it" ;;
 	esac
 	aside=$(restore_field aside)
