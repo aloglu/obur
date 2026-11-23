@@ -14,7 +14,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		// Totals across members of how much label scans were edited before saving (counts only).
 		catalog.labelScanTotals(session.userId),
 		remoteModels.personalKeysAllowed(session.userId),
-		updates.status(session.userId, true),
+		// The stored answer: the page asks GitHub afterwards, so it never waits for it (Gemini audit 2, H11).
+		updates.stored(session.userId, true),
 		// The deleted accounts a restore needs (docs/restore.md).
 		portability.deletions(session.userId),
 		backupReport()

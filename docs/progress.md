@@ -273,6 +273,19 @@ work is moderate; no word list for Speak, no cost figures for personal keys. One
     and in the obur reader, folders counted (unit test).
   - H09 done: the sub-phrase searches and portionFirst skip the typo pass (`typos` false); spoken items resolve in
     parallel.
+  - H10, H11 done: the app layout reads its four parts at the same time; Speak and Scan sources from one read of
+    the choices and the key switch (`allSources`); More's food count is one count (`catalog.ownCount`);
+    `progress.sync` skips its last read when nothing changed. Server opens with the stored update answer and asks
+    GitHub afterwards (`updates.stored`); Journal reads the profile with the rest.
+  - H12, H13 done: the toast sits beside the 72 px rail on medium screens; Scan's photo buttons show a keyboard focus
+    ring; leaving Scan another way stops asking about a photo. One "complete" change at a time; Speak and Scan
+    settings save one choice and one removal at a time and show fresh usage; a failed food choice in the entry
+    sheet shows its "can't read" notice. Radio groups (Chips, Speak and Scan) have one Tab stop and arrow keys
+    (`radio-keys.ts`; Speak and Scan's arrows only move, as choosing saves or asks).
+  - H14, H15 done: labels notices name FFmpeg 8.1.1 and GEOS 3.14.1 (read from the libraries in the image) with direct
+    source links; the AI-agent guide checks for x86-64 first; the install guide says what can leave the server;
+    design.md says AI keys work after a restore with the secrets file.
+  - Vitest: one run had 2 failures that 4 later runs did not repeat (not identified; the log was not kept).
 - Full browser suite in Docker (2026-11-22, after the Gemini fixes): 324 passed, 33 skipped; the 2 failures were
   one test still expecting the old "More → Profile" text (fixed; it passes).
 - A11 server-side check (2026-11-22, the owner's 48 development clips, iPhone m4a, in the current speech image):

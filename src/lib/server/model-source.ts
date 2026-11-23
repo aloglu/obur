@@ -14,6 +14,22 @@ export async function effectiveSource(userId: string, feature: Feature): Promise
 	return hasLocal(feature) ? 'server' : null;
 }
 
+/** effectiveSource for Speak and Scan, and whether personal keys work, from one read of each (Gemini audit 2, H10). */
+export async function allSources(
+	userId: string
+): Promise<{ speak: Source | null; scan: Source | null; keysAllowed: boolean }> {
+	const [choices, keysAllowed] = await Promise.all([
+		remoteModels.choices(userId),
+		remoteModels.allowed(userId)
+	]);
+	const pick = (feature: Feature): Source | null => {
+		const choice = choices[feature];
+		if (choice !== 'server' && keysAllowed) return choice;
+		return hasLocal(feature) ? 'server' : null;
+	};
+	return { speak: pick('speak'), scan: pick('scan'), keysAllowed };
+}
+
 /**
  * The source for one request. `viaServer` (the person tapped "Read this one on obur's server instead"): this
  * server's add-on or nothing, never a provider, even when the add-on was removed after the page opened. `normal` is

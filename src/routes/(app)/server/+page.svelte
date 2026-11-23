@@ -3,8 +3,9 @@
 	// label scan totals). People and invites are on Members.
 	import Check from '@lucide/svelte/icons/check';
 	import { resolve } from '$app/paths';
-	import { invalidateAll } from '$app/navigation';
-	import { untrack } from 'svelte';
+	import { invalidate, invalidateAll } from '$app/navigation';
+	import { onMount, untrack } from 'svelte';
+	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api, ApiError } from '#lib/client/api.ts';
 	import { describeError, withRecentAuth } from '#lib/client/passkeys.ts';
@@ -29,6 +30,19 @@
 	let updates = $state(untrack(() => data.updates));
 	let updateCheck = $state(untrack(() => data.updates.check));
 	let checking = $state(false);
+	// The page opens with the stored answer; when it is over a day old the server asks GitHub now (at most once a day),
+	// and the answer follows (2026-11-23 Gemini audit 2, H11).
+	onMount(() => {
+		if (!updates.check) return;
+		api<{ updates: UpdateStatus }>('GET', '/api/v1/admin/update-check')
+			.then((answer) => {
+				if (checking) return;
+				// News for More's "Update available" row too.
+				if (answer.updates.latest !== updates.latest) void invalidate(ACCOUNT_DATA, true);
+				updates = answer.updates;
+			})
+			.catch(() => {});
+	});
 	async function saveUpdateCheck(on: boolean) {
 		checking = true;
 		try {

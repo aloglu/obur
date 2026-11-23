@@ -178,9 +178,11 @@ export function createProgress(db: Database) {
 						)
 						.onConflictDoNothing();
 				}
+				let moved = false;
 				for (const a of derived) {
 					const row = have.get(achievementKey(a));
 					if (row && row.achievedOn !== a.date) {
+						moved = true;
 						await tx
 							.update(achievements)
 							.set({ achievedOn: a.date })
@@ -193,11 +195,19 @@ export function createProgress(db: Database) {
 							);
 					}
 				}
-				const rows = await tx
-					.select()
-					.from(achievements)
-					.where(eq(achievements.userId, userId))
-					.orderBy(asc(achievements.achievedOn));
+				// Nothing changed (most page loads): the rows read above are the answer (Gemini audit 2, H10).
+				const rows =
+					gone.length || fresh.length || moved
+						? await tx
+								.select()
+								.from(achievements)
+								.where(eq(achievements.userId, userId))
+								.orderBy(asc(achievements.achievedOn))
+						: stored
+								.slice()
+								.sort((a, b) =>
+									a.achievedOn < b.achievedOn ? -1 : a.achievedOn > b.achievedOn ? 1 : 0
+								);
 				return { list: rows.map(parse), weightAllowed, weightUnit };
 			});
 		},

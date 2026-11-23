@@ -80,6 +80,13 @@ export function createUpdates(db: Database, options: UpdatesOptions) {
 			return toStatus(row);
 		},
 
+		/** What an admin sees from the stored answer alone; never asks outside (Server opens with it, H11). */
+		async stored(userId: string, isAdmin: boolean): Promise<UpdateStatus> {
+			if (!isAdmin)
+				return { current: options.current, check: false, latest: null, checkedAt: null };
+			return toStatus(await read(userId));
+		},
+
 		/** The newer version already known, for an admin; never asks outside. Null for anyone else. */
 		async known(userId: string, isAdmin: boolean): Promise<string | null> {
 			return isAdmin ? toStatus(await read(userId)).latest : null;

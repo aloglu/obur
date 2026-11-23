@@ -544,6 +544,24 @@ export function createCatalog(db: Database, now: () => Date = () => new Date()) 
 		 * `archived`, optionally narrowed by `query`). Recipes have their own list; deleted foods are in Recently deleted.
 		 * `total` counts the whole list asked for, `archivedTotal` the archive (for the row that opens it).
 		 */
+		/** How many foods of their own a person keeps (not archived), for More: one count, no list (Gemini audit 2, H10). */
+		async ownCount(userId: string): Promise<number> {
+			return withUser(db, userId, async (tx) => {
+				const [row] = await tx
+					.select({ n: sql<number>`count(*)::int` })
+					.from(foods)
+					.where(
+						and(
+							sql`${foods.ownerId} = app_current_user_id()`,
+							ne(foods.origin, 'recipe'),
+							isNull(foods.deletedAt),
+							isNull(foods.archivedAt)
+						)
+					);
+				return row?.n ?? 0;
+			});
+		},
+
 		async ownFoods(
 			userId: string,
 			offset = 0,

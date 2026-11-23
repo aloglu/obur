@@ -24,16 +24,19 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const userId = locals.session!.userId;
 	const days = monthDays(month);
 	const [from, to] = [days[0], days.at(-1)!];
-	const profile = await goals.profile(userId);
+	// All at once, the profile too (Gemini audit 2, H11).
+	const [profile, eaten, activity, completedDays, versions, readings, achieved] = await Promise.all(
+		[
+			goals.profile(userId),
+			diary.dailyEnergy(userId, from, to),
+			body.activityByDay(userId, from, to),
+			diary.completedDays(userId, from, to),
+			goals.history(userId),
+			body.weights(userId, EARLIEST, to),
+			progress.sync(userId, today, locals.zone)
+		]
+	);
 	const firstDayOfWeek = profile?.firstDayOfWeek ?? 1;
-	const [eaten, activity, completedDays, versions, readings, achieved] = await Promise.all([
-		diary.dailyEnergy(userId, from, to),
-		body.activityByDay(userId, from, to),
-		diary.completedDays(userId, from, to),
-		goals.history(userId),
-		body.weights(userId, EARLIEST, to),
-		progress.sync(userId, today, locals.zone)
-	]);
 	const completed = new Set(completedDays);
 	const calendar = calendarDays(month, today, {
 		eaten: new Map(eaten.map((d) => [d.localDate, d.kcal])),

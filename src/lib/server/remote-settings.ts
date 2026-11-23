@@ -4,9 +4,8 @@ import { hasLocal } from './model-source.ts';
 import { remoteModels } from './remote-models.ts';
 
 export async function remoteSettings(userId: string) {
-	const [allowed, personalKeysAllowed, choices, keys, usage] = await Promise.all([
-		remoteModels.allowed(userId),
-		remoteModels.personalKeysAllowed(userId),
+	const [{ allowed, on: personalKeysAllowed }, choices, keys, usage] = await Promise.all([
+		remoteModels.keySwitch(userId),
 		remoteModels.choices(userId),
 		remoteModels.keys(userId),
 		remoteModels.usage(userId)

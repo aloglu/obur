@@ -30,9 +30,17 @@ export function createRemoteModels(db: Database, secret: Buffer | null) {
 	return {
 		/** Whether personal keys can work here at all: the server has its key, and an admin allows them. */
 		async allowed(userId: string): Promise<boolean> {
-			if (!secret) return false;
+			return (await this.keySwitch(userId)).allowed;
+		},
+
+		/**
+		 * Both answers from one read (Gemini audit 2, H21): `allowed`, personal keys work here (the admins' switch and
+		 * the server's secrets key); `on`, the admins' switch alone.
+		 */
+		async keySwitch(userId: string): Promise<{ allowed: boolean; on: boolean }> {
 			const [row] = await withUser(db, userId, (tx) => tx.select().from(serverSettings));
-			return row?.personalKeys ?? true;
+			const on = row?.personalKeys ?? true;
+			return { allowed: Boolean(secret) && on, on };
 		},
 
 		/** The admins' switch as an admin sees it; RLS lets only an active admin change it. */

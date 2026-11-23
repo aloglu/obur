@@ -1,7 +1,5 @@
 import { config } from '#lib/server/config.ts';
-import { effectiveSource } from '#lib/server/model-source.ts';
-import { remoteModels } from '#lib/server/remote-models.ts';
-import type { Source } from '#lib/shared/remote-models.ts';
+import { allSources } from '#lib/server/model-source.ts';
 import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 import { progress } from '#lib/server/progress.ts';
 import { body } from '#lib/server/body.ts';
@@ -20,95 +18,104 @@ export const load: LayoutServerLoad = async ({ locals, depends, parent }) => {
 	// refreshes the page, never as part of the page change itself: a page opens without waiting for it.
 	depends(ACCOUNT_DATA);
 	const today = localDate(new Date(), locals.zone);
-	// Achievements reached in the last few days and not yet celebrated. A celebration must never stop a page from
-	// opening, so a failure here only means no toast.
-	let celebrate: StoredAchievement[] = [];
-	if (locals.session?.kind === 'normal') {
-		try {
-			const { list } = await progress.sync(locals.session.userId, today, locals.zone);
-			celebrate = list.filter((a) => !a.seen);
-		} catch (e) {
-			console.error('achievements: sync failed', describeError(e));
-		}
-	}
-	// The goal weight is reached and the budget still has its deficit: Today and the goal's celebration offer to
-	// switch to maintenance (shared/goals.ts). Like the celebration, it never stops a page from opening.
-	let maintainAtKg: number | null = null;
-	// The pace a calculated budget asks for, for the Goal row in Settings; null without one.
-	let goalPace: number | null = null;
-	if (locals.session?.kind === 'normal') {
-		try {
-			const userId = locals.session.userId;
-			const [{ preferences }, target, weight] = await Promise.all([
-				parent(),
-				goals.targetFor(userId, today),
-				body.latestWeight(userId, today)
-			]);
-			maintainAtKg = maintainOffer(
-				target,
-				weight?.value ?? null,
-				preferences.maintainOfferDeclinedKg
-			);
-			const requested = target?.inputs.requestedRateKgPerWeek;
-			if (target?.mode === 'calculated')
-				goalPace = typeof requested === 'number' ? requested : (target.rateKgPerWeek ?? 0);
-		} catch (e) {
-			console.error('maintain offer: failed', describeError(e));
-		}
-	}
-	// What the More list shows beside its rows. Kept here, with everything else that refreshes behind a page change,
-	// so More opens without asking the server. Null when it could not be read: a row then shows no number.
-	let more: {
+	const normal = locals.session?.kind === 'normal' ? locals.session : null;
+	type More = {
 		deletedCount: number;
 		foodCount: number;
 		recipeCount: number;
 		mealCount: number;
 		/** A newer published version already known, for an admin who turned the check on (Server). */
 		newerVersion: string | null;
-	} | null = null;
-	if (locals.session?.kind === 'normal') {
-		try {
-			const { userId, role } = locals.session;
-			const [
-				deletedEntries,
-				deletedFoods,
-				deletedMeals,
-				own,
-				recipeCount,
-				mealCount,
-				newerVersion
-			] = await Promise.all([
-				diary.trashCount(userId),
-				catalog.trashCount(userId),
-				savedMeals.trashCount(userId),
-				catalog.ownFoods(userId, 0, 1),
-				recipes.count(userId),
-				savedMeals.count(userId),
-				updates.known(userId, role === 'admin').catch(() => null)
-			]);
-			more = {
-				deletedCount: deletedEntries + deletedFoods + deletedMeals,
-				foodCount: own.total,
-				recipeCount,
-				mealCount,
-				newerVersion
-			};
-		} catch (e) {
-			console.error('more: counts failed', describeError(e));
-		}
-	}
-	// What reads this person's recordings and photos: their own key, the server's add-on, or nothing yet.
-	let speakSource: Source | null = config.speechUrl !== null ? 'server' : null;
-	let scanSource: Source | null = config.ocrUrl !== null ? 'server' : null;
-	let keysAllowed = false;
-	if (locals.session) {
-		const userId = locals.session.userId;
-		[speakSource, scanSource, keysAllowed] = await Promise.all([
-			effectiveSource(userId, 'speak'),
-			effectiveSource(userId, 'scan'),
-			remoteModels.allowed(userId)
-		]);
-	}
+	};
+	// The parts below are independent, so they are read at the same time (2026-11-23 Gemini audit 2, H10: four
+	// waves, one after another). A part that fails only leaves out what it shows.
+	const [celebrate, offer, more, sources] = await Promise.all([
+		// Achievements reached in the last few days and not yet celebrated. A celebration must never stop a page from
+		// opening, so a failure here only means no toast.
+		normal
+			? progress
+					.sync(normal.userId, today, locals.zone)
+					.then(({ list }): StoredAchievement[] => list.filter((a) => !a.seen))
+					.catch((e): StoredAchievement[] => {
+						console.error('achievements: sync failed', describeError(e));
+						return [];
+					})
+			: ([] as StoredAchievement[]),
+		// The goal weight is reached and the budget still has its deficit: Today and the goal's celebration offer to
+		// switch to maintenance (shared/goals.ts). Like the celebration, it never stops a page from opening. Also the
+		// pace a calculated budget asks for, for the Goal row in Settings; null without one.
+		normal
+			? Promise.all([
+					parent(),
+					goals.targetFor(normal.userId, today),
+					body.latestWeight(normal.userId, today)
+				])
+					.then(([{ preferences }, target, weight]) => {
+						const requested = target?.inputs.requestedRateKgPerWeek;
+						return {
+							maintainAtKg: maintainOffer(
+								target,
+								weight?.value ?? null,
+								preferences.maintainOfferDeclinedKg
+							),
+							goalPace:
+								target?.mode === 'calculated'
+									? typeof requested === 'number'
+										? requested
+										: (target.rateKgPerWeek ?? 0)
+									: null
+						};
+					})
+					.catch((e) => {
+						console.error('maintain offer: failed', describeError(e));
+						return { maintainAtKg: null, goalPace: null };
+					})
+			: { maintainAtKg: null, goalPace: null },
+		// What the More list shows beside its rows. Kept here, with everything else that refreshes behind a page
+		// change, so More opens without asking the server. Null when it could not be read: a row then shows no number.
+		normal
+			? Promise.all([
+					diary.trashCount(normal.userId),
+					catalog.trashCount(normal.userId),
+					savedMeals.trashCount(normal.userId),
+					catalog.ownCount(normal.userId),
+					recipes.count(normal.userId),
+					savedMeals.count(normal.userId),
+					updates.known(normal.userId, normal.role === 'admin').catch(() => null)
+				])
+					.then(
+						([
+							deletedEntries,
+							deletedFoods,
+							deletedMeals,
+							foodCount,
+							recipeCount,
+							mealCount,
+							newerVersion
+						]): More => ({
+							deletedCount: deletedEntries + deletedFoods + deletedMeals,
+							foodCount,
+							recipeCount,
+							mealCount,
+							newerVersion
+						})
+					)
+					.catch((e): More | null => {
+						console.error('more: counts failed', describeError(e));
+						return null;
+					})
+			: null,
+		// What reads this person's recordings and photos: their own key, the server's add-on, or nothing yet.
+		locals.session
+			? allSources(locals.session.userId)
+			: {
+					speak: config.speechUrl !== null ? ('server' as const) : null,
+					scan: config.ocrUrl !== null ? ('server' as const) : null,
+					keysAllowed: false
+				}
+	]);
+	const { maintainAtKg, goalPace } = offer;
+	const { speak: speakSource, scan: scanSource, keysAllowed } = sources;
 	return {
 		zone: locals.zone,
 		today,
