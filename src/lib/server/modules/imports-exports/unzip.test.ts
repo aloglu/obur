@@ -4,6 +4,10 @@ import { readArchive } from './archive.ts';
 import { archiveKind, readLoseItArchive } from './loseit.ts';
 import { listZip, MAX_ENTRIES, TooManyEntries, unzipLimited } from './unzip.ts';
 
+/** Making the big archives below takes seconds on a slow computer (the release workflow's): that is not what is
+ *  measured, so these tests may take longer than the usual 5 s (rc.10 release run, 2026-11-23). */
+const SLOW_SETUP_MS = 60_000;
+
 /** An archive whose file says it holds one byte, and holds `mb` megabytes of zeros. */
 function lying(mb: number): Uint8Array {
 	const zip = zipSync({ 'manifest.json': new Uint8Array(mb * 1024 * 1024) }, { level: 9 });
@@ -30,20 +34,28 @@ describe('unzipLimited (G07)', () => {
 		expect(new TextDecoder().decode((out as Record<string, Uint8Array>)['a.json'])).toBe('{"a":1}');
 	});
 
-	it('stops a file that unpacks past the limit, whatever size it declares, without unpacking it all', () => {
-		const zip = lying(400);
-		const started = performance.now();
-		expect(unzipLimited(zip, () => true, 10 * 1024 * 1024)).toBe('too_large');
-		// Unpacking all 400 MB takes about a second; stopping at 10 MB takes a small part of that.
-		expect(performance.now() - started).toBeLessThan(300);
-	});
+	it(
+		'stops a file that unpacks past the limit, whatever size it declares, without unpacking it all',
+		() => {
+			const zip = lying(400);
+			const started = performance.now();
+			expect(unzipLimited(zip, () => true, 10 * 1024 * 1024)).toBe('too_large');
+			// Unpacking all 400 MB takes about a second; stopping at 10 MB takes a small part of that.
+			expect(performance.now() - started).toBeLessThan(300);
+		},
+		SLOW_SETUP_MS
+	);
 
-	it('makes both import readers refuse such a file as too large', () => {
-		const zip = lying(250);
-		expect(() => readArchive(zip)).toThrow(/too_large/);
-		const loseit = zipSync({ 'food-logs.csv': new Uint8Array(250 * 1024 * 1024) }, { level: 9 });
-		expect(() => readLoseItArchive(loseit)).toThrow(/too_large/);
-	});
+	it(
+		'makes both import readers refuse such a file as too large',
+		() => {
+			const zip = lying(250);
+			expect(() => readArchive(zip)).toThrow(/too_large/);
+			const loseit = zipSync({ 'food-logs.csv': new Uint8Array(250 * 1024 * 1024) }, { level: 9 });
+			expect(() => readLoseItArchive(loseit)).toThrow(/too_large/);
+		},
+		SLOW_SETUP_MS
+	);
 });
 
 describe('archives that list too many files (G07, 2026-11-23 verification)', () => {
