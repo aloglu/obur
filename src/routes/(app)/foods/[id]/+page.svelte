@@ -38,10 +38,14 @@
 		}
 	}
 
+	// Save goes back to the list, as Cancel does and as the recipe and saved meal editors do (owner, 2026-11-24).
 	const save = (input: FoodInput) =>
 		run(async () => {
+			const archived = food.archived;
 			await api('PUT', `/api/v1/foods/${food.id}`, { version: food.version, food: input });
-			await invalidateAll();
+			await goto(archived ? resolve('/(app)/foods/archived') : resolve('/(app)/foods'), {
+				invalidateAll: true
+			});
 			showToast({ message: m.food_saved() });
 		});
 

@@ -153,3 +153,31 @@ test("Cancel on a food's page leaves without saving, back to where the page came
 	await page.getByRole('link', { name: 'Cancel' }).click();
 	await expect(page).toHaveURL(/\/foods\/archived$/);
 });
+
+test("Save on a food's page goes back to its list, as on recipes and saved meals", async ({
+	page
+}) => {
+	// Owner, 2026-11-24: Save stayed on the food's page, unlike the recipe and saved meal editors.
+	await signedInAs(page, 'Kaydeden');
+	const id = await createFood(page, {
+		name: 'Save test bar',
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 400, qualifier: 'reported' }]
+	});
+	await page.goto(`/foods/${id}`);
+	await page.getByLabel('Name', { exact: true }).fill('Saved test bar');
+	await page.getByRole('button', { name: 'Save food' }).click();
+	await expect(page).toHaveURL(/\/foods$/);
+	await expect(page.getByRole('status').getByText('Food saved.')).toBeVisible();
+	await expect(page.getByRole('link', { name: /Saved test bar/ })).toBeVisible();
+
+	// An archived food goes back to Archived foods.
+	await page.goto(`/foods/${id}`);
+	await page.getByRole('button', { name: 'Archive food' }).click();
+	await expect(page.getByRole('status').filter({ hasText: 'Food archived' })).toBeVisible();
+	await page.goto(`/foods/${id}`);
+	await page.getByLabel('Name', { exact: true }).fill('Archived test bar');
+	await page.getByRole('button', { name: 'Save food' }).click();
+	await expect(page).toHaveURL(/\/foods\/archived$/);
+	await expect(page.getByRole('link', { name: /Archived test bar/ })).toBeVisible();
+});

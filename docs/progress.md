@@ -7,6 +7,9 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 - Achievement screen: the screen takes the focus when it opens, not Done, so phones no longer draw a ring around
   Done (same fix as Sheet). Enter still changes nothing. check, lint, achievements and goals e2e (27) pass. Not yet
   checked on a real phone.
+- Food page Save (owner report): saving an existing food stayed on its page, while recipes and saved meals go back
+  to their lists. Save now goes to Foods (an archived food: Archived foods) with "Food saved.". New e2e test in
+  `menu-dismiss.e2e.ts`. docs/ui.md updated.
 - Speak "Unit" with no unit chosen: not a bug. A count with no matching unit word ("2 lentil soup") is asked, as
   design.md says; the owner chose to keep it. Speech recognition quality may be looked at later (no work agreed).
 
