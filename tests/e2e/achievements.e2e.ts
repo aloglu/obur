@@ -27,7 +27,8 @@ test('a new weight mark is celebrated once; older ones arrive quietly', async ({
 	const dialog = page.getByRole('dialog', { name: 'Achievement: 4 kg lost' });
 	await expect(dialog).toContainText("That's a pumpkin.");
 	await expect(dialog).toContainText('Carved off.');
-	await expect(dialog.getByRole('button', { name: 'Done' })).toBeFocused();
+	// The screen takes the focus, not Done: phones would draw a ring around it.
+	await expect(dialog).toBeFocused();
 	const seen = page.waitForResponse(/achievements\/seen/);
 	await dialog.getByRole('button', { name: 'Done' }).click();
 	await seen; // being marked as seen is a request of its own

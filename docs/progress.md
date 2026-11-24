@@ -2,6 +2,14 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## After rc.10 (owner, 2026-11-24)
+
+- Achievement screen: the screen takes the focus when it opens, not Done, so phones no longer draw a ring around
+  Done (same fix as Sheet). Enter still changes nothing. check, lint, achievements and goals e2e (27) pass. Not yet
+  checked on a real phone.
+- Speak "Unit" with no unit chosen: not a bug. A count with no matching unit word ("2 lentil soup") is asked, as
+  design.md says; the owner chose to keep it. Speech recognition quality may be looked at later (no work agreed).
+
 ## Claude's 1.0 audit (owner's go, 2026-11-21)
 
 Report: `~/Documents/Obur-1.0-Audit-Claude.md` (not in the repository), items C01-C12. Owner's choices: do C01, C02,

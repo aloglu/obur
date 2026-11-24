@@ -330,8 +330,10 @@ test('reaching the goal weight offers to switch to maintain, from the celebratio
 	const before = await page.getByRole('region', { name: 'Budget' }).innerText();
 	await page.getByRole('button', { name: /^Goal reached: 80 kg/ }).click();
 	const dialog = page.getByRole('dialog', { name: 'Achievement: Goal reached: 80 kg' });
-	// Done keeps the focus, so Enter never changes a budget.
-	await expect(dialog.getByRole('button', { name: 'Done' })).toBeFocused();
+	// The screen keeps the focus, so Enter never changes a budget.
+	await expect(dialog).toBeFocused();
+	await page.keyboard.press('Enter');
+	await expect(dialog).toBeVisible();
 	await dialog.getByRole('button', { name: 'Switch to maintain' }).click();
 	await expect(dialog).toBeHidden();
 	await expect(page.getByRole('status')).toContainText('Budget switched to maintain');

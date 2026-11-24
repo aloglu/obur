@@ -29,7 +29,6 @@
 		'--badge-rose'
 	];
 	let shown = $state(0);
-	let done = $state<HTMLButtonElement>();
 	let box = $state<HTMLDialogElement>();
 	let canvas = $state<HTMLCanvasElement>();
 	const TICK = 1 / 60;
@@ -148,7 +147,9 @@
 	$effect(() => {
 		const a = celebration.open;
 		if (!a) return;
-		done?.focus();
+		// Opening moves focus to Done, which phones then draw a ring around as if it were chosen. The screen itself takes
+		// it instead, as in Sheet: its name is still read out, Tab reaches Done, and Enter changes nothing.
+		box?.focus({ preventScroll: true });
 		const target = typeof a.level === 'number' ? a.level : 0;
 		if (reduced() || !target) {
 			shown = target;
@@ -171,13 +172,14 @@
 	<!-- Tapping the background only plays with the confetti: decoration, with nothing for a keyboard to miss. -->
 	<dialog
 		bind:this={box}
+		tabindex="-1"
 		aria-label={m.achievement_celebration({ title: achievementTitle(a) })}
 		onclick={poke}
 		oncancel={(e) => {
 			e.preventDefault();
 			closeCelebration();
 		}}
-		class="celebrate fixed inset-0 isolate m-0 h-dvh max-h-none w-full max-w-none flex-col items-center justify-center gap-3 overflow-hidden border-0 px-7 pt-[calc(env(safe-area-inset-top)+40px)] pb-[calc(env(safe-area-inset-bottom)+40px)] text-center text-text open:flex"
+		class="celebrate fixed inset-0 isolate m-0 h-dvh max-h-none w-full max-w-none flex-col items-center justify-center gap-3 overflow-hidden border-0 px-7 pt-[calc(env(safe-area-inset-top)+40px)] pb-[calc(env(safe-area-inset-bottom)+40px)] text-center text-text outline-none open:flex"
 	>
 		{#if !reduced()}
 			<canvas
@@ -213,7 +215,6 @@
 		{/if}
 		<p class="sub max-w-[28ch] text-[0.9375rem] text-muted">{achievementLine(a)}</p>
 		<button
-			bind:this={done}
 			type="button"
 			onclick={closeCelebration}
 			class="done mt-2.5 min-h-[52px] min-w-[200px] rounded-tile bg-fill px-6 text-[1.0625rem] font-[750] text-on-accent"
