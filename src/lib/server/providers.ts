@@ -126,8 +126,19 @@ async function call(
 	} catch {
 		throw new RemoteFailure('provider_unavailable');
 	}
-	const body = await response.json().catch(() => null);
-	if (!response.ok) throw new RemoteFailure(errorFor(response.status, body));
+	// An answer cut off by the time limit, or not JSON, is no answer; and OpenRouter reports a provider that failed after
+	// it started answering as `{ error: { code } }` with status 200. Either way it is a failure, not an empty reading
+	// counted as a use (2026-11-25 Review.md audit, 2.1).
+	const unread = Symbol();
+	const body: unknown = await response.json().catch(() => unread);
+	if (!response.ok)
+		throw new RemoteFailure(errorFor(response.status, body === unread ? null : body));
+	if (body === unread) throw new RemoteFailure('provider_unavailable');
+	const failed = (body as { error?: { code?: unknown } } | null)?.error;
+	if (failed) {
+		const status = typeof failed.code === 'number' ? failed.code : 502;
+		throw new RemoteFailure(errorFor(status >= 400 ? status : 502, body));
+	}
 	return body;
 }
 

@@ -59,6 +59,14 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   save". The new recipe and new saved meal editors, after a save without an answer, look the item up and change it
   instead: one item, with the change. 5 e2e tests in `connection.e2e.ts` (Chromium only), each failed before.
   connection, typed-entry, saved-meals, recipes, speak, diary e2e (241) pass; check, lint pass.
+- Provider answers and short clips done (2.1, 2.2): an answer from OpenAI or OpenRouter that was cut off or not JSON,
+  or OpenRouter's `{ error }` with status 200, read as an empty transcript or table ("Nothing heard", "No nutrition
+  table found"), counted as a use, and let a key check pass. It is now a failure with its usual message (a 429 inside
+  is "busy"). The local Scan and Speak add-ons' unreadable answers say "unavailable" too. A Speak clip under 0.25 s
+  (Done tapped at once: only the 44-byte WAV header) is "Nothing heard" on the phone, never sent, and refused the same
+  way on the server; it was sent to OpenAI, refused as a failure, and Try again sent it again. Not checked here:
+  OpenRouter's documentation for errors with status 200, and OpenAI's exact minimum length. Unit tests (providers:
+  failed before; `shared/recording.ts`). speak, scan, own-key, voice-off e2e (208) pass; Firefox Speak not run.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

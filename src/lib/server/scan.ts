@@ -96,7 +96,9 @@ export async function scanLabel(
 	} catch {
 		throw new ScanFailure('unavailable');
 	}
-	const body = (await response.json().catch(() => ({}))) as {
+	// An answer cut off or not JSON is no reading: "unavailable", not "no table found" (2026-11-25 Review.md audit, 2.1).
+	const body = (await response.json().catch(() => ({ unread: true }))) as {
+		unread?: true;
 		lines?: OcrLine[];
 		error?: string;
 		ahead?: number;
@@ -114,8 +116,9 @@ export async function scanLabel(
 		const known = ['too_large', 'decode_failed'] as const;
 		throw new ScanFailure(known.find((k) => k === body.error) ?? 'unavailable');
 	}
+	if (body.unread || !Array.isArray(body.lines)) throw new ScanFailure('unavailable');
 	return {
-		proposal: parseLabel(Array.isArray(body.lines) ? body.lines : []),
+		proposal: parseLabel(body.lines),
 		source,
 		blurry: typeof body.sharpness === 'number' && body.sharpness < BLURRY_BELOW,
 		ocrMs: body.ocrMs ?? 0,

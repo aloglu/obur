@@ -9,7 +9,16 @@ interface ChatRequest {
 	messages: { content: { image_url?: { url: string } }[] }[];
 	provider?: unknown;
 }
-const { audioFormat, errorFor, labelRequest, tableFrom } = await import('./providers.ts');
+const {
+	audioFormat,
+	checkKey,
+	errorFor,
+	labelRequest,
+	readLabel,
+	RemoteFailure,
+	tableFrom,
+	transcribe
+} = await import('./providers.ts');
 
 describe('refusals', () => {
 	it.each([
@@ -66,5 +75,38 @@ describe('label requests', () => {
 		);
 		expect(tableFrom({ choices: [{ message: { content: '{"rows": 3}' } }] })).toEqual(empty);
 		expect(tableFrom(null)).toEqual(empty);
+	});
+});
+
+describe('an answer that is not one (2026-11-25 Review.md audit, 2.1)', () => {
+	const answer = (status: number, body: string) =>
+		vi.fn(
+			async () => new Response(body, { status, headers: { 'content-type': 'application/json' } })
+		);
+	const codeOf = (p: Promise<unknown>) =>
+		p.then(
+			() => 'resolved',
+			(e: unknown) => (e instanceof RemoteFailure ? e.code : String(e))
+		);
+
+	it('is a failure, not an empty reading, when a 200 carries an error or no JSON', async () => {
+		const audio = new Uint8Array([1, 2, 3]);
+		vi.stubGlobal('fetch', answer(200, '{"error":{"code":502,"message":"Upstream error"}}'));
+		expect(await codeOf(transcribe('openrouter', 'k', audio, 'audio/wav', ''))).toBe(
+			'provider_unavailable'
+		);
+		vi.stubGlobal('fetch', answer(200, '{"error":{"code":429,"message":"Rate limited"}}'));
+		expect(await codeOf(readLabel('openrouter', 'k', new Uint8Array([0xff])))).toBe(
+			'provider_busy'
+		);
+		vi.stubGlobal('fetch', answer(200, '{"text": "two eg'));
+		expect(await codeOf(transcribe('openai', 'k', audio, 'audio/wav', ''))).toBe(
+			'provider_unavailable'
+		);
+		vi.stubGlobal('fetch', answer(200, '<html>gateway</html>'));
+		expect(await checkKey('openrouter', 'k')).toBe('provider_unavailable');
+		vi.stubGlobal('fetch', answer(200, '{"data":{}}'));
+		expect(await checkKey('openrouter', 'k')).toBe('ok');
+		vi.unstubAllGlobals();
 	});
 });

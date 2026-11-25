@@ -19,6 +19,7 @@
 	import { accountHeaders, wrongAccount } from '#lib/client/account.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { recordingWav } from '#lib/client/wav.ts';
+	import { tooShortToHear } from '#lib/shared/recording.ts';
 	import type { ParsedEntry } from '#lib/shared/entry-types.ts';
 	import Button from '../Button.svelte';
 	import Notice from '../Notice.svelte';
@@ -222,6 +223,11 @@
 		stopTracks();
 		lastAudio = recordingWav(parts, rate, MAX_SECONDS);
 		parts = [];
+		// Done tapped at once: nothing to hear, and nothing to send again (Review.md audit, 2.2).
+		if (tooShortToHear(lastAudio.size, lastAudio.type)) {
+			lastAudio = null;
+			return fail(P.nothing());
+		}
 		send();
 	}
 

@@ -1,6 +1,7 @@
 // Voice entries: a short clip to text through the speech add-on (speech/service.py) or the person's own key with
 // OpenAI or OpenRouter (providers.ts), then the same understanding as typed text. The audio is held in memory for the one request and never stored or logged. The prompt lists the
 // person's recent foods and brands, which helps the recogniser with names (docs/feasibility.md, Speech).
+import { tooShortToHear } from '#lib/shared/recording.ts';
 import { RateLimiter } from '#lib/server/modules/auth/index.ts';
 import { SPEECH_VOCABULARY } from '#lib/server/modules/nl-parser/index.ts';
 import type { ParsedEntry } from '#lib/shared/entry-types.ts';
@@ -67,8 +68,9 @@ export async function understandSpeech(
 	);
 	if (source === 'local_missing') throw new SpeechFailure('unavailable');
 	if (!source) throw new SpeechFailure('off');
-	// An empty clip (Done tapped at once) is nothing heard, not an error.
-	if (audio.length === 0) throw new SpeechFailure('nothing_heard');
+	// An empty clip, or one too short for a word (Done tapped at once), is nothing heard, not an error: OpenAI
+	// refuses it as a failure (2026-11-25 Review.md audit, 2.2).
+	if (tooShortToHear(audio.length, mime)) throw new SpeechFailure('nothing_heard');
 	if (audio.length > MAX_AUDIO_BYTES) throw new SpeechFailure('too_large');
 	if (!perPerson.attempt(userId)) throw new SpeechFailure('limited');
 	const prompt = await promptFor(userId);
@@ -125,7 +127,10 @@ async function onServer(audio: Uint8Array, prompt: string) {
 	} catch {
 		throw new SpeechFailure('unavailable');
 	}
-	const body = (await response.json().catch(() => ({}))) as {
+	// An answer cut off or not JSON is no transcript: "unavailable", not "nothing heard" (2026-11-25 Review.md audit,
+	// 2.1).
+	const body = (await response.json().catch(() => ({ unread: true }))) as {
+		unread?: true;
 		text?: string;
 		error?: string;
 		audioS?: number;
@@ -136,8 +141,9 @@ async function onServer(audio: Uint8Array, prompt: string) {
 		const known = ['too_large', 'too_long', 'decode_failed', 'busy'] as const;
 		throw new SpeechFailure(known.find((k) => k === body.error) ?? 'unavailable');
 	}
+	if (body.unread || typeof body.text !== 'string') throw new SpeechFailure('unavailable');
 	return {
-		text: body.text ?? '',
+		text: body.text,
 		audioS: body.audioS ?? 0,
 		asrMs: body.asrMs ?? 0,
 		queueMs: body.queueMs ?? 0
