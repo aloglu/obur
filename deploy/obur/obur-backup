@@ -283,8 +283,8 @@ archive_status() {
 			waiting: $w, oldestWaitingAt: (if $o == "" then null else $o end)}'
 }
 
-# A backup of type $1 to every repository, or with "local" after it only to the local one, as if no off-site store
-# were configured (the backup before an upgrade). "scheduled" marks the scheduler's own, which it retries on failure;
+# A backup of type $1 to every repository, or with "local" after it only to the local one, never waiting for the
+# off-site store (the backup before an upgrade; the off-site copy keeps its last result). "scheduled" marks the scheduler's own, which it retries on failure;
 # "retry" with repository numbers after it backs up only to those. Succeeds when every repository it tried took the
 # backup: an earlier failure of one it did not try never fails it (2026-11-22 audit, A02: a recorded off-site failure
 # kept a finished restore closed). Each repository's own last result is kept in .copies, for the admin page.
@@ -295,6 +295,12 @@ backup() {
 	local)
 		targets=1
 		run=local_only
+		# The off-site copy is not tried: it keeps its earlier result, and a failed nightly backup's retry stays due
+		# (2026-11-25 audit: this replaced both, so a failed off-site copy left the admin warning until the next night).
+		if [[ -n ${PGBACKREST_REPO2_TYPE:-} ]]; then
+			results=$(jq -c '.lastBackup.repos // {}' "$STATUS_FILE" 2>/dev/null || echo '{}')
+			scheduled=$(jq '.lastBackup.scheduled == true' "$STATUS_FILE" 2>/dev/null || echo false)
+		fi
 		;;
 	scheduled) scheduled=true ;;
 	retry | only)

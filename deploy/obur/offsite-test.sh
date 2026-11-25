@@ -105,6 +105,11 @@ for _ in $(seq 60); do
 done
 [[ $(status '[.lastBackup.scheduled, .lastBackup.repos]') == '[true,{"1":true,"2":false}]' ]] ||
 	fail "the nightly backup did not run, or reached the store that was away"
+# The backup before an update is local only: the off-site failure stays shown, and its retry stays due (2026-11-25
+# audit: it replaced both).
+docker exec "$name" obur backup pre-upgrade >/dev/null 2>&1 || fail "the backup before an update"
+[[ $(status '[.lastBackup.scheduled, .lastBackup.repos]') == '[true,{"1":true,"2":false}]' ]] ||
+	fail "the backup before an update hid the off-site failure"
 docker exec "$name" chmod 700 /offsite
 for _ in $(seq 60); do
 	[[ $(status '.lastBackup.ok') == true ]] && break
