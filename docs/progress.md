@@ -2,6 +2,16 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Audit of the changes since rc.10 (owner's go, 2026-11-25) — in progress
+
+Diff `git diff v1.0.0-rc.10..HEAD` without docs, tests and messages: 2,807 lines. Read lines 1-1400 (deploy, labels,
+api/hold-drag/swipe/scan-result, goals, imports-exports, label and text parsers, progress, providers, scan, speech,
+food-bulk, food-edit, journal, recording, weight-unit, DayMealFields, Menu, TextField, Celebration, Picture, start of
+FoodForm). No serious problem found so far. Small ones: FoodForm keeps a stray doc comment of the removed
+`valuesHint`; `progress/service.ts` declares `WeightOff` between its imports; the salt/sodium row converted for the
+other label type is saved as "reported" (rule-exact, but its provenance says typed). Next: read lines 1400-2807
+(rest of FoodForm, EntrySheet, the two editors, sheets, service worker, routes), then report to the owner.
+
 ## Review.md audit, 2026-11-25 (owner's go: fix all; no more whole-codebase audits after it)
 
 Report: `~/Documents/Review.md` (not in the repository), sections 1-4. Every item confirmed (parsers by running the
