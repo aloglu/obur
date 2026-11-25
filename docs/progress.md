@@ -9,7 +9,8 @@ those changes. Checks: check, lint, Vitest 1,297, full browser suite in Docker 3
 WebKit pounds flake (passed 4 of 4 on its own), `obur` image smoke test, label add-on test. npm audit: the 4 known
 drizzle-kit/esbuild moderates only. The AI-agent guide needs no change (no commands, settings or log lines changed).
 `~/Documents/obur-rc-test-checklist.md` has "New in 1.0.0-rc.11". The release workflow runs the image tests
-(off-site, off-site restore, upgrades). Not done here: real-phone checks (the owner's checklist).
+(off-site, off-site restore, upgrades). Published 2026-11-25 16:35 UTC: every job passed (checks, browser tests, the three
+images with their tests, Publish). Next: the owner updates and goes through the checklist.
 
 ## Audit of the changes since rc.10 (owner's go, 2026-11-25) — done
 
