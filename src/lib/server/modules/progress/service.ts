@@ -15,13 +15,14 @@ import { addDays } from '../../../shared/diary-rules.ts';
 import type { WeightUnit } from '../../../shared/weight-convert.ts';
 import { goalWeightAllowed } from '../../../shared/goals.ts';
 
-/** Why weight achievements are off: no goal below the start, no birth date, or a profile that rules them out. */
-export type WeightOff = 'goal' | 'birth_date' | 'profile';
 import { weightEntries } from '../body/index.ts';
 import { foods, recipes } from '../catalog/index.ts';
 import { dayCompletions, diaryEntries } from '../diary/index.ts';
 import { goalVersions, profiles } from '../goals/index.ts';
 import { achievements } from './schema.ts';
+
+/** Why weight achievements are off: no goal below the start, no birth date, or a profile that rules them out. */
+export type WeightOff = 'goal' | 'birth_date' | 'profile';
 
 /** Reached this many days before today or more recently: celebrated; earlier: quiet. */
 export const CELEBRATE_DAYS = 2;

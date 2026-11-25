@@ -53,7 +53,6 @@
 		valueNotes?: Snippet;
 		/** On the right of the Nutrition title: Scan label on New food (docs/ui.md, "Food form"). */
 		valuesAction?: Snippet;
-		/** The hint on copying a label, when it should say more (that a scan can fill it in). */
 		/** Under the Nutrition title, above the basis: the scanned photo on New food. */
 		valuesTop?: Snippet;
 		/** A food the person already has that is the same: shown in place of Save ("Already in your foods"). */

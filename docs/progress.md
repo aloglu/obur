@@ -2,15 +2,15 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Audit of the changes since rc.10 (owner's go, 2026-11-25) — in progress
+## Audit of the changes since rc.10 (owner's go, 2026-11-25) — done
 
-Diff `git diff v1.0.0-rc.10..HEAD` without docs, tests and messages: 2,807 lines. Read lines 1-1400 (deploy, labels,
-api/hold-drag/swipe/scan-result, goals, imports-exports, label and text parsers, progress, providers, scan, speech,
-food-bulk, food-edit, journal, recording, weight-unit, DayMealFields, Menu, TextField, Celebration, Picture, start of
-FoodForm). No serious problem found so far. Small ones: FoodForm keeps a stray doc comment of the removed
-`valuesHint`; `progress/service.ts` declares `WeightOff` between its imports; the salt/sodium row converted for the
-other label type is saved as "reported" (rule-exact, but its provenance says typed). Next: read lines 1400-2807
-(rest of FoodForm, EntrySheet, the two editors, sheets, service worker, routes), then report to the owner.
+Read all of `git diff v1.0.0-rc.10..HEAD` without docs, tests and messages (2,807 lines, 27 commits). No bug found.
+Fixed: a stray doc comment of the removed `valuesHint` (FoodForm) and `WeightOff` declared between imports
+(progress service); check, lint, progress tests pass. Left as is, for the owner to know: the salt or sodium row,
+converted for the other label type (salt = sodium × 2.5), is saved as "reported" when the person saves the form; that
+case needs a food with a carbohydrate excluding fibre and sodium only, which no current path makes (scans, LoseIt
+imports, USDA variants and the form all write a matching pair). Checked by reading: Log's address-derived day and meal
+do not reset on a data refresh (the derived values are strings, unchanged). Next: the owner decides on rc.11.
 
 ## Review.md audit, 2026-11-25 (owner's go: fix all; no more whole-codebase audits after it)
 
