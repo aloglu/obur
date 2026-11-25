@@ -43,6 +43,11 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
 - Log tab done (2.5): Log read its day and meal from the address once, so the Log tab after "Add food" on yesterday
   kept yesterday and Breakfast. They now follow the address. New e2e test in `diary.e2e.ts` (failed before).
   diary, typed-entry, scan, connection e2e (116) pass in the container; check, lint pass.
+- Edit pages done (1.1, and 2.9's archived recipe Save): the food, recipe and saved meal editors started afresh
+  only on a new version, so Undo after archiving one food, from another food's page at the same version, showed the
+  other food's form, and Save wrote its values into the first. They now start afresh for another item too. Saving
+  an archived recipe goes back to Archived recipes, as Cancel does. 2 e2e tests failed before (`catalog.e2e.ts`,
+  `archive.e2e.ts`). catalog, archive, recipes, saved-meals, menu-dismiss e2e (43) pass; check, lint pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

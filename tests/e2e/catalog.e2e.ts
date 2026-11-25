@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createFood, signedInAs } from './fixtures.ts';
+import { apiAs, createFood, signedInAs } from './fixtures.ts';
 
 // Nutrient inputs by field; label text alone is ambiguous ("Fat" is inside "Saturated fat").
 const nutrient = (page: Page, field: string) => page.locator(`#n-${field}`);
@@ -133,4 +133,30 @@ test('a new food the person already has offers it instead, or saves it anyway', 
 	await page.getByRole('button', { name: 'Save mine anyway' }).click();
 	const saved = page.getByRole('link', { name: new RegExp(`yogurt greek ${tag}`) });
 	await expect(saved).toHaveAttribute('data-highlight', 'true');
+});
+
+test('Undo after archiving opens that food’s own form, not the one open before (2026-11-25 Review.md audit, 1.1)', async ({
+	page
+}, testInfo) => {
+	const tag = testInfo.project.name;
+	await signedInAs(page, `Undo Form ${tag}`);
+	const food = (name: string) => ({
+		name,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 100, qualifier: 'reported' }]
+	});
+	const first = await createFood(page, food('Apricot Jam'));
+	const second = await createFood(page, food('Plum Jam'));
+	// The same version as the first will have after its archive and Undo.
+	await apiAs(page, 'POST', `/api/v1/foods/${second}?action=archive`, {});
+	await apiAs(page, 'POST', `/api/v1/foods/${second}?action=restore`, {});
+
+	await page.goto(`/foods/${first}`);
+	await page.getByRole('button', { name: 'Archive food' }).click();
+	await expect(page).toHaveURL(/\/foods$/);
+	await page.getByRole('link', { name: /Plum Jam/ }).click();
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Plum Jam');
+	await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
+	await expect(page).toHaveURL(new RegExp(`/foods/${first}$`));
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Apricot Jam');
 });

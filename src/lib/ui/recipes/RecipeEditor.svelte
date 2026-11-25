@@ -115,7 +115,10 @@
 				cookedYieldG,
 				ingredients: items.map((d) => payloadOf(d, measures, 'ingredientId'))
 			});
-			await goto(resolve('/(app)/recipes'), { invalidateAll: true });
+			// Back to the list it came from, as Cancel goes (2026-11-25 Review.md audit, 2.9).
+			await goto(resolve(start?.archived ? '/(app)/recipes/archived' : '/(app)/recipes'), {
+				invalidateAll: true
+			});
 			showToast({ message: m.recipe_saved({ name: saved.name }) });
 		});
 	};

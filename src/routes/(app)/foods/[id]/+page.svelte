@@ -205,7 +205,9 @@
 			>
 		</Card>
 	{:else if editing}
-		{#key food.version}<FoodForm
+		<!-- Another food, or a new version, starts the form afresh: Undo can open another food at the same version
+		(2026-11-25 Review.md audit, 1.1: Save wrote the open form's values into it). -->
+		{#key `${food.id}-${food.version}`}<FoodForm
 				initial={food}
 				{busy}
 				onsave={save}

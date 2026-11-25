@@ -153,6 +153,11 @@ test('deleting a food says the recipe using it keeps its values; archived recipe
 	await main.getByRole('link', { name: /Lentil soup/ }).click();
 	await main.getByRole('link', { name: 'Cancel' }).click();
 	await expect(page).toHaveURL(/\/recipes\/archived$/);
+	// So does Save (2026-11-25 Review.md audit, 2.9: it went to Recipes, where the recipe isn't listed).
+	await main.getByRole('link', { name: /Lentil soup/ }).click();
+	await main.getByLabel('Servings it makes').fill('5');
+	await main.getByRole('button', { name: 'Save' }).click();
+	await expect(page).toHaveURL(/\/recipes\/archived$/);
 	await main.getByRole('link', { name: /Lentil soup/ }).click();
 	await main.getByRole('button', { name: 'Delete recipe' }).click();
 	await expect(page).toHaveURL(/\/recipes\/archived$/);
