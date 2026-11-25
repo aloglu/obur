@@ -24,6 +24,10 @@ status, interrupted first install, diary CSV unit, archive memory, import previe
   `smoke-test.sh` (failed before: database "obur" does not exist).
 - Image tests after both: smoke, off-site, restore-interrupt (20 rounds) and upgrade from rc.10 pass. Not run:
   off-site restore and upgrade from beta.19 (the release workflow runs them).
+- Full browser suite after all six: 342 passed, 2 failed, 58 skipped. The two failures were phone WebKit pounds
+  tests, at a page change just after a unit change on Units ("navigation interrupted by another navigation to
+  /more/units"); no code there changed. Alone, they passed 4 of 4 (--repeat-each=4). Not checked on a real phone.
+  Next: the owner decides on a release candidate.
 - Archive memory done: the queue of archive tasks kept the last task's result (`catch` passes it on), so a large
   import or export stayed in memory until the next one. Unit test (`archive-thread.test.ts`, a WeakRef after a
   forced collection; failed before). Vitest 1,274 and lint pass.
