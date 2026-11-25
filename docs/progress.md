@@ -48,6 +48,9 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   other food's form, and Save wrote its values into the first. They now start afresh for another item too. Saving
   an archived recipe goes back to Archived recipes, as Cancel does. 2 e2e tests failed before (`catalog.e2e.ts`,
   `archive.e2e.ts`). catalog, archive, recipes, saved-meals, menu-dismiss e2e (43) pass; check, lint pass.
+- Bulk size done (1.2): a part of a bulk food action held 5,000 IDs (about 195 KB), over the 64 KB body limit, so
+  Undo after Select all and Restore in Recently deleted failed above 1,679 foods. Parts are now 1,000 IDs. Unit
+  test (failed before: 413). catalog Vitest, archive and bulk e2e pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

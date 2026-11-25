@@ -33,3 +33,18 @@ describe('readBody (G08)', () => {
 		expect(await readBody(request, 1024)).toBeNull();
 	});
 });
+
+describe('a part of a bulk food action (2026-11-25 Review.md audit, 1.2)', () => {
+	it('fits in one JSON body, so Undo and Restore after Select all are not refused', async () => {
+		const { randomUUID } = await import('node:crypto');
+		const { MAX_BULK_FOODS } = await import('#lib/shared/food-bulk.ts');
+		const { readJson } = await import('./http.ts');
+		const v = await import('valibot');
+		const ids = Array.from({ length: MAX_BULK_FOODS }, () => randomUUID());
+		const request = new Request('http://x/', {
+			method: 'POST',
+			body: JSON.stringify({ action: 'undelete', ids })
+		});
+		await expect(readJson(request, v.any())).resolves.toMatchObject({ action: 'undelete' });
+	});
+});
