@@ -10,35 +10,13 @@
 	interface Props {
 		day: D;
 		days: Option<D>[];
-		dayLabel?: string;
 		meal: M;
 		meals: Option<M>[];
-		mealLabel?: string;
-		/** Hide Meal when nothing being logged belongs to one. */
-		showMeal?: boolean;
-		onmeal?: (meal: M) => void;
 	}
-	let {
-		day = $bindable(),
-		days,
-		dayLabel,
-		meal = $bindable(),
-		meals,
-		mealLabel,
-		showMeal = true,
-		onmeal
-	}: Props = $props();
+	let { day = $bindable(), days, meal = $bindable(), meals }: Props = $props();
 </script>
 
-<div class={['grid gap-2', showMeal && 'grid-cols-2']}>
-	<Select bind:value={day} options={days} label={dayLabel ?? t.amount_day()} wide />
-	{#if showMeal}
-		<Select
-			bind:value={meal}
-			options={meals}
-			label={mealLabel ?? t.amount_meal()}
-			wide
-			onchange={onmeal}
-		/>
-	{/if}
+<div class="grid grid-cols-2 gap-2">
+	<Select bind:value={day} options={days} label={t.amount_day()} wide />
+	<Select bind:value={meal} options={meals} label={t.amount_meal()} wide />
 </div>

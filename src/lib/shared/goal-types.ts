@@ -73,19 +73,6 @@ export type BudgetSettings = {
 const optionalNumber = (min: number, max: number) =>
 	v.optional(v.nullable(v.pipe(v.number(), v.finite(), v.minValue(min), v.maxValue(max))), null);
 
-export const ProfileInput = v.object({
-	heightCm: optionalNumber(50, 260),
-	birthDate: v.optional(v.nullable(v.pipe(v.string(), v.check(isIsoDate, 'Invalid date'))), null),
-	sex: v.optional(v.nullable(v.picklist(['female', 'male'])), null),
-	bodyFatPct: optionalNumber(2, 75),
-	waistCm: optionalNumber(30, 250),
-	pregnant: v.optional(v.boolean(), false),
-	breastfeeding: v.optional(v.boolean(), false),
-	decimalMark: v.optional(v.picklist([',', '.']), ','),
-	firstDayOfWeek: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7)), 1)
-});
-export type ProfileInput = v.InferOutput<typeof ProfileInput>;
-
 const Day = v.pipe(v.string(), v.check(isIsoDate, 'Invalid date'));
 
 export const TargetInput = v.variant('mode', [

@@ -12,7 +12,6 @@
 		kcal: number | string | null;
 		/** The words an icon is suggested from, when they aren't the row's name. */
 		iconFrom?: { name: string; brand: string | null };
-		faded?: boolean;
 		/** Just saved: tinted for a moment, then fading back. */
 		highlight?: boolean;
 	}
@@ -24,7 +23,6 @@
 		detail,
 		kcal,
 		iconFrom,
-		faded = false,
 		highlight = false
 	}: Props = $props();
 </script>
@@ -36,8 +34,7 @@
 		data-highlight={highlight || undefined}
 		class={[
 			'grid min-h-14 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-input px-2.5 py-1.5 transition-colors duration-700',
-			highlight ? 'bg-soft' : 'hover:bg-surface2',
-			faded && 'opacity-60'
+			highlight ? 'bg-soft' : 'hover:bg-surface2'
 		]}
 	>
 		<FoodIcon {icon} name={iconFrom?.name ?? name} brand={iconFrom?.brand ?? brand} />

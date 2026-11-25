@@ -22,6 +22,7 @@ import {
 	type PortableData
 } from './archive.ts';
 import { createPortability, PortabilityError } from './service.ts';
+import { saveProfile } from '../../../../../tests/db/profile.ts';
 
 const urls = inject('db');
 const quiet = { onnotice: () => {} };
@@ -169,7 +170,7 @@ async function buildHistory() {
 	await admin`insert into activity_entries (id, user_id, local_date, zone, source, kcal, counts_toward_budget)
 		values (${randomUUID()}, ${MEHMET}, '2026-10-02', 'Europe/Istanbul', 'loseit', 210, false)`;
 
-	await goals.saveProfile(MEHMET, { heightCm: 180, birthDate: '1990-05-01', sex: 'male' });
+	await saveProfile(admin, MEHMET, { heightCm: 180, birthDate: '1990-05-01', sex: 'male' });
 	await goals.savePreferences(MEHMET, {
 		palette: 'kaset',
 		appIcon: 'zerde',
@@ -872,7 +873,7 @@ describe('import', () => {
 
 		const [entry] = await diary.day(MEHMET, '2026-10-01');
 		await diary.update(MEHMET, entry.id, entry.revision, { meal: 'lunch' });
-		await goals.saveProfile(MEHMET, { heightCm: 181, birthDate: '1990-05-01', sex: 'male' });
+		await saveProfile(admin, MEHMET, { heightCm: 181, birthDate: '1990-05-01', sex: 'male' });
 		await catalog.setArchived(MEHMET, borek, true);
 		const [meal] = await savedMeals.list(MEHMET);
 		await savedMeals.rename(MEHMET, meal.id, meal.revision, 'Pazar');
@@ -933,7 +934,7 @@ describe('import', () => {
 	});
 
 	it('imports the profile into a new account whose first page only saved settings (2026-11-22 audit, A04)', async () => {
-		await goals.saveProfile(MEHMET, { heightCm: 178, birthDate: '1990-05-01', sex: 'male' });
+		await saveProfile(admin, MEHMET, { heightCm: 178, birthDate: '1990-05-01', sex: 'male' });
 		await goals.savePreferences(MEHMET, { palette: 'kaset', weightUnit: 'lb' });
 		const archive = fromElsewhere(await portability.exportArchive(MEHMET));
 		// A new account on a phone in the US: its first page saved start units, which makes a profile row.

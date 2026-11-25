@@ -134,8 +134,6 @@ const routes: Record<string, Handler> = {
 		await auth.reauthVerify(requireSession(session), body.challengeId, body.response as Auth);
 		return json({ ok: true });
 	},
-	'GET credentials': async (_, session) =>
-		json({ credentials: await auth.listCredentials(requireSession(session)) }),
 	'POST credentials/options': async (_, session) =>
 		json(await auth.addCredentialOptions(requireSession(session))),
 	'POST credentials/verify': async ({ request }, session) => {
@@ -153,8 +151,6 @@ const routes: Record<string, Handler> = {
 		await auth.removeCredential(requireSession(session), body.id);
 		return json({ ok: true });
 	},
-	'GET recovery-codes': async (_, session) =>
-		json({ remaining: await auth.recoveryCodeCount(requireSession(session)) }),
 	'POST recovery-codes': async (_, session) =>
 		json({ recoveryCodes: await auth.regenerateRecoveryCodes(requireSession(session)) }),
 	'POST sessions/sign-out-others': async (_, session) =>
@@ -186,8 +182,6 @@ const routes: Record<string, Handler> = {
 		setSessionCookie(cookies, result.sessionToken);
 		return json({ recoveryCodes: result.recoveryCodes });
 	},
-	'GET invites': async (_, session) =>
-		json({ invites: await auth.listInvites(requireSession(session)) }),
 	'POST invites': async ({ request }, session) => {
 		const body = await readJson(
 			request,
@@ -210,5 +204,5 @@ const dispatch: RequestHandler = (event) =>
 		return handler(event, event.locals.session);
 	});
 
-export const GET = dispatch;
+// Every action changes something; pages read their lists in their own loads.
 export const POST = dispatch;

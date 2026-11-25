@@ -5,8 +5,8 @@ Resumable status for obur. Update before each commit. Design: `docs/design.md`; 
 ## Review.md audit, 2026-11-25 (owner's go: fix all; no more whole-codebase audits after it)
 
 Report: `~/Documents/Review.md` (not in the repository), sections 1-4. Every item confirmed (parsers by running the
-report's inputs). Owner's choice for 1.6: weight achievements follow the Goal page's rule (a missing birth date
-does not block them). Agreed after it: no more whole-codebase audits; before a release, audit only what changed;
+report's inputs). Owner's choice for 1.6: keep "weight achievements need a known adult age" (design.md) and fix
+only the hint (the first plan, to drop the rule, missed that design line). Agreed after it: no more whole-codebase audits; before a release, audit only what changed;
 real-use failures (label text, sentences; never photos or audio) become parser fixtures. Order: label parser, text
 parser, food form carbohydrate/sodium, journal pounds, goal rules, Log tab, edit pages, bulk size, retry IDs,
 providers and Speak, menus and stale settings, races, the rest of 2.9, section 3, dead code.
@@ -107,6 +107,15 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   statement. Speak looks up its prompt words only for OpenAI and the server add-on (OpenRouter ignores them), after
   the key check. Vitest (1,297), prepared, connection, speak, progress, journal, achievements, speed, auth e2e (230)
   pass; check, lint pass. Not measured: load times before and after.
+- Dead code done (section 4): removed the GET endpoints no page uses (`/api/v1/remote-models`, reminders, admin
+  members, and the auth API's credentials, recovery-codes and invites lists; the auth API now takes only POST; the
+  app-shell test checks a signed-out POST instead); `goals.saveProfile` and `ProfileInput` (no route used them, and
+  they skipped the rules for minors and pregnancy: database tests now use `tests/db/profile.ts`, outside the image,
+  and the range test uses `updateDetails`); Journal's unreachable flag icon; the empty `src/lib/index.ts`; unused
+  props (FoodForm `valuesHint`, ListRow `faded`, Draft `note`, Picture `class`, DayMealFields' label, hide and
+  change props). The image no longer carries the parser's test sentences (`fixtures.ts` removed with the tests).
+  Vitest 1,297 pass. Full browser suite: 363 passed, 1 failed, 68 skipped; the failure was the known phone WebKit
+  pounds test ("navigation interrupted … /more/units", seen before this work), and pounds.e2e passed 4 of 4 repeats.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

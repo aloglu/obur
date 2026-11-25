@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest';
 import { createGoals, GoalError } from './service.ts';
+import { saveProfile } from '../../../../../tests/db/profile.ts';
 
 const urls = inject('db');
 const quiet = { onnotice: () => {} };
@@ -44,7 +45,7 @@ afterAll(async () => {
 
 describe('calculated targets', () => {
 	it('stores the computed numbers and the inputs used', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		const v = await goals.setTarget(
 			MEHMET,
 			{ mode: 'calculated', effectiveFrom: '2026-06-01', rateKgPerWeek: 0.5 },
@@ -68,7 +69,7 @@ describe('calculated targets', () => {
 	});
 
 	it('caps the rate at 1 % of body weight and bases protein on a lower goal weight', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		const v = await goals.setTarget(
 			MEHMET,
 			{ mode: 'calculated', effectiveFrom: '2026-06-01', rateKgPerWeek: 1, goalWeightKg: 70 },
@@ -84,7 +85,7 @@ describe('calculated targets', () => {
 	});
 
 	it('uses a fixed base burn when the person sets one', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		const v = await goals.setTarget(
 			MEHMET,
 			{
@@ -102,13 +103,13 @@ describe('calculated targets', () => {
 	it('refuses calculated targets without a profile or weight, and for minors, pregnancy or breastfeeding', async () => {
 		const req = { mode: 'calculated' as const, effectiveFrom: '2026-06-01', rateKgPerWeek: 0.5 };
 		expect(await errorCode(goals.setTarget(MEHMET, req, 80))).toBe('profile_incomplete');
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		expect(await errorCode(goals.setTarget(MEHMET, req, null))).toBe('weight_required');
-		await goals.saveProfile(MEHMET, { ...adult, birthDate: '2010-01-01' });
+		await saveProfile(admin, MEHMET, { ...adult, birthDate: '2010-01-01' });
 		expect(await errorCode(goals.setTarget(MEHMET, req, 60))).toBe('targets_not_allowed');
-		await goals.saveProfile(AYSE, { ...adult, sex: 'female', pregnant: true });
+		await saveProfile(admin, AYSE, { ...adult, sex: 'female', pregnant: true });
 		expect(await errorCode(goals.setTarget(AYSE, req, 70))).toBe('targets_not_allowed');
-		await goals.saveProfile(AYSE, { ...adult, sex: 'female', breastfeeding: true });
+		await saveProfile(admin, AYSE, { ...adult, sex: 'female', breastfeeding: true });
 		expect(await errorCode(goals.setTarget(AYSE, req, 70))).toBe('targets_not_allowed');
 		// A professional's target can still be entered by hand.
 		const manual = await goals.setTarget(
@@ -249,7 +250,7 @@ describe('following the latest weight', () => {
 	};
 
 	it('records a version from today with the same choices; past days keep their budget', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		const first = await goals.setTarget(MEHMET, calculated, 80);
 		const change = await goals.followWeight(MEHMET, '2026-06-10', 78);
 		expect(change).toMatchObject({ beforeKcal: 2136 - 550, afterKcal: 2112 - 550 });
@@ -270,7 +271,7 @@ describe('following the latest weight', () => {
 	});
 
 	it('runs one recalculation at a time for a person, so the last one decides (A20)', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		await goals.setTarget(MEHMET, calculated, 80);
 		const order: string[] = [];
 		let release!: () => void;
@@ -295,7 +296,7 @@ describe('following the latest weight', () => {
 	});
 
 	it('does nothing when the numbers stay the same, so repeating it is harmless', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		await goals.setTarget(MEHMET, calculated, 80);
 		expect(await goals.followWeight(MEHMET, '2026-06-10', 80)).toBeNull();
 		expect(await goals.followWeight(MEHMET, '2026-06-10', 79)).not.toBeNull();
@@ -304,7 +305,7 @@ describe('following the latest weight', () => {
 	});
 
 	it('keeps the requested rate, so a cap from a lower weight is lifted again later', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		await goals.setTarget(MEHMET, { ...calculated, rateKgPerWeek: 1 }, 120);
 		const lower = await goals.followWeight(MEHMET, '2026-06-10', 60);
 		expect(lower!.target).toMatchObject({ rateKgPerWeek: 0.6, deficitKcal: 660 });
@@ -313,7 +314,7 @@ describe('following the latest weight', () => {
 	});
 
 	it('keeps a fixed base burn and only updates the weight-based parts', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		await goals.setTarget(
 			MEHMET,
 			{ ...calculated, goalWeightKg: null, fixedBaseBurnKcal: 2400 },
@@ -334,9 +335,9 @@ describe('following the latest weight', () => {
 		await goals.setTarget(MEHMET, { mode: 'none', effectiveFrom: '2026-06-02' }, null);
 		expect(await goals.followWeight(MEHMET, '2026-06-10', 70)).toBeNull();
 
-		await goals.saveProfile(AYSE, { ...adult, sex: 'female' });
+		await saveProfile(admin, AYSE, { ...adult, sex: 'female' });
 		await goals.setTarget(AYSE, calculated, 70);
-		await goals.saveProfile(AYSE, { ...adult, sex: 'female', pregnant: true });
+		await saveProfile(admin, AYSE, { ...adult, sex: 'female', pregnant: true });
 		expect(await goals.followWeight(AYSE, '2026-06-10', 72)).toBeNull();
 		expect(await goals.followWeight(AYSE, '2026-06-10', null)).toBeNull();
 		expect(await goals.history(MEHMET)).toHaveLength(2);
@@ -344,7 +345,7 @@ describe('following the latest weight', () => {
 	});
 
 	it("never reads or changes another person's targets", async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		await goals.setTarget(MEHMET, calculated, 80);
 		expect(await goals.followWeight(AYSE, '2026-06-10', 70)).toBeNull();
 		expect(await goals.history(MEHMET)).toHaveLength(1);
@@ -358,7 +359,7 @@ describe('settings', () => {
 			preferences: DEFAULT_PREFERENCES,
 			saved: false
 		});
-		await goals.saveProfile(MEHMET, { ...adult, decimalMark: '.' });
+		await saveProfile(admin, MEHMET, { ...adult, decimalMark: '.' });
 		await goals.savePreferences(MEHMET, { palette: 'zerde', appIcon: 'kaset', themeMode: 'dark' });
 		await goals.savePreferences(MEHMET, {
 			weightView: 'trend',
@@ -383,7 +384,7 @@ describe('settings', () => {
 		});
 		// The profile's own fields are untouched, and saving the profile keeps the settings.
 		expect(await goals.profile(MEHMET)).toMatchObject({ heightCm: 180, decimalMark: '.' });
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		expect((await goals.preferences(MEHMET)).preferences.palette).toBe('zerde');
 		// Someone else's are their own.
 		expect((await goals.preferences(AYSE)).saved).toBe(false);
@@ -417,7 +418,7 @@ describe('editing details on Profile', () => {
 	};
 
 	it('saves the details and recalculates from today in one step; past days keep their budget', async () => {
-		await goals.saveProfile(MEHMET, { ...adult, decimalMark: '.', firstDayOfWeek: 7 });
+		await saveProfile(admin, MEHMET, { ...adult, decimalMark: '.', firstDayOfWeek: 7 });
 		const first = await goals.setTarget(MEHMET, calc, 80);
 		// 2 cm taller: 10·80 + 6.25·182 − 5·30 + 5 = 1792,5; × 1.2 = 2151.
 		const { profile, outcome, target } = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
@@ -441,7 +442,7 @@ describe('editing details on Profile', () => {
 	});
 
 	it('takes the rest of the setup details: body fat moves the budget, and details left out stay', async () => {
-		await goals.saveProfile(MEHMET, { ...adult, waistCm: 90, bodyFatPct: 20 });
+		await saveProfile(admin, MEHMET, { ...adult, waistCm: 90, bodyFatPct: 20 });
 		await goals.setTarget(MEHMET, calc, 80);
 		const before = await goals.targetFor(MEHMET, '2026-06-10');
 		const { profile, outcome } = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
@@ -480,7 +481,7 @@ describe('editing details on Profile', () => {
 	});
 
 	it('records nothing when nothing changes, and keeps the goal when it is not sent', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		const first = await goals.setTarget(MEHMET, calc, 80);
 		const { outcome, target } = await goals.updateDetails(MEHMET, '2026-06-10', 80, adult);
 		expect(outcome).toEqual({ kind: 'unchanged' });
@@ -495,7 +496,7 @@ describe('editing details on Profile', () => {
 	});
 
 	it('saves details that no longer allow a calculation and ends the calculated budget from today', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		const first = await goals.setTarget(MEHMET, calc, 80);
 		const minor = await goals.updateDetails(MEHMET, '2026-06-10', 80, {
 			...adult,
@@ -531,7 +532,7 @@ describe('editing details on Profile', () => {
 	});
 
 	it("only touches the signed-in person's profile and targets", async () => {
-		await goals.saveProfile(AYSE, { ...adult, heightCm: 165, sex: 'female' });
+		await saveProfile(admin, AYSE, { ...adult, heightCm: 165, sex: 'female' });
 		await goals.setTarget(AYSE, calc, 70);
 		await goals.updateDetails(MEHMET, '2026-06-10', 80, adult);
 		expect((await goals.profile(AYSE))?.heightCm).toBe(165);
@@ -548,7 +549,7 @@ describe('budget settings', () => {
 	};
 
 	it('changes settings from today on, keeping earlier days and every other choice', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		const first = await goals.setTarget(MEHMET, calc, 80);
 		expect(first).toMatchObject({ countActivity: true, atGoal: 'keep' });
 		const changed = await goals.changeSettings(MEHMET, '2026-06-10', 80, { countActivity: false });
@@ -567,7 +568,7 @@ describe('budget settings', () => {
 	});
 
 	it('switches to maintenance at the goal weight only when chosen, and back above it', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		await goals.setTarget(MEHMET, calc, 80);
 		// Default: the deficit continues at the goal weight.
 		expect((await goals.followWeight(MEHMET, '2026-06-05', 77.5))?.target.deficitKcal).toBe(550);
@@ -579,7 +580,7 @@ describe('budget settings', () => {
 	});
 
 	it('changes the pace and goal weight from today on, and a goal can be cleared', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		const first = await goals.setTarget(MEHMET, calc, 80);
 		const slower = await goals.changeSettings(MEHMET, '2026-06-10', 80, { rateKgPerWeek: 0.25 });
 		expect(slower).toMatchObject({
@@ -594,7 +595,7 @@ describe('budget settings', () => {
 	});
 
 	it('records own macro percentages from today; recalculations keep them; balanced comes back with its fat share', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		const first = await goals.setTarget(MEHMET, { ...calc, fatShare: 0.25 }, 80);
 		const own = await goals.changeSettings(MEHMET, '2026-06-10', 80, {
 			macros: { mode: 'percent', proteinPct: 30, carbPct: 10, fatPct: 60 }
@@ -626,7 +627,7 @@ describe('budget settings', () => {
 	});
 
 	it('refuses shares that do not add up to 100 %, in the service and in the database', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		await goals.setTarget(MEHMET, calc, 80);
 		await expect(
 			goals.changeSettings(MEHMET, '2026-06-10', 80, {
@@ -668,7 +669,7 @@ describe('budget settings', () => {
 
 describe('privacy', () => {
 	it('keeps profiles and targets private, even from the admin', async () => {
-		await goals.saveProfile(MEHMET, adult);
+		await saveProfile(admin, MEHMET, adult);
 		await goals.setTarget(
 			MEHMET,
 			{ mode: 'manual', effectiveFrom: '2026-06-01', budgetKcal: 2000 },
@@ -681,8 +682,12 @@ describe('privacy', () => {
 	});
 
 	it('validates profile ranges in the service and in the database', async () => {
-		await expect(goals.saveProfile(MEHMET, { ...adult, heightCm: 20 })).rejects.toThrow();
-		await expect(goals.saveProfile(MEHMET, { ...adult, bodyFatPct: 90 })).rejects.toThrow();
+		await expect(
+			goals.updateDetails(MEHMET, '2026-06-01', null, { ...adult, heightCm: 20 })
+		).rejects.toThrow();
+		await expect(
+			goals.updateDetails(MEHMET, '2026-06-01', null, { ...adult, bodyFatPct: 90 })
+		).rejects.toThrow();
 		expect(
 			await errorCode(
 				asUser(MEHMET, (tx) => tx`insert into profiles (user_id, height_cm) values (${MEHMET}, 20)`)

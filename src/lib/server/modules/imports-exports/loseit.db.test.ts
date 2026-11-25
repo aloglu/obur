@@ -12,6 +12,7 @@ import { createCatalog } from '../catalog/index.ts';
 import { createGoals } from '../goals/index.ts';
 import type { LoseItOptions } from './loseit-import.ts';
 import { createPortability, PortabilityError } from './service.ts';
+import { saveProfile } from '../../../../../tests/db/profile.ts';
 
 const urls = inject('db');
 const quiet = { onnotice: () => {} };
@@ -264,7 +265,7 @@ describe('LoseIt import', () => {
 		});
 		expect((await goals.preferences(MEHMET)).preferences.weightUnit).toBe('lb');
 		// Details the person entered are kept, as before.
-		await goals.saveProfile(ZEYNEP, { heightCm: 165, birthDate: '1995-01-01', sex: 'female' });
+		await saveProfile(admin, ZEYNEP, { heightCm: 165, birthDate: '1995-01-01', sex: 'female' });
 		const other = await portability.previewLoseIt(ZEYNEP, zip(), options);
 		expect(other.warnings).toContain('profile_kept');
 	});

@@ -46,7 +46,10 @@ test('sends hardening headers and rejects cross-site state changes', async ({
 	});
 	expect(sameSite.status()).toBe(200);
 
-	const unauthenticated = await request.get('/api/v1/auth/credentials');
+	const unauthenticated = await request.post('/api/v1/auth/credentials/options', {
+		headers: { origin: new URL(baseURL!).origin },
+		data: {}
+	});
 	expect(unauthenticated.status()).toBe(401);
 });
 

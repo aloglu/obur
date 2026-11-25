@@ -4,7 +4,6 @@
 	// docs/ui.md, "Achievements, Journal and Help": the month's weeks, newest first, each a summary line and only the
 	// moments that mattered. Achievements show as small versions of their badges and open the badge page; other
 	// highlights sit in neutral circles.
-	import Flag from '@lucide/svelte/icons/flag';
 	import Target from '@lucide/svelte/icons/target';
 	import TrendingDown from '@lucide/svelte/icons/trending-down';
 	import { resolve } from '$app/paths';
@@ -107,8 +106,7 @@
 										aria-hidden="true"
 									>
 										{#if e.kind === 'lowest'}<TrendingDown size={18} />
-										{:else if e.kind === 'budget'}<Target size={18} />
-										{:else}<Flag size={18} />{/if}
+										{:else}<Target size={18} />{/if}
 									</span>
 									{@render words(e)}
 								</div>

@@ -9,11 +9,6 @@ const enabled = () => {
 	if (!config.pushKey) error(404, 'Reminders are off on this server');
 };
 
-export const GET: RequestHandler = async ({ locals }) => {
-	enabled();
-	return json(await reminders.settings(locals.session!.userId, locals.zone));
-};
-
 /** PUT the whole settings: a time per reminder (null when off), quiet hours, and the device's time zone. */
 export const PUT: RequestHandler = async ({ request, locals }) => {
 	enabled();

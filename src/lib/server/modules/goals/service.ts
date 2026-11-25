@@ -26,7 +26,6 @@ import {
 import * as v from 'valibot';
 import {
 	ProfileDetailsInput,
-	ProfileInput,
 	type BudgetSettings,
 	type BudgetSettingsChange,
 	type DetailsOutcome,
@@ -279,20 +278,6 @@ export function createGoals(db: Database) {
 				tx.select().from(profiles).where(eq(profiles.userId, userId))
 			);
 			return row ? toProfile(row) : null;
-		},
-
-		/** Validates and saves the profile (missing optional fields take their defaults). */
-		async saveProfile(userId: string, raw: v.InferInput<typeof ProfileInput>): Promise<Profile> {
-			const input = v.parse(ProfileInput, raw);
-			const values = { ...input, updatedAt: new Date() };
-			const [row] = await withUser(db, userId, (tx) =>
-				tx
-					.insert(profiles)
-					.values({ userId, ...values })
-					.onConflictDoUpdate({ target: profiles.userId, set: values })
-					.returning()
-			);
-			return toProfile(row);
 		},
 
 		/** The person's settings, and whether they were ever saved to the account (shared/preferences.ts). */

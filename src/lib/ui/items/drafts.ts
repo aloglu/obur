@@ -22,8 +22,6 @@ export interface Draft {
 	foodId?: string;
 	kind: 'food' | 'quick';
 	name: string;
-	/** Below the name for quick items ("Quick add"). */
-	note?: string;
 	snapshot: FoodSnapshot | null;
 	amountText: string;
 	optionKey: string;

@@ -11,9 +11,9 @@ COPY . .
 RUN DATABASE_URL=postgres://build:build@localhost/build PUBLIC_ORIGIN=https://build.invalid \
 	WEBAUTHN_RP_ID=build.invalid npm run build \
 	&& npm prune --omit=dev --no-audit --no-fund \
-	&& find src/lib/server src/lib/shared -name '*.test.ts' -delete \
+	&& find src/lib/server src/lib/shared \( -name '*.test.ts' -o -name 'fixtures.ts' \) -delete \
 	&& find drizzle/meta -name '*_snapshot.json' -delete
-# Above: tests and drizzle-kit's schema snapshots stay in Git, not in the image; migrations need only the SQL and the
+# Above: tests, their fixtures and drizzle-kit's schema snapshots stay in Git, not in the image; migrations need only the SQL and the
 # journal (db/migrator.ts).
 
 FROM node:24.22.3-trixie-slim AS node
