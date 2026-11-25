@@ -193,16 +193,23 @@
 			});
 		});
 
+	// The copies' IDs stay the same while the same copy is tried again: a lost answer copies once (2026-11-25
+	// audit). After a copy that succeeded, the same copy again makes new copies.
+	let lastCopy: { key: string; ids: string[] } | undefined;
 	/** Copies entries (their own snapshots) to a day and meal; Undo deletes the copies. */
 	const copy = (entries: DiaryEntry[], date: string, meal: Meal) =>
 		run(async () => {
+			const key = JSON.stringify([entries.map((e) => e.id), date, meal]);
+			if (lastCopy?.key !== key) lastCopy = { key, ids: entries.map(() => crypto.randomUUID()) };
+			const ids = lastCopy.ids;
 			const copies = await bulk<DiaryEntry[]>({
 				action: 'copy',
-				entries: entries.map((e) => ({ id: e.id, copyId: crypto.randomUUID() })),
+				entries: entries.map((e, i) => ({ id: e.id, copyId: ids[i] })),
 				date,
 				meal,
 				zone: deviceZone()
 			});
+			lastCopy = undefined;
 			bulkSheet = null;
 			endSelect();
 			await invalidateAll();

@@ -4,7 +4,7 @@
 	// total. The sheet states both meanings plainly.
 	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { NoConnection, recordIds, save as send } from '#lib/client/api.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import type { ActivityEntry } from '#lib/shared/body-types.ts';
 	import { kcal } from '#lib/shared/format.ts';
@@ -33,6 +33,8 @@
 	let problem = $state('');
 	const value = $derived(parseDecimal(kcalText));
 	const valid = $derived(value !== undefined && value >= 1 && value <= 10_000);
+	// Saving again after a lost answer resends the same activity (2026-11-25 audit).
+	const idFor = recordIds();
 
 	async function save(event: SubmitEvent) {
 		event.preventDefault();
@@ -40,18 +42,18 @@
 		busy = true;
 		problem = '';
 		try {
+			const activity = {
+				date,
+				zone: deviceZone(),
+				value: Math.round(value!),
+				note: note || null,
+				kind
+			};
 			onsaved(
-				await api<ActivityEntry>('POST', '/api/v1/body/activity', {
-					id: crypto.randomUUID(),
-					date,
-					zone: deviceZone(),
-					value: Math.round(value!),
-					note: note || null,
-					kind
-				})
+				await send<ActivityEntry>('/api/v1/body/activity', { id: idFor(activity), ...activity })
 			);
-		} catch {
-			problem = m.error_generic();
+		} catch (e) {
+			problem = e instanceof NoConnection ? m.save_no_connection() : m.error_generic();
 		} finally {
 			busy = false;
 		}

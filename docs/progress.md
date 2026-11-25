@@ -2,6 +2,18 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
+
+Six findings, all confirmed in the code; each gets a test that failed before its fix. Order: retry IDs, off-site
+status, interrupted first install, diary CSV unit, archive memory, import preview.
+
+- Retry IDs done: water, weigh-in, activity and "Copy meal to…" made a new ID on each tap, so a save whose answer
+  was lost saved twice when tapped again (250 ml became 500 ml). They now keep the ID while the same save is tried
+  again, and make a new one after a save succeeded (a second glass of the same size is a new glass). `recordIds()`
+  has `saved()` for that. Activity now saves with the 10 s limit and says "Couldn't save" without a connection, as
+  the other save sheets do. Four e2e tests in `connection.e2e.ts` (Chromium only: they hold back the answer);
+  they failed before the fix. connection, body, goals, bulk, pounds e2e, check and lint pass.
+
 ## After rc.10 (owner, 2026-11-24)
 
 - Achievement screen: the screen takes the focus when it opens, not Done, so phones no longer draw a ring around

@@ -4,7 +4,7 @@
 	// budget moved. Used on Today's Weight card and on an empty Progress.
 	import Check from '@lucide/svelte/icons/check';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api, NoConnection, save as send } from '#lib/client/api.ts';
+	import { api, NoConnection, recordIds, save as send } from '#lib/client/api.ts';
 	import { inlineField } from '#lib/client/inline-field.svelte.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -47,15 +47,18 @@
 	const budgetDetail = (b: BudgetChange | undefined) =>
 		b ? m.toast_budget_now({ after: kcal(b.afterKcal), before: kcal(b.beforeKcal) }) : undefined;
 
+	// Save again after a lost answer resends the same weigh-in; one after a saved one is a new one.
+	const idFor = recordIds();
+
 	async function save(value: number) {
 		busy = true;
 		try {
+			const reading = { date, zone: deviceZone(), value };
 			const r = await send<{ id: string; budget?: BudgetChange }>('/api/v1/body/weight', {
-				id: crypto.randomUUID(),
-				date,
-				zone: deviceZone(),
-				value
+				id: idFor(reading),
+				...reading
 			});
+			idFor.saved();
 			inlineField.open = null;
 			await onchange();
 			showToast({

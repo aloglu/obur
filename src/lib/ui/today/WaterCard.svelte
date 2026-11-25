@@ -5,7 +5,7 @@
 	import Check from '@lucide/svelte/icons/check';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api, NoConnection, save } from '#lib/client/api.ts';
+	import { api, NoConnection, recordIds, save } from '#lib/client/api.ts';
 	import { inlineField } from '#lib/client/inline-field.svelte.ts';
 	import { clockTime, deviceZone } from '#lib/client/prefs.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
@@ -69,16 +69,16 @@
 		if (await add(ml)) inlineField.open = null;
 	}
 
+	// A tap again after a lost answer resends the same glass; a glass after a saved one is a new one.
+	const idFor = recordIds();
+
 	/** True once saved. */
 	async function add(ml: number): Promise<boolean> {
 		busy = true;
 		try {
-			const r = await save<{ id: string }>('/api/v1/body/water', {
-				id: crypto.randomUUID(),
-				date,
-				zone: deviceZone(),
-				value: ml
-			});
+			const water = { date, zone: deviceZone(), value: ml };
+			const r = await save<{ id: string }>('/api/v1/body/water', { id: idFor(water), ...water });
+			idFor.saved();
 			await onchange();
 			showToast({
 				message: m.toast_water({ amount: waterText(ml, wu) }),

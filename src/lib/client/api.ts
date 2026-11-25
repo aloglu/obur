@@ -87,13 +87,16 @@ export const save = <T = unknown>(path: string, body: Record<string, unknown> & 
 
 /**
  * The ID for a new record, the same for as long as what is saved stays the same: tapping Save again after
- * NoConnection resends the same record (counted once), while a changed amount is a new record.
+ * NoConnection resends the same record (counted once), while a changed amount is a new record. After a save that
+ * succeeded, call `saved()`: the same content again is then a new record (a second glass of water of the same size,
+ * 2026-11-25 audit).
  */
-export function recordIds(): (content: Record<string, unknown>) => string {
+export function recordIds(): ((content: unknown) => string) & { saved: () => void } {
 	let last: { key: string; id: string } | undefined;
-	return (content) => {
+	const idFor = (content: unknown) => {
 		const key = JSON.stringify(content);
 		if (last?.key !== key) last = { key, id: crypto.randomUUID() };
 		return last.id;
 	};
+	return Object.assign(idFor, { saved: () => (last = undefined) });
 }

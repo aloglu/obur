@@ -5,7 +5,16 @@ import { expect, test, type Page } from '@playwright/test';
 import { e2eEnv } from '../../playwright.config.ts';
 import { foodFingerprint } from '../../src/lib/shared/diary-rules.ts';
 import type { FoodDetail } from '../../src/lib/shared/food-types.ts';
-import { apiAs, createFood, notesOf, openCaloriesOnly, signedInAs } from './fixtures.ts';
+import {
+	apiAs,
+	choose,
+	createFood,
+	losingToward,
+	notesOf,
+	openCaloriesOnly,
+	rowCount,
+	signedInAs
+} from './fixtures.ts';
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1000) < 760;
 const today = (page: Page) => page.evaluate(() => new Date().toLocaleDateString('en-CA'));
@@ -184,6 +193,93 @@ test('a save that arrived but lost its answer counts once when tapped again', as
 	);
 	expect(day.entries.map((e) => e.description)).toEqual(['Mandalina']);
 	await context.unroute('**/api/v1/diary/entries');
+});
+
+/** The server saves the first POST to `url`, but its answer never reaches the app. */
+async function loseFirstAnswer(page: Page, url: string) {
+	let lost = false;
+	await page.context().route(url, async (route) => {
+		if (lost || route.request().method() !== 'POST') return route.continue();
+		lost = true;
+		await route.fetch();
+		await route.abort('connectionreset');
+	});
+}
+
+test.describe('a save whose answer was lost counts once when tapped again (2026-11-25 audit)', () => {
+	test.skip(({ browserName }) => browserName !== 'chromium', 'needs Chromium request routing');
+
+	test('water, and a later glass of the same size is a new one', async ({ page }) => {
+		const userId = await signedInAs(page, 'Arda');
+		await ready(page);
+		await loseFirstAnswer(page, '**/api/v1/body/water');
+		const water = page.getByRole('region', { name: 'Water' });
+		const add = water.getByRole('button', { name: 'Add 250 ml of water' });
+		await add.click();
+		await expect(page.getByRole('status')).toContainText("Couldn't save");
+		await add.click();
+		await expect(water).toContainText('250 ml');
+		expect(await rowCount('water_entries', userId)).toBe(1);
+		await add.click();
+		await expect(water).toContainText('500 ml');
+		expect(await rowCount('water_entries', userId)).toBe(2);
+	});
+
+	test('a weigh-in', async ({ page }) => {
+		const userId = await signedInAs(page, 'Arda');
+		await ready(page);
+		await loseFirstAnswer(page, '**/api/v1/body/weight');
+		const weight = page.getByRole('region', { name: 'Weight' });
+		await weight.getByRole('button', { name: 'New weigh-in' }).click();
+		await weight.getByLabel('New weight').fill('82.4');
+		await weight.getByRole('button', { name: 'Save' }).click();
+		await expect(page.getByRole('status')).toContainText("Couldn't save");
+		await weight.getByRole('button', { name: 'Save' }).click();
+		await expect(weight).toContainText('82.4 kg');
+		expect(await rowCount('weight_entries', userId)).toBe(1);
+	});
+
+	test('an activity', async ({ page }) => {
+		const userId = await signedInAs(page, 'Arda');
+		await losingToward(userId, 70);
+		await ready(page);
+		await loseFirstAnswer(page, '**/api/v1/body/activity');
+		await page
+			.getByRole('region', { name: 'Budget' })
+			.getByRole('button', { name: 'Add activity' })
+			.click();
+		const sheet = page.getByRole('dialog', { name: 'Activity' });
+		await sheet.getByLabel('Calories burned (kcal)').fill('300');
+		await sheet.getByRole('button', { name: 'Add to budget' }).click();
+		await expect(sheet.getByRole('alert')).toBeVisible();
+		await sheet.getByRole('button', { name: 'Add to budget' }).click();
+		await expect(sheet).toBeHidden();
+		expect(await rowCount('activity_entries', userId)).toBe(1);
+	});
+
+	test('a copied meal', async ({ page }) => {
+		const userId = await signedInAs(page, 'Arda');
+		await apiAs(page, 'POST', '/api/v1/diary/entries', {
+			kind: 'quick',
+			date: await today(page),
+			meal: 'dinner',
+			zone: 'UTC',
+			kcal: 180,
+			description: 'Ayran'
+		});
+		await ready(page);
+		await loseFirstAnswer(page, '**/api/v1/diary/entries/bulk');
+		const dinner = page.getByRole('region', { name: 'Dinner' });
+		await dinner.getByRole('button', { name: 'Dinner actions' }).click();
+		await page.getByRole('menuitem', { name: 'Copy meal to…' }).click();
+		const sheet = page.getByRole('dialog', { name: 'Copy 1 entry' });
+		await choose(sheet, 'Meal', 'Snacks');
+		await sheet.getByRole('button', { name: 'Copy to Snacks' }).click();
+		await expect(page.getByRole('status')).toContainText('changed on another device');
+		await sheet.getByRole('button', { name: 'Copy to Snacks' }).click();
+		await expect(page.getByRole('status')).toContainText('Copied 1 entry');
+		expect(await rowCount('diary_entries', userId)).toBe(2);
+	});
 });
 
 test('a day note that can’t be saved says so and goes with the next change', async ({

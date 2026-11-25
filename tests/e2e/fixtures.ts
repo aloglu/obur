@@ -60,6 +60,15 @@ export async function notesOf(userId: string): Promise<string[]> {
 	return rows.map((r) => r.text as string);
 }
 
+/** How many rows of one kind a person has, in the trash or not (read only, to check a save counted once). */
+export async function rowCount(
+	table: 'water_entries' | 'weight_entries' | 'activity_entries' | 'diary_entries',
+	userId: string
+): Promise<number> {
+	const [row] = await sql`select count(*)::int as n from ${sql(table)} where user_id = ${userId}`;
+	return row.n as number;
+}
+
 /** Makes every session of a person's look as if their last passkey check was long ago (test setup only). */
 export async function staleSessions(userId: string): Promise<void> {
 	await sql`update sessions set verified_at = now() - interval '1 day' where user_id = ${userId}`;
