@@ -2,6 +2,15 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Release 1.0.0-rc.11 (2026-11-25, owner asked)
+
+Everything since rc.10: the 2026-11-25 outside audit (6 fixes), the Review.md audit (all items) and the audit of
+those changes. Checks: check, lint, Vitest 1,297, full browser suite in Docker 363 passed with the one known phone
+WebKit pounds flake (passed 4 of 4 on its own), `obur` image smoke test, label add-on test. npm audit: the 4 known
+drizzle-kit/esbuild moderates only. The AI-agent guide needs no change (no commands, settings or log lines changed).
+`~/Documents/obur-rc-test-checklist.md` has "New in 1.0.0-rc.11". The release workflow runs the image tests
+(off-site, off-site restore, upgrades). Not done here: real-phone checks (the owner's checklist).
+
 ## Audit of the changes since rc.10 (owner's go, 2026-11-25) — done
 
 Read all of `git diff v1.0.0-rc.10..HEAD` without docs, tests and messages (2,807 lines, 27 commits). No bug found.
