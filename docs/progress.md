@@ -2,6 +2,24 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Review.md audit, 2026-11-25 (owner's go: fix all; no more whole-codebase audits after it)
+
+Report: `~/Documents/Review.md` (not in the repository), sections 1-4. Every item confirmed (parsers by running the
+report's inputs). Owner's choice for 1.6: weight achievements follow the Goal page's rule (a missing birth date
+does not block them). Agreed after it: no more whole-codebase audits; before a release, audit only what changed;
+real-use failures (label text, sentences; never photos or audio) become parser fixtures. Order: label parser, text
+parser, food form carbohydrate/sodium, journal pounds, goal rules, Log tab, edit pages, bulk size, retry IDs,
+providers and Speak, menus and stale settings, races, the rest of 2.9, section 3, dead code.
+
+- Label parser done (1.7-1.9): a title naming 100 g over the names became a second per-100 column and hid the real
+  one (nothing read); of two columns of one kind, one with no value under it is now left out. Mapping numbers to
+  columns by order no longer sends a number with a unit to %RI ("265 kcal" was dropped) or moves a number at a %RI
+  column one column left (a per-serving value was taken as per 100 g). "2.280 kJ" and "1,250 mg" are thousands in
+  kJ, kcal and mg (grams keep decimals). After "ß" the value was cut ("Eiweiß12,5g" → 2,5 g). Six tests failed
+  before. Private label sets (scripts/label-eval.ts) after the change, before → after: development B-1280 71/85
+  right, 1 wrong (same); A-1280 52, 7 wrong (same); C-1280 57 → 58 right, 2 wrong; held-out 80/104, 3 wrong (same);
+  basis unchanged. check, lint pass.
+
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 
 Six findings, all confirmed in the code; each gets a test that failed before its fix. Order: retry IDs, off-site

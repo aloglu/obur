@@ -90,3 +90,19 @@ describe('a copied table', () => {
 		expect(value(p, 'carbohydrate_excl_fibre')?.value).toBe(10.6);
 	});
 });
+
+it('reads a copied table whose title names 100 g (2026-11-25 Review.md audit, 1.7)', () => {
+	for (const title of ['Nutrition information (per 100 g)', 'Besin Değerleri (100 g için)']) {
+		const p = parseLabelTable({
+			title,
+			columns: ['100 g', '%RI*'],
+			rows: [
+				{ name: 'Energy', values: ['1098 kJ / 265 kcal', '13%'] },
+				{ name: 'Fat', values: ['21.5 g', '31%'] },
+				{ name: 'Protein', values: ['16.5 g', '33%'] }
+			]
+		});
+		expect(value(p, 'fat')?.value).toBe(21.5);
+		expect(p.basis).toBe('100g');
+	}
+});

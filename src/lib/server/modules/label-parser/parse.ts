@@ -160,9 +160,16 @@ function numbers(text: string, x0 = 0, x1 = 0, score = 1): Num[] {
 	for (const m of fold(text).matchAll(NUMBER)) {
 		const unit = (m[6] ?? m[4] ?? null) as Num['unit'];
 		const at = (m.index! + m[0].length / 2) / Math.max(text.length, 1);
+		// "2.280 kJ", "1,250 mg": a dot or comma before exactly three digits, in units whose values often pass 1,000,
+		// separates thousands (2026-11-25 Review.md audit, 1.9: read as 2.28 kJ). Grams keep their decimals ("0,020").
+		const firstUnit = m[4] ?? (m[5] ? null : m[6]);
+		const value = (digits: string, unit: string | null | undefined) =>
+			/^[1-9]\d{0,2}[.,]\d{3}$/.test(digits) && (unit === 'kj' || unit === 'kcal' || unit === 'mg')
+				? Number(digits.replace(/[.,]/, ''))
+				: Number(digits.replace(',', '.'));
 		out.push({
-			value: Number(m[3].replace(',', '.')),
-			second: m[5] ? Number(m[5].replace(',', '.')) : null,
+			value: value(m[3], firstUnit),
+			second: m[5] ? value(m[5], m[6]) : null,
 			lessThan: !!m[2],
 			unit: m[4] && m[6] ? null : unit,
 			units: [m[4] ?? null, m[5] ? (m[6] ?? null) : null],
@@ -386,10 +393,10 @@ function parseTable(lines: Line[], seen: Seen): Read | undefined {
 			best.some((r) => r.hit.row !== 'other' && l.cy > r.line.cy && l.cy - r.line.cy < rowGap * 0.8)
 		)
 			continue;
-		best.push({ line: l, hit: { row: 'other', end: l.text.search(/\d|$/) } });
+		best.push({ line: l, hit: { row: 'other', end: l.folded.search(/\d|$/) } });
 	}
 	best.sort((a, b) => a.line.cy - b.line.cy);
-	const columns = headerColumns(
+	const found = headerColumns(
 		lines.filter((l) => l.x1 > left),
 		top - rowGap * 0.5,
 		rowGap
@@ -399,10 +406,12 @@ function parseTable(lines: Line[], seen: Seen): Read | undefined {
 	const cells = new Map<(typeof best)[number], Num[]>(best.map((r) => [r, []]));
 	for (const r of best) {
 		// A short bracket after the name is its unit, "(g)", which the OCR may read as "(9)": never a value.
-		const own = r.line.text
+		// The name's end is a place in the folded text, which is longer than the line's own after "ß" (2026-11-25
+		// Review.md audit, 1.9: "Eiweiß12,5g" read as 2,5 g).
+		const own = r.line.folded
 			.slice(r.hit.end)
 			.replace(/\([^)]{0,12}\)/g, (m) => ' '.repeat(m.length));
-		const share = r.hit.end / Math.max(r.line.text.length, 1);
+		const share = r.hit.end / Math.max(r.line.folded.length, 1);
 		cells
 			.get(r)!
 			.push(...numbers(own, r.line.x0 + (r.line.x1 - r.line.x0) * share, r.line.x1, r.line.score));
@@ -465,6 +474,15 @@ function parseTable(lines: Line[], seen: Seen): Read | undefined {
 		}
 	}
 
+	// A title naming 100 g ("Nutrition information (per 100 g)") reads as a second per-100 column with no values under
+	// it; it hid the real one (2026-11-25 Review.md audit, 1.7). Of two columns of one kind, one that no value is
+	// nearest to is left out.
+	const near = (x: number) =>
+		found.reduce((a, b) => (Math.abs(b.x - x) < Math.abs(a.x - x) ? b : a));
+	const filled = new Set(found.length ? [...cells.values()].flat().map((n) => near(n.x)) : []);
+	const columns = found.filter(
+		(c) => filled.has(c) || !found.some((o) => o !== c && o.kind === c.kind && filled.has(o))
+	);
 	const amounts = columns.filter((c) => c.kind !== 'ri');
 	const chosen =
 		columns.find((c) => c.kind === 'per100') ?? columns.find((c) => c.kind === 'serving') ?? null;
@@ -479,12 +497,21 @@ function parseTable(lines: Line[], seen: Seen): Read | undefined {
 			const ordered = [...columns].sort((a, b) => a.x - b.x);
 			const amountColumns = ordered.filter((c) => c.kind !== 'ri');
 			const plain = all.every((n) => !n.percent);
+			const nearest = (n: Num) =>
+				columns.reduce((a, b) => (Math.abs(b.x - n.x) < Math.abs(a.x - n.x) ? b : a));
+			// In order only where the order cannot be wrong (2026-11-25 Review.md audit, 1.8): a number with a unit is an
+			// amount, never a %RI value ("265 kcal" under "1098 kJ"), and a number at a %RI column is that column's
+			// ("31" whose % the OCR missed), not an amount moved one column left.
+			const byOrder =
+				all.length === ordered.length &&
+				all.every((n, i) => ordered[i].kind !== 'ri' || n.unit === null);
+			const byAmountOrder =
+				!byOrder &&
+				plain &&
+				all.length === amountColumns.length &&
+				all.every((n) => nearest(n).kind !== 'ri');
 			const columnOf = (n: Num, i: number) =>
-				all.length === ordered.length
-					? ordered[i]
-					: plain && all.length === amountColumns.length
-						? amountColumns[i]
-						: columns.reduce((a, b) => (Math.abs(b.x - n.x) < Math.abs(a.x - n.x) ? b : a));
+				byOrder ? ordered[i] : byAmountOrder ? amountColumns[i] : nearest(n);
 			// With only %RI columns found, the amounts are the numbers left of the first of them.
 			const firstRi = Math.min(...ordered.filter((c) => c.kind === 'ri').map((c) => c.x));
 			nums = all.filter((n, i) =>

@@ -381,3 +381,71 @@ it('proposes nothing when there is no nutrition information', () => {
 	const p = parseLabel([line('Net Miktar: 400 g', 20, 40), line('TETT 01/06/2027', 20, 70)]);
 	expect(p).toMatchObject({ layout: 'none', basis: null, nutrients: [] });
 });
+
+describe('cases from the 2026-11-25 Review.md audit', () => {
+	it('reads the table when its title names 100 g at the names column (1.7)', () => {
+		// Over the names only: a title over two column headers is already left out.
+		for (const title of ['Besin Değerleri (100 g için)', 'Nutrition information (per 100 g)']) {
+			const p = parseLabel([line(title, 100, 30, 180), ...table(ROWS)]);
+			expect(value(p, 'fat')?.value).toBe(21.5);
+			expect(value(p, 'energy_kcal')?.value).toBe(265);
+			expect(p.basis).toBe('100g');
+		}
+	});
+
+	it('never takes a per-serving value as per 100 g when a row misses its per-100 cell (1.8)', () => {
+		const rows = ROWS.map((r) => [...r] as [string, string, string, string]);
+		rows[1] = ['Yağ (g)', '', '5,4', '31']; // the OCR missed 21,5 and the % of %31
+		const lines = table(rows).filter((l) => l.text !== '');
+		const p = parseLabel(lines);
+		expect(value(p, 'fat')).toBeUndefined();
+		expect(value(p, 'protein')?.value).toBe(16.5);
+	});
+
+	it('keeps kcal beside kJ in a table of per 100 g and %RI only (1.8)', () => {
+		const lines = [
+			line('Enerji ve', 100, 60),
+			line('Besin Öğeleri', 100, 82),
+			line('100 g', 300, 60, 50),
+			line('için', 300, 82, 40),
+			line('%RA*', 520, 70, 40),
+			line('Enerji', 100, 120),
+			line('1098 kJ', 300, 120, 60),
+			line('265 kcal', 300, 140, 60),
+			line('Yağ (g)', 100, 172),
+			line('21,5', 300, 172, 60),
+			line('%31', 520, 172, 40),
+			line('Protein (g)', 100, 198),
+			line('16,5', 300, 198, 60),
+			line('%33', 520, 198, 40)
+		];
+		const p = parseLabel(lines);
+		expect(value(p, 'energy_kj')?.value).toBe(1098);
+		expect(value(p, 'energy_kcal')?.value).toBe(265);
+	});
+
+	it('reads a dot or comma before three digits in kJ, kcal or mg as thousands (1.9)', () => {
+		const rows: [string, string, string, string][] = [
+			['Enerji', '2.280 kJ / 545 kcal', '', ''],
+			['Yağ (g)', '21,5', '5,4', '%31'],
+			['Protein (g)', '16,5', '4,1', '%33'],
+			['Sodyum', '1,250 mg', '', ''],
+			['Tuz (g)', '0,020', '0,1', '%1']
+		];
+		const p = parseLabel(table(rows).filter((l) => l.text !== ''));
+		expect(value(p, 'energy_kj')?.value).toBe(2280);
+		expect(value(p, 'energy_kcal')?.value).toBe(545);
+		expect(value(p, 'sodium')?.value).toBe(1250);
+		// Grams keep their decimals.
+		expect(value(p, 'salt')?.value).toBe(0.02);
+	});
+
+	it('reads a value written against a name with ß (1.9)', () => {
+		const rows: [string, string, string, string][] = [
+			...ROWS.slice(0, 3),
+			['Eiweiß12,5g', '', '', '']
+		];
+		const p = parseLabel(table(rows).filter((l) => l.text !== ''));
+		expect(value(p, 'protein')?.value).toBe(12.5);
+	});
+});
