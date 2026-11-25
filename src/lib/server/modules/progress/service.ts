@@ -14,7 +14,6 @@ import {
 import { addDays } from '../../../shared/diary-rules.ts';
 import type { WeightUnit } from '../../../shared/weight-convert.ts';
 import { goalWeightAllowed } from '../../../shared/goals.ts';
-
 import { weightEntries } from '../body/index.ts';
 import { foods, recipes } from '../catalog/index.ts';
 import { dayCompletions, diaryEntries } from '../diary/index.ts';
