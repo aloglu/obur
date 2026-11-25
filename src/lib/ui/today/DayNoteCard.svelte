@@ -66,11 +66,15 @@
 						: m.note_private()
 	);
 
+	// Each save's number: an earlier one answering after a later one has nothing more to say (2026-11-25 Review.md
+	// audit, 2.8: a slow first save then showed "Kept a newer note from another device", or "unsaved").
+	let saves = 0;
 	async function save() {
 		clearTimeout(timer);
 		if (!dirty) return;
 		dirty = false;
 		const typed = text;
+		const mine = ++saves;
 		status = 'saving';
 		try {
 			const result = await send<{ text: string }>(`/api/v1/diary/days/${date}/note`, {
@@ -78,9 +82,10 @@
 				text: typed,
 				typedAt
 			});
-			// Typed again meanwhile: the next save answers for it.
-			if (!dirty) settled(result.text, typed);
+			// Typed again meanwhile, or saved again since: the newer save answers for it.
+			if (!dirty && mine === saves) settled(result.text, typed);
 		} catch {
+			if (mine !== saves) return;
 			dirty = true;
 			status = 'unsaved';
 			showToast({ message: m.note_not_saved() });

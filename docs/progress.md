@@ -75,6 +75,14 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   emptied after each choice, so the same file can be chosen again (no browser test: Playwright fires the change
   event either way). New `failed-save.e2e.ts`: 4 tests, all failed before; the three failure tests run in Chromium
   only (routing). data, goals, pounds, own-key, updates, app-icon, menu-dismiss, accessibility, large-text e2e pass.
+- Races done (2.8): a swiped-away toast's last step ran after the next toast had come and dismissed it (and marked a
+  new achievement seen); the step is now cleared with the toast. Holding an entry with a second finger started a
+  second hold whose ghost nothing removed; one hold at a time now, and only the holding finger lifts or drops it.
+  Closing Scan while a photo was being made smaller still showed and uploaded it (to a paid provider too); a closed
+  or replaced attempt now stops there. A slow day-note save answering after a newer one showed "A newer version
+  from another device was kept" (or "unsaved"); each save now has a number and only the newest answers. One e2e
+  test for the note (failed before); the other three by code reading only (timings a browser test can't hold
+  reliably). connection, bulk, toast-dismiss, sheet-swipe, achievements, scan, diary e2e (117) pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

@@ -177,6 +177,9 @@
 			}
 			return;
 		}
+		// Closed, or another photo, while this one was being made smaller: it is neither shown nor sent (2026-11-25
+		// Review.md audit, 2.8: it was uploaded, to a paid provider too, after the sheet had closed).
+		if (mine !== attempt) return;
 		lastImage = image;
 		showStill(image);
 		await send(image, mine);
@@ -222,6 +225,9 @@
 			}
 			return;
 		}
+		// Closed, or another photo, while this one was being made smaller: it is neither shown nor sent (2026-11-25
+		// Review.md audit, 2.8: it was uploaded, to a paid provider too, after the sheet had closed).
+		if (mine !== attempt) return;
 		lastImage = image;
 		showStill(image);
 		await send(image, mine);

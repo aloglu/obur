@@ -640,3 +640,34 @@ test.describe('a save whose answer was lost, then changed, saves the change (202
 		await expect(meals).toContainText('Big oat bowl');
 	});
 });
+
+test('a slow note save answering after a newer one changes nothing (2026-11-25 Review.md audit, 2.8)', async ({
+	page,
+	context
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'needs Chromium request routing');
+	await signedInAs(page, 'Nur');
+	await ready(page);
+	const card = page.getByRole('region', { name: 'Notes' });
+	await card.getByRole('button', { name: /^Notes/ }).click();
+	let first = true;
+	await context.route('**/note', async (route) => {
+		if (route.request().method() !== 'POST' || !first) return route.continue();
+		first = false;
+		// It reaches the server after the newer one.
+		await new Promise((r) => setTimeout(r, 2500));
+		await route.continue();
+	});
+	const field = card.getByLabel('Note for this day');
+	await field.fill('Walked');
+	await page.waitForTimeout(800); // the first save starts and waits
+	await field.press('End');
+	await field.pressSequentially(' to work');
+	await field.press('Tab');
+	await expect(card.getByText(/^Saved /)).toBeVisible();
+	await page.waitForTimeout(3000); // the first answer arrives
+	await expect(card.getByText(/^Saved /)).toBeVisible();
+	await expect(card.getByText('A newer version from another device was kept')).toHaveCount(0);
+	await page.reload();
+	await expect(card).toContainText('Walked to work');
+});

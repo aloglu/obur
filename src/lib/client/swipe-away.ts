@@ -21,6 +21,9 @@ export function swipeAway(node: HTMLElement, initial: SwipeAwayOptions) {
 	let offset = 0;
 	let last = { offset: 0, at: 0, speed: 0 };
 	let swallowClick = false;
+	// The slide's last step, cleared when the element goes: run after it, it dismissed the next toast instead
+	// (2026-11-25 Review.md audit, 2.8).
+	let after: ReturnType<typeof setTimeout> | undefined;
 	node.style.touchAction = 'none';
 
 	const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -87,12 +90,12 @@ export function swipeAway(node: HTMLElement, initial: SwipeAwayOptions) {
 			if (reduced()) options.ondismiss();
 			else {
 				show(away, true);
-				setTimeout(() => options.ondismiss(), SLIDE_MS);
+				after = setTimeout(() => options.ondismiss(), SLIDE_MS);
 			}
 			return;
 		}
 		show(0, true);
-		setTimeout(reset, SLIDE_MS);
+		after = setTimeout(reset, SLIDE_MS);
 		options.onrelease?.();
 	}
 
@@ -113,6 +116,7 @@ export function swipeAway(node: HTMLElement, initial: SwipeAwayOptions) {
 			options = next;
 		},
 		destroy() {
+			clearTimeout(after);
 			node.removeEventListener('pointerdown', down);
 			node.removeEventListener('pointermove', move);
 			node.removeEventListener('pointerup', up);

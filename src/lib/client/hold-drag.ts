@@ -23,6 +23,8 @@ export interface HoldDragOptions {
 export function holdDrag(node: HTMLElement, initial: HoldDragOptions) {
 	let options = initial;
 	let timer: ReturnType<typeof setTimeout> | undefined;
+	/** The pointer of the hold in progress. */
+	let holder: number | undefined;
 	let start = { x: 0, y: 0 };
 	let swallowClick = false;
 	let lifted: {
@@ -131,9 +133,13 @@ export function holdDrag(node: HTMLElement, initial: HoldDragOptions) {
 
 	function onDown(e: PointerEvent) {
 		if (options.enabled === false || e.button > 0 || e.ctrlKey || e.metaKey) return;
+		// One hold at a time: a second finger while one is held or lifted would start another, and the first one's
+		// timer then lifted a ghost that nothing removed (2026-11-25 Review.md audit, 2.8).
+		if (timer || lifted) return;
 		start = { x: e.clientX, y: e.clientY };
 		node.setAttribute('data-pressing', 'true');
 		const pointerId = e.pointerId;
+		holder = pointerId;
 		timer = setTimeout(() => {
 			timer = undefined;
 			lift(pointerId);
@@ -141,6 +147,7 @@ export function holdDrag(node: HTMLElement, initial: HoldDragOptions) {
 	}
 
 	function onMove(e: PointerEvent) {
+		if (e.pointerId !== holder) return;
 		if (timer && Math.hypot(e.clientX - start.x, e.clientY - start.y) > SLOP_PX) cancelHold();
 		if (!lifted) return;
 		if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > SLOP_PX) lifted.moved = true;
@@ -148,8 +155,11 @@ export function holdDrag(node: HTMLElement, initial: HoldDragOptions) {
 		place(e.clientX, e.clientY);
 	}
 
-	const onUp = () => (lifted ? drop(true) : cancelHold());
-	const onCancel = () => (lifted ? drop(false) : cancelHold());
+	// Only the finger holding counts: another one lifting must not drop or cancel its hold.
+	const onUp = (e: PointerEvent) =>
+		e.pointerId !== holder ? undefined : lifted ? drop(true) : cancelHold();
+	const onCancel = (e: PointerEvent) =>
+		e.pointerId !== holder ? undefined : lifted ? drop(false) : cancelHold();
 	function onClick(e: MouseEvent) {
 		if (!swallowClick) return;
 		swallowClick = false;
