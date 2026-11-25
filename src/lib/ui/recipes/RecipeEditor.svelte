@@ -6,7 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api, ApiError } from '#lib/client/api.ts';
+	import { api, ApiError, NoConnection, SAVE_TIMEOUT_MS } from '#lib/client/api.ts';
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import { suggestIcon } from '#lib/shared/food-icons.ts';
@@ -34,6 +34,7 @@
 	const start = untrack(() => recipe);
 	// A new recipe's ID is chosen once, so a retried Save never creates it twice.
 	const id = start?.id ?? crypto.randomUUID();
+	let maybeSaved = false;
 
 	let name = $state(start?.name ?? '');
 	// The chosen icon; null shows the one the name suggests.
@@ -92,11 +93,13 @@
 			await action();
 		} catch (e) {
 			problem =
-				e instanceof ApiError && (e.status === 409 || e.status === 404)
-					? m.meal_editor_changed()
-					: e instanceof ApiError && e.status === 422
-						? m.amount_conversion_unknown()
-						: m.error_generic();
+				e instanceof NoConnection
+					? m.save_no_connection()
+					: e instanceof ApiError && (e.status === 409 || e.status === 404)
+						? m.meal_editor_changed()
+						: e instanceof ApiError && e.status === 422
+							? m.amount_conversion_unknown()
+							: m.error_generic();
 		} finally {
 			busy = false;
 		}
@@ -107,13 +110,31 @@
 		showErrors = true;
 		if (invalid) return;
 		return run(async () => {
-			const saved = await api<Recipe>('PUT', `/api/v1/recipes/${id}`, {
-				version: start?.version ?? null,
-				name,
-				icon,
-				servings,
-				cookedYieldG,
-				ingredients: items.map((d) => payloadOf(d, measures, 'ingredientId'))
+			// A new recipe whose save lost its answer may be there: Save again changes it, rather than being refused
+			// for a changed name or answered with the first save's values (2026-11-25 Review.md audit, 2.7).
+			let version = start?.version ?? null;
+			if (!start && maybeSaved) {
+				const there = await api<Recipe>('GET', `/api/v1/recipes/${id}`).catch((e: unknown) => {
+					if (e instanceof ApiError && e.status === 404) return null;
+					throw e;
+				});
+				version = there?.version ?? null;
+			}
+			const saved = await api<Recipe>(
+				'PUT',
+				`/api/v1/recipes/${id}`,
+				{
+					version,
+					name,
+					icon,
+					servings,
+					cookedYieldG,
+					ingredients: items.map((d) => payloadOf(d, measures, 'ingredientId'))
+				},
+				SAVE_TIMEOUT_MS
+			).catch((e: unknown) => {
+				if (e instanceof NoConnection) maybeSaved = true;
+				throw e;
 			});
 			// Back to the list it came from, as Cancel goes (2026-11-25 Review.md audit, 2.9).
 			await goto(resolve(start?.archived ? '/(app)/recipes/archived' : '/(app)/recipes'), {

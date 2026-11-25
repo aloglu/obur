@@ -196,10 +196,10 @@ test('a save that arrived but lost its answer counts once when tapped again', as
 });
 
 /** The server saves the first POST to `url`, but its answer never reaches the app. */
-async function loseFirstAnswer(page: Page, url: string) {
+async function loseFirstAnswer(page: Page, url: string, method = 'POST') {
 	let lost = false;
 	await page.context().route(url, async (route) => {
-		if (lost || route.request().method() !== 'POST') return route.continue();
+		if (lost || route.request().method() !== method) return route.continue();
 		lost = true;
 		await route.fetch();
 		await route.abort('connectionreset');
@@ -505,4 +505,138 @@ test('signing out without a connection says it needs one and keeps the person si
 	await context.setOffline(false);
 	await page.reload();
 	await expect(page.getByText('Signed in as Zeynep')).toBeVisible();
+});
+
+test.describe('a save whose answer was lost, then changed, saves the change (2026-11-25 Review.md audit, 2.7)', () => {
+	test.skip(({ browserName }) => browserName !== 'chromium', 'needs Chromium request routing');
+
+	test('a typed entry', async ({ page }) => {
+		await signedInAs(page, 'Deniz');
+		await page.goto('/log');
+		await loseFirstAnswer(page, '**/api/v1/diary/entries');
+		await page.getByRole('button', { name: 'Type it' }).click();
+		const sheet = page.getByRole('dialog', { name: 'Type what you ate' });
+		await sheet.getByLabel('You typed').fill('120 kcal snack');
+		const kcal = sheet.getByRole('region', { name: 'Calories only' }).getByLabel('Calories (kcal)');
+		await expect(kcal).toHaveValue('120');
+		await sheet.getByRole('button', { name: /^Log / }).click();
+		await expect(sheet.getByText('Some items could not be saved.')).toBeVisible();
+		await sheet.getByRole('button', { name: 'Edit Calories only' }).click();
+		await kcal.fill('150');
+		await sheet.getByRole('button', { name: /^Log / }).click();
+		await expect(sheet).toBeHidden();
+		await expect(page.getByText(/^Logged/)).toBeVisible();
+	});
+
+	test('a saved meal logged to another meal', async ({ page }) => {
+		await signedInAs(page, 'Deniz');
+		const day = await today(page);
+		const { id } = await apiAs<{ id: string }>(page, 'POST', '/api/v1/diary/entries', {
+			kind: 'quick',
+			date: day,
+			meal: 'breakfast',
+			zone: 'UTC',
+			kcal: 90,
+			description: 'Toast'
+		});
+		await apiAs(page, 'POST', '/api/v1/saved-meals', {
+			id: crypto.randomUUID(),
+			name: 'Toast plate',
+			entryIds: [id]
+		});
+		await page.goto('/log');
+		await loseFirstAnswer(page, '**/api/v1/saved-meals/*/log');
+		await page.getByRole('searchbox').fill('toast plate');
+		await page.getByRole('button', { name: /Toast plate/ }).click();
+		const sheet = page.getByRole('dialog', { name: 'Toast plate' });
+		await choose(sheet, 'Meal', 'Lunch');
+		await sheet.getByRole('button', { name: /^Log 1 item/ }).click();
+		await expect(sheet.getByRole('alert')).toBeVisible();
+		await choose(sheet, 'Meal', 'Dinner');
+		await sheet.getByRole('button', { name: /^Log 1 item/ }).click();
+		await expect(sheet).toBeHidden();
+		await expect(page.getByText('Logged 1 item')).toBeVisible();
+	});
+
+	test('a meal saved as a meal, renamed', async ({ page }) => {
+		await signedInAs(page, 'Deniz');
+		await apiAs(page, 'POST', '/api/v1/diary/entries', {
+			kind: 'quick',
+			date: await today(page),
+			meal: 'breakfast',
+			zone: 'UTC',
+			kcal: 90,
+			description: 'Toast'
+		});
+		await page.goto('/');
+		await loseFirstAnswer(page, '**/api/v1/saved-meals');
+		const breakfast = page.getByRole('region', { name: 'Breakfast' });
+		await breakfast.getByRole('button', { name: 'Breakfast actions' }).click();
+		await breakfast.getByRole('menuitem', { name: 'Save Breakfast as a meal' }).click();
+		const sheet = page.getByRole('dialog', { name: 'Save as a meal' });
+		await sheet.getByLabel('Name').fill('Morning toast');
+		await sheet.getByRole('button', { name: 'Save meal' }).click();
+		await expect(sheet.getByRole('alert')).toBeVisible();
+		await sheet.getByLabel('Name').fill('Weekday toast');
+		await sheet.getByRole('button', { name: 'Save meal' }).click();
+		await expect(sheet).toBeHidden();
+		await expect(page.getByText('Saved “Weekday toast”')).toBeVisible();
+	});
+
+	test('a new recipe', async ({ page }) => {
+		await signedInAs(page, 'Deniz');
+		const name = 'Lost reply lentils';
+		await createFood(page, {
+			name,
+			basis: '100g',
+			nutrients: [{ code: 'energy_kcal', value: 340, qualifier: 'reported' }]
+		});
+		await page.goto('/recipes/new');
+		await loseFirstAnswer(page, '**/api/v1/recipes/*', 'PUT');
+		await page.getByLabel('Name').fill('Lentil stew');
+		await page.getByLabel('Servings it makes').fill('4');
+		await page.getByRole('button', { name: 'Add food' }).click();
+		const add = page.getByRole('dialog', { name: 'Add a food' });
+		await add.getByLabel('Search foods').fill(name);
+		await add.getByRole('button', { name: new RegExp(name) }).click();
+		const amount = page.getByRole('dialog', { name: new RegExp(name) });
+		await amount.getByLabel('Amount').fill('200');
+		await amount.getByRole('button', { name: 'Add to meal' }).click();
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(page.getByRole('alert')).toBeVisible();
+		await page.getByLabel('Servings it makes').fill('5');
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(page).toHaveURL(/\/recipes$/);
+		// One recipe, with the change: not the lost save's copy without it.
+		const stew = page.getByRole('main').getByRole('link', { name: /Lentil stew/ });
+		await expect(stew).toHaveCount(1);
+		await expect(stew).toContainText('5 servings');
+	});
+	test('a new saved meal in its editor', async ({ page }) => {
+		await signedInAs(page, 'Deniz');
+		const name = 'Lost reply oats';
+		await createFood(page, {
+			name,
+			basis: '100g',
+			nutrients: [{ code: 'energy_kcal', value: 380, qualifier: 'reported' }]
+		});
+		await page.goto('/saved-meals/new');
+		await loseFirstAnswer(page, '**/api/v1/saved-meals/*', 'PUT');
+		await page.getByLabel('Name').fill('Oat bowl');
+		await page.getByRole('button', { name: 'Add food' }).click();
+		const add = page.getByRole('dialog', { name: 'Add a food' });
+		await add.getByLabel('Search foods').fill(name);
+		await add.getByRole('button', { name: new RegExp(name) }).click();
+		const amount = page.getByRole('dialog', { name: new RegExp(name) });
+		await amount.getByLabel('Amount').fill('50');
+		await amount.getByRole('button', { name: 'Add to meal' }).click();
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(page.getByRole('alert')).toBeVisible();
+		await page.getByLabel('Name').fill('Big oat bowl');
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(page).toHaveURL(/\/saved-meals$/);
+		const meals = page.getByRole('main').getByRole('link', { name: /oat bowl/i });
+		await expect(meals).toHaveCount(1);
+		await expect(meals).toContainText('Big oat bowl');
+	});
 });

@@ -3,7 +3,7 @@
 	// snapshot; the name defaults to the meal's.
 	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { NoConnection, recordIds, save as send } from '#lib/client/api.ts';
 	import type { DiaryEntry, Meal, SavedMeal } from '#lib/shared/diary-types.ts';
 	import { mealName } from '#lib/shared/format.ts';
 	import Button from '../Button.svelte';
@@ -23,8 +23,9 @@
 	let chosen = $state(untrack(() => entries.map((e) => e.id)));
 	let busy = $state(false);
 	let problem = $state('');
-	// One ID per attempt, so a retry after a lost reply does not save twice.
-	const id = crypto.randomUUID();
+	// One ID while the name and items stay the same, so a retry after a lost reply does not save twice; a changed one
+	// is a new saved meal, not one refused as changed (2026-11-25 Review.md audit, 2.7).
+	const idFor = recordIds();
 	const valid = $derived(name.trim().length > 0 && name.trim().length <= 120 && chosen.length > 0);
 
 	async function save(event: SubmitEvent) {
@@ -33,16 +34,14 @@
 		busy = true;
 		problem = '';
 		try {
-			onsaved(
-				await api<SavedMeal>('POST', '/api/v1/saved-meals', {
-					id,
-					name,
-					// In the meal's order, not the order they were ticked.
-					entryIds: entries.filter((e) => chosen.includes(e.id)).map((e) => e.id)
-				})
-			);
-		} catch {
-			problem = m.error_generic();
+			// In the meal's order, not the order they were ticked.
+			const body = {
+				name,
+				entryIds: entries.filter((e) => chosen.includes(e.id)).map((e) => e.id)
+			};
+			onsaved(await send<SavedMeal>('/api/v1/saved-meals', { id: idFor(body), ...body }));
+		} catch (e) {
+			problem = e instanceof NoConnection ? m.save_no_connection() : m.error_generic();
 		} finally {
 			busy = false;
 		}

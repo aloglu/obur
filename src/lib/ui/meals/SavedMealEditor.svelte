@@ -6,7 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api, ApiError } from '#lib/client/api.ts';
+	import { api, ApiError, NoConnection, SAVE_TIMEOUT_MS } from '#lib/client/api.ts';
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { showToast } from '#lib/client/toast.svelte.ts';
 	import type { SavedMeal } from '#lib/shared/diary-types.ts';
@@ -29,6 +29,7 @@
 	const start = untrack(() => meal);
 	// A new meal's ID is chosen once, so a retried Save never creates it twice.
 	const id = start?.id ?? crypto.randomUUID();
+	let maybeSaved = false;
 
 	let name = $state(start?.name ?? '');
 	let items = $state<Draft[]>(
@@ -58,11 +59,13 @@
 			await action();
 		} catch (e) {
 			problem =
-				e instanceof ApiError && (e.status === 409 || e.status === 404)
-					? m.meal_editor_changed()
-					: e instanceof ApiError && e.status === 422
-						? m.amount_conversion_unknown()
-						: m.error_generic();
+				e instanceof NoConnection
+					? m.save_no_connection()
+					: e instanceof ApiError && (e.status === 409 || e.status === 404)
+						? m.meal_editor_changed()
+						: e instanceof ApiError && e.status === 422
+							? m.amount_conversion_unknown()
+							: m.error_generic();
 		} finally {
 			busy = false;
 		}
@@ -73,10 +76,26 @@
 		showErrors = true;
 		if (invalid) return;
 		return run(async () => {
-			const saved = await api<SavedMeal>('PUT', `/api/v1/saved-meals/${id}`, {
-				revision: start?.revision ?? null,
-				name,
-				items: items.map((d) => payloadOf(d, measures, 'itemId'))
+			// A new saved meal whose save lost its answer may be there: Save again changes it, rather than being refused
+			// for a changed name or answered with the first save's items (2026-11-25 Review.md audit, 2.7).
+			let revision = start?.revision ?? null;
+			if (!start && maybeSaved) {
+				const there = await api<SavedMeal>('GET', `/api/v1/saved-meals/${id}`).catch(
+					(e: unknown) => {
+						if (e instanceof ApiError && e.status === 404) return null;
+						throw e;
+					}
+				);
+				revision = there?.revision ?? null;
+			}
+			const saved = await api<SavedMeal>(
+				'PUT',
+				`/api/v1/saved-meals/${id}`,
+				{ revision, name, items: items.map((d) => payloadOf(d, measures, 'itemId')) },
+				SAVE_TIMEOUT_MS
+			).catch((e: unknown) => {
+				if (e instanceof NoConnection) maybeSaved = true;
+				throw e;
 			});
 			await goto(resolve('/(app)/saved-meals'), { invalidateAll: true });
 			showToast({ message: m.meal_editor_saved({ name: saved.name }) });

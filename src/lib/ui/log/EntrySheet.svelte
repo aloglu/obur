@@ -19,7 +19,7 @@
 	import type { FoodSearchResult } from '#lib/shared/food-types.ts';
 	import FoodIcon from '../FoodIcon.svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api } from '#lib/client/api.ts';
+	import { api, recordIds, save } from '#lib/client/api.ts';
 	import { householdMeasures } from '#lib/client/measures.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { addDays, foodFingerprint } from '#lib/shared/diary-rules.ts';
@@ -393,14 +393,25 @@
 					activity: m.entry_kind_activity
 				}[c.kind]();
 
+	// Each card's record ID stays while what it saves stays the same: tapping Log again after a lost answer counts it
+	// once, and a card changed meanwhile is a new record, not one the server refuses as changed (2026-11-25 Review.md
+	// audit, 2.7). Saves give up after the usual time, as other save sheets do. Not displayed, so not reactive.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	const recordFor = new Map<string, ReturnType<typeof recordIds>>();
+	function send(c: Card, path: string, body: Record<string, unknown>) {
+		let idFor = recordFor.get(c.id);
+		if (!idFor) recordFor.set(c.id, (idFor = recordIds()));
+		const id = idFor(body);
+		return save(path, { id, ...body }).then(() => id);
+	}
+
 	/** Saves one card; returns the path that deletes it again. */
-	async function save(c: Card): Promise<{ undo: string; diaryId?: string }> {
+	async function saveCard(c: Card): Promise<{ undo: string; diaryId?: string }> {
 		const zone = deviceZone();
 		if (c.kind === 'food') {
 			const option = unitOptions(c.food!, measures).find((o) => o.key === c.optionKey)!;
-			await api('POST', '/api/v1/diary/entries', {
+			const id = await send(c, '/api/v1/diary/entries', {
 				kind: 'food',
-				id: c.id,
 				date: day,
 				meal,
 				zone,
@@ -409,19 +420,18 @@
 				unit: option.input,
 				expected: foodFingerprint(c.food!)
 			});
-			return { undo: `/api/v1/diary/entries/${c.id}?action=delete`, diaryId: c.id };
+			return { undo: `/api/v1/diary/entries/${id}?action=delete`, diaryId: id };
 		}
 		if (c.kind === 'quick') {
-			await api('POST', '/api/v1/diary/entries', {
+			const id = await send(c, '/api/v1/diary/entries', {
 				kind: 'quick',
-				id: c.id,
 				date: day,
 				meal,
 				zone,
 				kcal: parseDecimal(c.kcalText),
 				description: c.description || null
 			});
-			return { undo: `/api/v1/diary/entries/${c.id}?action=delete`, diaryId: c.id };
+			return { undo: `/api/v1/diary/entries/${id}?action=delete`, diaryId: id };
 		}
 		const kind = c.kind;
 		const value =
@@ -430,14 +440,13 @@
 				: kind === 'weight'
 					? typedKg(parseDecimal(c.readingText)!, weightUnit())
 					: Math.round(parseDecimal(c.kcalText)!);
-		await api('POST', `/api/v1/body/${kind}`, {
-			id: c.id,
+		const id = await send(c, `/api/v1/body/${kind}`, {
 			date: day,
 			zone,
 			value,
 			...(kind === 'activity' ? { note: c.note || null } : {})
 		});
-		return { undo: `/api/v1/body/${kind}/${c.id}?action=delete` };
+		return { undo: `/api/v1/body/${kind}/${id}?action=delete` };
 	}
 
 	async function logAll(event: SubmitEvent) {
@@ -451,7 +460,7 @@
 		const skipped = cards.filter(notFound).map((c) => (c.kind === 'food' ? c.text : ''));
 		for (const c of ready) {
 			try {
-				const r = await save(c);
+				const r = await saveCard(c);
 				undo.push(r.undo);
 				if (r.diaryId) entryIds.push(r.diaryId);
 			} catch {

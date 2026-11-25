@@ -5,7 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { api, ApiError } from '#lib/client/api.ts';
+	import { api, ApiError, NoConnection, SAVE_TIMEOUT_MS } from '#lib/client/api.ts';
 	import { deviceZone } from '#lib/client/prefs.ts';
 	import { addDays, isLateNight } from '#lib/shared/diary-rules.ts';
 	import { MEALS, type DiaryEntry, type Meal, type SavedMeal } from '#lib/shared/diary-types.ts';
@@ -59,9 +59,11 @@
 			await action();
 		} catch (e) {
 			problem =
-				e instanceof ApiError && (e.status === 409 || e.status === 404)
-					? m.saved_changed()
-					: m.error_generic();
+				e instanceof NoConnection
+					? m.save_no_connection()
+					: e instanceof ApiError && (e.status === 409 || e.status === 404)
+						? m.saved_changed()
+						: m.error_generic();
 		} finally {
 			busy = false;
 		}
@@ -72,13 +74,18 @@
 		if (!saved || picked.length === 0) return;
 		return run(async () => {
 			const items = picked.map((i) => {
-				if (!entryIds.has(i.id)) entryIds.set(i.id, crypto.randomUUID());
-				return { itemId: i.id, entryId: entryIds.get(i.id)! };
+				// The same entry while the item goes to the same day and meal: logged again after a lost answer, it counts
+				// once; to another day or meal it is a new entry, not one refused as changed (2026-11-25 Review.md
+				// audit, 2.7).
+				const key = `${i.id}:${day}:${meal}`;
+				if (!entryIds.has(key)) entryIds.set(key, crypto.randomUUID());
+				return { itemId: i.id, entryId: entryIds.get(key)! };
 			});
 			const { entries } = await api<{ entries: DiaryEntry[] }>(
 				'POST',
 				`/api/v1/saved-meals/${savedMealId}/log`,
-				{ date: day, meal, zone: deviceZone(), items }
+				{ date: day, meal, zone: deviceZone(), items },
+				SAVE_TIMEOUT_MS
 			);
 			onlogged(entries);
 		});

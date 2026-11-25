@@ -51,6 +51,14 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
 - Bulk size done (1.2): a part of a bulk food action held 5,000 IDs (about 195 KB), over the 64 KB body limit, so
   Undo after Select all and Restore in Recently deleted failed above 1,679 foods. Parts are now 1,000 IDs. Unit
   test (failed before: 413). catalog Vitest, archive and bulk e2e pass.
+- Lost answers then a change done (2.7): five save flows kept one record ID, so a save that landed but lost its
+  answer, then changed and saved again, was refused as changed until the sheet closed (or, for a new recipe or
+  saved meal with the same name, answered with the first save's values: the change was lost). The typed or spoken
+  entry sheet, "Save as a meal" and logging a saved meal now keep an ID only while what is saved stays the same, as
+  the other save sheets do (so the lost save's record stays, as there); they give up after 10 s and say "Couldn't
+  save". The new recipe and new saved meal editors, after a save without an answer, look the item up and change it
+  instead: one item, with the change. 5 e2e tests in `connection.e2e.ts` (Chromium only), each failed before.
+  connection, typed-entry, saved-meals, recipes, speak, diary e2e (241) pass; check, lint pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 
