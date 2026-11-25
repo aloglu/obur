@@ -16,7 +16,14 @@ status, interrupted first install, diary CSV unit, archive memory, import previe
 - Diary CSV unit done: a serving showed only its size's unit, so two 30 g slices read "2, g". The unit column now
   names each kind: "g", a household measure's name, "slice (30 g)", "serving". Database test (failed before:
   "g"). Import/export Vitest (59), check and lint pass.
-- Off-site status and first install: fixed, image tests running (see the next entries).
+- Off-site status done: the local-only backup before an update replaced the last backup's result, so a failed
+  off-site copy left the admin warning and lost its retry until the next night. It now keeps the off-site result
+  and the retry. New step in `offsite-test.sh` (failed before: repos {"1":true}, scheduled false).
+- Interrupted first install done: the app's database was made only on the start that ran initdb, so a first start
+  stopped between the two failed on every later start. Every start now makes it if it is missing. New case in
+  `smoke-test.sh` (failed before: database "obur" does not exist).
+- Image tests after both: smoke, off-site, restore-interrupt (20 rounds) and upgrade from rc.10 pass. Not run:
+  off-site restore and upgrade from beta.19 (the release workflow runs them).
 - Archive memory done: the queue of archive tasks kept the last task's result (`catch` passes it on), so a large
   import or export stayed in memory until the next one. Unit test (`archive-thread.test.ts`, a WeakRef after a
   forced collection; failed before). Vitest 1,274 and lint pass.

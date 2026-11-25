@@ -8,9 +8,10 @@ image=${1:?usage: smoke-test.sh <image>}
 name=obur-smoke-$$
 data=$(mktemp -d)
 fresh=$(mktemp -d)
+half=$(mktemp -d)
 cleanup() {
 	docker rm -f "$name" >/dev/null 2>&1 || true
-	for d in "$data" "$fresh"; do
+	for d in "$data" "$fresh" "$half"; do
 		docker run --rm -v "$d:/d" --entrypoint bash "$image" -c 'rm -rf /d/*' >/dev/null 2>&1 || true
 		rm -rf "$d"
 	done
@@ -175,5 +176,22 @@ out=$(docker exec "$name" obur restore finish 2>&1) && fail "restore finish ran 
 [[ $out == *'or --none if that list is empty'* ]] || fail "restore finish without a list: $out"
 out=$(docker exec "$name" obur restore finish --none 2>&1) || fail "restore finish: $out"
 ready_again 1 "not ready after restoring a lost database"
+docker stop -t 60 "$name" >/dev/null
+docker rm "$name" >/dev/null
+
+# A first start stopped after PostgreSQL was set up, before it made the app's database: the next start makes it
+# (2026-11-25 audit: each later start failed).
+docker run --rm -v "$half:/data" --entrypoint bash "$image" -c 'chmod a+x /data && install -d -o postgres -g postgres -m 700 /data/postgres /data/postgres/18 &&
+	gosu postgres initdb -D /data/postgres/18/docker -U obur_admin --data-checksums --auth-local=peer --auth-host=scram-sha-256' \
+	>/dev/null || fail "setting up the half-made database"
+docker run -d --name "$name" -p 127.0.0.1:3199:3000 -v "$half:/data" \
+	-e PUBLIC_ORIGIN=http://localhost:3199 -e OBUR_BACKUP_PASSPHRASE=smoke-test-passphrase "$image" >/dev/null
+for _ in $(seq 90); do
+	[[ $(docker inspect -f '{{.State.Health.Status}}' "$name") == healthy ]] && break
+	[[ $(docker inspect -f '{{.State.Running}}' "$name") == true ]] || fail "a half-made first start stopped obur"
+	sleep 2
+done
+[[ $(docker inspect -f '{{.State.Health.Status}}' "$name") == healthy ]] || fail "not healthy after a half-made first start"
+[[ $(logs) == *'http://localhost:3199/setup#'* ]] || fail "no first-account link after a half-made first start"
 docker stop -t 60 "$name" >/dev/null
 echo "smoke test passed"

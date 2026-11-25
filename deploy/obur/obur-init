@@ -117,12 +117,10 @@ look_offsite() {
 
 start_pg() {
 	install -d -o postgres -g postgres -m 700 "$(dirname "$PGDATA")"
-	local created=0
 	if [[ ! -s $PGDATA/PG_VERSION ]]; then
 		log "creating a new database"
 		gosu postgres initdb -D "$PGDATA" -U obur_admin --data-checksums --auth-local=peer \
 			--auth-host=scram-sha-256 >/dev/null || fatal "creating the database failed"
-		created=1
 	fi
 	gosu postgres "${PG_ARGS[@]}" &
 	pg_pid=$!
@@ -133,7 +131,13 @@ start_pg() {
 		sleep 0.5
 	done
 	pg_isready -q -h 127.0.0.1 -U obur_app -d obur || fatal "PostgreSQL did not become ready"
-	if ((created)); then
+	# Looked for on every start, not only the one that ran initdb: a first start stopped between the two left a
+	# database without obur's, and every later start failed (2026-11-25 audit). A restored one always has it, so
+	# nothing is written while it replays its history.
+	local found
+	found=$(gosu postgres psql -X -q -t -A -v ON_ERROR_STOP=1 -h "$OBUR_SOCKET" -U obur_admin -d postgres \
+		-c "select count(*) from pg_database where datname = 'obur'") || fatal "PostgreSQL did not answer"
+	if [[ $found == 0 ]]; then
 		gosu postgres psql -X -q -v ON_ERROR_STOP=1 -h "$OBUR_SOCKET" -U obur_admin -d postgres \
 			-c 'create database obur' || fatal "creating the database failed"
 	fi
