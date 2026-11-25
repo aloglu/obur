@@ -1,6 +1,7 @@
 <script lang="ts">
 	// docs/ui.md "Logging": the amount sheet in edit mode. Its button says what it will do: No changes, Move to a meal, or
 	// Save changes. Delete is immediate and the toast offers Undo. Only this entry changes, never the food.
+	import { fullFoodName } from '#lib/shared/curated-names.ts';
 	import AmountField from '../AmountField.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
@@ -60,7 +61,9 @@
 	const name =
 		start.kind === 'quick'
 			? (start.description ?? m.entry_quick())
-			: `${snapshot?.brand ? `${snapshot.brand} ` : ''}${snapshot?.name ?? ''}`;
+			: snapshot
+				? fullFoodName(snapshot)
+				: '';
 
 	const storedUnit = $derived(
 		option && snapshotUnitFor(option.input, snapshot?.servings ?? [], measures)

@@ -38,14 +38,18 @@
 		return () => clearTimeout(t);
 	});
 	let more = $state(untrack(() => data.own.more));
+	// How far the server's list has been read: a food just saved, put at the top, is not part of it (2026-11-25
+	// Review.md audit, 2.9: counting it skipped the 50th food).
+	let read = untrack(() => data.own.foods.length);
 	let loading = $state(false);
 	async function showMore() {
 		loading = true;
 		try {
 			const page = await api<{ foods: OwnFood[]; more: boolean }>(
 				'GET',
-				`/api/v1/foods?mine=1&offset=${own.length}`
+				`/api/v1/foods?mine=1&offset=${read}`
 			);
+			read += page.foods.length;
 			own.push(...page.foods.filter((f) => !own.some((o) => o.id === f.id)));
 			more = page.more;
 		} catch {

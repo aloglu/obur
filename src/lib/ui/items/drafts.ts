@@ -110,7 +110,7 @@ export function quantityOf(d: Draft, measures: MeasureOption[]): string {
 	const amount = parseDecimal(d.amountText);
 	const unit = unitOf(d, measures) ?? d.startUnit;
 	return amount !== undefined && unit
-		? quantityText(amount, unit, d.snapshot?.servingLabel ?? null)
+		? quantityText(amount, unit, d.snapshot?.servingLabel ?? null, d.snapshot?.curated)
 		: '—';
 }
 

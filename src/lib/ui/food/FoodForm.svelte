@@ -194,6 +194,9 @@
 		return out;
 	});
 	const invalid = (text: string) => text.trim() !== '' && parseDecimal(text) === undefined;
+	// A portion needs a size above zero: blank did nothing on Save, 0 was refused by the server with a generic error
+	// (2026-11-25 Review.md audit, 2.9). Both now mark the field.
+	const badPortionAmount = (p: { text: string }) => !((parseDecimal(p.text) ?? 0) > 0);
 	// A label value may start with "<" ("less than").
 	const invalidValue = (text: string) => text.trim() !== '' && !parseLabelValue(text);
 	const warnings = $derived<FoodWarning[]>(foodWarnings(basis, deriveNutrients(values)));
@@ -307,7 +310,8 @@
 		const anyInvalid =
 			FIELDS.some((f) => invalidValue(rows[f].text)) ||
 			EXTRA_CODES.some((c) => invalidValue(extras[c].text)) ||
-			portions.some((p) => parseDecimal(p.text) === undefined || !p.name.trim()) ||
+			portions.some(badPortionAmount) ||
+			portions.some((p) => !p.name.trim()) ||
 			(basis === 'serving' && invalid(servingSizeText));
 		if (anyInvalid || !name.trim() || (basis === 'serving' && !servingLabel.trim())) return;
 		const size = basis === 'serving' ? parseDecimal(servingSizeText) : undefined;
@@ -503,6 +507,7 @@
 						placeholder={m.food_portion_placeholder()}
 						bind:value={portion.name}
 						maxlength={60}
+						aria-invalid={showErrors && !portion.name.trim()}
 					/>
 					<button
 						type="button"
@@ -517,6 +522,7 @@
 						label={m.food_portion_amount()}
 						bind:value={portion.text}
 						inputmode="decimal"
+						aria-invalid={showErrors && badPortionAmount(portion)}
 					/>
 					<Select bind:value={portion.unit} label={m.food_unit()} options={UNITS} />
 				</div>

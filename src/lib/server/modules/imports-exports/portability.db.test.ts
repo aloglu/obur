@@ -900,6 +900,38 @@ describe('import', () => {
 		expect((await goals.targetFor(ZEYNEP, '2026-10-05'))?.baseBurnKcal).toBe(1900);
 	});
 
+	it('remembers a LoseIt target only when the target was imported (2026-11-25 Review.md audit, 2.9)', async () => {
+		await buildHistory();
+		const files = unzipSync(await portability.exportArchive(MEHMET));
+		const targets = JSON.parse(strFromU8(files['data/targets.json'])) as { id: string }[];
+		const identities = [{ kind: 'target', sourceId: 'loseit-goal-1', localId: targets[0].id }];
+		const bytes = strToU8(JSON.stringify(identities));
+		const manifest = JSON.parse(strFromU8(files['manifest.json']));
+		const entry = manifest.files.find(
+			(f: { path: string }) => f.path === 'data/loseit-identities.json'
+		);
+		Object.assign(entry, { sha256: sha256(bytes), rows: 1 });
+		const archive = fromElsewhere(
+			zipSync({
+				...files,
+				'data/loseit-identities.json': bytes,
+				'manifest.json': strToU8(JSON.stringify(manifest))
+			})
+		);
+		await goals.setTarget(
+			ZEYNEP,
+			{ mode: 'manual', effectiveFrom: '2026-01-01', budgetKcal: 1900 },
+			null
+		);
+		await applyImport(ZEYNEP, archive);
+		const kept = await admin`select kind from import_identities where user_id = ${ZEYNEP}`;
+		expect(kept.map((r) => r.kind)).not.toContain('target');
+		// Into an account without targets, the target and what it was in LoseIt both arrive.
+		await applyImport(AYSE, archive);
+		const imported = await admin`select kind from import_identities where user_id = ${AYSE}`;
+		expect(imported.map((r) => r.kind)).toContain('target');
+	});
+
 	it('imports the profile into a new account whose first page only saved settings (2026-11-22 audit, A04)', async () => {
 		await goals.saveProfile(MEHMET, { heightCm: 178, birthDate: '1990-05-01', sex: 'male' });
 		await goals.savePreferences(MEHMET, { palette: 'kaset', weightUnit: 'lb' });

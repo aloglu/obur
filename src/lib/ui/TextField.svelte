@@ -17,7 +17,7 @@
 		id={fieldId}
 		bind:value
 		aria-describedby={hint ? `${fieldId}-hint` : undefined}
-		class="min-h-12 rounded-input border border-line bg-surface2 px-3.5 text-[1rem] font-semibold text-text placeholder:text-muted focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-accent"
+		class="min-h-12 rounded-input border border-line bg-surface2 px-3.5 text-[1rem] font-semibold text-text placeholder:text-muted focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-accent aria-invalid:border-bad"
 		{...rest}
 	/>
 	{#if hint}<p id="{fieldId}-hint" class="text-[0.8125rem] text-muted">{hint}</p>{/if}

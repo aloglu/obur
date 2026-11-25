@@ -160,3 +160,44 @@ test('Undo after archiving opens that food’s own form, not the one open before
 	await expect(page).toHaveURL(new RegExp(`/foods/${first}$`));
 	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Apricot Jam');
 });
+
+test('Show more after a new food at the top skips no food (2026-11-25 Review.md audit, 2.9)', async ({
+	page
+}, testInfo) => {
+	await signedInAs(page, `Many Foods ${testInfo.project.name}`);
+	const food = (name: string) => ({
+		name,
+		basis: '100g',
+		nutrients: [{ code: 'energy_kcal', value: 100, qualifier: 'reported' }]
+	});
+	for (let i = 1; i <= 51; i++) await createFood(page, food(`Food ${String(i).padStart(3, '0')}`));
+	// Saved from New food, after the first page: shown at the top.
+	const saved = await createFood(page, food('Zz newest'));
+	await page.goto(`/foods?saved=${saved}`);
+	const main = page.getByRole('main');
+	await expect(main.getByRole('link', { name: /Zz newest/ })).toBeVisible();
+	await expect(main.getByRole('link', { name: /Food 051/ })).toHaveCount(0);
+	await main.getByRole('button', { name: 'Show more' }).click();
+	await expect(main.getByRole('link', { name: /Food 051/ })).toBeVisible();
+	await expect(main.getByRole('link', { name: /Zz newest/ })).toHaveCount(1);
+});
+
+test('a portion without a size, or of 0, is marked and not saved (2026-11-25 Review.md audit, 2.9)', async ({
+	page
+}) => {
+	await signedInAs(page, 'Portion Check');
+	await page.goto('/foods/new');
+	await page.getByLabel('Name', { exact: true }).fill('Granola');
+	await nutrient(page, 'energy_kcal').fill('450');
+	await page.getByRole('button', { name: 'Add portion' }).click();
+	await page.locator('#portion-name-0').fill('bowl');
+	const size = page.locator('#portion-amount-0');
+	for (const typed of ['', '0']) {
+		await size.fill(typed);
+		await page.getByRole('button', { name: 'Save food' }).click();
+		await expect(size).toHaveAttribute('aria-invalid', 'true');
+		await expect(page).toHaveURL(/\/foods\/new$/);
+	}
+	await size.fill('45');
+	await expect(size).not.toHaveAttribute('aria-invalid', 'true');
+});

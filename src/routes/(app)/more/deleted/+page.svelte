@@ -53,7 +53,8 @@
 							brand: e.food?.brand ?? null
 						},
 						detail: `${dayTitle(e.localDate, data.today)} · ${mealName(e.meal)}`,
-						kcal: energy(e.nutrients.energy_kcal?.value ?? 0)
+						// Unknown stays unknown, never 0 (2026-11-25 Review.md audit, 2.9).
+						kcal: energy(e.nutrients.energy_kcal?.value)
 					}))
 				},
 				{
@@ -174,7 +175,9 @@
 				}
 			});
 		} catch {
-			await invalidateAll();
+			// Without a connection the refresh fails too; the person still hears that it didn't work (Review.md audit,
+			// 2.9).
+			await invalidateAll().catch(() => {});
 			showToast({ message: m.error_generic() });
 		} finally {
 			busy = false;

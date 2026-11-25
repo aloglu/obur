@@ -1249,6 +1249,9 @@ async function write(tx: Tx, userId: string, data: PortableData, p: Plan, source
 	// What the archive's LoseIt rows became, pointed at the records they are here now. Rows whose record is not in the
 	// archive (purged from the trash) have nothing to point at and are left out.
 	for (const i of data.loseitIdentities) {
+		// Targets are left out when the account keeps its own: nothing is there to point at (2026-11-25 Review.md
+		// audit, 2.9).
+		if (i.kind === 'target' && !p.importTargets) continue;
 		const here = p.decisions.get(key(i.kind, i.localId));
 		if (here && here.status !== 'purged')
 			identities.push({

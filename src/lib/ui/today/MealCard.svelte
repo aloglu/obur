@@ -110,7 +110,7 @@
 							</span>
 						</span>
 						<span class="ml-3 min-w-11 text-right text-[0.9375rem] font-[650] tabular-nums"
-							>{kcal(e.nutrients.energy_kcal?.value ?? 0)}</span
+							>{e.nutrients.energy_kcal ? kcal(e.nutrients.energy_kcal.value) : '–'}</span
 						>
 					</button>
 				</li>

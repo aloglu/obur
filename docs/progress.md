@@ -83,6 +83,14 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   from another device was kept" (or "unsaved"); each save now has a number and only the newest answers. One e2e
   test for the note (failed before); the other three by code reading only (timings a browser test can't hold
   reliably). connection, bulk, toast-dismiss, sheet-swipe, achievements, scan, diary e2e (117) pass.
+- The rest of 2.9 done: Foods' Show more counted a food just saved at the top and skipped the 50th; it now counts
+  only what the server listed. Built-in foods' Turkish names and portions also in the entry editor, the typed-entry
+  choices and the saved meal and recipe editors' amounts. Unknown calories show "–" on Today and in Recently deleted
+  (they showed 0). Recently deleted's failed restore says so without a connection too. A portion with no size or 0
+  is marked and not saved (blank did nothing, 0 got a server error); text fields show `aria-invalid` with the red
+  border the nutrient fields have. An import into an account that keeps its own targets no longer writes LoseIt
+  identities for the targets it left out. Tests that failed before: 2 e2e (`catalog.e2e.ts`), 1 database test.
+  Full browser suite: 363 passed, 0 failed, 67 skipped. check, lint pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

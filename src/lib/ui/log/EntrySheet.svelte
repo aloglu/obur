@@ -580,9 +580,7 @@
 										class="flex min-h-[52px] items-center justify-between gap-3 rounded-small bg-surface2 py-1.5 pr-3 pl-3.5 text-left"
 									>
 										<span class="min-w-0">
-											<b class="block truncate text-[0.9375rem] font-[650]"
-												>{c.brand ? `${c.brand} ` : ''}{c.name}</b
-											>
+											<b class="block truncate text-[0.9375rem] font-[650]">{fullFoodName(c)}</b>
 											<small class="block text-[0.8125rem] text-muted"
 												>{per(c)}{c.kcal === null ? '' : ` · ${kcal(c.kcal)} kcal`}</small
 											>
@@ -656,7 +654,7 @@
 												wide
 												options={card.candidates.map((c) => ({
 													value: c.id,
-													label: `${c.brand ? `${c.brand} ` : ''}${c.name}${c.kcal === null ? '' : ` · ${kcal(c.kcal)} kcal`}`
+													label: `${fullFoodName(c)}${c.kcal === null ? '' : ` · ${kcal(c.kcal)} kcal`}`
 												}))}
 											/>
 										{/if}
