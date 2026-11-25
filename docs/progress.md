@@ -13,6 +13,10 @@ status, interrupted first install, diary CSV unit, archive memory, import previe
   has `saved()` for that. Activity now saves with the 10 s limit and says "Couldn't save" without a connection, as
   the other save sheets do. Four e2e tests in `connection.e2e.ts` (Chromium only: they hold back the answer);
   they failed before the fix. connection, body, goals, bulk, pounds e2e, check and lint pass.
+- Diary CSV unit done: a serving showed only its size's unit, so two 30 g slices read "2, g". The unit column now
+  names each kind: "g", a household measure's name, "slice (30 g)", "serving". Database test (failed before:
+  "g"). Import/export Vitest (59), check and lint pass.
+- Off-site status and first install: fixed, image tests running (see the next entries).
 
 ## After rc.10 (owner, 2026-11-24)
 

@@ -470,6 +470,22 @@ const cell = (value: unknown): string => {
 const csv = (header: string[], rows: unknown[][]) =>
 	[header, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
 
+/** A diary unit as a person reads it: "g", "cup", or a serving with its size, "slice (30 g)" (2026-11-25 audit: a
+ * serving showed only its size's unit, so two slices read "2 g"). */
+function unitText(u: v.InferOutput<typeof SnapshotUnit>): string {
+	switch (u.kind) {
+		case 'mass':
+		case 'volume':
+			return u.unit;
+		case 'measure':
+			return u.name;
+		case 'serving':
+			return `${u.name} (${u.amount} ${u.unit})`;
+		case 'basis_serving':
+			return 'serving';
+	}
+}
+
 function csvViews(data: PortableData): Record<(typeof CSV_FILES)[number], string> {
 	const trash = (d: string | null) => (d ? 'yes' : '');
 	return {
@@ -491,13 +507,7 @@ function csvViews(data: PortableData): Record<(typeof CSV_FILES)[number], string
 				e.meal,
 				e.food?.name ?? e.description ?? '',
 				e.amount,
-				e.unit
-					? 'unit' in e.unit
-						? e.unit.unit
-						: 'name' in e.unit
-							? e.unit.name
-							: e.unit.kind
-					: '',
+				e.unit ? unitText(e.unit) : '',
 				e.nutrients.energy_kcal?.value,
 				e.nutrients.protein?.value,
 				e.nutrients.fat?.value,

@@ -9,7 +9,7 @@ import { FoodInput } from '../../../shared/food-input.ts';
 import { foodSearchKey } from '../../../shared/search-text.ts';
 import { createBody } from '../body/index.ts';
 import { createCatalog, createRecipes } from '../catalog/index.ts';
-import { createDiary, createSavedMeals } from '../diary/index.ts';
+import { createDiary, createSavedMeals, resolveUnit } from '../diary/index.ts';
 import { createGoals } from '../goals/index.ts';
 import { createReminders } from '../reminders/index.ts';
 import { createRemoteModels } from '../remote-models/index.ts';
@@ -438,6 +438,31 @@ describe('export', () => {
 		// Over the unpacked limit, however small the zip.
 		const huge = zipSync({ 'data/diary.json': new Uint8Array(LIMITS.unpackedBytes + 1) });
 		expect(fitsImport(huge)).toBe(false);
+	});
+
+	it('names each kind of unit in the diary CSV (2026-11-25 audit: two slices showed as "2 g")', async () => {
+		const bread = await builtIn({
+			name: 'Bread',
+			basis: '100g',
+			kcal: 250,
+			portions: [{ name: 'slice', amount: 30, unit: 'g' }]
+		});
+		const food = await catalog.getFood(MEHMET, bread);
+		const day = { localDate: '2026-10-01', meal: 'breakfast' as const, ...ist };
+		// As the API stores it: the serving's name and size go with the entry.
+		const slice = resolveUnit(
+			{ kind: 'serving', servingId: food.servings[0].id },
+			food.servings,
+			[]
+		);
+		await diary.logFood(MEHMET, day, food, 2, slice!);
+		await diary.logFood(MEHMET, day, food, 45, grams);
+		const files = unzipSync(await portability.exportArchive(MEHMET));
+		const rows = strFromU8(files['csv/diary.csv']).trim().split('\r\n').slice(1);
+		expect(rows.map((r) => r.split(',').slice(3, 6))).toEqual([
+			['2', 'slice (30 g)', '150'],
+			['45', 'g', '112.5']
+		]);
 	});
 
 	it('detects a damaged or altered archive before reading anything', async () => {
