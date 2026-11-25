@@ -17,6 +17,9 @@ status, interrupted first install, diary CSV unit, archive memory, import previe
   names each kind: "g", a household measure's name, "slice (30 g)", "serving". Database test (failed before:
   "g"). Import/export Vitest (59), check and lint pass.
 - Off-site status and first install: fixed, image tests running (see the next entries).
+- Archive memory done: the queue of archive tasks kept the last task's result (`catch` passes it on), so a large
+  import or export stayed in memory until the next one. Unit test (`archive-thread.test.ts`, a WeakRef after a
+  forced collection; failed before). Vitest 1,274 and lint pass.
 
 ## After rc.10 (owner, 2026-11-24)
 

@@ -59,8 +59,12 @@ function run<T>(task: ArchiveTask): Promise<T> {
 				});
 			})
 	);
-	// The next task waits for this one, whatever its result.
-	queue = next.catch(() => {});
+	// The next task waits for this one, whatever its result, and the queue keeps no result: `catch` alone passes it
+	// on, which kept the last archive in memory until the next task (2026-11-25 audit).
+	queue = next.then(
+		() => {},
+		() => {}
+	);
 	return next.finally(() => pending--);
 }
 
