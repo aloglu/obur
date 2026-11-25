@@ -125,10 +125,11 @@ function forgetPrepared() {
 	prepared.clear();
 }
 
-async function prepareOne(url: string) {
+/** Prepares one page's answer; false when the rest should wait (no connection, or nobody signed in). */
+async function prepareOne(url: string): Promise<boolean> {
 	const key = preparedKey(url);
 	const known = prepared.get(key);
-	if (preparing.has(key) || (known && Date.now() - known.at < PREPARED_AGAIN_MS)) return;
+	if (preparing.has(key) || (known && Date.now() - known.at < PREPARED_AGAIN_MS)) return true;
 	let done = () => {};
 	preparing.set(key, new Promise<void>((resolve) => (done = resolve)));
 	const startedAt = generation;
@@ -142,10 +143,10 @@ async function prepareOne(url: string) {
 			throw e;
 		});
 		unreachableUntil = 0;
-		if (notSignedIn(response)) return;
-		if (!response.ok || response.redirected || response.type !== 'basic') return;
+		if (notSignedIn(response)) return false;
+		if (!response.ok || response.redirected || response.type !== 'basic') return true;
 		const body = await response.arrayBuffer();
-		if (generation !== startedAt || writes > 0) return;
+		if (generation !== startedAt || writes > 0) return true;
 		prepared.set(key, {
 			body,
 			status: response.status,
@@ -153,8 +154,10 @@ async function prepareOne(url: string) {
 			at: Date.now(),
 			layers: askedLayers(url)
 		});
+		return true;
 	} catch {
 		// Not reachable: the page is asked for again when it is opened.
+		return false;
 	} finally {
 		preparing.delete(key);
 		done();
@@ -170,8 +173,13 @@ async function prepareAll(urls: string[]) {
 			return false;
 		}
 	});
+	// Without a connection, or once one fails or nobody is signed in, the rest wait for the next time: each would hang
+	// or fail too, and keep the connection page up longer (2026-11-25 Review.md audit, 3.1).
+	if (!sw.navigator.onLine || unreachable()) return;
+	let stop = false;
 	const worker = async () => {
-		for (let url = queue.shift(); url !== undefined; url = queue.shift()) await prepareOne(url);
+		for (let url = queue.shift(); url !== undefined && !stop; url = queue.shift())
+			if (!(await prepareOne(url))) stop = true;
 	};
 	await Promise.all([worker(), worker(), worker()]);
 }
@@ -189,20 +197,23 @@ function preparedAnswer(request: Request): Response | undefined {
 async function write(request: Request): Promise<Response> {
 	writes++;
 	forgetPrepared();
+	// Open pages prepare again (client/prepare.ts) after a write that reached the server for someone signed in; not
+	// after one that failed or found no session (Review.md audit, 3.1).
+	let landed = false;
 	try {
 		const response = await fetch(request).catch((e: unknown) => {
 			failed();
 			throw e;
 		});
 		unreachableUntil = 0;
-		notSignedIn(response);
+		landed = !notSignedIn(response);
 		return response;
 	} finally {
 		writes--;
 		forgetPrepared();
-		// Open pages prepare again (client/prepare.ts).
-		for (const client of await sw.clients.matchAll({ type: 'window' }))
-			client.postMessage({ type: 'obur:written' });
+		if (landed)
+			for (const client of await sw.clients.matchAll({ type: 'window' }))
+				client.postMessage({ type: 'obur:written' });
 	}
 }
 

@@ -98,6 +98,15 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   held-out full-size 79/104, 4 wrong; held-out phone-size (what the app sends) 80/104, 3 wrong, before and after.
   Decoding at the reading size itself saved more but changed readings (one more wrong value), so it was not kept.
   `deploy/addon-test.sh … labels` passes.
+- Section 3 done (3.1-3.3): the service worker told open pages to prepare again after every write, even one that
+  failed or found no session, and prepared on without a connection: a failed save started 8 page requests that
+  failed too and held the connection page up longer; sign-out set off unsigned requests in other tabs. Now only a
+  write that reached the server for someone signed in does it, and preparing stops at the first failure or missing
+  session (new `prepared.e2e.ts` test: 8 requests before, 0 after). The layout and Progress, Journal or Achievements
+  worked out achievements twice per request; now once (`syncOnce`, per request), and removed ones go in one
+  statement. Speak looks up its prompt words only for OpenAI and the server add-on (OpenRouter ignores them), after
+  the key check. Vitest (1,297), prepared, connection, speak, progress, journal, achievements, speed, auth e2e (230)
+  pass; check, lint pass. Not measured: load times before and after.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

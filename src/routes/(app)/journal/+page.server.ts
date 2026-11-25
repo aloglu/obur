@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import { body } from '#lib/server/body.ts';
 import { diary } from '#lib/server/diary.ts';
 import { goals } from '#lib/server/goals.ts';
-import { progress } from '#lib/server/progress.ts';
+import { syncOnce } from '#lib/server/progress.ts';
 import { calendarDays, monthDays } from '#lib/shared/calendar.ts';
 import { journal } from '#lib/shared/journal.ts';
 import { isIsoDate, localDate } from '#lib/shared/diary-rules.ts';
@@ -33,7 +33,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			diary.completedDays(userId, from, to),
 			goals.history(userId),
 			body.weights(userId, EARLIEST, to),
-			progress.sync(userId, today, locals.zone)
+			syncOnce(locals, userId, today, locals.zone)
 		]
 	);
 	const firstDayOfWeek = profile?.firstDayOfWeek ?? 1;

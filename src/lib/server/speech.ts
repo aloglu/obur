@@ -73,11 +73,10 @@ export async function understandSpeech(
 	if (tooShortToHear(audio.length, mime)) throw new SpeechFailure('nothing_heard');
 	if (audio.length > MAX_AUDIO_BYTES) throw new SpeechFailure('too_large');
 	if (!perPerson.attempt(userId)) throw new SpeechFailure('limited');
-	const prompt = await promptFor(userId);
 	let heard: { text: string; audioS: number; asrMs: number; queueMs: number };
 	if (source === 'server') {
 		try {
-			heard = await onServer(audio, prompt);
+			heard = await onServer(audio, await promptFor(userId));
 		} catch (e) {
 			// A busy add-on is not another recording, as with a busy provider (2026-11-23 Gemini audit 2, H20).
 			if (e instanceof SpeechFailure && e.code === 'busy') perPerson.refund(userId);
@@ -86,6 +85,8 @@ export async function understandSpeech(
 	} else {
 		const key = await remoteModels.keyFor(userId, source);
 		if (!key) throw new SpeechFailure('key_missing');
+		// OpenRouter takes no prompt: its words are not looked up (2026-11-25 Review.md audit, 3.3).
+		const prompt = source === 'openai' ? await promptFor(userId) : '';
 		const started = performance.now();
 		try {
 			heard = {

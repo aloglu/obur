@@ -155,3 +155,26 @@ test('Members opens with its people already listed', async ({ page }) => {
 	await expect(page.getByRole('heading', { level: 1, name: 'Members' })).toBeVisible();
 	expect(await page.getByRole('main').textContent()).toContain('Listed Admin');
 });
+
+test('a save that fails prepares no pages, which would only fail too (2026-11-25 Review.md audit, 3.1)', async ({
+	page,
+	context
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'desktop-chromium', 'needs Chromium request routing');
+	await signedInAs(page, 'Ready Failing');
+	await settledOnToday(page);
+	await context.route('**/api/v1/body/water', (route) =>
+		route.request().method() === 'POST' ? route.abort('connectionreset') : route.continue()
+	);
+	const asked: string[] = [];
+	context.on('request', (r) => {
+		if (r.url().includes('__data.json')) asked.push(r.url());
+	});
+	await page
+		.getByRole('region', { name: 'Water' })
+		.getByRole('button', { name: 'Add 250 ml of water' })
+		.click();
+	await expect(page.getByRole('status')).toContainText("Couldn't save");
+	await page.waitForTimeout(2000);
+	expect(asked).toEqual([]);
+});

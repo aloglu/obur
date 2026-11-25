@@ -1,7 +1,7 @@
 import { config } from '#lib/server/config.ts';
 import { allSources } from '#lib/server/model-source.ts';
 import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
-import { progress } from '#lib/server/progress.ts';
+import { syncOnce } from '#lib/server/progress.ts';
 import { body } from '#lib/server/body.ts';
 import { goals } from '#lib/server/goals.ts';
 import { catalog, recipes } from '#lib/server/catalog.ts';
@@ -33,8 +33,7 @@ export const load: LayoutServerLoad = async ({ locals, depends, parent }) => {
 		// Achievements reached in the last few days and not yet celebrated. A celebration must never stop a page from
 		// opening, so a failure here only means no toast.
 		normal
-			? progress
-					.sync(normal.userId, today, locals.zone)
+			? syncOnce(locals, normal.userId, today, locals.zone)
 					.then(({ list }): StoredAchievement[] => list.filter((a) => !a.seen))
 					.catch((e): StoredAchievement[] => {
 						console.error('achievements: sync failed', describeError(e));

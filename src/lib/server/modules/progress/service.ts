@@ -2,7 +2,7 @@
 // by shared/achievements.ts and kept in step with them in the `achievements` table, which remembers what was
 // celebrated. One reached in the last few days waits to be celebrated; older ones (an import, a backfilled weigh-in,
 // the history before achievements existed) arrive quietly with their real dates.
-import { and, asc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, or, sql } from 'drizzle-orm';
 import { withUser, type Database } from '../../db/identity.ts';
 import {
 	achievementKey,
@@ -155,17 +155,20 @@ export function createProgress(db: Database) {
 				const want = new Map(derived.map((a) => [achievementKey(a), a]));
 				const have = new Map(stored.map((r) => [`${r.kind}:${r.level}`, r]));
 				const gone = stored.filter((r) => !want.has(`${r.kind}:${r.level}`));
-				for (const r of gone) {
+				// In one statement (Review.md audit, 3.2: one each).
+				if (gone.length)
 					await tx
 						.delete(achievements)
 						.where(
 							and(
 								eq(achievements.userId, userId),
-								eq(achievements.kind, r.kind),
-								eq(achievements.level, r.level)
+								or(
+									...gone.map((r) =>
+										and(eq(achievements.kind, r.kind), eq(achievements.level, r.level))
+									)
+								)
 							)
 						);
-				}
 				const quietBefore = addDays(today, -CELEBRATE_DAYS);
 				// A change of unit (Units) swaps kilo marks for pound marks or back: the new ones were earned before and
 				// arrive quietly, never celebrated a second time.

@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { goals } from '#lib/server/goals.ts';
-import { progress } from '#lib/server/progress.ts';
+import { syncOnce } from '#lib/server/progress.ts';
 import { loadHistory } from '#lib/server/progress-history.ts';
 import { DEFAULT_RANGE, isHistoryRange } from '#lib/shared/history.ts';
 import { localDate } from '#lib/shared/diary-rules.ts';
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const firstDayOfWeek = profile?.firstDayOfWeek ?? 1;
 	const [history, achieved] = await Promise.all([
 		loadHistory(userId, range, today, firstDayOfWeek),
-		progress.sync(userId, today, locals.zone)
+		syncOnce(locals, userId, today, locals.zone)
 	]);
 	return { history, achievements: achieved.list.length };
 };
