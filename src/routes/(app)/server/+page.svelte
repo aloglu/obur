@@ -50,6 +50,8 @@
 			({ updates } = await withRecentAuth(() =>
 				api<{ updates: UpdateStatus }>('PUT', '/api/v1/admin/update-check', { on })
 			));
+			// More's "Update available" row follows at once (Review.md audit, 2.4).
+			void invalidate(ACCOUNT_DATA);
 		} catch {
 			updateCheck = !on;
 			showToast({ message: m.settings_save_failed() });

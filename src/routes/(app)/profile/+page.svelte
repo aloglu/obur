@@ -51,8 +51,13 @@
 			await api('PATCH', '/api/v1/targets/settings', settings);
 			await invalidateAll();
 			showToast({ message: m.profile_settings_saved(), detail: m.profile_settings_saved_detail() });
+			return true;
 		} catch {
 			problem = m.error_generic();
+			// What is saved shows again (2026-11-25 Review.md audit, 2.3).
+			activityOn = t?.countActivity ?? true;
+			atGoal = t?.atGoal ?? 'keep';
+			return false;
 		} finally {
 			busy = false;
 		}

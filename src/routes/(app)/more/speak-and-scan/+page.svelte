@@ -5,7 +5,8 @@
 	import PageHead from '#lib/ui/PageHead.svelte';
 	import Plus from '@lucide/svelte/icons/plus';
 	import { untrack } from 'svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidate, invalidateAll } from '$app/navigation';
+	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { api } from '#lib/client/api.ts';
@@ -229,6 +230,8 @@
 		onsaved={(next) => {
 			keys = next;
 			adding = false;
+			// Speak and Scan elsewhere follow the new key at once (Review.md audit, 2.4).
+			void invalidate(ACCOUNT_DATA);
 			showToast({ message: m.models_key_saved() });
 		}}
 		onclose={() => (adding = false)}

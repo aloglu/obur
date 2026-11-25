@@ -56,8 +56,10 @@
 			await invalidateAll();
 			editing = false;
 			showToast({ message: m.profile_settings_saved(), detail: m.profile_settings_saved_detail() });
+			return true;
 		} catch {
 			problem = m.error_generic();
+			return false;
 		} finally {
 			busy = false;
 		}

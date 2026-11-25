@@ -275,6 +275,9 @@
 	function choose(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		file = input.files?.[0] ?? null;
+		// Emptied, so choosing the same file again (after a preview without a connection, or an import) is a change
+		// too (2026-11-25 Review.md audit, 2.6). The file itself is kept above.
+		input.value = '';
 		summary = null;
 		finished = null;
 		trashMissing = false;

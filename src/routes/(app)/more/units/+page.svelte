@@ -36,16 +36,18 @@
 		}
 	}
 
+	// The format last saved: the row is already showing the new one when this runs (Menu), so it is kept here.
+	let savedTime = untrack(() => data.timeFormat);
 	async function change(next: TimeFormat) {
-		const before = time;
 		setTimeFormat(next);
 		try {
 			await savePreferences({ timeFormat: next });
+			savedTime = next;
 			await invalidateAll();
 		} catch {
-			time = before;
-			setTimeFormat(before);
+			setTimeFormat(savedTime);
 			showToast({ message: m.settings_save_failed() });
+			return false;
 		}
 	}
 </script>

@@ -23,7 +23,8 @@
 		label?: string;
 		class?: unknown;
 		disabled?: boolean;
-		onchange?: (value: T) => void;
+		/** Answering false (or a promise of false) says the change wasn't saved: the menu shows the value before it. */
+		onchange?: (value: T) => unknown;
 		children: Snippet;
 	}
 	let {
@@ -97,12 +98,15 @@
 		if ((event as ToggleEvent).newState === 'open') place();
 	}
 
-	function choose(next: T) {
+	async function choose(next: T) {
 		list?.hidePopover();
 		trigger?.focus();
 		if (next === value) return;
+		const before = value;
 		value = next;
-		onchange?.(next);
+		// A save that failed shows what is saved again, so the same choice can be tried again (2026-11-25 Review.md
+		// audit, 2.3: it kept the unsaved one, and choosing it again did nothing).
+		if ((await onchange?.(next)) === false && value === next) value = before;
 	}
 
 	function onkeydown(event: KeyboardEvent) {

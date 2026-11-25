@@ -67,6 +67,14 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   way on the server; it was sent to OpenAI, refused as a failure, and Try again sent it again. Not checked here:
   OpenRouter's documentation for errors with status 200, and OpenAI's exact minimum length. Unit tests (providers:
   failed before; `shared/recording.ts`). speak, scan, own-key, voice-off e2e (208) pass; Firefox Speak not run.
+- Settings state done (2.3, 2.4, 2.6): a menu showed its new choice before the save and kept it when the save
+  failed (and choosing it again did nothing). A menu's `onchange` may now answer false, and the menu shows the saved
+  value again: Units time format (it also kept the wrong format on the device), Goal pace. Profile's activity
+  switch, "at goal" choice and macro mode go back too. Appearance, a new personal key and the update-check switch
+  refresh the shared settings at once (Settings showed the old mode for up to 30 s). The Import file field is
+  emptied after each choice, so the same file can be chosen again (no browser test: Playwright fires the change
+  event either way). New `failed-save.e2e.ts`: 4 tests, all failed before; the three failure tests run in Chromium
+  only (routing). data, goals, pounds, own-key, updates, app-icon, menu-dismiss, accessibility, large-text e2e pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

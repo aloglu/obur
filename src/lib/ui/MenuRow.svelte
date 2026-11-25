@@ -8,7 +8,7 @@
 		value: T;
 		options: { value: T; label: string; hint?: string }[];
 		disabled?: boolean;
-		onchange?: (value: T) => void;
+		onchange?: (value: T) => unknown;
 	}
 	let { label, value = $bindable(), options, disabled, onchange }: Props = $props();
 	const current = $derived(options.find((o) => o.value === value)?.label ?? '');

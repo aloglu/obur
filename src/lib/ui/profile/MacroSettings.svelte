@@ -14,7 +14,8 @@
 		/** The day's budget before activity, for the gram preview. */
 		budgetKcal: number;
 		busy: boolean;
-		onsave: (macros: MacroChoice) => Promise<void>;
+		/** Resolves to false when the choice wasn't saved. */
+		onsave: (macros: MacroChoice) => Promise<boolean | void>;
 	}
 	let { target, budgetKcal, busy, onsave }: Props = $props();
 
@@ -68,8 +69,12 @@
 	]);
 
 	async function choose(next: 'balanced' | 'percent') {
+		const before = mode;
 		mode = next;
-		if (next === 'balanced' && target.macroMode === 'percent') await onsave({ mode: 'balanced' });
+		if (next === 'balanced' && target.macroMode === 'percent') {
+			// Not saved: the saved choice shows again (2026-11-25 Review.md audit, 2.3).
+			if ((await onsave({ mode: 'balanced' })) === false) mode = before;
+		}
 		if (next === 'percent') fill();
 	}
 

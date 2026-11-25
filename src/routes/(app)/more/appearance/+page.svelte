@@ -3,7 +3,9 @@
 	// and in the backup). Mode and theme apply at once; the icon shows the next time obur is added to the Home Screen.
 	import PageHead from '#lib/ui/PageHead.svelte';
 	import { untrack } from 'svelte';
+	import { invalidate } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { ACCOUNT_DATA } from '#lib/shared/account-data.ts';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		savePreferences,
@@ -29,6 +31,9 @@
 		show();
 		try {
 			await savePreferences(change);
+			// Settings and this page read what is shared; it would otherwise stay as it was for up to half a minute
+			// (2026-11-25 Review.md audit, 2.4).
+			void invalidate(ACCOUNT_DATA);
 		} catch {
 			undo();
 			showToast({ message: m.settings_save_failed() });
