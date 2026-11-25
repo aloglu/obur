@@ -551,10 +551,49 @@ async function plan(
 	const foodMap = new Map<string, string>();
 	const ownFoods = data.foods.filter((f) => f.mine);
 	const otherFoods = data.foods.filter((f) => !f.mine);
-	const foodContent = (f: { name: string; brand: string | null; basis: string }, n: unknown) =>
-		canonical([f.name, f.brand, f.basis, n]);
+	// What a food says, for "unchanged": its portions and its archived or deleted state too (2026-11-25 audit: a
+	// food with new portions was called unchanged). Not its icon, ID or times.
+	type Content = {
+		name: string;
+		brand: string | null;
+		basis: string;
+		servingLabel: string | null;
+		servingAmount: number | null;
+		servingUnit: string | null;
+		barcode: string | null;
+		archivedAt: Date | string | null;
+		deletedAt?: Date | string | null;
+	};
+	type Portion = { name: string; amount: number; unit: string; source: string };
+	const foodContent = (f: Content, n: unknown, servings: Portion[]) =>
+		canonical([
+			f.name,
+			f.brand,
+			f.basis,
+			f.servingLabel,
+			f.servingAmount,
+			f.servingUnit,
+			f.barcode,
+			f.archivedAt !== null,
+			(f.deletedAt ?? null) !== null,
+			n,
+			servings
+				.map((x) => [x.name, x.amount, x.unit, x.source])
+				.sort((a, b) => canonical(a).localeCompare(canonical(b)))
+		]);
 	const loadFoods = async (ids: string[]) => {
 		const rows = await tx.select().from(foods).where(inArray(foods.id, ids));
+		const portions = rows.length
+			? await tx
+					.select()
+					.from(foodServings)
+					.where(
+						inArray(
+							foodServings.foodId,
+							rows.map((r) => r.id)
+						)
+					)
+			: [];
 		const values = rows.length
 			? await tx
 					.select()
@@ -571,7 +610,8 @@ async function plan(
 			nutrients: values
 				.filter((n) => n.foodId === r.id)
 				.map((n) => ({ code: n.code, value: n.value, qualifier: n.qualifier }))
-				.sort((a, b) => a.code.localeCompare(b.code))
+				.sort((a, b) => a.code.localeCompare(b.code)),
+			servings: portions.filter((x) => x.foodId === r.id)
 		}));
 	};
 	const sortedNutrients = (f: PortableData['foods'][number]) =>
@@ -580,7 +620,8 @@ async function plan(
 		'food',
 		ownFoods,
 		{ load: async (ids) => (await loadFoods(ids)).filter((r) => r.ownerId === userId) },
-		(s, l) => foodContent(s, sortedNutrients(s)) === foodContent(l, l.nutrients)
+		(s, l) =>
+			foodContent(s, sortedNutrients(s), s.servings) === foodContent(l, l.nutrients, l.servings)
 	);
 	if (otherFoods.length) {
 		const visible = same
@@ -607,7 +648,8 @@ async function plan(
 			'food',
 			copies,
 			{ load: async (ids) => (await loadFoods(ids)).filter((r) => r.ownerId === userId) },
-			(s, l) => foodContent(s, sortedNutrients(s)) === foodContent(l, l.nutrients)
+			(s, l) =>
+				foodContent(s, sortedNutrients(s), s.servings) === foodContent(l, l.nutrients, l.servings)
 		);
 	}
 	// A purged food has no record to link to: entries using it keep their own snapshot, as for a food that's gone.
@@ -690,11 +732,32 @@ async function plan(
 			deleted(s.deletedAt) === deleted(l.deletedAt)
 	);
 
-	// Saved meals match on their name and items' content (item IDs are not portable).
-	const mealContent = (
-		name: string,
-		items: { kind: string; amount: number | null; description: string | null; nutrients: unknown }[]
-	) => canonical([name, items.map((i) => [i.kind, i.amount, i.description, i.nutrients])]);
+	// Saved meals match on their name, trash state and items' content: each item's food by its name, and its unit
+	// without the serving's ID (item, food and serving IDs are not portable; 2026-11-25 audit: a meal in the trash
+	// was called unchanged).
+	type MealItem = {
+		kind: string;
+		amount: number | null;
+		description: string | null;
+		nutrients: unknown;
+		food: { name: string } | null;
+		unit: Record<string, unknown> | null;
+	};
+	const portableUnit = (u: MealItem['unit']) =>
+		u && Object.fromEntries(Object.entries(u).filter(([k]) => k !== 'servingId'));
+	const mealContent = (name: string, inTrash: boolean, items: MealItem[]) =>
+		canonical([
+			name,
+			inTrash,
+			items.map((i) => [
+				i.kind,
+				i.amount,
+				i.description,
+				i.nutrients,
+				i.food?.name ?? null,
+				portableUnit(i.unit)
+			])
+		]);
 	await decide(
 		'saved_meal',
 		data.savedMeals,
@@ -719,7 +782,9 @@ async function plan(
 				return rows.map((r) => ({ ...r, items: items.filter((i) => i.savedMealId === r.id) }));
 			}
 		},
-		(s, l) => mealContent(s.name, s.items) === mealContent(l.name, l.items)
+		(s, l) =>
+			mealContent(s.name, (s.deletedAt ?? null) !== null, s.items as MealItem[]) ===
+			mealContent(l.name, l.deletedAt !== null, l.items as MealItem[])
 	);
 
 	// Targets are append-only: an imported version matches or is new. New ones are added only when the account

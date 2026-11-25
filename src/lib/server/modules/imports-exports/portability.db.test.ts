@@ -833,6 +833,33 @@ describe('import', () => {
 		expect(await count('diary_entries', ZEYNEP)).toBe(6);
 	});
 
+	it('calls a food with new portions and a saved meal in the trash changed (2026-11-25 audit)', async () => {
+		const { old } = await buildHistory();
+		const archive = await portability.exportArchive(MEHMET);
+		const same = await portability.previewImport(MEHMET, archive);
+		expect(same.counts.food).toMatchObject({ unchanged: 6, changed: 0 });
+		expect(same.counts.saved_meal).toMatchObject({ unchanged: 1, changed: 0 });
+
+		const yogurt = await catalog.getFood(MEHMET, old);
+		await catalog.updateFood(
+			MEHMET,
+			old,
+			yogurt.version,
+			food({
+				name: yogurt.name,
+				basis: yogurt.basis,
+				nutrients: [{ code: 'energy_kcal', value: 60, qualifier: 'reported' }],
+				servings: [{ name: 'cup', amount: 150, unit: 'g' }]
+			})
+		);
+		const [meal] = await savedMeals.list(MEHMET);
+		await savedMeals.remove(MEHMET, meal.id);
+		const changed = await portability.previewImport(MEHMET, archive);
+		expect(changed.counts.food).toMatchObject({ unchanged: 5, changed: 1 });
+		expect(changed.counts.saved_meal).toMatchObject({ unchanged: 0, changed: 1 });
+		expect(changed.warnings).toContain('changed_kept');
+	});
+
 	it('keeps the current version of changed records, existing targets and an existing profile', async () => {
 		const { borek } = await buildHistory();
 		const archive = await portability.exportArchive(MEHMET);

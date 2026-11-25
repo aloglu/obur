@@ -20,6 +20,11 @@ status, interrupted first install, diary CSV unit, archive memory, import previe
 - Archive memory done: the queue of archive tasks kept the last task's result (`catch` passes it on), so a large
   import or export stayed in memory until the next one. Unit test (`archive-thread.test.ts`, a WeakRef after a
   forced collection; failed before). Vitest 1,274 and lint pass.
+- Import preview done: a food with new portions (or archived, deleted, a changed serving size or barcode) and a
+  saved meal moved to the trash (or with another food or unit in an item) were called "unchanged", so the preview
+  did not say "changed, your version kept". Both comparisons now include these; IDs that are not portable (serving
+  IDs, food IDs of items) are left out, and an icon change does not count. The import itself already kept the local
+  version. Database test (both halves failed before). Import/export Vitest (61), archive and data e2e, lint pass.
 
 ## After rc.10 (owner, 2026-11-24)
 
