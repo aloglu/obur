@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { weightFixed } from '#lib/shared/weight-unit.ts';
+	import { weightChangeText, weightFixed } from '#lib/shared/weight-unit.ts';
 	import { weightUnit } from '#lib/client/weight-unit.ts';
 	// docs/ui.md, "Achievements, Journal and Help": the month's weeks, newest first, each a summary line and only the
 	// moments that mattered. Achievements show as small versions of their badges and open the badge page; other
@@ -19,7 +19,7 @@
 
 	// Weights and changes in the person's unit.
 	const kg = (v: number) => weightFixed(v, weightUnit());
-	const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${kg(Math.abs(v))}`;
+	const signed = (v: number) => weightChangeText(v, weightUnit());
 	const day = (date: string) => shortDay(date);
 	// "26–31 Oct", or "1 Oct" for a week of one day.
 	function span(w: JournalWeek): string {
@@ -76,7 +76,7 @@
 					<span
 						class={[
 							'text-[0.875rem] font-[650] whitespace-nowrap tabular-nums',
-							w.weightChange < 0 ? 'text-good' : 'text-muted'
+							signed(w.weightChange).startsWith('−') ? 'text-good' : 'text-muted'
 						]}>{signed(w.weightChange)} {weightUnit()}</span
 					>
 				{/if}

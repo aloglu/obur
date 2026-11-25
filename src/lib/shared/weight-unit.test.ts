@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fromKg, typedKg, weightFixed, weightText } from './weight-unit.ts';
+import { fromKg, typedKg, weightChangeText, weightFixed, weightText } from './weight-unit.ts';
 
 describe('weight unit', () => {
 	it('shows stored kilograms in either unit', () => {
@@ -16,5 +16,16 @@ describe('weight unit', () => {
 			expect(weightText(kg, 'lb')).toBe(`${lb} lb`);
 		}
 		expect(typedKg(84.65, 'kg')).toBe(84.65);
+	});
+});
+
+describe('a weight change in the person’s unit (2026-11-25 Review.md audit, 1.5)', () => {
+	it('rounds in the unit shown, and its sign follows what is shown', () => {
+		const lb = 0.45359237;
+		expect(weightChangeText(-1 * lb, 'lb')).toBe('−1.0');
+		expect(weightChangeText(-0.5 * lb, 'lb')).toBe('−0.5');
+		expect(weightChangeText(-0.1 * lb, 'lb')).toBe('−0.1');
+		expect(weightChangeText(0.02, 'kg')).toBe('±0.0');
+		expect(weightChangeText(0.2, 'kg')).toBe('+0.2');
 	});
 });

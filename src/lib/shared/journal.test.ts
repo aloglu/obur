@@ -96,6 +96,19 @@ describe('journal weeks', () => {
 		// 1–4 October recorded nothing, so it is left out.
 		expect(weeks.map((w) => w.weightChange)).toEqual([0.2, -0.8]);
 	});
+
+	it('keeps the change unrounded, for the unit shown to round (2026-11-25 Review.md audit, 1.5)', () => {
+		const weeks = journal(
+			input({
+				today: '2026-10-14',
+				readings: [
+					{ localDate: '2026-10-06', value: 90 },
+					{ localDate: '2026-10-13', value: 89.54640763 } // one pound less
+				]
+			})
+		);
+		expect(weeks[0].weightChange).toBeCloseTo(-0.45359237, 6);
+	});
 });
 
 describe('journal highlights', () => {

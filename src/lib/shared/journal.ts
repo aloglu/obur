@@ -132,7 +132,8 @@ export function journal(input: JournalInput): JournalWeek[] {
 			averageDiff: mean(budgeted.map((d) => d.eatenKcal - d.budgetKcal!)),
 			weightChange:
 				lastBefore !== null && lastWithin !== null
-					? Math.round((lastWithin - lastBefore) * 10) / 10
+					? // Unrounded: the unit shown rounds it (2026-11-25 Review.md audit, 1.5: −1.0 lb showed as −1.1).
+						Math.round((lastWithin - lastBefore) * 1e6) / 1e6
 					: null,
 			events
 		});

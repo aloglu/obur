@@ -31,6 +31,9 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   "total" with the excluding-fibre number's code mismatch, so fibre came off twice). A typed carbohydrate replaces an
   imported one of unstated definition. Rules in `shared/food-edit.ts` with 4 unit tests (the imported-carbohydrate
   one failed before). scan, catalog, curated e2e (36) pass; check, lint pass.
+- Journal weight change done (1.5): the week's change was rounded to 0.1 kg before pounds (−1.0 lb showed −1.1 lb,
+  −0.1 lb ±0.0). It stays unrounded; `weightChangeText` rounds in the unit shown and takes the sign (and the green)
+  from that. 2 unit tests failed before. journal and pounds e2e (35), check, lint pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

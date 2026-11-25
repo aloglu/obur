@@ -27,6 +27,12 @@ export const weightNumber = (kg: number, unit: WeightUnit): string =>
 export const weightText = (kg: number, unit: WeightUnit): string =>
 	`${weightNumber(kg, unit)} ${unit}`;
 
+/** A change to one decimal with its sign, "−1.0", "+0.2" or "±0.0", rounded in the unit shown first. */
+export function weightChangeText(kg: number, unit: WeightUnit): string {
+	const shown = Math.round(fromKg(kg, unit) * 10) / 10;
+	return `${shown > 0 ? '+' : shown < 0 ? '−' : '±'}${fixedDecimal(Math.abs(shown), 1)}`;
+}
+
 /** One decimal, zero kept ("84.0", "185.2"): charts and summaries. */
 export const weightFixed = (kg: number, unit: WeightUnit): string =>
 	fixedDecimal(fromKg(kg, unit), 1);
