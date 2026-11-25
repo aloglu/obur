@@ -91,8 +91,15 @@ class Reader:
                 with Image.open(io.BytesIO(data)) as im:
                     if im.format not in ("JPEG", "PNG", "WEBP"):
                         raise ValueError("decode_failed")
-                    im = ImageOps.exif_transpose(im).convert("RGB")
+                    # One full-size copy at most (2026-11-25 Review.md audit, 3.4: three, ~450 MB for a 50 MP photo in a
+                    # 1 GiB container): a JPEG decodes at the smallest scale still twice MAX_SIDE (as thumbnail() would on
+                    # its own; readings unchanged on the private label sets), it turns in place, and
+                    # it becomes RGB only once small.
+                    im.draft("RGB", (MAX_SIDE * 2, MAX_SIDE * 2))
+                    ImageOps.exif_transpose(im, in_place=True)
                     im.thumbnail((MAX_SIDE, MAX_SIDE))
+                    if im.mode != "RGB":
+                        im = im.convert("RGB")
                     sharp = sharpness(np.asarray(im.convert("L")))
                     pixels = np.asarray(im)[:, :, ::-1].copy()  # RGB -> BGR, as RapidOCR expects
                 result = self.engine(pixels)

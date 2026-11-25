@@ -91,6 +91,13 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   border the nutrient fields have. An import into an account that keeps its own targets no longer writes LoseIt
   identities for the targets it left out. Tests that failed before: 2 e2e (`catalog.e2e.ts`), 1 database test.
   Full browser suite: 363 passed, 0 failed, 67 skipped. check, lint pass.
+- Label add-on memory done (3.4): a photo was turned and made RGB at full size before it was made smaller, so a
+  large one held three full copies. A JPEG now decodes at the smallest scale still twice the reading size (what
+  Pillow's thumbnail does by itself), turns in place, and becomes RGB once small. Measured on a 50 MP JPEG: peak
+  690 → 478 MB. Readings on the private label photos are unchanged: development full-size 71/85 right, 1 wrong;
+  held-out full-size 79/104, 4 wrong; held-out phone-size (what the app sends) 80/104, 3 wrong, before and after.
+  Decoding at the reading size itself saved more but changed readings (one more wrong value), so it was not kept.
+  `deploy/addon-test.sh … labels` passes.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 
