@@ -116,6 +116,10 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   change props). The image no longer carries the parser's test sentences (`fixtures.ts` removed with the tests).
   Vitest 1,297 pass. Full browser suite: 363 passed, 1 failed, 68 skipped; the failure was the known phone WebKit
   pounds test ("navigation interrupted … /more/units", seen before this work), and pounds.e2e passed 4 of 4 repeats.
+- After all of it: `obur:test` image built, test sentences absent from it, `deploy/obur/smoke-test.sh` passes.
+  Not run: off-site, restore-interrupt and upgrade image tests (no change to backups or upgrades here; the release
+  workflow runs them), Firefox Speak, real-phone checks. Next: the owner decides on a release candidate; before the
+  tag, audit only the changes since rc.10 (owner, 2026-11-25).
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 
