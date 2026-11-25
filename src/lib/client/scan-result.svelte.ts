@@ -1,5 +1,6 @@
 // What the Scan sheet read, handed to the page that shows it as a food form (Check the label). Kept in memory only:
 // the photo stays on this phone as an object URL and is never stored or sent again.
+import { scannedNutrients } from '#lib/shared/food-edit.ts';
 import type { FoodDetail } from '#lib/shared/food-types.ts';
 import type { LabelNote } from '#lib/shared/label-notes.ts';
 import type { NutrientValue } from '#lib/shared/nutrients.ts';
@@ -63,11 +64,8 @@ export function proposalFood(p: LabelProposal): FoodDetail {
 		version: 0,
 		mine: true,
 		derivedFrom: null,
-		// A stated sodium makes the form treat the label as American (carbohydrate as total); with salt there too,
-		// as on Turkish and EU labels, salt is enough.
-		nutrients: p.nutrients.some((n) => n.code === 'salt')
-			? p.nutrients.filter((n) => n.code !== 'sodium')
-			: p.nutrients,
+		// Salt, or sodium alone as on an American label, whose carbohydrate is then the total (food-edit.ts).
+		nutrients: scannedNutrients(p.nutrients),
 		servings: [],
 		warnings: []
 	};

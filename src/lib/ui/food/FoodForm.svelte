@@ -11,10 +11,13 @@
 	import type { FoodDetail } from '#lib/shared/food-types.ts';
 	import {
 		EXTRA_CODES,
+		formRowValue,
+		labelTypeOf,
 		labelValueText,
 		parseLabelValue,
 		portionSource,
-		preservedNutrients
+		preservedNutrients,
+		type LabelType
 	} from '#lib/shared/food-edit.ts';
 	import { deriveNutrients, type NutrientCode, type NutrientValue } from '#lib/shared/nutrients.ts';
 	import { formatDecimal, parseDecimal } from '#lib/shared/numbers.ts';
@@ -115,10 +118,8 @@
 		);
 
 	const reported = (code: NutrientCode) => reportedIn(start?.nutrients ?? [], code);
-	const labelTypeOf = (nutrients: NutrientValue[]) =>
-		reportedIn(nutrients, 'carbohydrate_total') || reportedIn(nutrients, 'sodium') ? 'us' : 'eu';
 
-	let labelType = $state<'eu' | 'us'>(labelTypeOf(start?.nutrients ?? []));
+	let labelType = $state<LabelType>(labelTypeOf(start?.nutrients ?? []));
 	const codeFor = (field: Field): NutrientCode =>
 		field === 'carbohydrate'
 			? labelType === 'eu'
@@ -128,17 +129,12 @@
 				? 'sodium'
 				: field;
 
-	function initialRow(
-		field: Field,
-		find: (code: NutrientCode) => NutrientValue | undefined = reported
-	) {
-		const codes: NutrientCode[] =
-			field === 'carbohydrate'
-				? ['carbohydrate_excl_fibre', 'carbohydrate_total']
-				: field === 'salt'
-					? ['salt', 'sodium']
-					: [field];
-		const found = codes.map(find).find(Boolean);
+	// Carbohydrate and salt follow the label type (food-edit.ts); the other rows are their own code.
+	function initialRow(field: Field, nutrients = start?.nutrients ?? [], type = labelType) {
+		const found =
+			field === 'carbohydrate' || field === 'salt'
+				? formRowValue(nutrients, field, type)
+				: reportedIn(nutrients, field);
 		return { text: found ? labelValueText(found) : '' };
 	}
 
@@ -280,12 +276,15 @@
 		food: Pick<FoodDetail, 'basis' | 'servingLabel' | 'servingSize' | 'nutrients'>
 	) {
 		const find = (code: NutrientCode) => reportedIn(food.nutrients, code);
-		labelType = labelTypeOf(food.nutrients);
+		const type = labelTypeOf(food.nutrients);
+		labelType = type;
 		basis = food.basis;
 		servingLabel = food.servingLabel ?? '';
 		servingSizeText = food.servingSize ? formatDecimal(food.servingSize.amount, 4) : '';
 		servingSizeUnit = food.servingSize?.unit ?? 'g';
-		rows = Object.fromEntries(FIELDS.map((f) => [f, initialRow(f, find)])) as typeof rows;
+		rows = Object.fromEntries(
+			FIELDS.map((f) => [f, initialRow(f, food.nutrients, type)])
+		) as typeof rows;
 		extras = extraRows(find);
 		if (EXTRA_CODES.some((c) => extras[c].text !== '')) extrasShown = true;
 	}

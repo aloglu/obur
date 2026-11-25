@@ -24,6 +24,13 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   the first number ("for an hour" → 1 kcal; now the number said with kcal, kg or lb, else the first); ".5 lb" was
   5 lb and "1,250.5 kcal" lost .5. Four tests failed before. Private sentences: nl-cases 44/48 (same); all 194 real
   typed and heard sentences in ~/obur-private parse exactly as before. check, lint pass.
+- Food form carbohydrate and salt done (1.3, 1.4): the label type now follows the carbohydrate's definition first,
+  then sodium without salt; the carbohydrate row shows only that type's own value, and the salt row salt or sodium
+  in its unit (the other one converted by the EU rule, salt = sodium × 2.5; grams no longer appear in the mg row). A
+  scanned label with sodium and no salt is American, so its carbohydrate is saved as the total (it was saved as
+  "total" with the excluding-fibre number's code mismatch, so fibre came off twice). A typed carbohydrate replaces an
+  imported one of unstated definition. Rules in `shared/food-edit.ts` with 4 unit tests (the imported-carbohydrate
+  one failed before). scan, catalog, curated e2e (36) pass; check, lint pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 
