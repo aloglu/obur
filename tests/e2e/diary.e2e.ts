@@ -485,3 +485,21 @@ test('every nested page has the same "<" beside its title, leading one level up'
 		await expect(page, path).toHaveURL(lands);
 	}
 });
+
+test('the Log tab starts afresh after Log opened for another day and meal (2026-11-25 Review.md audit, 2.5)', async ({
+	page
+}) => {
+	await signedInAs(page, 'Ayşe');
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Previous day' }).click();
+	await meal(page, 'Breakfast').getByRole('button', { name: 'Add food to Breakfast' }).click();
+	await expect(page).toHaveURL(/\/log\?.*date=/);
+	await expect(page.getByText('Adding to Breakfast · Yesterday')).toBeVisible();
+	await page
+		.getByRole('navigation', { name: 'Main' })
+		.filter({ visible: true })
+		.getByRole('link', { name: 'Log' })
+		.click();
+	await expect(page).toHaveURL(/\/log$/);
+	await expect(page.getByText(/^Adding to /)).toHaveCount(0);
+});

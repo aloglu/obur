@@ -27,20 +27,23 @@
 
 	let { data } = $props();
 
-	const params = page.url.searchParams;
-	const requestedDate = params.get('date');
+	// Read from the address each time it changes: the Log tab from "/log?meal=breakfast&date=…" is the same page, so a
+	// value read once kept that day and meal (2026-11-25 Review.md audit, 2.5). A meal or food picked here holds
+	// until the address changes.
+	const params = $derived(page.url.searchParams);
+	const requestedDate = $derived(params.get('date'));
 	const date = $derived(
 		requestedDate && isIsoDate(requestedDate) && requestedDate <= data.today
 			? requestedDate
 			: data.today
 	);
-	const requestedMeal = params.get('meal');
-	let preset = $state<Meal | null>(
+	const requestedMeal = $derived(params.get('meal'));
+	let preset = $derived<Meal | null>(
 		MEALS.includes(requestedMeal as Meal) ? (requestedMeal as Meal) : null
 	);
 	// A link may open a food's amount sheet (after a label scan, say); nothing is logged until Save.
-	const requestedFood = params.get('food');
-	let picking = $state<string | null>(
+	const requestedFood = $derived(params.get('food'));
+	let picking = $derived<string | null>(
 		requestedFood && /^[0-9a-f-]{36}$/i.test(requestedFood) ? requestedFood : null
 	);
 	let quick = $state(false);
@@ -50,7 +53,7 @@
 	let speaking = $state(false);
 	let heard = $state(false);
 	// Scan a label opens as a sheet, like Speak; "?scan=1" opens it (Check the label opened without a reading).
-	let scanning = $state(untrack(() => data.scan) && params.get('scan') === '1');
+	let scanning = $state(untrack(() => data.scan && params.get('scan') === '1'));
 	const sheetMeal = $derived(preset ?? defaultMeal(new Date(), deviceZone()));
 
 	/** What the Scan sheet read (or Fill in by hand) goes to Check the label. */

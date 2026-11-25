@@ -40,6 +40,9 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   today when Profile says pregnant, breastfeeding or under 18 (it stayed, with no way to clear it); the budget
   stays. 2 database tests failed before. goals and progress Vitest (38), achievements and goals e2e (27), check,
   lint pass.
+- Log tab done (2.5): Log read its day and meal from the address once, so the Log tab after "Add food" on yesterday
+  kept yesterday and Breakfast. They now follow the address. New e2e test in `diary.e2e.ts` (failed before).
+  diary, typed-entry, scan, connection e2e (116) pass in the container; check, lint pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 
