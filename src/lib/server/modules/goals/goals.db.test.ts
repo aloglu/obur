@@ -134,6 +134,35 @@ describe('calculated targets', () => {
 });
 
 describe('a goal weight with a budget set by hand', () => {
+	it('ends from today when the profile no longer allows it; the budget stays (2026-11-25 Review.md audit, 1.6)', async () => {
+		await goals.setTarget(
+			MEHMET,
+			{ mode: 'manual', effectiveFrom: '2026-06-01', budgetKcal: 2100, goalWeightKg: 82 },
+			null
+		);
+		const { outcome, target } = await goals.updateDetails(MEHMET, '2026-06-10', 90, {
+			...adult,
+			sex: 'female',
+			pregnant: true
+		});
+		expect(outcome).toEqual({ kind: 'unchanged' });
+		expect(target).toMatchObject({ mode: 'manual', baseBurnKcal: 2100, goalWeightKg: null });
+		expect(await goals.targetFor(MEHMET, '2026-06-10')).toMatchObject({
+			mode: 'manual',
+			baseBurnKcal: 2100,
+			goalWeightKg: null
+		});
+		expect((await goals.targetFor(MEHMET, '2026-06-09'))?.goalWeightKg).toBe(82);
+		// Saving the same details again adds nothing.
+		const before = (await goals.history(MEHMET)).length;
+		await goals.updateDetails(MEHMET, '2026-06-10', 90, {
+			...adult,
+			sex: 'female',
+			pregnant: true
+		});
+		expect((await goals.history(MEHMET)).length).toBe(before);
+	});
+
 	it('is kept beside the budget, changes nothing in it, and survives other settings', async () => {
 		await goals.setTarget(
 			MEHMET,

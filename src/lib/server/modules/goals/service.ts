@@ -496,6 +496,36 @@ export function createGoals(db: Database) {
 					outcome,
 					target: row ? toVersion(row) : null
 				});
+				// A goal weight beside a budget set by hand ends from today when the new details no longer allow one: More →
+				// Goal no longer offers a way to clear it (2026-11-25 Review.md audit, 1.6). The budget stays.
+				if (
+					current?.mode === 'manual' &&
+					current.goalWeightKg !== null &&
+					!goalWeightAllowed(profileRow, today)
+				) {
+					const [row] = await tx
+						.insert(goalVersions)
+						.values({
+							userId,
+							effectiveFrom: today,
+							mode: current.mode,
+							baseBurnKcal: current.baseBurnKcal,
+							deficitKcal: current.deficitKcal,
+							floorKcal: current.floorKcal,
+							goalWeightKg: null,
+							inputs: {
+								...(current.inputs as Record<string, unknown>),
+								source: 'details',
+								reason: 'targets_not_allowed'
+							},
+							calculationVersion: current.calculationVersion,
+							countActivity: current.countActivity,
+							atGoal: current.atGoal,
+							...macroColumns(macroChoice(current), null)
+						})
+						.returning();
+					return done({ kind: 'unchanged' }, row);
+				}
 				if (current?.mode !== 'calculated') return done({ kind: 'unchanged' });
 				const request = {
 					...repeatRequest(current, today),

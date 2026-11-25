@@ -1132,6 +1132,8 @@
 	"achievements_weight_none": "İlk kilo girdinden itibaren her 2 kg'da bir.",
 	"achievements_weight_none_lb": "İlk kilo girdinden itibaren her 5 lb'de bir.",
 	"achievements_weight_off": "Kilo başarıları için Ayarlar → Hedef'te başladığın kilonun altında bir hedef kilo gerekir.",
+	"achievements_weight_off_birth": "Kilo başarıları için Ayarlar → Profil'de doğum tarihin gerekir.",
+	"achievements_weight_off_profile": "Kilo başarıları hamilelikte, emzirirken ve 18 yaşından önce kapalıdır.",
 	"achievements_streak_title": "Art arda tamamlanan günler",
 	"achievements_firsts_title": "İlkler",
 	"achievements_goal_title": "Hedef",

@@ -1132,6 +1132,8 @@
 	"achievements_weight_none": "One every 2 kg lost, from your first weigh-in.",
 	"achievements_weight_none_lb": "One every 5 lb lost, from your first weigh-in.",
 	"achievements_weight_off": "Weight achievements need a goal weight below where you started, in Settings → Goal.",
+	"achievements_weight_off_birth": "Weight achievements need your birth date, in Settings → Profile.",
+	"achievements_weight_off_profile": "Weight achievements are off during pregnancy and breastfeeding, and under 18.",
 	"achievements_streak_title": "Streaks of complete days",
 	"achievements_firsts_title": "Firsts",
 	"achievements_goal_title": "Goal",

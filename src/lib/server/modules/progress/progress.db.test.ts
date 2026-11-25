@@ -128,6 +128,20 @@ describe('achievements', () => {
 		expect(await progress.sync(AYSE, TODAY, ZONE)).toEqual([]);
 	});
 
+	it('say why weight is off: no goal below the start, no birth date, or the profile (2026-11-25 Review.md audit, 1.6)', async () => {
+		await adult(AYSE, 120);
+		await weigh(AYSE, '2026-06-01', 100);
+		const off = async () => (await service.sync(AYSE, TODAY, ZONE)).weightOff;
+		expect(await off()).toBe('goal');
+		await admin`update goal_versions set goal_weight_kg = 80 where user_id = ${AYSE}`;
+		expect(await off()).toBeNull();
+		// A goal weight beside a budget set by hand needs no birth date, but its achievements need a known adult age.
+		await admin`update profiles set birth_date = null where user_id = ${AYSE}`;
+		expect(await off()).toBe('birth_date');
+		await admin`update profiles set breastfeeding = true where user_id = ${AYSE}`;
+		expect(await off()).toBe('profile');
+	});
+
 	it('count streaks and firsts, in the person’s own day, and keep a recorded first voice log', async () => {
 		await admin`insert into day_completions (user_id, local_date)
 			select ${AYSE}, d::date from generate_series('2026-10-20'::date, '2026-10-26'::date, '1 day') d`;

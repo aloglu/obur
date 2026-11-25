@@ -34,6 +34,12 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
 - Journal weight change done (1.5): the week's change was rounded to 0.1 kg before pounds (−1.0 lb showed −1.1 lb,
   −0.1 lb ±0.0). It stays unrounded; `weightChangeText` rounds in the unit shown and takes the sign (and the green)
   from that. 2 unit tests failed before. journal and pounds e2e (35), check, lint pass.
+- Goal rules done (1.6): the owner kept "weight achievements need a known adult age" (design.md; my first plan
+  would have dropped it). Achievements now says why weight is off (no goal below the start, no birth date, or a
+  profile that rules it out) instead of always asking for a goal weight. A hand-set budget's goal weight ends from
+  today when Profile says pregnant, breastfeeding or under 18 (it stayed, with no way to clear it); the budget
+  stays. 2 database tests failed before. goals and progress Vitest (38), achievements and goals e2e (27), check,
+  lint pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 

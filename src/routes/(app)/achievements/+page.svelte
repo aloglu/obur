@@ -53,7 +53,11 @@
 						? pounds
 							? m.achievements_weight_none_lb()
 							: m.achievements_weight_none()
-						: m.achievements_weight_off()}
+						: data.weightOff === 'birth_date'
+							? m.achievements_weight_off_birth()
+							: data.weightOff === 'profile'
+								? m.achievements_weight_off_profile()
+								: m.achievements_weight_off()}
 			</p>
 		</div>
 		{#if data.weightAllowed || weights.length}

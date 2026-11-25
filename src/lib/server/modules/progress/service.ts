@@ -13,7 +13,10 @@ import {
 } from '../../../shared/achievements.ts';
 import { addDays } from '../../../shared/diary-rules.ts';
 import type { WeightUnit } from '../../../shared/weight-convert.ts';
-import { targetsAllowed } from '../../../shared/goals.ts';
+import { goalWeightAllowed } from '../../../shared/goals.ts';
+
+/** Why weight achievements are off: no goal below the start, no birth date, or a profile that rules them out. */
+export type WeightOff = 'goal' | 'birth_date' | 'profile';
 import { weightEntries } from '../body/index.ts';
 import { foods, recipes } from '../catalog/index.ts';
 import { dayCompletions, diaryEntries } from '../diary/index.ts';
@@ -44,7 +47,13 @@ export function createProgress(db: Database) {
 			userId: string,
 			today: string,
 			zone: string
-		): Promise<{ list: StoredAchievement[]; weightAllowed: boolean; weightUnit: WeightUnit }> {
+		): Promise<{
+			list: StoredAchievement[];
+			weightAllowed: boolean;
+			/** Why weight achievements are off, for Achievements to say (2026-11-25 Review.md audit, 1.6). */
+			weightOff: WeightOff | null;
+			weightUnit: WeightUnit;
+		}> {
 			return withUser(db, userId, async (tx) => {
 				const [readings, completed, goals, [profile], [scan], [recipe], stored, [logged]] =
 					await Promise.all([
@@ -110,14 +119,18 @@ export function createProgress(db: Database) {
 					(latest.goalWeightKg !== null
 						? start !== null && latest.goalWeightKg < start
 						: latest.deficitKcal > 0);
+				// A known adult age is needed (docs/design.md, "Achievements"; owner kept it, 2026-11-25), though a goal
+				// weight beside a budget set by hand needs only no known reason against it.
 				const birthDate = profile?.birthDate ?? null;
-				const weightAllowed =
-					losing &&
-					birthDate !== null &&
-					targetsAllowed(
-						{ birthDate, pregnant: profile!.pregnant, breastfeeding: profile!.breastfeeding },
-						today
-					);
+				const weightOff: WeightOff | null =
+					profile && !goalWeightAllowed(profile, today)
+						? 'profile'
+						: !losing
+							? 'goal'
+							: birthDate === null
+								? 'birth_date'
+								: null;
+				const weightAllowed = weightOff === null;
 
 				const weightUnit: WeightUnit = profile?.weightUnit ?? 'kg';
 				const voice = stored.find((r) => r.kind === 'first' && r.level === 'voice');
@@ -208,7 +221,7 @@ export function createProgress(db: Database) {
 								.sort((a, b) =>
 									a.achievedOn < b.achievedOn ? -1 : a.achievedOn > b.achievedOn ? 1 : 0
 								);
-				return { list: rows.map(parse), weightAllowed, weightUnit };
+				return { list: rows.map(parse), weightAllowed, weightOff, weightUnit };
 			});
 		},
 

@@ -5,5 +5,6 @@ export {
 	CELEBRATE_DAYS,
 	createProgress,
 	type Progress,
-	type StoredAchievement
+	type StoredAchievement,
+	type WeightOff
 } from './service.ts';

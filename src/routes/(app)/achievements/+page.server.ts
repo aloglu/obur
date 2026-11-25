@@ -7,10 +7,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Worked out here rather than taken from the layout: the layout's data refreshes on its own, and a page that
 	// read it would be loaded again with it.
 	const today = localDate(new Date(), locals.zone);
-	const { list, weightAllowed, weightUnit } = await progress.sync(
+	const { list, weightAllowed, weightOff, weightUnit } = await progress.sync(
 		locals.session!.userId,
 		today,
 		locals.zone
 	);
-	return { achievements: list, next: nextUp(list, weightUnit), weightAllowed, weightUnit };
+	return {
+		achievements: list,
+		next: nextUp(list, weightUnit),
+		weightAllowed,
+		weightOff,
+		weightUnit
+	};
 };
