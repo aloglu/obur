@@ -66,10 +66,15 @@ function tokenize(text: string): Token[] {
 	// separators. Apostrophes split a suffix off ("Lunch'ta" → "Lunch", "ta"); "200g" becomes "200", "g".
 	for (const m of text
 		.normalize('NFC')
-		.matchAll(/\d+\s*\/\s*\d+|[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]|\d+(?:[.,]\d+)?|%|[\p{L}]+|[,+;]/gu)) {
+		// "1,250.5" whole; ".5" as a number (2026-11-25 Review.md audit, 1.10: read as 1,250 and 5).
+		.matchAll(
+			/\d+\s*\/\s*\d+|[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]|\d{1,3}(?:,\d{3})+\.\d+|\d+(?:[.,]\d+)?|(?<!\d)\.\d+|%|[\p{L}]+|[,+;]/gu
+		)) {
 		const raw = m[0];
 		out.push(
-			raw === ',' || raw === '+' || raw === ';' ? { raw, f: raw, sep: true } : { raw, f: fold(raw) }
+			raw === ',' || raw === '+' || raw === ';'
+				? { raw, f: raw, sep: true }
+				: { raw, f: raw.startsWith('.') ? `0${raw}` : fold(raw) }
 		);
 	}
 	return out;
@@ -227,7 +232,8 @@ function readNumbers(tokens: Token[]): Token[] {
 				? Number(t.f.replace(/,/g, ''))
 				: Number(t.f.replace(',', '.'));
 			let used = 1;
-			if (at(i + 1) === 'percent') {
+			// "2% milk": a percentage after its number, unless the % starts the next one ("1 %2 süt").
+			if (at(i + 1) === 'percent' || (at(i + 1) === '%' && !/^\d/.test(at(i + 2) ?? ''))) {
 				out.push({ raw: `%${value}`, f: `%${value}` });
 				i += 2;
 				continue;
@@ -322,7 +328,9 @@ function wordNumber(tokens: Token[], k: number, afterPercent = false): [number |
 	for (;;) {
 		const w = f(j);
 		if (w === 'on' && !(afterPercent || any || isUnitWord(f(j + 1)) || f(j + 1) in UNITS_TR)) break;
-		if (w in UNITS_TR && !(w === 'bir' && any)) current += UNITS_TR[w];
+		// "bir" after a number is a number only to fill its last digit: "seksen bir" is 81 (2026-11-25 Review.md
+		// audit, 1.10: it was 80), "iki bir" is not 3.
+		if (w in UNITS_TR && !(w === 'bir' && any && current % 10 !== 0)) current += UNITS_TR[w];
 		else if (w in TENS_TR) current += TENS_TR[w];
 		else if (w in SMALL_EN) current += SMALL_EN[w];
 		else if (w in TENS_EN) current += TENS_EN[w];
@@ -344,7 +352,7 @@ function wordNumber(tokens: Token[], k: number, afterPercent = false): [number |
 // Units ----------------------------------------------------------------------------------------------------------
 
 /** "2,000", "12,500", "1,000,000"; not "0,250" (a decimal). */
-const THOUSANDS = /^[1-9]\d{0,2}(,\d{3})+$/;
+const THOUSANDS = /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/;
 /** Exact by definition: the avoirdupois ounce and pound, and the US fluid ounce. */
 const G_PER_LB = KG_PER_LB * 1000;
 const OUNCE = /^(oz|ozs|ounce|ounces)$/;
@@ -686,8 +694,15 @@ export function parseEntry(text: string, todayWeekday: number): ParseResult {
 				/^(geldim|ciktim|oldum|gosterdi|cikti|geliyorum|cikiyorum)$/.test(rest[k + 1]?.f ?? '')) ||
 			(t.f === 'tarti' && /^(gosterdi|dedi)$/.test(rest.at(-1)?.f ?? ''))
 	);
+	// The number said with the unit ("burned 450 calories", "81.5 kg"), else the first one: "for an hour" and
+	// "30 minutes" are not the value (2026-11-25 Review.md audit, 1.10).
+	const valueBefore = (unit: (f: string) => boolean) =>
+		(
+			rest.find((t, k) => t.n !== undefined && unit(rest[k + 1]?.f ?? '')) ??
+			rest.find((t) => t.n !== undefined)
+		)?.n;
 	if (weighIn) {
-		const value = rest.find((t) => t.n !== undefined)?.n;
+		const value = valueBefore((f) => KILO_WORD.test(f) || POUND_WORD.test(f));
 		const unit = rest.some((t) => POUND_WORD.test(t.f))
 			? 'lb'
 			: rest.some((t) => KILO_WORD.test(t.f))
@@ -697,7 +712,7 @@ export function parseEntry(text: string, todayWeekday: number): ParseResult {
 	}
 	// Activity: "450 kalori yaktım", "I burned 450 calories walking".
 	if (rest.some((t) => BURN_WORD.test(t.f))) {
-		const value = rest.find((t) => t.n !== undefined)?.n;
+		const value = valueBefore((f) => unitOf(f)?.kind === 'kcal');
 		const note = words(rest.filter((t) => !BURN_WORD.test(t.f) && !unitOf(t.f)));
 		return value === undefined
 			? empty

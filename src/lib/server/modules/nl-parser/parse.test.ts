@@ -68,3 +68,47 @@ describe('parseEntry: edges', () => {
 		expect((first('8 fluid ounces milk') as { amount: number }).amount).toBeCloseTo(236.588, 3);
 	});
 });
+
+describe('parseEntry: cases from the 2026-11-25 Review.md audit (1.10)', () => {
+	const items = (text: string) => parseEntry(text, TODAY_WEEKDAY).items;
+
+	it('reads Turkish numbers ending in "bir"', () => {
+		expect(items('seksen bir kiloydum')).toEqual([{ kind: 'weight', value: 81, unit: 'kg' }]);
+		expect(items('yirmi bir gram fındık')).toEqual([
+			{ kind: 'food', text: 'fındık', amount: 21, unit: { kind: 'g' }, vague: false }
+		]);
+		expect(items('yüz bir gram peynir')[0]).toMatchObject({ amount: 101, unit: { kind: 'g' } });
+		expect(items('on bir gram ceviz')[0]).toMatchObject({ amount: 11, unit: { kind: 'g' } });
+	});
+
+	it('keeps a percentage written after its number in the food name', () => {
+		expect(items('2% milk, 250 ml')).toEqual([
+			{ kind: 'food', text: '%2 milk', amount: 250, unit: { kind: 'ml' }, vague: false }
+		]);
+		expect(items('0% Greek yogurt, 150g')).toEqual([
+			{ kind: 'food', text: '%0 Greek yogurt', amount: 150, unit: { kind: 'g' }, vague: false }
+		]);
+	});
+
+	it('takes the calories of an activity and the weight of a weigh-in, not the first number', () => {
+		expect(items('Ran for an hour and burned 600 calories')[0]).toMatchObject({
+			kind: 'activity',
+			kcal: 600
+		});
+		expect(items('I ran for 30 minutes and burned 450 calories')[0]).toMatchObject({
+			kind: 'activity',
+			kcal: 450
+		});
+		expect(items('after 2 coffees I weighed 81.5 kg')).toEqual([
+			{ kind: 'weight', value: 81.5, unit: 'kg' }
+		]);
+	});
+
+	it('reads a leading decimal point and thousands with decimals', () => {
+		expect(items('.5 lb ground beef')[0]).toMatchObject({
+			text: 'ground beef',
+			amount: 0.5 * 453.59237
+		});
+		expect(items('1,250.5 kcal')).toEqual([{ kind: 'quick', kcal: 1250.5, description: null }]);
+	});
+});

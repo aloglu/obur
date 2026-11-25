@@ -19,6 +19,11 @@ providers and Speak, menus and stale settings, races, the rest of 2.9, section 3
   before. Private label sets (scripts/label-eval.ts) after the change, before → after: development B-1280 71/85
   right, 1 wrong (same); A-1280 52, 7 wrong (same); C-1280 57 → 58 right, 2 wrong; held-out 80/104, 3 wrong (same);
   basis unchanged. check, lint pass.
+- Text parser done (1.10): "seksen bir" was 80 ("bir" after a number now fills its last digit, "iki bir" is not
+  3); "2% milk, 250 ml" kept 2 as the amount (a % after its number stays in the name); an activity or weigh-in took
+  the first number ("for an hour" → 1 kcal; now the number said with kcal, kg or lb, else the first); ".5 lb" was
+  5 lb and "1,250.5 kcal" lost .5. Four tests failed before. Private sentences: nl-cases 44/48 (same); all 194 real
+  typed and heard sentences in ~/obur-private parse exactly as before. check, lint pass.
 
 ## Outside audit, 2026-11-25 (owner's go: fix all six, in this order)
 
