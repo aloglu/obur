@@ -27,6 +27,23 @@ test('signed-out visitors land on sign-in, served with self-hosted assets only',
 	expect(fontsLoaded.join(' ')).toMatch(/Bricolage Grotesque Variable/);
 });
 
+test('the sign-in page arrives without the unsupported-passkeys warning, so the button does not move', async ({
+	request
+}) => {
+	// The server can't run the browser's passkey check; the warning used to arrive in the page and vanish (2026-11-26).
+	const html = await (await request.get('/login')).text();
+	expect(html).toContain('Sign in with a passkey');
+	expect(html).not.toContain('support passkeys');
+});
+
+test('a browser without passkeys still sees the warning on sign-in', async ({ page }) => {
+	await page.addInitScript(() => {
+		delete (globalThis as { PublicKeyCredential?: unknown }).PublicKeyCredential;
+	});
+	await page.goto('/login');
+	await expect(page.getByText("This browser doesn't support passkeys.")).toBeVisible();
+});
+
 test('sends hardening headers and rejects cross-site state changes', async ({
 	request,
 	baseURL

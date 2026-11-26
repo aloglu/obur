@@ -1,6 +1,7 @@
 <script lang="ts">
 	// docs/ui.md "Signing in and first day": the icon and name centred on the screen, one button low, no subtitle or invite
 	// line. Anything above the button (a warning) pushes the name up rather than covering it.
+	import { onMount } from 'svelte';
 	import KeyRound from '@lucide/svelte/icons/key-round';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -12,6 +13,10 @@
 
 	let busy = $state(false);
 	let problem = $state('');
+	// The server can't tell, so it assumes support and the browser checks once the page is up: otherwise the warning
+	// arrived in every page and vanished, moving the button (owner report 2026-11-26).
+	let supported = $state(true);
+	onMount(() => (supported = passkeysSupported()));
 
 	async function start() {
 		busy = true;
@@ -50,7 +55,7 @@
 		</p>
 	</div>
 	<div class="act relative flex flex-col justify-end gap-2.5">
-		{#if !passkeysSupported()}<Notice>{m.error_unsupported()}</Notice>{/if}
+		{#if !supported}<Notice>{m.error_unsupported()}</Notice>{/if}
 		{#if problem}<Notice>{problem}</Notice>{/if}
 		<Button wide disabled={busy} onclick={start}>
 			<KeyRound size={20} aria-hidden="true" />

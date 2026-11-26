@@ -2,6 +2,15 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Sign-in warning flash, 2026-11-26 (owner report and go)
+
+The sign-in page's "This browser doesn't support passkeys." warning came in every server page (the server has no
+passkeys) and vanished once the browser checked, moving the button. Now the page assumes support and the browser
+checks after it is up; only a browser without passkeys shows the warning. New browser tests: the served page has no
+warning (fails on the old code, checked), and a browser without `PublicKeyCredential` still sees it. check, lint,
+app-shell and auth browser tests pass. Not run: the full browser suite, a real phone. Unreleased. Next: the owner goes
+through the rc.11 checklist.
+
 ## Dead-code check, 2026-11-26 (owner's go)
 
 knip (run once with npx, setup outside the repository) found little. Removed: the scaffold's empty Vitest browser
