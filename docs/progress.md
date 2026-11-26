@@ -2,6 +2,16 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Dead-code check, 2026-11-26 (owner's go)
+
+knip (run once with npx, setup outside the repository) found little. Removed: the scaffold's empty Vitest browser
+project (no `*.svelte.test.ts` files existed) with `@vitest/browser-playwright`, `vitest-browser-svelte` and the
+direct `playwright` entry (`@playwright/test` brings its own), and the unread `SAVED_MEAL_MAX_ITEMS` re-export. Kept:
+about 45 exports used only in their own file and 49 module types (harmless). False alarms: `archive-worker.ts` (loaded
+by path), fonts and Tailwind (CSS), inlang plugins (settings). All 1,470 messages are used; en and tr have the same
+keys. Not checked: repeated code, unused styles and static files. check, lint, Vitest 1,297, build pass; npm audit
+the 4 known moderates. Next: the owner goes through the rc.11 checklist.
+
 ## Release 1.0.0-rc.11 (2026-11-25, owner asked)
 
 Everything since rc.10: the 2026-11-25 outside audit (6 fixes), the Review.md audit (all items) and the audit of
