@@ -476,7 +476,7 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   units in the food form and the food chooser in Check and log (owner, 2026-10-31: one convention everywhere).
 - **Toolbar dropdowns** (`progress/RangeSelect.svelte`): one-tone tray with the chevron, beside tab-like controls.
 
-### Food icons (owner's choice 2026-10-30: OpenMoji)
+### Food icons (owner's choice 2026-10-30: OpenMoji; to be replaced by obur's own set, see below)
 
 - OpenMoji 15.1.0 food and drink icons (CC BY-SA 4.0; credit at the foot of More), bundled in `static/icons/food/`.
 - A food shows its chosen icon, else the one its name suggests (`shared/food-icons.ts`: English and Turkish words,
@@ -487,6 +487,50 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   owner found the bright tiles out of place in dark mode, 2026-10-30). Decorative: the name always sits beside it.
 - The food form's and recipe editor's **Icon** row shows the current icon and whether it is suggested or chosen; **Change icon** opens a
   picker (search in English or Turkish, a grid of tiles, "Use the suggestion from the name" when one is chosen).
+
+#### Our own food icon set (owner's decision 2026-11-27; planned, not started)
+
+OpenMoji stays until obur's own set replaces it. Status: the decisions below are the owner's **requirements**; the
+method, numbers and order are **provisional** plans from the 2026-11-27 discussion; the cost figures are **estimates**
+from an 8-icon pilot, not measurements.
+
+- **Requirement: one style, entirely obur's own.** No mixing of icon styles, however alike. No third-party icons in the
+  set: neither OpenMoji nor Iconito nor any other pack. OpenMoji is replaced in one switch once the set covers
+  everything it covers now; until then the app shows OpenMoji only.
+- **The look:** flat, colour, no outlines, two or three tones per hue, a darker crescent on the lower right and a small
+  highlight; each drawing fills its square and reads at 29 px. This is the look of the Iconito pack the owner preferred
+  among three candidates (Iconito, Culinary Assets, Ingredient Atlas, compared on the Foods screen on 2026-11-27). Ours
+  are drawn from scratch; nothing is traced or copied. The palette may lean towards Pazar so the set is obur's own.
+  The owner liked an 8-icon pilot in this look (pear, cherries, apricot, pomegranate, eggplant, chicken şiş, chili,
+  Turkish coffee); those drawings can be kept.
+- **Method (provisional):**
+  1. A short written style guide: 1024 grid, a fixed palette per food family, the shading rule, legibility at 29 px.
+  2. Icons as source code in the repository: each drawing a few lines in a script with shared helpers (shading, stems,
+     leaves, plates, cups, bowls); a build step writes the SVGs, fits each to its square and minifies it. A palette or
+     shading change is one edit rebuilt across the set.
+  3. Batches of about 15. Each batch is rendered and checked, then shown to the owner on a review page (Foods rows,
+     close-up, light and dark, keep or redo per icon); redos go into the next batch.
+  4. English and Turkish words per icon as now; matching unchanged. Tests: every word points at an existing icon, and
+     a set of real Turkish names gets the expected icon.
+  5. Each icon drawn to read on both the light and dark tile (no separate dark files, unlike OpenMoji).
+- **The switch.** Chosen icons are stored as OpenMoji hexcodes (`foods.icon` with its format check, diary snapshots,
+  exports). Provisional: keep those values and map each hexcode to the new icon when shown, so no diary snapshot or old
+  archive is rewritten; new choices store the new names. The OpenMoji files and the CC BY-SA credit go at the switch;
+  the new set is MIT like the app.
+- **Size (provisional):** about 150 icons before the switch (the 133 foods mapped now plus about 15 fallbacks for whole
+  groups: soup, pastry, dessert, sauce, snack, drink, supplement and so on), then about 340 in all with Turkish staples
+  and dishes (~100) and the owner's own long tail (~50). Batch order: fruit, vegetables and legumes, bakery, dairy and
+  eggs, meat and fish, dishes, sweets, drinks, fallbacks; then the rest.
+- **Where the list comes from:** (1) the owner's own history: a script run on their own installation or LoseIt export
+  that lists, by how often logged, the food names that fall back to the plate; it reads only the owner's data, and the
+  output stays on their machine; (2) today's 133 mapped foods; (3) the Turkish national food composition database
+  (TÜRKOMP) as a checklist of names, after checking its terms; (4) Ingredient Atlas's CC0 catalogue names as a
+  checklist only; (5) USDA food groups and the "What We Eat in America" categories, so no group is missed.
+- **Estimated cost:** per batch about 30–60 minutes of Claude's work and 100–200k tokens (mostly re-read context),
+  plus 10–15 minutes of the owner's review; about 10 batches to the switch and about 23 for the whole set (roughly
+  20–30 hours spread over many sessions). Dishes take more redraws than fruit and vegetables.
+- **Open:** whether the achievement pictures (`static/icons/achievements/`, also OpenMoji) are redrawn in the same
+  set. The owner has not decided this yet.
 
 ### Icons
 

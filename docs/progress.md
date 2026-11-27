@@ -2,6 +2,16 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Own food icon set: decided, not started (2026-11-27)
+
+The owner compared three icon packs on demo Foods screens (Iconito, Culinary Assets, Ingredient Atlas; private Claude
+artifacts, not in the repository), preferred Iconito's look, and liked an 8-icon pilot drawn in that look. The owner's
+decision: obur gets its own icon set in one style. Nothing from Iconito or OpenMoji goes into it, and styles are never
+mixed. OpenMoji stays until the switch. The plan is recorded in `docs/ui.md`, "Our own food icon set", and in the
+`docs/design.md` roadmap. No code changed. Next, only on the owner's go: the style guide and the owner's history script
+(the foods that fall back to the plate, by frequency), then the first batch (fruit). Open: whether achievement
+pictures are redrawn too.
+
 ## Sign-in warning flash, 2026-11-26 (owner report and go)
 
 The sign-in page's "This browser doesn't support passkeys." warning came in every server page (the server has no
