@@ -502,7 +502,7 @@ from an 8-icon pilot, not measurements.
   among three candidates (Iconito, Culinary Assets, Ingredient Atlas, compared on the Foods screen on 2026-11-27). Ours
   are drawn from scratch; nothing is traced or copied. The palette may lean towards Pazar so the set is obur's own.
   The owner liked an 8-icon pilot in this look (pear, cherries, apricot, pomegranate, eggplant, chicken şiş, chili,
-  Turkish coffee); those drawings can be kept.
+  Turkish coffee); those drawings are kept in `assets/food-icons/` (source in `build.ts`, built files in `svg/`).
 - **Method (provisional):**
   1. A short written style guide: 1024 grid, a fixed palette per food family, the shading rule, legibility at 29 px.
   2. Icons as source code in the repository: each drawing a few lines in a script with shared helpers (shading, stems,
