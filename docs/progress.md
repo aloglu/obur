@@ -11,7 +11,8 @@ mixed. OpenMoji stays until the switch. The plan is recorded in `docs/ui.md`, "O
 `docs/design.md` roadmap. The 8 pilot drawings are kept at the owner's request in `assets/food-icons/` (`build.ts`
 draws them as code and writes `svg/`; not used by the app). The build was run once here through the preinstalled
 Playwright (this container has Node 22, so `npm ci` refuses), and its output matched the pilot. Not run: lint and
-check on `build.ts`. Next, only on the owner's go: the style guide and the owner's history script
+check on `build.ts`. Owner's go (2026-11-28): style guide, batch 1 (fruit) and the history script; achievement
+pictures are redrawn too (46 non-food pictures added before the switch). Earlier plan, now under way: the style guide and the owner's history script
 (the foods that fall back to the plate, by frequency), then the first batch (fruit). Open: whether achievement
 pictures are redrawn too.
 

@@ -488,7 +488,7 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
 - The food form's and recipe editor's **Icon** row shows the current icon and whether it is suggested or chosen; **Change icon** opens a
   picker (search in English or Turkish, a grid of tiles, "Use the suggestion from the name" when one is chosen).
 
-#### Our own food icon set (owner's decision 2026-11-27; planned, not started)
+#### Our own food icon set (owner's decision 2026-11-27; under way since 2026-11-28)
 
 OpenMoji stays until obur's own set replaces it. Status: the decisions below are the owner's **requirements**; the
 method, numbers and order are **provisional** plans from the 2026-11-27 discussion; the cost figures are **estimates**
@@ -529,8 +529,15 @@ from an 8-icon pilot, not measurements.
 - **Estimated cost:** per batch about 30–60 minutes of Claude's work and 100–200k tokens (mostly re-read context),
   plus 10–15 minutes of the owner's review; about 10 batches to the switch and about 23 for the whole set (roughly
   20–30 hours spread over many sessions). Dishes take more redraws than fruit and vegetables.
-- **Open:** whether the achievement pictures (`static/icons/achievements/`, also OpenMoji) are redrawn in the same
-  set. The owner has not decided this yet.
+- **Achievement pictures too (owner, 2026-11-28):** "our own system through and through". The achievements' 59
+  OpenMoji pictures (`static/icons/achievements/`, `shared/achievement-display.ts`) are redrawn in the same set: 13
+  are foods the set needs anyway, 46 are other things (animals, sports gear, household objects). They switch together
+  with the food icons, so the set needs about 200 icons before the switch (about 14 batches).
+- **How the owner reviews a batch (2026-11-28):** a private review page per batch. First a blind round: the new icons
+  without names, and the owner types what each looks like (a wrong guess means redraw). Then each icon in the Foods
+  rows at real size on a phone-sized screen, light and dark, beside icons already kept, plus a close-up; Keep or Redo
+  with a note per icon, saved on the page and read back from it. The owner also opens it on their phone. Before a page
+  goes out, every icon is rendered at 29 px on both tiles and in greyscale (does it rely on colour alone?).
 
 ### Icons
 
