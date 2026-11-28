@@ -2,7 +2,17 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Own icon set: batch 2 (vegetables and legumes) out for review (2026-11-28)
+## Own icon set: batch 2, 14 redos out as three versions each (2026-11-28)
+
+`batch2` verdicts: kept tomato, chili, eggplant, cucumber, garlic, mushroom, chestnut (7 of 21). Redo with notes: beans,
+bell pepper (not only red), broccoli (shorter stem, more texture), carrot, corn (rounded top), ginger ("a baby bear
+on its back"), herbs, leafy greens (a bunch, not a leaf), olives (leaf not attached), onion (shape), peanut, potato
+(more texture), peas (peas hard to see), seeds ("awful"). Lessons in STYLE.md (texture; the whole idea; even piles).
+42 drafts in `icons/drafts.ts`, each checked at row size on both tiles and in greyscale (beans, onion C, potatoes and
+the seed piles redrawn before going out). Pick page (same artifact as before) collection `picks_batch2`, empty when
+published. Next: read `picks_batch2`, move each pick into `icons/vegetables.ts` (replacing the round-1 drawing), delete
+the drafts; three versions again for any "None"; then batch 3 (bakery).
+
 
 19 new icons in `icons/vegetables.ts`, each drawn from the real thing's outline: tomato, olives, potato, carrot,
 corn, bell pepper, cucumber, leafy greens (romaine leaves), broccoli, garlic, onion, mushroom, ginger, peas (pod),

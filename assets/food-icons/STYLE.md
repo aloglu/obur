@@ -25,6 +25,12 @@ Every icon in the set follows these rules, so the 300th matches the first. The l
   from the last drawing or the last note alone. A banana is a gently curved band that tapers at both ends and has
   a stalk; a lemon is an oval with a small nub at each end; a pomegranate is nearly round with a crown of sepals.
   `polar()` and `band()` in `lib.ts` draw such outlines from a radius or a centre line.
+- **Texture where the food has it** (owner, batch 2): pits on a peanut shell, bumps on broccoli, eyes and specks on a
+  potato, kernels on corn, rings on a carrot. A plain smooth shape reads as a blob.
+- **Show the whole idea, not one part of it**: leafy greens are a head or a bunch, not a single leaf; a bell pepper
+  family is not only red; olives hang from the branch that bears the leaves (nothing floats unattached).
+- Small things in a pile (seeds, beans) are spread evenly (a spiral, not a line) and in a tone that stands out from
+  what they lie on.
 - Few confident shapes. A food is recognised by its silhouette first, then one telling detail (a seed pattern, a crown,
   a stone). Drop anything that doesn't help recognise it.
 - Cut it open when the inside is what identifies it (kiwi, avocado, citrus, melon, coconut). Put a whole one behind

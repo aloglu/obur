@@ -64,6 +64,15 @@ export const P = {
 	peanut: { hi: '#ECCDA0', base: '#D7AE77', dark: '#B48A52', deep: '#9C7442' },
 	chestnut: { hi: '#B9734A', base: '#8E4B2B', dark: '#68341C' },
 	grain: { hi: '#E3C48E', base: '#C9A46A', dark: '#A6824A', deep: '#7E6234' },
+	whiteBean: { hi: '#FFFFFF', base: '#EFE3CB', dark: '#CDB892' },
+	chickpea: { hi: '#F2D9AE', base: '#E0BB80', dark: '#BF975A' },
+	yellowPepper: { hi: '#FBE07A', base: '#F6C62E', dark: '#D49C12' },
+	greenPepper: { hi: '#8FC46A', base: '#4E9A3A', dark: '#357628' },
+	redPepper: { hi: '#F27466', base: '#E0352B', dark: '#B0201E' },
+	redOnion: { hi: '#C46A98', base: '#94386C', dark: '#6C2450', deep: '#521A3C' },
+	nut: { hi: '#E2AE85', base: '#C98B5E', dark: '#A26A40' },
+	wood: { hi: '#D7A46E', base: '#B7804A', dark: '#8F5F32' },
+	bowl: { hi: '#FFFFFF', base: '#F3EEE6', dark: '#D6CCBC' },
 	seed: '#2B2321',
 	stem: '#86542F'
 } as const;
