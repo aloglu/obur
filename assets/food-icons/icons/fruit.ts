@@ -38,16 +38,13 @@ fruit.apricot = svg(
 		`<path fill="${P.leaf.base}" d="M545 120C610 50 730 50 800 95C730 165 630 175 545 120Z"/>`
 );
 
+// Wider than tall, with a short crown: a tube whose sepals flare outward (owner's review, 2026-11-28).
+const POMEGRANATE =
+	'M512 300C690 300 872 405 888 610C904 800 742 942 512 942C282 942 120 800 136 610C152 405 334 300 512 300Z';
 fruit.pomegranate = svg(
-	`<path fill="${P.ruby.dark}" d="M395 290L405 140L465 205L512 105L559 205L619 140L629 290Z"/>` +
-		ramp(
-			circle(512, 590, 375),
-			P.ruby,
-			-70,
-			-55,
-			highlight(330, 470, 55, 95, 30, P.ruby.hi) +
-				`<path fill="${P.ruby.deep}" d="M440 255C470 235 554 235 584 255C560 275 464 275 440 255Z"/>`
-		)
+	`<path fill="${P.ruby.dark}" d="M432 330L438 250L398 190L462 214L486 160L512 206L538 160L562 214L626 190L586 250L592 330Z"/>` +
+		`<ellipse cx="512" cy="252" rx="62" ry="20" fill="${P.ruby.deep}"/>` +
+		ramp(POMEGRANATE, P.ruby, -70, -55, highlight(320, 520, 50, 90, 35, P.ruby.hi))
 );
 
 // --- Batch 1 (2026-11-28) ---
@@ -68,33 +65,37 @@ const appleTop = (body: Ramp, leafFill: string) =>
 fruit.apple = svg(appleTop(P.red, P.leaf.base));
 fruit.green_apple = svg(appleTop(P.greenApple, P.leaf.dark));
 
-// A crescent between two circles (outer centre 700,300 r 560; inner 740,230 r 470).
-const BANANA = 'M148 397A560 560 0 0 0 980 785L989 629A470 470 0 0 1 277 312Z';
+// A full crescent; the stem and tip are olive, not near-black, so they show on the dark tile (owner's review,
+// 2026-11-28: the first was too thin and lost its ends in dark mode).
+const BANANA =
+	'M215 250C150 520 290 820 590 890C760 930 890 870 945 770C905 745 855 740 790 752C620 784 470 690 405 520C372 432 362 350 366 250Z';
 fruit.banana = svg(
 	ramp(
 		BANANA,
 		P.banana,
 		45,
 		-55,
-		line('M215 420C260 650 470 830 760 820', P.banana.hi, 30, ' opacity=".7"')
+		line('M272 330C270 560 420 760 660 820', P.banana.hi, 30, ' opacity=".7"')
 	) +
-		`<path fill="${P.brown.deep}" d="M140 405L160 300L262 300L262 340Z"/>` +
-		`<circle cx="988" cy="712" r="30" fill="${P.brown.deep}"/>`
+		`<rect x="212" y="150" width="150" height="120" rx="34" fill="#9C8A3E"/>` +
+		`<ellipse cx="950" cy="770" rx="40" ry="34" fill="#8A7A36"/>`
 );
 
-const CITRUS = ellipse(512, 560, 350, 275);
+// Long and flat, with short nubs tucked into the body (owner's review, 2026-11-28: the first was too round and its
+// ends stuck out too far).
+const CITRUS = ellipse(512, 560, 390, 250);
 const citrus = (r: Ramp) =>
 	svg(
-		`<ellipse cx="852" cy="400" rx="52" ry="40" fill="${r.base}" transform="rotate(-25 852 400)"/>` +
-			`<ellipse cx="172" cy="720" rx="52" ry="40" fill="${r.dark}" transform="rotate(-25 172 720)"/>` +
-			`<g transform="rotate(-25 512 560)">` +
+		`<g transform="rotate(-20 512 560)">` +
+			`<ellipse cx="904" cy="560" rx="40" ry="34" fill="${r.base}"/>` +
+			`<ellipse cx="120" cy="560" rx="40" ry="34" fill="${r.dark}"/>` +
 			ramp(
 				CITRUS,
 				r,
 				-60,
-				-55,
-				highlight(330, 480, 48, 105, 70, r.hi) +
-					`<circle cx="640" cy="470" r="9" fill="${r.dark}" opacity=".5"/><circle cx="720" cy="600" r="9" fill="${r.dark}" opacity=".5"/><circle cx="560" cy="700" r="9" fill="${r.dark}" opacity=".5"/>`
+				-50,
+				highlight(330, 470, 46, 110, 75, r.hi) +
+					`<circle cx="640" cy="470" r="9" fill="${r.dark}" opacity=".5"/><circle cx="740" cy="600" r="9" fill="${r.dark}" opacity=".5"/><circle cx="560" cy="700" r="9" fill="${r.dark}" opacity=".5"/>`
 			) +
 			'</g>'
 	);
@@ -216,20 +217,20 @@ fruit.pineapple = svg(
 		)
 );
 
+// One shape, one soft blush, a leaf (owner's review, 2026-11-28: the first had too much going on).
 const MANGO =
-	'M250 430C290 250 520 165 700 230C875 295 935 480 870 650C805 820 620 935 430 905C255 878 205 640 250 430Z';
+	'M300 262C470 172 722 222 822 392C912 545 878 762 738 862C618 948 468 930 400 860C350 810 360 742 330 682C290 602 200 562 190 452C182 362 230 302 300 262Z';
 fruit.mango = svg(
 	ramp(
 		MANGO,
 		P.mango,
 		-70,
 		-55,
-		`<circle cx="760" cy="300" r="230" fill="#E8553F" opacity=".75"/>` +
-			`<circle cx="300" cy="860" r="170" fill="#9CC34A" opacity=".75"/>` +
-			highlight(380, 450, 48, 100, 30, P.mango.hi)
+		`<circle cx="760" cy="330" r="260" fill="#EF6F3A" opacity=".55"/>` +
+			highlight(330, 420, 44, 90, 35, P.mango.hi)
 	) +
-		line('M600 205C615 160 640 125 680 100', P.stem, 32) +
-		leaf(650, 140, 880, 120, 60, P.leaf.base)
+		line('M330 270C320 220 300 180 270 150', P.stem, 32) +
+		leaf(300, 190, 520, 120, 56, P.leaf.base)
 );
 
 const BERRY =

@@ -2,7 +2,14 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Own icon set: batch 1 out for review (2026-11-28)
+## Own icon set: batch 1 round 2 out for review (2026-11-28)
+
+Round 1 verdicts (collection `verdicts`): 16 kept; redo banana (too thin, ends lost on the dark tile), lemon and lime
+(too round, ends too long), mango (too busy, not clearly a mango), pomegranate (better crown, less round). All five
+redrawn from the notes and shown again on the same page as round 2 (collection `round2`, only those five; empty when
+published). The page generator is now `assets/food-icons/review.ts`. Next: read `round2`, redraw anything still
+marked Redo, then batch 2 (vegetables and legumes).
+
 
 Done: `assets/food-icons/STYLE.md` (the rules), `lib.ts` (shared palette `P` and helpers), drawings split by family in
 `icons/`, and batch 1: the 17 fruits OpenMoji covers that the pilot didn't (21 fruits with the pilot's 4). The fit
