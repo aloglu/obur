@@ -3,6 +3,8 @@
 import {
 	P,
 	band,
+	deg,
+	near,
 	circle,
 	ellipse,
 	highlight,
@@ -323,13 +325,6 @@ fruit.grapes = svg(
 );
 
 // --- Batch 1, round 3 (2026-11-28): drawn from the real fruit's outline; versions picked by the owner ---
-
-const deg = (a: number) => (a * Math.PI) / 180;
-/** Closeness of angle `a` to `at`, 1 there and fading over `spread` radians: for bumps on an outline. */
-const near = (a: number, at: number, spread: number) => {
-	const d = Math.atan2(Math.sin(a - at), Math.cos(a - at));
-	return Math.exp(-((d / spread) ** 2));
-};
 
 // --- Banana: a band along a gentle arc, tapering at both ends, its lower face in shadow, with a stalk and a tip. ---
 

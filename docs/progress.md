@@ -2,6 +2,17 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Own icon set: batch 2 (vegetables and legumes) out for review (2026-11-28)
+
+19 new icons in `icons/vegetables.ts`, each drawn from the real thing's outline: tomato, olives, potato, carrot,
+corn, bell pepper, cucumber, leafy greens (romaine leaves), broccoli, garlic, onion, mushroom, ginger, peas (pod),
+beans (kidney beans), peanut, chestnut, herbs (a sprig), seeds (a mound); with the pilot's eggplant and chili, the 21
+entries under "Vegetables and legumes". Checked at 29 px on both tiles and in greyscale; tomato, leafy greens and
+herbs redrawn once before the page went out; the seed mound is the weakest. Each batch's Foods rows now live in
+`assets/food-icons/batches.ts` (`BATCH=2 node assets/food-icons/review.ts <out>`). Review page: private artifact
+https://claude.ai/artifact/8RHMntmD3tbWSE4sVbxivT, collection `batch2`, empty when published. Next: read `batch2`;
+each Redo comes back as three versions (`pick.ts`); then batch 3 (bakery).
+
 ## Own icon set: batch 1 done (2026-11-28)
 
 All 21 fruits are kept: the owner picked the banana at 40° (`picks2`), already in `icons/fruit.ts`; the drafts are

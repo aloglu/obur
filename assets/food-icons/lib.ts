@@ -42,6 +42,28 @@ export const P = {
 	steel: { hi: '#C9CED4', base: '#AEB4BC', dark: '#8D949D' },
 	porcelain: { hi: '#F3F5F6', base: '#E9ECEE', dark: '#CDD4DA', deep: '#C9D0D6' },
 	coffee: { hi: '#A4693D', base: '#5A3220', dark: '#3E2215' },
+	tomato: { hi: '#F47A64', base: '#E8412F', dark: '#B82A24' },
+	greenOlive: { hi: '#BAC66E', base: '#93A53C', dark: '#6D7E24' },
+	blackOlive: { hi: '#8E6C8A', base: '#5E3D59', dark: '#422943' },
+	potato: { hi: '#EBC898', base: '#D9A86A', dark: '#B5824A' },
+	carrot: { hi: '#FBA25A', base: '#F47E24', dark: '#D25E14' },
+	corn: { hi: '#FBE07A', base: '#F5C53A', dark: '#D8A21E' },
+	husk: { hi: '#C3DB8A', base: '#9CC25A', dark: '#77A03C' },
+	cucumber: { hi: '#86B86A', base: '#4F8C3B', dark: '#376B29' },
+	lettuce: { hi: '#C7E59A', base: '#8DC453', dark: '#67A037', deep: '#4E8429' },
+	broccoli: { hi: '#6DB86A', base: '#3F8F42', dark: '#2C6B2F' },
+	stalk: { hi: '#C9E3A2', base: '#A8CF7A', dark: '#86B35A' },
+	garlic: { hi: '#FFFFFF', base: '#F1E8DA', dark: '#CDBEA4', deep: '#B9A88A' },
+	onion: { hi: '#EDB66E', base: '#D9913F', dark: '#B56E26', deep: '#97561A' },
+	mushroom: { hi: '#CDA07C', base: '#B07A52', dark: '#8A5A38' },
+	mushroomStem: { hi: '#FBF4E8', base: '#EFE2CB', dark: '#D3BE9A' },
+	ginger: { hi: '#F0D29C', base: '#E0B46C', dark: '#BE8F48', deep: '#9C7234' },
+	pod: { hi: '#A8D46E', base: '#78AE3E', dark: '#57882A' },
+	pea: { hi: '#C6E58E', base: '#9DCB52', dark: '#78A83A' },
+	kidneyBean: { hi: '#D26A70', base: '#A5353C', dark: '#7A242A' },
+	peanut: { hi: '#ECCDA0', base: '#D7AE77', dark: '#B48A52', deep: '#9C7442' },
+	chestnut: { hi: '#B9734A', base: '#8E4B2B', dark: '#68341C' },
+	grain: { hi: '#E3C48E', base: '#C9A46A', dark: '#A6824A', deep: '#7E6234' },
 	seed: '#2B2321',
 	stem: '#86542F'
 } as const;
@@ -170,3 +192,11 @@ export function band(centre: (t: number) => Pt, width: (t: number) => number, st
 	}
 	return { d: smooth([...left, ...right.reverse()]), line };
 }
+
+/** Degrees to radians. */
+export const deg = (a: number) => (a * Math.PI) / 180;
+/** Closeness of angle `a` to `at`, 1 there and fading over `spread` radians: for bumps on an outline. */
+export const near = (a: number, at: number, spread: number) => {
+	const d = Math.atan2(Math.sin(a - at), Math.cos(a - at));
+	return Math.exp(-((d / spread) ** 2));
+};

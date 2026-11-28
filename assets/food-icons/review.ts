@@ -4,8 +4,9 @@
 // No guessing round: the owner asked that it never be made again (2026-11-28).
 //   node assets/food-icons/review.ts <out.html>
 // DECIDE=a,b,c asks only about those icons (a later round); COLLECTION names the round's collection; INTRO replaces
-// the opening line. The rows below are batch 1's; a new batch replaces them.
+// the opening line. BATCH picks the batch's Foods rows from batches.ts (default 1).
 import { readFileSync, writeFileSync } from 'node:fs';
+import { BATCHES } from './batches.ts';
 
 const dir = 'assets/food-icons/svg';
 const [out] = process.argv.slice(2);
@@ -13,36 +14,10 @@ if (!out) throw new Error('Usage: node assets/food-icons/review.ts <out.html>');
 // A later round decides only the redrawn icons, in its own collection; the Foods screen still shows the whole batch.
 const DECIDE = process.env.DECIDE ? process.env.DECIDE.split(',') : null;
 const COLLECTION = process.env.COLLECTION || 'verdicts';
-const INTRO =
-	process.env.INTRO ||
-	'17 new fruit icons, plus the 4 fruits from the pilot. Keep or redo each one.';
 
-// name, row name, detail, kcal, pilot?
-const ICONS = (
-	[
-		['apple', 'Elma', 'per 100 g', '52'],
-		['green_apple', 'Granny Smith apple', 'per 100 g', '58'],
-		['pear', 'Armut', 'per 100 g', '57', true],
-		['banana', 'Banana', '1 medium (118 g)', '105'],
-		['orange', 'Portakal', '1 medium (131 g)', '62'],
-		['grapefruit', 'Greyfurt', 'per 100 g', '42'],
-		['lemon', 'Limon suyu', 'per 1 tbsp (15 ml)', '3'],
-		['lime', 'Misket limonu', 'per 100 g', '30'],
-		['apricot', 'Kayısı', 'per 100 g', '48', true],
-		['cherries', 'Vişne', 'per 100 g', '50', true],
-		['strawberry', 'Çilek', 'per 100 g', '32'],
-		['blueberries', 'Blueberries', 'per 100 g', '57'],
-		['grapes', 'Kuru üzüm', 'per 100 g', '299'],
-		['watermelon', 'Karpuz', 'per 100 g', '30'],
-		['melon', 'Kavun', 'per 100 g', '34'],
-		['pineapple', 'Pineapple chunks', 'per 100 g', '50'],
-		['mango', 'Mango', 'per 100 g', '60'],
-		['kiwi', 'Kivi', '1 medium (69 g)', '42'],
-		['pomegranate', 'Nar', 'per 100 g', '83', true],
-		['coconut', 'Hindistan cevizi rendesi', 'per 100 g', '660'],
-		['avocado', 'Avokado', 'per 100 g', '160']
-	] as [string, string, string, string, boolean?][]
-).map(([name, row, detail, kcal, pilot]) => ({
+const batch = BATCHES[Number(process.env.BATCH || 1)];
+if (!batch) throw new Error(`No batch ${process.env.BATCH}: see batches.ts.`);
+const ICONS = batch.rows.map(([name, row, detail, kcal, pilot]) => ({
 	name,
 	label: name.replace(/_/g, ' '),
 	row,
@@ -52,7 +27,9 @@ const ICONS = (
 	src: 'data:image/svg+xml;base64,' + readFileSync(`${dir}/${name}.svg`).toString('base64')
 }));
 
-const html = `<title>Icons batch 1: fruit</title>
+const INTRO = process.env.INTRO || batch.intro;
+
+const html = `<title>Icons batch ${process.env.BATCH || 1}: ${batch.title}</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Inter:wght@400..800&display=swap" rel="stylesheet">
@@ -125,7 +102,7 @@ button{font:inherit;cursor:pointer}
 <div class="wrap">
   <header>
     <div>
-      <h1>Icons, batch 1: fruit</h1>
+      <h1>Icons, batch ${process.env.BATCH || 1}: ${batch.title}</h1>
       <p>${INTRO} Your answers save as you go, and Claude reads them from this page.</p>
     </div>
     <div class="count"><span class="chip">Decided <b id="n-done">0</b> of ${(DECIDE || ICONS).length}</span></div>
