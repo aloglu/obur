@@ -1,6 +1,6 @@
 // Fruit (batch 1). Fruit whose inside identifies it best (kiwi, avocado, melon, grapefruit, watermelon, coconut) is
 // drawn cut; the rest whole.
-import { P, circle, ellipse, highlight, leaf, line, ramp, shaded, svg } from '../lib.ts';
+import { P, circle, ellipse, highlight, leaf, line, ramp, shaded, svg, type Ramp } from '../lib.ts';
 
 export const fruit: Record<string, string> = {};
 
@@ -54,7 +54,7 @@ fruit.pomegranate = svg(
 
 const APPLE =
 	'M512 300C440 250 330 232 250 292C150 367 132 520 170 650C215 802 320 930 420 930C462 930 482 906 512 906C542 906 562 930 604 930C704 930 809 802 854 650C892 520 874 367 774 292C694 232 584 250 512 300Z';
-const appleTop = (body: typeof P.red, leafFill: string) =>
+const appleTop = (body: Ramp, leafFill: string) =>
 	ramp(
 		APPLE,
 		body,
@@ -83,7 +83,7 @@ fruit.banana = svg(
 );
 
 const CITRUS = ellipse(512, 560, 350, 275);
-const citrus = (r: typeof P.lemon) =>
+const citrus = (r: Ramp) =>
 	svg(
 		`<ellipse cx="852" cy="400" rx="52" ry="40" fill="${r.base}" transform="rotate(-25 852 400)"/>` +
 			`<ellipse cx="172" cy="720" rx="52" ry="40" fill="${r.dark}" transform="rotate(-25 172 720)"/>` +

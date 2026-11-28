@@ -2,6 +2,21 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Own icon set: batch 1 out for review (2026-11-28)
+
+Done: `assets/food-icons/STYLE.md` (the rules), `lib.ts` (shared palette `P` and helpers), drawings split by family in
+`icons/`, and batch 1: the 17 fruits OpenMoji covers that the pilot didn't (21 fruits with the pilot's 4). The fit
+now measures rendered pixels (the old one counted the shading's hidden copy, so the pilot sat slightly off-centre).
+Review page with a blind round and keep or redo per icon: private Claude artifact
+https://claude.ai/artifact/CfvFtfcMRde2MTSx6pEssG (its database collection `verdicts`, one document per icon:
+`guess`, `verdict` keep/redo, `note`); empty when published. `scripts/food-icons-gaps.ts` lists the foods in the
+owner's own exports that show the plate (tested on made-up exports only). Checks: lint, Prettier, a strict type
+check of both scripts (they are outside `tsconfig.json`'s include), the icon build. This container has Node 22: Node
+24 came from the `node@24` npm package and the dependencies from `npm@11 ci`; the project's Playwright wants browser
+build 1248, so the icon build ran against the preinstalled Playwright. Next: read the owner's verdicts
+(`ArtifactData` list on that artifact), redraw the Redo icons, then batch 2 (vegetables and legumes). The owner runs
+the gap script on their own exports when they have time.
+
 ## Own food icon set: decided, not started (2026-11-27)
 
 The owner compared three icon packs on demo Foods screens (Iconito, Culinary Assets, Ingredient Atlas; private Claude
