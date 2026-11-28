@@ -2,6 +2,14 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Own icon set: batch 1, banana angle out for a pick (2026-11-28)
+
+Picks (`picks1`): lemon C, lime A, mango A, pomegranate B, now in `icons/fruit.ts` (pixel-identical to the picked
+drafts) and their drafts deleted. Banana: "None", with the note that B is very good but its orientation shouldn't
+have changed; B is now in `fruit.ts` turned back to the earlier orientation (stalk upper left, 40°), and the same
+pick page asks for the angle (25°, 40°, 55°; collection `picks2`, empty when published). Next: read `picks2`, set
+the banana's angle, delete the drafts, then batch 2 (vegetables and legumes).
+
 ## Own icon set: batch 1, five fruits out as three versions each (2026-11-28)
 
 Round 2 (`round2`): all five redraws rejected ("bananas don't look like this", lemon and lime "overdone", mango

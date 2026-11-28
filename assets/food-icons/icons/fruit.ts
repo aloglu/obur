@@ -1,6 +1,19 @@
 // Fruit (batch 1). Fruit whose inside identifies it best (kiwi, avocado, melon, grapefruit, watermelon, coconut) is
 // drawn cut; the rest whole.
-import { P, circle, ellipse, highlight, leaf, line, ramp, shaded, svg, type Ramp } from '../lib.ts';
+import {
+	P,
+	band,
+	circle,
+	ellipse,
+	highlight,
+	leaf,
+	line,
+	polar,
+	ramp,
+	shaded,
+	svg,
+	type Ramp
+} from '../lib.ts';
 
 export const fruit: Record<string, string> = {};
 
@@ -38,15 +51,6 @@ fruit.apricot = svg(
 		`<path fill="${P.leaf.base}" d="M545 120C610 50 730 50 800 95C730 165 630 175 545 120Z"/>`
 );
 
-// Wider than tall, with a short crown: a tube whose sepals flare outward (owner's review, 2026-11-28).
-const POMEGRANATE =
-	'M512 300C690 300 872 405 888 610C904 800 742 942 512 942C282 942 120 800 136 610C152 405 334 300 512 300Z';
-fruit.pomegranate = svg(
-	`<path fill="${P.ruby.dark}" d="M432 330L438 250L398 190L462 214L486 160L512 206L538 160L562 214L626 190L586 250L592 330Z"/>` +
-		`<ellipse cx="512" cy="252" rx="62" ry="20" fill="${P.ruby.deep}"/>` +
-		ramp(POMEGRANATE, P.ruby, -70, -55, highlight(320, 520, 50, 90, 35, P.ruby.hi))
-);
-
 // --- Batch 1 (2026-11-28) ---
 
 const APPLE =
@@ -64,43 +68,6 @@ const appleTop = (body: Ramp, leafFill: string) =>
 	leaf(548, 196, 770, 118, 62, leafFill);
 fruit.apple = svg(appleTop(P.red, P.leaf.base));
 fruit.green_apple = svg(appleTop(P.greenApple, P.leaf.dark));
-
-// A full crescent; the stem and tip are olive, not near-black, so they show on the dark tile (owner's review,
-// 2026-11-28: the first was too thin and lost its ends in dark mode).
-const BANANA =
-	'M215 250C150 520 290 820 590 890C760 930 890 870 945 770C905 745 855 740 790 752C620 784 470 690 405 520C372 432 362 350 366 250Z';
-fruit.banana = svg(
-	ramp(
-		BANANA,
-		P.banana,
-		45,
-		-55,
-		line('M272 330C270 560 420 760 660 820', P.banana.hi, 30, ' opacity=".7"')
-	) +
-		`<rect x="212" y="150" width="150" height="120" rx="34" fill="#9C8A3E"/>` +
-		`<ellipse cx="950" cy="770" rx="40" ry="34" fill="#8A7A36"/>`
-);
-
-// Long and flat, with short nubs tucked into the body (owner's review, 2026-11-28: the first was too round and its
-// ends stuck out too far).
-const CITRUS = ellipse(512, 560, 390, 250);
-const citrus = (r: Ramp) =>
-	svg(
-		`<g transform="rotate(-20 512 560)">` +
-			`<ellipse cx="904" cy="560" rx="40" ry="34" fill="${r.base}"/>` +
-			`<ellipse cx="120" cy="560" rx="40" ry="34" fill="${r.dark}"/>` +
-			ramp(
-				CITRUS,
-				r,
-				-60,
-				-50,
-				highlight(330, 470, 46, 110, 75, r.hi) +
-					`<circle cx="640" cy="470" r="9" fill="${r.dark}" opacity=".5"/><circle cx="740" cy="600" r="9" fill="${r.dark}" opacity=".5"/><circle cx="560" cy="700" r="9" fill="${r.dark}" opacity=".5"/>`
-			) +
-			'</g>'
-	);
-fruit.lemon = citrus(P.lemon);
-fruit.lime = citrus(P.lime);
 
 fruit.orange = svg(
 	ramp(
@@ -215,22 +182,6 @@ fruit.pineapple = svg(
 			line(LATTICE, P.pineapple.deep!, 16, ' opacity=".55"') +
 				highlight(360, 520, 40, 90, 20, P.pineapple.hi)
 		)
-);
-
-// One shape, one soft blush, a leaf (owner's review, 2026-11-28: the first had too much going on).
-const MANGO =
-	'M300 262C470 172 722 222 822 392C912 545 878 762 738 862C618 948 468 930 400 860C350 810 360 742 330 682C290 602 200 562 190 452C182 362 230 302 300 262Z';
-fruit.mango = svg(
-	ramp(
-		MANGO,
-		P.mango,
-		-70,
-		-55,
-		`<circle cx="760" cy="330" r="260" fill="#EF6F3A" opacity=".55"/>` +
-			highlight(330, 420, 44, 90, 35, P.mango.hi)
-	) +
-		line('M330 270C320 220 300 180 270 150', P.stem, 32) +
-		leaf(300, 190, 520, 120, 56, P.leaf.base)
 );
 
 const BERRY =
@@ -369,4 +320,169 @@ fruit.grapes = svg(
 		GRAPES.map(([x, y]) =>
 			ramp(circle(x, y, 92), P.grape, -24, -20, highlight(x - 40, y - 20, 12, 24, 30, P.grape.hi))
 		).join('')
+);
+
+// --- Batch 1, round 3 (2026-11-28): drawn from the real fruit's outline; versions picked by the owner ---
+
+const deg = (a: number) => (a * Math.PI) / 180;
+/** Closeness of angle `a` to `at`, 1 there and fading over `spread` radians: for bumps on an outline. */
+const near = (a: number, at: number, spread: number) => {
+	const d = Math.atan2(Math.sin(a - at), Math.cos(a - at));
+	return Math.exp(-((d / spread) ** 2));
+};
+
+// --- Banana: a band along a gentle arc, tapering at both ends, its lower face in shadow, with a stalk and a tip. ---
+
+export function banana(R: number, from: number, to: number, wide: number, back = false) {
+	const r = back ? { hi: '#F6DC7A', base: '#EFC232', dark: '#CF9718' } : P.banana;
+	const cx = 512;
+	const cy = 560 - R;
+	const centre = (t: number): [number, number] => {
+		const a = deg(from + (to - from) * t);
+		return [cx + R * Math.cos(a), cy + R * Math.sin(a)];
+	};
+	const width = (t: number) => Math.max(34, wide * Math.sin(Math.PI * t) ** 0.6);
+	const { d, line: mid } = band(centre, width);
+	const [sx, sy] = centre(0);
+	const [nx, ny] = centre(0.04);
+	const [ex, ey] = centre(1);
+	const len = Math.hypot(sx - nx, sy - ny);
+	const ux = (sx - nx) / len;
+	const uy = (sy - ny) / len;
+	const ridge = mid
+		.slice(3, -3)
+		.map(([x, y], i) => `${i ? 'L' : 'M'}${Math.round(x)} ${Math.round(y - wide * 0.12)}`)
+		.join('');
+	return (
+		line(
+			`M${Math.round(sx)} ${Math.round(sy)}L${Math.round(sx + ux * 90)} ${Math.round(sy + uy * 90)}`,
+			'#8C7A35',
+			44
+		) +
+		shaded(
+			d,
+			r.base,
+			r.dark,
+			0,
+			-46,
+			line(ridge, r.hi, 22, ' opacity=".75" stroke-linejoin="round"')
+		) +
+		`<circle cx="${Math.round(ex)}" cy="${Math.round(ey)}" r="24" fill="#7A6A2E"/>`
+	);
+}
+// --- Lemon: an oval whose tips are part of the outline, the stem end's larger. ---
+
+function lemonShape(rx: number, ry: number, tip1: number, tip2: number, turn: number) {
+	return polar(
+		512,
+		560,
+		(a) => {
+			const k = 1 + tip1 * near(a, 0, 0.09) + tip2 * near(a, Math.PI, 0.09);
+			return [rx * Math.cos(a) * k, ry * Math.sin(a) * k];
+		},
+		turn,
+		72
+	);
+}
+const pores = (r: Ramp) =>
+	[
+		[620, 470],
+		[700, 590],
+		[540, 680],
+		[440, 560]
+	]
+		.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="9" fill="${r.dark}" opacity=".45"/>`)
+		.join('');
+const citrus = (d: string, r: Ramp) =>
+	svg(ramp(d, r, -60, -50, highlight(350, 470, 44, 95, 60, r.hi) + pores(r)));
+// --- Mango: a plump oval, wider at the stem end, with a small beak low on the narrow end. ---
+
+function mangoShape(A: number, B: number, k: number, turn: number) {
+	return polar(
+		512,
+		540,
+		(a) => {
+			const beak = 1 + 0.07 * near(a, deg(160), 0.22);
+			return [A * Math.cos(a) * beak, B * Math.sin(a) * (1 + k * Math.cos(a)) * beak];
+		},
+		turn,
+		72
+	);
+}
+const MANGO = mangoShape(380, 270, 0.16, -35);
+// The stem end is the wide end (angle 0), turned -35°: up and to the right.
+const mangoStem = (A: number) => {
+	const t = deg(-35);
+	const x = Math.round(512 + A * 0.97 * Math.cos(t));
+	const y = Math.round(540 + A * 0.97 * Math.sin(t));
+	return (
+		line(`M${x} ${y}L${x + 40} ${y - 50}`, P.stem, 30) +
+		leaf(x + 30, y - 40, x + 230, y - 70, 52, P.leaf.base)
+	);
+};
+// --- Pomegranate: a slightly squarish body, a crown of pointed sepals on a short tube. ---
+
+function squircle(rx: number, ry: number, n: number, turn = 0) {
+	return polar(
+		512,
+		600,
+		(a) => {
+			const c = Math.cos(a);
+			const s = Math.sin(a);
+			return [
+				rx * Math.sign(c) * Math.abs(c) ** (2 / n),
+				ry * Math.sign(s) * Math.abs(s) ** (2 / n)
+			];
+		},
+		turn,
+		72
+	);
+}
+function sepals(top: number, w: number, h: number) {
+	const x = (f: number) => Math.round(512 + f * w);
+	const y = (f: number) => Math.round(top + f * h);
+	const pts = [
+		[x(-0.5), y(1.3)],
+		[x(-0.5), y(0.55)],
+		[x(-0.72), y(0)],
+		[x(-0.36), y(0.38)],
+		[x(-0.22), y(-0.08)],
+		[x(0), y(0.34)],
+		[x(0.22), y(-0.08)],
+		[x(0.36), y(0.38)],
+		[x(0.72), y(0)],
+		[x(0.5), y(0.55)],
+		[x(0.5), y(1.3)]
+	];
+	return (
+		`<path fill="${P.ruby.dark}" d="M${pts.map((p) => p.join(' ')).join('L')}Z"/>` +
+		`<ellipse cx="512" cy="${y(0.42)}" rx="${Math.round(w * 0.36)}" ry="${Math.round(h * 0.14)}" fill="${P.ruby.deep}"/>`
+	);
+}
+const pomegranate = (body: string, top: number, w: number, h: number, extra = '') =>
+	svg(
+		sepals(top, w, h) +
+			ramp(body, P.ruby, -65, -55, highlight(330, 520, 46, 90, 35, P.ruby.hi) + extra)
+	);
+// Picked: banana version B, turned back to the earlier orientation (stalk upper left); the angle is being picked.
+fruit.banana = svg(`<g transform="rotate(40 512 512)">${banana(620, 128, 52, 215)}</g>`);
+// Picked: lemon C, lime A, mango A, pomegranate B.
+fruit.lemon = citrus(lemonShape(335, 245, 0.2, 0.1, -25), P.lemon);
+fruit.lime = citrus(lemonShape(300, 258, 0.07, 0.03, -20), P.lime);
+fruit.mango = svg(
+	ramp(
+		MANGO,
+		P.mango,
+		-60,
+		-50,
+		`<circle cx="790" cy="300" r="250" fill="#EF6F3A" opacity=".45"/>` +
+			highlight(380, 520, 40, 90, 55, P.mango.hi)
+	) + mangoStem(380)
+);
+fruit.pomegranate = pomegranate(
+	squircle(360, 350, 2.15),
+	140,
+	210,
+	140,
+	line('M512 300C470 450 470 700 512 930', P.ruby.dark, 18, ' opacity=".45"')
 );
