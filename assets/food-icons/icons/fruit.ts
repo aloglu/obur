@@ -464,7 +464,7 @@ const pomegranate = (body: string, top: number, w: number, h: number, extra = ''
 		sepals(top, w, h) +
 			ramp(body, P.ruby, -65, -55, highlight(330, 520, 46, 90, 35, P.ruby.hi) + extra)
 	);
-// Picked: banana version B, turned back to the earlier orientation (stalk upper left); the angle is being picked.
+// Picked: banana version B, turned back to the earlier orientation (stalk upper left), at the 40° the owner chose.
 fruit.banana = svg(`<g transform="rotate(40 512 512)">${banana(620, 128, 52, 215)}</g>`);
 // Picked: lemon C, lime A, mango A, pomegranate B.
 fruit.lemon = citrus(lemonShape(335, 245, 0.2, 0.1, -25), P.lemon);

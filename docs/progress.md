@@ -2,6 +2,13 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Own icon set: batch 1 done (2026-11-28)
+
+All 21 fruits are kept: the owner picked the banana at 40° (`picks2`), already in `icons/fruit.ts`; the drafts are
+deleted (`icons/drafts.ts` stays, empty, for the next picks). Next: batch 2, vegetables and legumes (the entries under
+"Vegetables and legumes" in `src/lib/shared/food-icons.ts`, less the pilot's eggplant and chili, which the owner
+has seen but not yet kept in a batch review).
+
 ## Own icon set: batch 1, banana angle out for a pick (2026-11-28)
 
 Picks (`picks1`): lemon C, lime A, mango A, pomegranate B, now in `icons/fruit.ts` (pixel-identical to the picked
