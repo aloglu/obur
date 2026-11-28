@@ -513,7 +513,7 @@ Status: **requirements** from the owner (2026-11-07): personal keys first, expli
 - **Phase 4 — Optional capability and polish.** Activity credit for imported or automatic sources once their meaning is mapped; richer charts/timeline, achievements including one per kilo lost, reminders, bulk actions and drag-and-drop.
 - **Phase 5 — Distribution and exchange.** Distribution (published images, install guides, entry-point options) was brought forward on 2026-11-07, before the first release (see "Distribution"). Catalog exchange follows when actual installations need it. Native companions, Health integration, model fine-tuning and browser OCR remain separate future decisions.
 
-- **Own food icon set: stopped (owner, 2026-11-28).** Tried and stopped; OpenMoji stays. See `docs/ui.md`, "Own icon set: stopped".
+- **Replace OpenMoji with a ready-made icon package (owner, 2026-11-28; package not yet chosen, Iconito the only contender).** One style, no mixing; OpenMoji stays until the choice. Drawing an own set was tried and stopped. See `docs/ui.md`, "Replacing OpenMoji".
 
 This roadmap is not authorization to build every phase at once. Once a feature/phase is requested, carry it through within its agreed scope; routine details do not require repeated permission. Surface consequential scope changes with evidence and update this document when decisions change.
 

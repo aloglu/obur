@@ -2,6 +2,13 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Icons: a ready-made package will replace OpenMoji (owner, 2026-11-28)
+
+Correction to the entry below: the icons will still change, from OpenMoji to a ready-made package in one style; the
+owner hasn't chosen which, Iconito being the only contender. Recorded in `docs/ui.md` ("Replacing OpenMoji") and the
+`docs/design.md` roadmap. No work until the owner chooses. Useful then: the size, price and licence of Iconito's
+larger collection; its coverage of the 133 mapped foods and 59 achievement pictures.
+
 ## Own icon set: stopped (owner, 2026-11-28)
 
 The owner stopped the own icon set: the trial icons from reference photos looked demonstrably worse and took too

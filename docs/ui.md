@@ -476,7 +476,7 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
   units in the food form and the food chooser in Check and log (owner, 2026-10-31: one convention everywhere).
 - **Toolbar dropdowns** (`progress/RangeSelect.svelte`): one-tone tray with the chevron, beside tab-like controls.
 
-### Food icons (owner's choice 2026-10-30: OpenMoji)
+### Food icons (owner's choice 2026-10-30: OpenMoji; to be replaced by a ready-made package, see below)
 
 - OpenMoji 15.1.0 food and drink icons (CC BY-SA 4.0; credit at the foot of More), bundled in `static/icons/food/`.
 - A food shows its chosen icon, else the one its name suggests (`shared/food-icons.ts`: English and Turkish words,
@@ -488,16 +488,20 @@ Settled over five rounds of mock-ups (a private Artifact; picks and notes in its
 - The food form's and recipe editor's **Icon** row shows the current icon and whether it is suggested or chosen; **Change icon** opens a
   picker (search in English or Turkish, a grid of tiles, "Use the suggestion from the name" when one is chosen).
 
-#### Own icon set: stopped (owner, 2026-11-28)
+#### Replacing OpenMoji: a ready-made package, not yet chosen (owner, 2026-11-28)
 
-An own icon set in one style, to replace OpenMoji, was decided on 2026-11-27 and tried on 2026-11-28: a style
-guide, the fruit (21 icons, all kept after several rounds) and the vegetables and legumes (14 of 21 rejected, and the
-redraws rejected again), then a trial drawing from reference photos (outline from the photo, house style for the
-rest), which the owner found demonstrably worse and too slow. The owner stopped it: the fault rate needs a review of
-every icon, which isn't worth it. **OpenMoji stays the app's food and achievement icons.** The drawings, tools and
-review pages are in Git history (last commit with them: the trial, 2026-11-28); nothing of it is in the app.
-`scripts/food-icons-gaps.ts` stays: it lists the foods in a person's own exports that show the plate with today's
-icons, which helps extend the OpenMoji word lists.
+- **Requirement:** the icons will change from OpenMoji to a ready-made package in one style. Not yet decided which;
+  Iconito is the only contender so far (the owner preferred its look on 2026-11-27, against Culinary Assets and
+  Ingredient Atlas). The owner's rule from 2026-11-27 stands: no mixing of icon styles. Until a package is chosen,
+  OpenMoji stays.
+- **Evidence for the choice:** Iconito's free set has 120 food icons (MIT); about 72 of today's 133 mapped foods have
+  a match, 57 do not (among them pear, cherry, eggplant, chili, kebab, espresso, cola; the 2026-11-27 comparison).
+  The free set calls itself part of a larger "Mini" collection on iconi.to; its size, price and licence are not yet
+  checked. The achievement pictures (59, 46 of them not food) would need a match too.
+- **Own icon set: stopped (owner, 2026-11-28).** Drawing obur's own set was tried (fruit, then vegetables, then a
+  trial from reference photos) and stopped: the fault rate needed a review of every icon. The work is in Git history
+  (commit 6412335); nothing of it is in the app. `scripts/food-icons-gaps.ts` lists the foods in a person's own exports
+  that show the plate with today's icons, which also measures a package's coverage once its words are mapped.
 
 ### Icons
 
