@@ -2,6 +2,26 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Own icon set: method changed, trial under way (2026-11-28)
+
+Owner (2026-11-28): too many basic misses (two bananas that weren't bananas, 14 of 21 vegetables redone and the redos
+"very off"); notes not taken into account; doesn't want to review half of each batch. Agreed method, on trial:
+reference photos for outline and proportions only (the icon keeps the house style, no photo detail), a verification
+sheet per icon (photo, icon, row size on both tiles, greyscale), the owner's notes as a checklist, one version per
+icon shown only when it passes. Trial: the banana from a photo (owner's test of whether photos help), then carrot,
+onion, ginger and beans from the 14 rejected. Ignore the `picks_batch2` page (superseded); the 42 drafts are deleted.
+Network: a personal environment "obur" (owner approved) adds commons.wikimedia.org and upload.wikimedia.org. Commons
+serves scripts only standard thumbnail sizes (250 px works, 330 and 500 refused) and wants an identifying User-Agent;
+a generic one is used (no personal or project details). The Commons search API then answered 429 for a while.
+Tools so far live in the session scratchpad (refs.py, trace.py with OpenCV, compare.js); they move into the
+repository if the trial works. The banana from the photo's traced outline (`draft_banana_photo`) reads as a banana.
+Trial results so far: banana (from its photo's traced outline) and onion (traced, shadow dropped, made upright and
+symmetrical) pass my checks; the carrot only partly (leaves from the photo, but the body could not be traced from a
+bunch). Ginger and beans: no references yet (Commons refusing this machine). Trial page: private artifact
+https://claude.ai/artifact/URcrkHDYPUBtX63Y8bBwff, collection `trial` (banana, onion, carrot: verdict, note), empty when
+published. Tools in `assets/food-icons/reference/`. Open with the owner: whether Commons may be sent a contact in
+the User-Agent (their policy wants one; nothing personal is sent now), or reference photos come another way.
+
 ## Own icon set: batch 2, 14 redos out as three versions each (2026-11-28)
 
 `batch2` verdicts: kept tomato, chili, eggplant, cucumber, garlic, mushroom, chestnut (7 of 21). Redo with notes: beans,
