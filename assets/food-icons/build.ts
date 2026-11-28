@@ -5,13 +5,14 @@
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 import { dishes } from './icons/dishes.ts';
+import { drafts } from './icons/drafts.ts';
 import { drinks } from './icons/drinks.ts';
 import { fruit } from './icons/fruit.ts';
 import { vegetables } from './icons/vegetables.ts';
 
 const OUT = 'assets/food-icons/svg';
 
-const families = { fruit, vegetables, dishes, drinks };
+const families = { fruit, vegetables, dishes, drinks, drafts };
 const icons: Record<string, string> = {};
 for (const [family, set] of Object.entries(families)) {
 	for (const [name, source] of Object.entries(set)) {
@@ -29,7 +30,18 @@ const page = await browser.newPage();
 mkdirSync(OUT, { recursive: true });
 for (const file of readdirSync(OUT))
 	if (!icons[file.replace(/\.svg$/, '')]) rmSync(`${OUT}/${file}`);
-for (const [name, source] of Object.entries(icons)) {
+/** Clip ids numbered within each file (c1, c2, …), so adding a drawing elsewhere never changes this file. */
+function renumber(source: string): string {
+	const ids = new Map<string, string>();
+	for (const [, id] of source.matchAll(/<clipPath id="(c\d+)"/g)) ids.set(id, `c${ids.size + 1}`);
+	return source.replace(
+		/(id="|url\(#)(c\d+)/g,
+		(m, pre: string, id: string) => pre + (ids.get(id) ?? id)
+	);
+}
+
+for (const [name, raw] of Object.entries(icons)) {
+	const source = renumber(raw);
 	const wide = source.replace('viewBox="0 0 1024 1024"', 'viewBox="-512 -512 2048 2048"');
 	const box = await page.evaluate(async (svgText) => {
 		const img = new Image();

@@ -2,7 +2,16 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
-## Own icon set: batch 1 round 2 out for review (2026-11-28)
+## Own icon set: batch 1, five fruits out as three versions each (2026-11-28)
+
+Round 2 (`round2`): all five redraws rejected ("bananas don't look like this", lemon and lime "overdone", mango
+and pomegranate "don't look like this"). Cause: redrawn from the notes alone, one guess each. Now: drawn from the
+real fruit's shape (new `polar()`, `band()` and `smooth()` in `lib.ts`), three versions each (`icons/drafts.ts`,
+names `draft_<icon>_<a|b|c>`), and a pick page (`assets/food-icons/pick.ts`): private artifact
+https://claude.ai/artifact/GBD9iLnP8TCJo5vZhF1dJe, collection `picks1`, one document per fruit
+`{pick: a|b|c|none, note}`; empty when published. STYLE.md records the process. Next: read `picks1`, move each
+picked draft into `icons/fruit.ts` under its real name, delete the drafts, then batch 2.
+
 
 Round 1 verdicts (collection `verdicts`): 16 kept; redo banana (too thin, ends lost on the dark tile), lemon and lime
 (too round, ends too long), mango (too busy, not clearly a mango), pomegranate (better crown, less round). All five

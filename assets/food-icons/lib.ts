@@ -109,3 +109,64 @@ export function leaf(
 	const r = (n: number) => Math.round(n);
 	return `<path fill="${fill}" d="M${x1} ${y1}Q${r(mx + nx)} ${r(my + ny)} ${x2} ${y2}Q${r(mx - nx)} ${r(my - ny)} ${x1} ${y1}Z"/>`;
 }
+
+type Pt = [number, number];
+
+/** A smooth closed outline through the points (Catmull-Rom, written as cubic curves). */
+export function smooth(points: Pt[]): string {
+	const n = points.length;
+	const r = (v: number) => Math.round(v);
+	const at = (i: number) => points[(i + n) % n];
+	let d = `M${r(at(0)[0])} ${r(at(0)[1])}`;
+	for (let i = 0; i < n; i++) {
+		const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+		const c1: Pt = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+		const c2: Pt = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+		d += `C${r(c1[0])} ${r(c1[1])} ${r(c2[0])} ${r(c2[1])} ${r(p2[0])} ${r(p2[1])}`;
+	}
+	return d + 'Z';
+}
+
+/**
+ * A closed outline from a radius that varies with the angle, around (cx, cy) and turned by `turn` degrees: the way
+ * to draw fruit whose outline is an oval with bumps (a lemon's tips, a mango's shoulder).
+ */
+export function polar(
+	cx: number,
+	cy: number,
+	radius: (a: number) => Pt,
+	turn = 0,
+	steps = 48
+): string {
+	const t = (turn * Math.PI) / 180;
+	const pts: Pt[] = [];
+	for (let i = 0; i < steps; i++) {
+		const a = (i / steps) * 2 * Math.PI;
+		const [x, y] = radius(a);
+		pts.push([cx + x * Math.cos(t) - y * Math.sin(t), cy + x * Math.sin(t) + y * Math.cos(t)]);
+	}
+	return smooth(pts);
+}
+
+/**
+ * A band along a centre line, `width(t)` wide at each point (t from 0 to 1): for long curved things that taper, such
+ * as a banana. Returns the outline and the centre line's points.
+ */
+export function band(centre: (t: number) => Pt, width: (t: number) => number, steps = 24) {
+	const left: Pt[] = [];
+	const right: Pt[] = [];
+	const line: Pt[] = [];
+	for (let i = 0; i <= steps; i++) {
+		const t = i / steps;
+		const [x, y] = centre(t);
+		const [ax, ay] = centre(Math.max(0, t - 0.01));
+		const [bx, by] = centre(Math.min(1, t + 0.01));
+		const len = Math.hypot(bx - ax, by - ay);
+		const [nx, ny] = [-(by - ay) / len, (bx - ax) / len];
+		const w = width(t) / 2;
+		left.push([x + nx * w, y + ny * w]);
+		right.push([x - nx * w, y - ny * w]);
+		line.push([x, y]);
+	}
+	return { d: smooth([...left, ...right.reverse()]), line };
+}

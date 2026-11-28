@@ -21,6 +21,10 @@ Every icon in the set follows these rules, so the 300th matches the first. The l
 
 - Drawn on a 1024 grid, centred near (512, 560). Size doesn't matter much: `build.ts` fits every drawing to its square
   with a 2% margin, measured from the rendered pixels.
+- **Draw the real thing.** Start from what the food actually looks like (its true outline, proportions and parts), not
+  from the last drawing or the last note alone. A banana is a gently curved band that tapers at both ends and has
+  a stalk; a lemon is an oval with a small nub at each end; a pomegranate is nearly round with a crown of sepals.
+  `polar()` and `band()` in `lib.ts` draw such outlines from a radius or a centre line.
 - Few confident shapes. A food is recognised by its silhouette first, then one telling detail (a seed pattern, a crown,
   a stone). Drop anything that doesn't help recognise it.
 - Cut it open when the inside is what identifies it (kiwi, avocado, citrus, melon, coconut). Put a whole one behind
@@ -35,6 +39,8 @@ Every icon in the set follows these rules, so the 300th matches the first. The l
 - In greyscale: the silhouette and tones should still tell it apart from its neighbours (lemon and lime, apple and
   green apple may share a shape; they differ by colour, and their names sit beside them).
 - Beside the icons already kept, for size and weight.
+- An icon marked Redo comes back as **three versions** to pick from (`pick.ts`), never a single new guess (owner,
+  2026-11-28, after two single redraws of five fruits missed).
 - The owner's review page: the Foods rows at real size and keep or redo per icon. No guessing round (owner,
   2026-11-28: unnecessary; never add one).
 
