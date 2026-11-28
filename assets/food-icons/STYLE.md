@@ -35,7 +35,8 @@ Every icon in the set follows these rules, so the 300th matches the first. The l
 - In greyscale: the silhouette and tones should still tell it apart from its neighbours (lemon and lime, apple and
   green apple may share a shape; they differ by colour, and their names sit beside them).
 - Beside the icons already kept, for size and weight.
-- The owner's review page: a blind round (what is this?), then keep or redo per icon.
+- The owner's review page: the Foods rows at real size and keep or redo per icon. No guessing round (owner,
+  2026-11-28: unnecessary; never add one).
 
 ## Code
 

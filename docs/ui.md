@@ -533,11 +533,11 @@ from an 8-icon pilot, not measurements.
   OpenMoji pictures (`static/icons/achievements/`, `shared/achievement-display.ts`) are redrawn in the same set: 13
   are foods the set needs anyway, 46 are other things (animals, sports gear, household objects). They switch together
   with the food icons, so the set needs about 200 icons before the switch (about 14 batches).
-- **How the owner reviews a batch (2026-11-28):** a private review page per batch. First a blind round: the new icons
-  without names, and the owner types what each looks like (a wrong guess means redraw). Then each icon in the Foods
+- **How the owner reviews a batch (2026-11-28):** a private review page per batch: each icon in the Foods
   rows at real size on a phone-sized screen, light and dark, beside icons already kept, plus a close-up; Keep or Redo
   with a note per icon, saved on the page and read back from it. The owner also opens it on their phone. Before a page
-  goes out, every icon is rendered at 29 px on both tiles and in greyscale (does it rely on colour alone?).
+  goes out, every icon is rendered at 29 px on both tiles and in greyscale (does it rely on colour alone?). No
+  guessing round: the owner found it unnecessary and asked that it never be made again (2026-11-28).
 
 ### Icons
 
