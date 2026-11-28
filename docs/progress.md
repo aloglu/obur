@@ -2,6 +2,16 @@
 
 Resumable status for obur. Update before each commit. Design: `docs/design.md`; working rules: `CLAUDE.md`.
 
+## Own icon set: stopped (owner, 2026-11-28)
+
+The owner stopped the own icon set: the trial icons from reference photos looked demonstrably worse and took too
+long, and the fault rate would need a review of every icon. OpenMoji stays. Removed `assets/food-icons/` (drawings,
+build, review and pick pages, reference tools; all in Git history at commit 6412335). Kept
+`scripts/food-icons-gaps.ts` (finds foods that show the plate with today's icons). Docs updated: `docs/ui.md`
+("Own icon set: stopped"), `docs/design.md` roadmap, `CLAUDE.md` commands. The personal environment "obur" (Wikimedia
+hosts) and the private review artifacts are left as they are; the owner can delete them. Next: back to the owner's
+priorities (the rc.11 checklist).
+
 ## Own icon set: method changed, trial under way (2026-11-28)
 
 Owner (2026-11-28): too many basic misses (two bananas that weren't bananas, 14 of 21 vegetables redone and the redos

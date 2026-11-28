@@ -1,4 +1,4 @@
-// Which foods in a person's own history have no icon (docs/ui.md, "Our own food icon set": where the list comes from).
+// Which foods in a person's own history have no icon (docs/ui.md, "Food icons"): a list for extending the word lists.
 // Reads export files the person made themselves, an obur export (More → Export) or a LoseIt export, and lists the
 // food names that fall back to the plate, most logged first. Nothing is sent anywhere and no database is opened.
 // The output holds food names from the diary: keep it on your own machine and share only what you choose.

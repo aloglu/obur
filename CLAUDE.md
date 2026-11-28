@@ -103,6 +103,6 @@ Verified on 2026-10-25 and 2026-11-07 (Node 24+, npm, Docker). Add commands here
 - Curated USDA foods: `npm run curated:build -- <sr_legacy .zip> <foundation .zip>` regenerates `src/lib/server/modules/catalog/curated/usda-foods.json` from the downloaded datasets (checksums pinned in the script); `npm run curated:load` loads it (idempotent; `obur migrate` runs it in production).
 - Messages: edit `messages/en.json`; `npm run i18n` compiles them.
 - Background jobs: `npm run jobs:setup` (schema owner; creates or upgrades the pg-boss schema and schedules, `TZ` sets the schedule zone), then `npm run worker` (worker role).
-- Own icon set (not used by the app yet; `assets/food-icons/STYLE.md`): `node assets/food-icons/build.ts` draws `icons/*.ts` into `svg/`. Foods in a person's own history that show the plate, most logged first: `node scripts/food-icons-gaps.ts <obur or LoseIt export.zip> [--all]` (reads only the files given; the output holds diary food names, so it stays on the owner's machine). Verified 2026-11-28.
+- Foods in a person's own history that show the plate with today's icons, most logged first: `node scripts/food-icons-gaps.ts <obur or LoseIt export.zip> [--all]` (reads only the files given; the output holds diary food names, so it stays on the owner's machine). Verified 2026-11-28.
 
 Use `docs/design.md` for milestone scope and deferred features. Native apps, health-platform integration, meal planning and social features are outside the initial releases. Open sign-up, billing and multi-organisation tenancy are not planned.
